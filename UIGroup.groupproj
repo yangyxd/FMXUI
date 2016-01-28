@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{7909FFFF-DA04-4EE1-8D8F-F4C1ADA619A1}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="UIDemo.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="YxdUI.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="UIDemo">
+        <MSBuild Projects="UIDemo.dproj"/>
+    </Target>
+    <Target Name="UIDemo:Clean">
+        <MSBuild Projects="UIDemo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="UIDemo:Make">
+        <MSBuild Projects="UIDemo.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="YxdUI">
+        <MSBuild Projects="YxdUI.dproj"/>
+    </Target>
+    <Target Name="YxdUI:Clean">
+        <MSBuild Projects="YxdUI.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="YxdUI:Make">
+        <MSBuild Projects="YxdUI.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="UIDemo;YxdUI"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="UIDemo:Clean;YxdUI:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="UIDemo:Make;YxdUI:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
