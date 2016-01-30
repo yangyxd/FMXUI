@@ -1,0 +1,7 @@
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+<style name="AppThemeSplash">        
+    <item name="android:windowBackground">@drawable/splash_image_custom</item>  
+    <item name="android:windowNoTitle">true</item>
+    <item name="android:windowContentOverlay">@null</item>    
+</style>
+</resources>

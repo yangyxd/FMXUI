@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" >  
+  	<!-- 背景颜色 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#ffffffff" />
+        </shape>
+    </item>
+    
+    <!-- 居中显示背景图像 -->
+    <item>
+        <bitmap android:src="@drawable/background" android:gravity="center" />
+    </item>
+</layer-list>

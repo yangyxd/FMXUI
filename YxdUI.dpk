@@ -35,6 +35,7 @@ requires
 
 contains
   UI.Base in 'source\UI.Base.pas',
-  UI.Debug in 'source\UI.Debug.pas';
+  UI.Debug in 'source\UI.Debug.pas',
+  UI.Standard in 'source\UI.Standard.pas';
 
 end.

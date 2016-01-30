@@ -6,7 +6,8 @@ interface
 
 uses
   {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
-  System.TypInfo, FMX.Graphics, //DesignEditors,
+  FMX.TextLayout, FMX.Objects, System.Rtti,
+  System.TypInfo, FMX.Graphics, System.Generics.Collections, System.Math,
   System.Classes, System.Types, System.UITypes, System.SysUtils, System.Math.Vectors,
   FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls, FMX.InertialMovement;
 
@@ -16,6 +17,8 @@ const
     pidiOSSimulator or pidiOSDevice or pidAndroid;
 
 type
+  IView = interface;
+  IViewGroup = interface;
   TView = class;
   TViewGroup = class;
 
@@ -35,45 +38,48 @@ type
   /// </summary>
   TViewSize = (WrapContent {随内容}, FillParent {填充父级});
 
+  TViewBrushBitmap = class(TBrushBitmap);
+  TViewBrush = class(TBrush);
+
   /// <summary>
   /// 可绘制对象
   /// </summary>
   TDrawable = class(TPersistent)
   private
-    FView: TView;
+    [Weak] FView: IView;
     FDefaultKind: TBrushKind;
     FDefaultColor: TAlphaColor;
     FOnChanged: TNotifyEvent;
 
-    FDefault: TBrush;
-    FPressed: TBrush;
-    FFocused: TBrush;
-    FHovered: TBrush;
-    FSelected: TBrush;
-    FChecked: TBrush;
-    FEnabled: TBrush;
-    FActivated: TBrush;
+    FDefault: TViewBrush;
+    FPressed: TViewBrush;
+    FFocused: TViewBrush;
+    FHovered: TViewBrush;
+    FSelected: TViewBrush;
+    FChecked: TViewBrush;
+    FEnabled: TViewBrush;
+    FActivated: TViewBrush;
 
     FPadding: TBounds;
     FXRadius, FYRadius: Single;
 
-    function GetStateBrush(const State: TViewState): TBrush; overload;
-    procedure GetStateBrush(const State: TViewState; var V: TBrush); overload;
-    procedure SetStateBrush(const State: TViewState; const V: TBrush);
-    function GetValue(const Index: Integer): TBrush;
-    procedure SetValue(const Index: Integer; const Value: TBrush);
-    function GetBrush(const State: TViewState; AutoCreate: Boolean): TBrush;
+    function GetStateBrush(const State: TViewState): TViewBrush; overload;
+    procedure GetStateBrush(const State: TViewState; var V: TViewBrush); overload;
+    procedure SetStateBrush(const State: TViewState; const V: TViewBrush);
+    function GetValue(const Index: Integer): TViewBrush;
+    procedure SetValue(const Index: Integer; const Value: TViewBrush);
+    function GetBrush(const State: TViewState; AutoCreate: Boolean): TViewBrush;
     procedure SetXRadius(const Value: Single);
     procedure SetYRadius(const Value: Single);
     procedure SetPadding(const Value: TBounds);
     function GetPaddings: string;
     procedure SetPaddings(const Value: string);
   protected
-    procedure CreateBrush(var Value: TBrush);
+    procedure CreateBrush(var Value: TViewBrush);
     procedure DoChange(Sender: TObject);
   public
-    constructor Create(View: TView); overload;
-    constructor Create(View: TView; const ADefaultKind: TBrushKind;
+    constructor Create(View: IView); overload;
+    constructor Create(View: IView; const ADefaultKind: TBrushKind;
       const ADefaultColor: TAlphaColor); overload;
     destructor Destroy; override;
 
@@ -95,14 +101,14 @@ type
     property Padding: TBounds read FPadding write SetPadding;
     property Paddings: string read GetPaddings write SetPaddings;
 
-    property ItemDefault: TBrush index 0 read GetValue write SetValue;
-    property ItemPressed: TBrush index 1 read GetValue write SetValue;
-    property ItemFocused: TBrush index 2 read GetValue write SetValue;
-    property ItemHovered: TBrush index 3 read GetValue write SetValue;
-    property ItemSelected: TBrush index 4 read GetValue write SetValue;
-    property ItemChecked: TBrush index 5 read GetValue write SetValue;
-    property ItemEnabled: TBrush index 6 read GetValue write SetValue;
-    property ItemActivated: TBrush index 7 read GetValue write SetValue;
+    property ItemDefault: TViewBrush index 0 read GetValue write SetValue;
+    property ItemPressed: TViewBrush index 1 read GetValue write SetValue;
+    property ItemFocused: TViewBrush index 2 read GetValue write SetValue;
+    property ItemHovered: TViewBrush index 3 read GetValue write SetValue;
+    property ItemSelected: TViewBrush index 4 read GetValue write SetValue;
+    property ItemChecked: TViewBrush index 5 read GetValue write SetValue;
+    property ItemEnabled: TViewBrush index 6 read GetValue write SetValue;
+    property ItemActivated: TViewBrush index 7 read GetValue write SetValue;
   end;
 
   /// <summary>
@@ -110,7 +116,7 @@ type
   /// </summary>
   TViewLayout = class(TPersistent)
   private
-    FView: TView;
+    [Weak] FView: IView;
     FOnChanged: TNotifyEvent;
     FToLeftOf: TControl;
     FToRightOf: TControl;
@@ -156,7 +162,7 @@ type
   protected
     procedure DoChange(); virtual;
   public
-    constructor Create(View: TView);
+    constructor Create(View: IView);
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
     function IsEmpty: Boolean;
@@ -185,45 +191,147 @@ type
   /// <summary>
   /// 内容重力
   /// </summary>
-  TLayoutGravity = (Top, Bottom, Left, Right, CenterVertical,
-    FillVertical, CenterHorizontal, FillHorizontal, Center);
+  TLayoutGravity = (None, LeftTop, LeftBottom, RightTop, RightBottom,
+    CenterVertical, CenterHorizontal, CenterHBottom, CenterVRight, Center);
 
   /// <summary>
   /// 视图布局属性接口
   /// </summary>
-  IViewLayout = interface(IInterface)
+  IView = interface(IInterface)
     ['{9C2D9DB0-9D59-4A9D-BC47-53928194544E}']
+    function GetBackground: TDrawable;
     function GetLayout: TViewLayout;
+    function GetParentControl: TControl;
+    function GetParentView: IViewGroup;
+    function GetAdjustViewBounds: Boolean;
+    function GetGravity: TLayoutGravity;
+    function GetMaxHeight: Single;
+    function GetMaxWidth: Single;
+    function GetMinHeight: Single;
+    function GetMinWidth: Single;
+    function GetWeight: Single;
+    function GetViewStates: TViewStates;
+    function GetHeightSize: TViewSize;
+    function GetWidthSize: TViewSize;
+    function GetViewState: TViewStates;
+    function GetOrientation: TOrientation;
+    function GetComponentState: TComponentState;
+
+    function GetPosition: TPosition;
+    function GetWidth: Single;
+    function GetHeight: Single;
+    function GetOpacity: Single;
+
+    procedure IncViewState(const State: TViewState);
+    procedure DecViewState(const State: TViewState);
+
     procedure SetLayout(const Value: TViewLayout);
+    procedure SetBackground(const Value: TDrawable);
+    procedure SetWeight(const Value: Single);
+    procedure SetGravity(const Value: TLayoutGravity);
+    procedure SetOrientation(const Value: TOrientation);
+    procedure SetMaxHeight(const Value: Single);
+    procedure SetMaxWidth(const Value: Single);
+    procedure SetMinHeight(const Value: Single);
+    procedure SetMinWidth(const Value: Single);
+    procedure SetAdjustViewBounds(const Value: Boolean);
+    procedure SetHeightSize(const Value: TViewSize);
+    procedure SetWidthSize(const Value: TViewSize);
+
+    property Layout: TViewLayout read GetLayout write SetLayout;
+    property Background: TDrawable read GetBackground write SetBackground;
+    property Weight: Single read GetWeight write SetWeight;
+    property Gravity: TLayoutGravity read GetGravity write SetGravity;
+    property Orientation: TOrientation read GetOrientation write SetOrientation;
+    property MaxHeight: Single read GetMaxHeight write SetMaxHeight;
+    property MaxWidth: Single read GetMaxWidth write SetMaxWidth;
+    property MinHeight: Single read GetMinHeight write SetMinHeight;
+    property MinWidth: Single read GetMinWidth write SetMinWidth;
+    property AdjustViewBounds: Boolean read GetAdjustViewBounds write SetAdjustViewBounds;
+    property HeightSize: TViewSize read GetHeightSize write SetHeightSize;
+    property WidthSize: TViewSize read GetWidthSize write SetWidthSize;
+
+    property Opacity: Single read GetOpacity;
+    property Width: Single read GetWidth;
+    property Height: Single read GetHeight;
+    property Position: TPosition read GetPosition;
+    property ParentControl: TControl read GetParentControl;
+    property ParentView: IViewGroup read GetParentView;
   end;
 
   /// <summary>
   /// 可绘制背景层接口
   /// </summary>
-  IBackground = interface(IInterface)
+  IViewGroup = interface(IView)
     ['{73A1B9E5-D4AF-4956-A15F-73B0B8EDADF9}']
-    function GetBackground: TDrawable;
-    procedure SetBackground(const Value: TDrawable);
+    function AddView(View: TView): Integer;
+    function RemoveView(View: TView): Integer;
+  end;
+
+  /// <summary>
+  /// 字体设置
+  /// </summary>
+  TTextSettings = class(TPersistent)
+  private
+    [Weak] FOwner: TControl;
+    FOnChanged: TNotifyEvent;
+    FOnTextChanged: TNotifyEvent;
+    FColor: TAlphaColor;
+    FFont: TFont;
+    FPrefixStyle: TPrefixStyle;
+    FGravity: TLayoutGravity;
+    FTrimming: TTextTrimming;
+    FWordWrap: Boolean;
+    FText: string;
+    FAutoSize: Boolean;
+    FIsSizeChange: Boolean;
+    FIsEffectsChange: Boolean;
+    function GetGravity: TLayoutGravity;
+    function GetWordWrap: Boolean;
+    procedure SetColor(const Value: TAlphaColor);
+    procedure SetFont(const Value: TFont);
+    procedure SetGravity(const Value: TLayoutGravity);
+    procedure SetPrefixStyle(const Value: TPrefixStyle);
+    procedure SetTrimming(const Value: TTextTrimming);
+    procedure SetWordWrap(const Value: Boolean);
+    procedure SetText(const Value: string);
+    procedure SetAutoSize(const Value: Boolean);
+    function GetFillTextFlags: TFillTextFlags;
+  protected
+    procedure DoChange; virtual;
+    procedure DoTextChanged;
+    procedure DoFontChanged(Sender: TObject);
+  public
+    constructor Create(AOwner: TComponent);
+    destructor Destroy; override;
+    function CalcTextObjectSize(const MaxWidth, SceneScale: Single;
+      const Margins: TBounds; var Size: TSizeF): Boolean;
+    procedure FillText(const Canvas: TCanvas; const ARect: TRectF; const AText: string; const WordWrap: Boolean; const AOpacity: Single;
+      const Flags: TFillTextFlags; const ATextAlign: TTextAlign; const AVTextAlign: TTextAlign = TTextAlign.Center);
+    procedure Draw(const Canvas: TCanvas; const R: TRectF; const Opacity: Single);
+    property IsSizeChange: Boolean read FIsSizeChange;
+    property IsEffectsChange: Boolean read FIsEffectsChange;
+    property Text: string read FText write SetText;
+    property FillTextFlags: TFillTextFlags read GetFillTextFlags;
+    property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
+    property OnTextChanged: TNotifyEvent read FOnTextChanged write FOnTextChanged;
+  published
+    property AutoSize: Boolean read FAutoSize write SetAutoSize;
+    property Color: TAlphaColor read FColor write SetColor default TAlphaColorRec.Black;
+    property Font: TFont read FFont write SetFont;
+    property PrefixStyle: TPrefixStyle read FPrefixStyle write SetPrefixStyle;
+    property Trimming: TTextTrimming read FTrimming write SetTrimming default TTextTrimming.None;
+    property WordWrap: Boolean read GetWordWrap write SetWordWrap default False;
+    property Gravity: TLayoutGravity read GetGravity write SetGravity;
   end;
 
   /// <summary>
   /// 基本视图
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
-  TView = class(TControl, IViewLayout, IBackground)
+  TView = class(TControl, IView)
   private
-    FWeight: Single;
-    FGravity: TLayoutGravity;
-    FOrientation: TOrientation;
-    FBackground: TDrawable;
-    FDrawing: Boolean;
-    FViewState: TViewStates;
-    FMinWidth: Single;
-    FMinHeight: Single;
-    FMaxWidth: Single;
-    FMaxHeight: Single;
-    FLayout: TViewLayout;
-    function GetParentView: TViewGroup;
+    function GetParentView: IViewGroup;
     function GetClickable: Boolean;
     procedure SetClickable(const Value: Boolean);
     function GetPaddings: string;
@@ -231,7 +339,6 @@ type
     function GetMargin: string;
     procedure SetMargin(const Value: string);
     procedure SetWeight(const Value: Single);
-    procedure SetGravity(const Value: TLayoutGravity);
     procedure SetOrientation(const Value: TOrientation);
     function GetViewStates: TViewStates;
     function GetBackground: TDrawable;
@@ -246,9 +353,37 @@ type
     function GetWidthSize: TViewSize;
     procedure SetHeightSize(const Value: TViewSize);
     procedure SetWidthSize(const Value: TViewSize);
+    function GetAdjustViewBounds: Boolean;
+    function GetGravity: TLayoutGravity;
+    function GetMaxHeight: Single;
+    function GetMaxWidth: Single;
+    function GetMinHeight: Single;
+    function GetMinWidth: Single;
+    function GetWeight: Single;
+    function GetOrientation: TOrientation;
+    function GetComponentState: TComponentState;
+    function GetOpacity: Single;
+    function GetParentControl: TControl;
+    function GetPosition: TPosition;
   protected
+    FWeight: Single;
+    FGravity: TLayoutGravity;
+    FOrientation: TOrientation;
+    FBackground: TDrawable;
+    FDrawing: Boolean;
+    FViewState: TViewStates;
+    FMinWidth: Single;
+    FMinHeight: Single;
+    FMaxWidth: Single;
+    FMaxHeight: Single;
+    FLayout: TViewLayout;
     function IsDrawing: Boolean;
-    function CanRePaintBk(State: TViewState): Boolean; virtual;
+    class function CanRePaintBk(const View: IView; State: TViewState): Boolean; virtual;
+    function GetViewState: TViewStates;
+    procedure IncViewState(const State: TViewState); virtual;
+    procedure DecViewState(const State: TViewState); virtual;
+    procedure IncChildState(State: TViewState); virtual;  // 给所有子控件增加状态
+    procedure DecChildState(State: TViewState); virtual;  // 给所有子控件减少状态
     procedure DoActivate; override;
     procedure DoDeactivate; override;
     procedure DoMouseEnter; override;
@@ -261,7 +396,6 @@ type
       var ALastWidth, ALastHeight: Single): Boolean; override;
   protected
     FAdjustViewBounds: Boolean;
-    FAdjustBounding: Boolean;
     procedure Paint; override;
     procedure Loaded; override;
     procedure ReadState(Reader: TReader); override;
@@ -275,8 +409,10 @@ type
     procedure DoBackgroundChanged(Sender: TObject); virtual;
     procedure DoLayoutChanged(Sender: TObject); virtual;
     procedure DoChangeSize(var ANewWidth, ANewHeight: Single); virtual;
+    procedure DoMouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); virtual;
+    procedure DoMouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single); virtual;
     procedure PaintBackground; virtual;
-    function CheckRecursionState(const Control: TControl): Boolean; virtual;
+    procedure SetGravity(const Value: TLayoutGravity); virtual;
     function AllowUseLayout(): Boolean; virtual;
   public
     constructor Create(AOwner: TComponent); override;
@@ -289,13 +425,17 @@ type
     procedure SetBackground(const Value: TBitmap); overload;
     procedure SetBackground(const Value: TBrushBitmap); overload;
 
-    property ParentView: TViewGroup read GetParentView;
-    property Orientation: TOrientation read FOrientation write SetOrientation;
+    function IsPressed: Boolean;
+    function IsHovered: Boolean;
+    function IsActivated: Boolean;
+
+    property ParentView: IViewGroup read GetParentView;
+    property Orientation: TOrientation read GetOrientation write SetOrientation;
     property ViewState: TViewStates read GetViewStates;
   published
     property Align;
     property Anchors;
-    property AdjustViewBounds: Boolean read FAdjustViewBounds write SetAdjustViewBounds default True;
+    property AdjustViewBounds: Boolean read GetAdjustViewBounds write SetAdjustViewBounds default True;
     property Background: TDrawable read GetBackground write SetBackground;
     property Cursor;
     property ClipChildren;
@@ -317,12 +457,12 @@ type
     property Height;
     property WidthSize: TViewSize read GetWidthSize write SetWidthSize;
     property HeightSize: TViewSize read GetHeightSize write SetHeightSize;
-    property MinWidth: Single read FMinWidth write SetMinWidth;
-    property MinHeight: Single read FMinHeight write SetMinHeight;
-    property MaxWidth: Single read FMaxWidth write SetMaxWidth;
-    property MaxHeight: Single read FMaxHeight write SetMaxHeight;
-    property Gravity: TLayoutGravity read FGravity write SetGravity;
-    property Weight: Single read FWeight write SetWeight;
+    property MinWidth: Single read GetMinWidth write SetMinWidth;
+    property MinHeight: Single read GetMinHeight write SetMinHeight;
+    property MaxWidth: Single read GetMaxWidth write SetMaxWidth;
+    property MaxHeight: Single read GetMaxHeight write SetMaxHeight;
+    property Gravity: TLayoutGravity read GetGravity write SetGravity;
+    property Weight: Single read GetWeight write SetWeight;
     property Scale;
     property Size;
     property Position;
@@ -356,10 +496,10 @@ type
   /// 基本视图组
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
-  TViewGroup = class(TView)
+  TViewGroup = class(TView, IViewGroup)
   private
   protected
-    function IsAutoSize(View: TView;  Align: TAlignLayout): Boolean;
+    function IsAutoSize(View: IView;  Align: TAlignLayout): Boolean;
     procedure DoAddObject(const AObject: TFmxObject); override;
     procedure DoRemoveObject(const AObject: TFmxObject); override;
     procedure DoLayoutChanged(Sender: TObject); override;
@@ -395,7 +535,7 @@ type
   TRelativeLayout = class(TViewGroup)
   private
     FViewList: TList;
-    procedure DoAlignControl(ViewList: TList; X, Y, W, H: Single);
+    procedure DoAlignControl(const X, Y, W, H: Single);
   protected
     function GetXY(const StackList: TList; const Control: TControl;
       var X, Y, W, H: Single): Integer;
@@ -424,8 +564,8 @@ end;
 procedure RegisterAliases;
 begin
   AddEnumElementAliases(TypeInfo(TLayoutGravity),
-    ['Top', 'Bottom', 'Left', 'Right', 'CenterVertical',
-    'FillVertical', 'CenterHorizontal', 'FillHorizontal', 'Center']);
+    ['None', 'LeftTop', 'LeftBottom', 'RightTop', 'RightBottom',
+    'CenterVertical', 'CenterHorizontal', 'CenterHBottom', 'CenterVRight', 'Center']);
   AddEnumElementAliases(TypeInfo(TViewSize),
     ['WrapContent', 'FillParent']);
 end;
@@ -435,6 +575,8 @@ begin
   RemoveEnumElementAliases(TypeInfo(TLayoutGravity));
   RemoveEnumElementAliases(TypeInfo(TViewSize));
 end;
+
+type TPrivateControl = class(TControl);
 
 function GetBoundsFloat(const R: TBounds): string;
 begin
@@ -455,12 +597,80 @@ begin
   Result := True;
 end;
 
+procedure CheckView(const List: TInterfaceList; const View: IView);
+
+  procedure Check(const Control: TControl);
+  var
+    View: IView;
+  begin
+    if Supports(Control, IView, View) then
+      CheckView(List, View);
+  end;
+
+var
+  Layout: TViewLayout;
+begin
+  if Assigned(View) then begin
+    if Assigned(List) and (List.Count > 0) then begin
+      if List.Count > 256 then
+        raise EViewError.Create(SRefOutLimitMax);
+      if (List.IndexOf(View) >= 0) then // 重复引用
+        raise EViewError.Create(SLocateFailed);
+    end;
+    Layout := View.GetLayout;
+        if not Assigned(Layout) then
+      Exit;
+    List.Add(View);
+    try
+      if Assigned(Layout.FAlignBaseline) then
+        Check(Layout.FAlignBaseline);
+      if Assigned(Layout.FAlignTop) then
+        Check(Layout.FAlignTop);
+      if Assigned(Layout.FAlignBottom) then
+        Check(Layout.FAlignBottom);
+      if Assigned(Layout.FAbove) then
+        Check(Layout.FAbove);
+      if Assigned(Layout.FBelow) then
+        Check(Layout.FBelow);
+      if Assigned(Layout.FAlignLeft) then
+        Check(Layout.FAlignLeft);
+      if Assigned(Layout.FAlignRight) then
+        Check(Layout.FAlignRight);
+      if Assigned(Layout.FToRightOf) then
+        Check(Layout.FToRightOf);
+      if Assigned(Layout.FToLeftOf) then
+        Check(Layout.FToLeftOf);
+    finally
+      if List.Count > 0 then
+        List.Delete(List.Count - 1);
+    end;
+  end;
+end;
+
+// 检查组件引用是否存在死循环。返回True表示不存在
+function CheckRecursionState(const Control: IView): Boolean;
+var
+  List: TInterfaceList;
+begin
+  if not Assigned(Control) then
+    Result := True
+  else begin
+    List := TInterfaceList.Create;
+    try
+      CheckView(List, Control);
+    finally
+      List.Free;
+    end;
+    Result := True;
+  end;
+end;
+
 { TDrawable }
 
 procedure TDrawable.Assign(Source: TPersistent);
 
   procedure AssignItem(State: TViewState; const Src: TDrawable);
-  var V: TBrush;
+  var V: TViewBrush;
   begin
     Src.GetStateBrush(State, V);
     if Assigned(V) then
@@ -494,12 +704,12 @@ begin
     inherited;
 end;
 
-constructor TDrawable.Create(View: TView);
+constructor TDrawable.Create(View: IView);
 begin
   Create(View, TBrushKind.None, TAlphaColors.White);
 end;
 
-constructor TDrawable.Create(View: TView; const ADefaultKind: TBrushKind;
+constructor TDrawable.Create(View: IView; const ADefaultKind: TBrushKind;
   const ADefaultColor: TAlphaColor);
 begin
   FView := View;
@@ -507,7 +717,7 @@ begin
   FPadding.OnChange := DoChange;
   FDefaultKind := ADefaultKind;
   FDefaultColor := ADefaultColor;
-  if Assigned(FView) and (csDesigning in FView.ComponentState) then begin
+  if Assigned(FView) and (csDesigning in FView.GetComponentState) then begin
     CreateBrush(FDefault);
     CreateBrush(FPressed);
     CreateBrush(FFocused);
@@ -519,11 +729,11 @@ begin
   end;
 end;
 
-procedure TDrawable.CreateBrush(var Value: TBrush);
+procedure TDrawable.CreateBrush(var Value: TViewBrush);
 begin
   if Assigned(Value) then
     FreeAndNil(Value);
-  Value := TBrush.Create(FDefaultKind, FDefaultColor);
+  Value := TViewBrush.Create(FDefaultKind, FDefaultColor);
   Value.OnChanged := DoChange;
 end;
 
@@ -548,16 +758,16 @@ begin
     FOnChanged(Sender);
 end;
 
-function TDrawable.GetValue(const Index: Integer): TBrush;
+function TDrawable.GetValue(const Index: Integer): TViewBrush;
 begin
   Result := GetBrush(TViewState(Index), False);
 end;
 
-function TDrawable.GetBrush(const State: TViewState; AutoCreate: Boolean): TBrush;
+function TDrawable.GetBrush(const State: TViewState; AutoCreate: Boolean): TViewBrush;
 begin
   GetStateBrush(State, Result);
   if (not Assigned(Result)) and
-    (AutoCreate or (csLoading in FView.ComponentState)) then
+    (AutoCreate or (csLoading in FView.GetComponentState)) then
   begin
     CreateBrush(Result);
     SetStateBrush(State, Result);
@@ -569,12 +779,12 @@ begin
   Result := GetBoundsFloat(FPadding);
 end;
 
-function TDrawable.GetStateBrush(const State: TViewState): TBrush;
+function TDrawable.GetStateBrush(const State: TViewState): TViewBrush;
 begin
   GetStateBrush(State, Result);
 end;
 
-procedure TDrawable.GetStateBrush(const State: TViewState; var V: TBrush);
+procedure TDrawable.GetStateBrush(const State: TViewState; var V: TViewBrush);
 begin
   case State of
     TViewState.None: V := FDefault;
@@ -593,10 +803,10 @@ end;
 procedure TDrawable.Draw(const Canvas: TCanvas);
 var
   States: TViewStates;
-  V: TBrush;
+  V: TViewBrush;
 begin
-  if not Assigned(FView) or (csDestroying in FView.ComponentState) then Exit;
-  States := FView.ViewState;
+  if not Assigned(FView) or (csDestroying in FView.GetComponentState) then Exit;
+  States := FView.GetViewState;
   if States = [] then
     V := FDefault
   else begin
@@ -626,10 +836,10 @@ begin
       ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid)) then
     Exit;
   Canvas.FillRect(RectF(FPadding.Left, FPadding.Top,
-    FView.Width - FPadding.Right,
-    FView.Height - FPadding.Bottom),
+    FView.GetWidth - FPadding.Right,
+    FView.GetHeight - FPadding.Bottom),
     FXRadius, FYRadius,
-    AllCorners, FView.AbsoluteOpacity, V);
+    AllCorners, FView.GetOpacity, V);
 end;
 
 procedure TDrawable.SetDrawable(const Value: TDrawable);
@@ -694,7 +904,7 @@ begin
   V.Kind := TBrushKind.Bitmap;
 end;
 
-procedure TDrawable.SetStateBrush(const State: TViewState; const V: TBrush);
+procedure TDrawable.SetStateBrush(const State: TViewState; const V: TViewBrush);
 begin
   case State of
     TViewState.None: FDefault := V;
@@ -708,7 +918,7 @@ begin
   end;
 end;
 
-procedure TDrawable.SetValue(const Index: Integer; const Value: TBrush);
+procedure TDrawable.SetValue(const Index: Integer; const Value: TViewBrush);
 begin
   SetBrush(TViewState(Index), Value);
 end;
@@ -766,7 +976,7 @@ begin
     inherited;
 end;
 
-constructor TViewLayout.Create(View: TView);
+constructor TViewLayout.Create(View: IView);
 begin
   FView := View;
 end;
@@ -892,15 +1102,15 @@ var
 begin
   if Dest <> Value then begin
     if Assigned(Value) then begin
-      if Value = FView then
+      if Value = TObject(FView) then
         raise EViewLayoutError.Create(SNotAllowSelf);
-      if Value.Parent <> FView.Parent then
+      if Value.Parent <> FView.ParentControl then
         raise EViewLayoutError.Create(SMustSameParent);
-      if not (csLoading in FView.ComponentState) then begin
+      if not (csLoading in FView.GetComponentState) then begin
         Tmp := Dest;
         Dest := Value;
         try
-          FView.CheckRecursionState(FView);
+          CheckRecursionState(FView);
         finally
           Dest := Tmp;
         end;
@@ -927,72 +1137,10 @@ begin
     (Assigned(ParentControl)) and (ParentControl is TRelativeLayout);
 end;
 
-function TView.CanRePaintBk(State: TViewState): Boolean;
+class function TView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
 begin
-  Result := Assigned(FBackground) and
-    Assigned(FBackground.GetStateBrush(State));
-end;
-
-// 检查组件引用是否存在死循环。返回True表示不存在
-function TView.CheckRecursionState(const Control: TControl): Boolean;
-var
-  List: TList;
-
-  procedure Check(const List: TList; const Control: TControl);
-  var
-    I: Integer;
-    View: TView;
-  begin
-    if Assigned(Control) and (Control is TView) then begin
-      if (List.Count > 0) then begin
-        if List.Count > 256 then
-          raise EViewError.Create(SRefOutLimitMax);
-        I := List.IndexOf(Control);
-        if (I >= 0) then // 重复引用
-          raise EViewError.Create(SLocateFailed);
-      end;
-      View := TView(Control);
-      if not Assigned(View.FLayout) then
-        Exit;
-      List.Add(Control);
-      try
-        if Assigned(View.FLayout.FAlignBaseline) then
-          Check(List, View.FLayout.FAlignBaseline);
-        if Assigned(View.FLayout.FAlignTop) then
-          Check(List, View.FLayout.FAlignTop);
-        if Assigned(View.FLayout.FAlignBottom) then
-          Check(List, View.FLayout.FAlignBottom);
-        if Assigned(View.FLayout.FAbove) then
-          Check(List, View.FLayout.FAbove);
-        if Assigned(View.FLayout.FBelow) then
-          Check(List, View.FLayout.FBelow);
-        if Assigned(View.FLayout.FAlignLeft) then
-          Check(List, View.FLayout.FAlignLeft);
-        if Assigned(View.FLayout.FAlignRight) then
-          Check(List, View.FLayout.FAlignRight);
-        if Assigned(View.FLayout.FToRightOf) then
-          Check(List, View.FLayout.FToRightOf);
-        if Assigned(View.FLayout.FToLeftOf) then
-          Check(List, View.FLayout.FToLeftOf);
-      finally
-        if List.Count > 0 then
-          List.Delete(List.Count - 1);
-      end;
-    end;
-  end;
-
-begin
-  if not Assigned(Control) then
-    Result := True
-  else begin
-    List := TList.Create;
-    try
-      Check(List, Control);
-    finally
-      List.Free;
-    end;
-    Result := True;
-  end;
+  Result := Assigned(View.Background) and
+    Assigned(View.Background.GetStateBrush(State));
 end;
 
 constructor TView.Create(AOwner: TComponent);
@@ -1011,6 +1159,25 @@ begin
   end;
 end;
 
+procedure TView.DecChildState(State: TViewState);
+var
+  I: Integer;
+  View: IView;
+begin
+  if State = TViewState.None then Exit;
+  if csDestroying in ComponentState then Exit;
+  for I := 0 to Controls.Count - 1 do begin
+    if Supports(Controls.Items[I], IView, View) then
+      View.DecViewState(State);
+  end;
+end;
+
+procedure TView.DecViewState(const State: TViewState);
+begin
+  Exclude(FViewState, State);
+  DecChildState(State);
+end;
+
 destructor TView.Destroy;
 begin
   FreeAndNil(FBackground);
@@ -1020,22 +1187,22 @@ end;
 
 procedure TView.DoActivate;
 begin
-  Include(FViewState, TViewState.Activated);
+  IncViewState(TViewState.Activated);
   inherited DoActivate;
 end;
 
 procedure TView.DoAdjustViewBounds;
 begin
   RecalcSize;
-  if Assigned(ParentView) then
-    ParentView.Realign;
+  if Assigned(ParentControl) then
+    TPrivateControl(ParentControl).Realign;
 end;
 
 procedure TView.DoAutoSize;
 begin
   RecalcSize;
-  if Assigned(ParentView) then
-    ParentView.Realign;
+  if Assigned(ParentControl) then
+    TPrivateControl(ParentControl).Realign;
 end;
 
 procedure TView.DoBackgroundChanged(Sender: TObject);
@@ -1059,7 +1226,7 @@ end;
 
 procedure TView.DoDeactivate;
 begin
-  Exclude(FViewState, TViewState.Activated);
+  DecViewState(TViewState.Activated);
   inherited DoDeactivate;
 end;
 
@@ -1070,41 +1237,69 @@ end;
 
 procedure TView.DoLayoutChanged(Sender: TObject);
 begin
-  if Assigned(ParentView) then
-    ParentView.Realign;
+  if Assigned(ParentControl) then
+    TPrivateControl(ParentControl).Realign;
 end;
 
 procedure TView.DoMaxSizeChange;
 begin
   RecalcSize;
-  if Assigned(ParentView) then
-    ParentView.Realign;
+  if Assigned(ParentControl) then
+    TPrivateControl(ParentControl).Realign;
 end;
 
 procedure TView.DoMinSizeChange;
 begin
   RecalcSize;
-  if Assigned(ParentView) then
-    ParentView.Realign;
+  if Assigned(ParentControl) then
+    TPrivateControl(ParentControl).Realign;
+end;
+
+procedure TView.DoMouseDown(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+begin
+  if TMouseButton.mbLeft = Button then begin
+    IncViewState(TViewState.Pressed);
+    if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
+  end;
 end;
 
 procedure TView.DoMouseEnter;
 begin
   inherited DoMouseEnter;
-  Include(FViewState, TViewState.Hovered);
-  if CanRePaintBk(TViewState.Hovered) then Repaint;
+  IncViewState(TViewState.Hovered);
+  if CanRePaintBk(Self, TViewState.Hovered) then Repaint;
 end;
 
 procedure TView.DoMouseLeave;
 begin
   inherited DoMouseLeave;
-  Exclude(FViewState, TViewState.Hovered);
-  if CanRePaintBk(TViewState.Hovered) then Repaint;
+  DecViewState(TViewState.Hovered);
+  if CanRePaintBk(Self, TViewState.Hovered) then Repaint;
+end;
+
+procedure TView.DoMouseUp(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+begin
+  if TMouseButton.mbLeft = Button then begin
+    DecViewState(TViewState.Pressed);
+    if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
+  end;
 end;
 
 function TView.GetClickable: Boolean;
 begin
   Result := HitTest;
+end;
+
+function TView.GetComponentState: TComponentState;
+begin
+  Result := ComponentState;
+end;
+
+function TView.GetGravity: TLayoutGravity;
+begin
+  Result := FGravity;
 end;
 
 function TView.GetHeightSize: TViewSize;
@@ -1132,21 +1327,69 @@ begin
   Result := GetBoundsFloat(Margins);
 end;
 
+function TView.GetMaxHeight: Single;
+begin
+  Result := FMaxHeight;
+end;
+
+function TView.GetMaxWidth: Single;
+begin
+  Result := FMaxWidth;
+end;
+
+function TView.GetMinHeight: Single;
+begin
+  Result := FMinHeight;
+end;
+
+function TView.GetMinWidth: Single;
+begin
+  Result := FMinWidth;
+end;
+
+function TView.GetOpacity: Single;
+begin
+  Result := AbsoluteOpacity;
+end;
+
+function TView.GetOrientation: TOrientation;
+begin
+  Result := FOrientation;
+end;
+
 function TView.GetPaddings: string;
 begin
   Result := GetBoundsFloat(Padding);
 end;
 
-function TView.GetParentView: TViewGroup;
+function TView.GetParentControl: TControl;
 begin
-  if Parent.InheritsFrom(TViewGroup) then
-    Result := TViewGroup(Parent)
-  else Result := nil;
+  Result := ParentControl;
+end;
+
+function TView.GetParentView: IViewGroup;
+begin
+  Supports(Parent, IViewGroup, Result);
+end;
+
+function TView.GetPosition: TPosition;
+begin
+  Result := Position;
+end;
+
+function TView.GetViewState: TViewStates;
+begin
+  Result := FViewState;
 end;
 
 function TView.GetViewStates: TViewStates;
 begin
   Result := FViewState;
+end;
+
+function TView.GetWeight: Single;
+begin
+  Result := FWeight;
 end;
 
 function TView.GetWidthSize: TViewSize;
@@ -1163,9 +1406,48 @@ begin
     AutoCapture := True;
 end;
 
+procedure TView.IncChildState(State: TViewState);
+var
+  I: Integer;
+  View: IView;
+begin
+  if State = TViewState.None then Exit;
+  if csDestroying in ComponentState then Exit;
+  for I := 0 to Controls.Count - 1 do begin
+    if Supports(Controls.Items[I], IView, View) then
+      View.IncViewState(State);
+  end;
+end;
+
+procedure TView.IncViewState(const State: TViewState);
+begin
+  Include(FViewState, State);
+  IncChildState(State);
+end;
+
+function TView.IsActivated: Boolean;
+begin
+  Result := TViewState.Activated in FViewState;
+end;
+
 function TView.IsDrawing: Boolean;
 begin
   Result := FDrawing;
+end;
+
+function TView.IsHovered: Boolean;
+begin
+  Result := TViewState.Hovered in FViewState;
+end;
+
+function TView.IsPressed: Boolean;
+begin
+  Result := TViewState.Pressed in FViewState;
+end;
+
+function TView.GetAdjustViewBounds: Boolean;
+begin
+  Result := FAdjustViewBounds;
 end;
 
 function TView.GetBackground: TDrawable;
@@ -1186,15 +1468,13 @@ procedure TView.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
   inherited MouseDown(Button, Shift, X, Y);
-  Include(FViewState, TViewState.Pressed);
-  if CanRePaintBk(TViewState.Pressed) then Repaint;
+  DoMouseDown(Button, Shift, X, Y);
 end;
 
 procedure TView.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single);
 begin
   inherited MouseUp(Button, Shift, X, Y);
-  Exclude(FViewState, TViewState.Pressed);
-  if CanRePaintBk(TViewState.Pressed) then Repaint;
+  DoMouseUp(Button, Shift, X, Y);
 end;
 
 procedure TView.DoOrientation;
@@ -1212,17 +1492,18 @@ end;
 
 procedure TView.DoWeight;
 begin
-  if Assigned(ParentView) then
-    ParentView.Realign;
+  if Assigned(ParentControl) then
+    TPrivateControl(ParentControl).Realign;
 end;
 
 procedure TView.EnabledChanged;
 begin
   inherited EnabledChanged;
-  if Enabled then
-    Exclude(FViewState, TViewState.Enabled)
-  else
-    Include(FViewState, TViewState.Enabled);
+  if Enabled then begin
+    DecViewState(TViewState.Enabled);
+  end else begin
+    IncViewState(TViewState.Enabled);
+  end;
 end;
 
 procedure TView.Paint;
@@ -1233,8 +1514,6 @@ begin
       Include(FViewState, TViewState.Focused)
     else
       Exclude(FViewState, TViewState.Focused);
-    if Enabled then
-
     FDrawing := True;
     try
       PaintBackground();
@@ -1473,12 +1752,12 @@ begin
   Realign;
 end;
 
-function TViewGroup.IsAutoSize(View: TView; Align: TAlignLayout): Boolean;
+function TViewGroup.IsAutoSize(View: IView; Align: TAlignLayout): Boolean;
 begin
   if FOrientation = TOrientation.Horizontal then
-    Result := Assigned(View) and (View.HeightSize <> TViewSize.WrapContent)
+    Result := Assigned(View) and (View.GetHeightSize <> TViewSize.WrapContent)
   else
-    Result := Assigned(View) and (View.WidthSize <> TViewSize.WrapContent);
+    Result := Assigned(View) and (View.GetWidthSize <> TViewSize.WrapContent);
   if not Result then begin
     if FOrientation = TOrientation.Horizontal then
       Result := Align in [TAlignLayout.Left, TAlignLayout.Right,
@@ -1515,7 +1794,7 @@ var
   W, H, Fix: Single;
   VL, VT, VW, VH, AW, AH: Single;
   Control: TControl;
-  View: TView;
+  View: IView;
   SaveAdjustViewBounds: Boolean;
 begin
   if FDisableAlign then
@@ -1523,12 +1802,24 @@ begin
   if csLoading in ComponentState then
     Exit;
   FDisableAlign := True;
-  FAdjustBounding := True;
   WeightSum := GetWeightSum(Fix);
 
   CurPos := PointF(Padding.Left, Padding.Top);
   W := Self.Width - CurPos.X - Padding.Right;
   H := Self.Height - CurPos.Y - Padding.Bottom;
+  if WeightSum = 0 then begin
+    if Orientation = TOrientation.Horizontal then begin
+      if FGravity in [TLayoutGravity.CenterHorizontal, TLayoutGravity.CenterHBottom, TLayoutGravity.Center] then
+        CurPos.X := (W - Fix) / 2 + Padding.Left
+      else if FGravity in [TLayoutGravity.RightTop, TLayoutGravity.RightBottom, TLayoutGravity.CenterVRight] then
+        CurPos.X := W - Fix + Padding.Left;
+    end else begin
+      if FGravity in [TLayoutGravity.CenterVertical, TLayoutGravity.CenterVRight, TLayoutGravity.Center] then
+        CurPos.Y := (H - Fix) / 2 + Padding.Top
+      else if FGravity in [TLayoutGravity.LeftBottom, TLayoutGravity.RightBottom, TLayoutGravity.CenterHBottom] then
+        CurPos.Y := H - Fix + Padding.Top;
+    end;
+  end;
 
   if (W > 0) and (H > 0) then begin
     SaveAdjustViewBounds := False;
@@ -1540,102 +1831,115 @@ begin
       {$ENDIF}
       if not Control.Visible then Continue;
 
-
-      if (Control.InheritsFrom(TView)) then begin
-        View := TView(Control);
-        SaveAdjustViewBounds := View.FAdjustViewBounds;
-      end else
-        View := nil;
+      View := nil;
+      if (Supports(Control, IView, View)) then
+        SaveAdjustViewBounds := View.GetAdjustViewBounds;
 
       if Orientation = TOrientation.Horizontal then begin  // 横排
         VL := CurPos.X + Control.Margins.Left;
-        if Assigned(View) and (WeightSum > 0) and (View.FWeight > 0) then begin
-          VW := (W - Fix) / WeightSum * View.FWeight - Control.Margins.Left - Control.Margins.Right;
+        if Assigned(View) and (WeightSum > 0) and (View.GetWeight > 0) then begin
+          VW := (W - Fix) / WeightSum * View.GetWeight - Control.Margins.Left - Control.Margins.Right;
         end else
           VW := Control.Width;
 
         if IsAutoSize(View, Control.Align) then begin
           VT := CurPos.Y + Control.Margins.Top;
-          VH := H - VT - Control.Margins.Bottom;
+          VH := H - Control.Margins.Bottom;
         end else begin
-          VT := Control.Position.Y;
           VH := Control.Height;
+          case FGravity of
+            TLayoutGravity.LeftTop, TLayoutGravity.RightTop:
+              VT := CurPos.Y + Control.Margins.Top;
+            TLayoutGravity.LeftBottom, TLayoutGravity.RightBottom, TLayoutGravity.CenterHBottom:
+              VT := H - VH - Control.Margins.Bottom + Padding.Top;
+            TLayoutGravity.CenterVertical, TLayoutGravity.Center, TLayoutGravity.CenterVRight:
+              VT := (H - (VH + Control.Margins.Top + Control.Margins.Bottom)) / 2 + Padding.Top;
+          else
+            VT := Control.Position.Y;
+          end;
         end;
 
         if Assigned(View) and (SaveAdjustViewBounds) then begin
-          if (View.HeightSize = TViewSize.WrapContent) and (View.FMaxHeight > 0) and (VH > View.FMaxHeight) then
-            VH := View.FMaxHeight;
-          if (View.FMinHeight > 0) and (VH < View.FMinHeight) then
-            VH := View.FMinHeight;
+          if (View.GetHeightSize = TViewSize.WrapContent) and (View.GetMaxHeight > 0) and (VH > View.GetMaxHeight) then
+            VH := View.GetMaxHeight;
+          if (View.GetMinHeight > 0) and (VH < View.GetMinHeight) then
+            VH := View.GetMinHeight;
           AW := VW;
-          if (View.FMaxWidth > 0) and (AW > View.FMaxWidth) then
-            AW := View.FMaxWidth;
-          if (View.FMinWidth > 0) and (AW < View.FMinWidth) then
-            AW := View.FMinWidth;
+          if (View.GetMaxWidth > 0) and (AW > View.GetMaxWidth) then
+            AW := View.GetMaxWidth;
+          if (View.GetMinWidth > 0) and (AW < View.GetMinWidth) then
+            AW := View.GetMinWidth;
           if AW <> VW then
             VW := AW;
         end;
-        if Assigned(View) and (View.FWeight > 0) then begin
+        if Assigned(View) and (View.GetWeight > 0) then begin
           Fix := Fix + VW + Control.Margins.Left + Control.Margins.Right;
-          WeightSum := WeightSum - View.FWeight;
+          WeightSum := WeightSum - View.GetWeight;
         end;
         CurPos.X := VL + VW + Control.Margins.Right;
 
       end else begin // 竖排
         VT := CurPos.Y + Control.Margins.Top;
-        if Assigned(View) and (WeightSum > 0) and (View.FWeight > 0) then
-          VH := (H - Fix) / WeightSum * View.FWeight - Control.Margins.Top - Control.Margins.Bottom
+        if Assigned(View) and (WeightSum > 0) and (View.GetWeight > 0) then
+          VH := (H - Fix) / WeightSum * View.GetWeight - Control.Margins.Top - Control.Margins.Bottom
         else
           VH := Control.Height;
 
         if IsAutoSize(View, Control.Align) then begin
           VL := CurPos.X + Control.Margins.Left;
-          VW := W - VL - Control.Margins.Right;
+          VW := W - Control.Margins.Right;
         end else begin
-          VL := Control.Position.X;
           VW := Control.Width;
+          case FGravity of
+            TLayoutGravity.LeftTop, TLayoutGravity.LeftBottom:
+              VL := CurPos.X + Control.Margins.Left;
+            TLayoutGravity.RightTop, TLayoutGravity.RightBottom, TLayoutGravity.CenterVRight:
+              VL := W - VW - Control.Margins.Right + Padding.Left;
+            TLayoutGravity.CenterHBottom, TLayoutGravity.Center:
+              VL := (W - (VW + Control.Margins.Left + Control.Margins.Right)) / 2 + Padding.Left;
+          else
+            VL := Control.Position.X;
+          end;
         end;
 
         if Assigned(View) and (SaveAdjustViewBounds) then begin
-          if (View.WidthSize = TViewSize.WrapContent) and (View.FMaxWidth > 0) and (VW > View.FMaxWidth) then
-            VW := View.FMaxWidth;
-          if (View.FMinWidth > 0) and (VW < View.FMinWidth) then
-            VW := View.FMinWidth;
+          if (View.GetWidthSize = TViewSize.WrapContent) and (View.GetMaxWidth > 0) and (VW > View.GetMaxWidth) then
+            VW := View.GetMaxWidth;
+          if (View.GetMinWidth > 0) and (VW < View.GetMinWidth) then
+            VW := View.GetMinWidth;
           AH := VH;
-          if (View.FMaxHeight > 0) and (AH > View.FMaxHeight) then
-            AH := View.FMaxHeight;
-          if (View.FMinHeight > 0) and (AH < View.FMinHeight) then
-            AH := View.FMinHeight;
+          if (View.GetMaxHeight > 0) and (AH > View.GetMaxHeight) then
+            AH := View.GetMaxHeight;
+          if (View.GetMinHeight > 0) and (AH < View.GetMinHeight) then
+            AH := View.GetMinHeight;
           if AH <> VH then
             VH := AH;
         end;
-        if Assigned(View) then begin
+        if Assigned(View) and (View.GetWeight > 0) then begin
           Fix := Fix + VH + Control.Margins.Top + Control.Margins.Bottom;
-          WeightSum := WeightSum - View.FWeight;
+          WeightSum := WeightSum - View.GetWeight;
         end;
         CurPos.Y := VT + VH + Control.Margins.Bottom;
 
       end;
 
       if Assigned(View) then begin
-        View.FAdjustViewBounds := False;
-        View.FAdjustBounding := True;
+        View.SetAdjustViewBounds(False);
         Control.SetBounds(VL, VT, VW, VH);
-        View.FAdjustBounding := False;
-        View.FAdjustViewBounds := SaveAdjustViewBounds;
+        View.SetAdjustViewBounds(SaveAdjustViewBounds);
       end else
         Control.SetBounds(VL, VT, VW, VH);
       
     end;
   end;
   FDisableAlign := False;
-  FAdjustBounding := False;
 end;
 
 function TLinearLayout.GetWeightSum(var FixSize: Single): Single;
 var
   I: Integer;
   Control: TControl;
+  View: IView;
 begin
   Result := 0;
   FixSize := 0;
@@ -1647,8 +1951,8 @@ begin
     {$ENDIF}
     if (not Control.Visible) then Continue;
     // TDesignRectangle
-    if (Control.InheritsFrom(TView)) and (TView(Control).FWeight > 0) then
-      Result := Result + TView(Control).FWeight
+    if (Supports(Control, IView, View)) and (View.GetWeight > 0) then
+      Result := Result + View.GetWeight
     else begin
       if Orientation = TOrientation.Horizontal then       
         FixSize := FixSize + Control.Width + Control.Margins.Left + Control.Margins.Right
@@ -1678,7 +1982,7 @@ begin
   inherited;
 end;
 
-procedure TRelativeLayout.DoAlignControl(ViewList: TList; X, Y, W, H: Single);
+procedure TRelativeLayout.DoAlignControl(const X, Y, W, H: Single);
 var
   R: TRectF;
   AlignList: TInterfaceList;
@@ -1729,14 +2033,13 @@ var
     end;
   end;
 
-  procedure DoGetList(ViewList, List: TList);
+  procedure DoGetList(const List: TList);
   var
-    View: TView;
+    View: IView;
     Control: TControl;
     I: Integer;
   begin
     List.Clear;
-    ViewList.Clear;
     for I := 0 to ControlsCount - 1 do begin
       Control := Controls[I];
       {$IFDEF MSWINDOWS}
@@ -1745,10 +2048,9 @@ var
       {$ENDIF}
       if not Control.Visible then Continue;
 
-      if (Control.InheritsFrom(TView)) then begin
-        View := TView(Control);
-        if (Assigned(View.FLayout)) then begin
-          ViewList.Add(View);
+      if (Supports(Control, IView, View)) then begin
+        if (Assigned(View.GetLayout)) then begin
+          FViewList.Add(Control);
           Continue;
         end;
       end;
@@ -1770,7 +2072,7 @@ begin
   R := Padding.PaddingRect(R);
   List := TList.Create;
   try
-    DoGetList(ViewList, List);
+    DoGetList(List);
     // Align
     DoAlign(List, TAlignLayout.MostTop);
     DoAlign(List, TAlignLayout.MostBottom);
@@ -1808,8 +2110,8 @@ var
   I: Integer;
   CurPos: TPointF;
   VL, VT, VW, VH: Single;
-  View: TView;
-  Layout: TViewLayout;
+  View: TControl;
+  LView: IView;
   SaveAdjustViewBounds: Boolean;
 begin
   if FDisableAlign or (not Assigned(FViewList)) then
@@ -1817,22 +2119,19 @@ begin
   if csLoading in ComponentState then
     Exit;
   FDisableAlign := True;
-  FAdjustBounding := True;
   CurPos := PointF(Padding.Left, Padding.Top);
   W := Self.Width - CurPos.X - Padding.Right;
   H := Self.Height - CurPos.Y - Padding.Bottom;
 
   if (W > 0) and (H > 0) then begin
     FViewList.Clear;
-    DoAlignControl(FViewList, CurPos.X, CurPos.Y, FSize.Width, FSize.Height);
+    DoAlignControl(CurPos.X, CurPos.Y, FSize.Width, FSize.Height);
     SaveAdjustViewBounds := False;
     List := TList.Create;
     try
       for I := 0 to FViewList.Count - 1 do begin
-        View := TView(FViewList[I]);
-        if not Assigned(View) then Continue;
-        Layout := View.FLayout;
-        if not Assigned(Layout) then Continue;
+        View := FViewList[I];
+        if not Supports(View, IView, LView) then Continue;
 
         List.Clear;
         if GetXY(List, View, VL, VT, VW, VH) < 0 then Exit;
@@ -1840,24 +2139,22 @@ begin
         VT := VT + View.Margins.Top;
         VW := VW - View.Margins.Left - View.Margins.Right;
         VH := VH - View.Margins.Top - View.Margins.Bottom;
-        View.FAdjustViewBounds := False;
-        View.FAdjustBounding := True;
+        LView.SetAdjustViewBounds(False);
         View.SetBounds(VL, VT, VW, VH);
-        View.FAdjustBounding := False;
-        View.FAdjustViewBounds := SaveAdjustViewBounds;
+        LView.SetAdjustViewBounds(SaveAdjustViewBounds);
       end;
     finally
       List.Free;
     end;
   end;
   FDisableAlign := False;
-  FAdjustBounding := False;
 end;
 
 function TRelativeLayout.GetXY(const StackList: TList; const Control: TControl;
   var X, Y, W, H: Single): Integer;
 var
-  View: TView;
+  View: IView;
+  Layout: TViewLayout;
   PW, PH: Single;
   AX, AY, AW, AH: Single;
   BX, BY, BW, BH: Single;
@@ -1871,194 +2168,464 @@ begin
 
   W := Control.Width + Control.Margins.Left + Control.Margins.Right;
   H := Control.Height + Control.Margins.Top + Control.Margins.Bottom;
-  X := 0;
-  Y := 0;
 
-  if not (Control is TView) then begin
+  if not (Supports(Control, IView, View)) then begin
+    X := Control.Position.X;
+    Y := Control.Position.Y;
     Exit;
   end else begin
-    if (StackList.Count > 0) then begin
-      if StackList.Count > 256 then begin
-        Result := -1;
-        Exit;
-      end;
-      I := StackList.IndexOf(Control);
-      if (I >= 0) then begin
-        Result := -2;
-        Exit;
-      end;
-    end;
-    View := TView(Control);
-    if not Assigned(View.FLayout) then
+    X := 0;
+    Y := 0;
+  end;
+  if (StackList.Count > 0) then begin
+    if StackList.Count > 256 then begin
+      Result := -1;
       Exit;
-    Parent := View.ParentControl;
-    if Assigned(Parent) then begin
-      PW := Parent.Width - Parent.Padding.Left - Parent.Padding.Right;
-      PH := Parent.Height - Parent.Padding.Top - Parent.Padding.Bottom;
-    end else begin
-      PW := 0; PH := 0;
     end;
-    if not View.FLayout.AlignParentLeft then
-      X := View.Position.X;
-    if not View.FLayout.AlignParentTop then
-      Y := View.Position.Y;
-    StackList.Add(Control);
-    try
+    I := StackList.IndexOf(Control);
+    if (I >= 0) then begin
+      Result := -2;
+      Exit;
+    end;
+  end;
+  Layout := View.Layout;
+  if not Assigned(Layout) then
+    Exit;
+  Parent := View.ParentControl;
+  if Assigned(Parent) then begin
+    PW := Parent.Width - Parent.Padding.Left - Parent.Padding.Right;
+    PH := Parent.Height - Parent.Padding.Top - Parent.Padding.Bottom;
+  end else begin
+    PW := 0; PH := 0;
+  end;
+  if (not Layout.AlignParentLeft) and Assigned(View.Position) then
+    X := View.Position.X;
+  if (not Layout.AlignParentTop) and Assigned(View.Position) then
+    Y := View.Position.Y;
+  StackList.Add(Control);
+  try
 
-      DecH := False;
-      DecW := False;
-      DecHD2 := False;
+    DecH := False;
+    DecW := False;
+    DecHD2 := False;
 
-      AutoW := View.WidthSize <> TViewSize.WrapContent;
-      AutoH := View.HeightSize <> TViewSize.WrapContent;
+    AutoW := View.WidthSize <> TViewSize.WrapContent;
+    AutoH := View.HeightSize <> TViewSize.WrapContent;
 
-      if (View.FLayout.FCenterInParent) or (View.FLayout.FCenterVertical and View.FLayout.FCenterHorizontal) then begin
-        if AutoW then W := PW;
-        if AutoH then H := PH;
-        if Assigned(Parent) then begin
-          X := (PW - W) / 2;
-          Y := (PH - H) / 2;
-        end;
-        Exit;
+    if (Layout.FCenterInParent) or (Layout.FCenterVertical and Layout.FCenterHorizontal) then begin
+      if AutoW then W := PW;
+      if AutoH then H := PH;
+      if Assigned(Parent) then begin
+        X := (PW - W) / 2;
+        Y := (PH - H) / 2;
       end;
+      Exit;
+    end;
 
-      if View.FLayout.FCenterVertical then begin
-        if AutoH then H := PH;
-        if Assigned(Parent) then
-          Y := (PH - H) / 2;
-      end else if Assigned(View.FLayout.FAlignBaseline) then begin
-        if AutoH then begin
-          H := PH;
-          Y := 0;
-        end else begin
-          Result := GetXY(StackList, View.FLayout.FAlignBaseline, AX, AY, AW, AH);
-          if Result < 0 then Exit;
-          Y := AY + AH / 2;
-          DecHD2 := True;
-        end;
-      end else if View.FLayout.FAlignParentTop then begin
+    if Layout.FCenterVertical then begin
+      if AutoH then H := PH;
+      if Assigned(Parent) then
+        Y := (PH - H) / 2;
+    end else if Assigned(Layout.FAlignBaseline) then begin
+      if AutoH then begin
+        H := PH;
         Y := 0;
-        if AutoH then H := PH;
-      end else if View.FLayout.FAlignParentBottom then begin
-        if AutoH then begin
-          Y := 0;
-          H := PH;
-        end else
-          Y := PH - H;
-      end else if Assigned(View.FLayout.FAlignTop) then begin
-        Result := GetXY(StackList, View.FLayout.FAlignTop, AX, AY, AW, AH);
+      end else begin
+        Result := GetXY(StackList, Layout.FAlignBaseline, AX, AY, AW, AH);
         if Result < 0 then Exit;
-        Y := AY + View.FLayout.FAlignTop.Margins.Top;
-        if Assigned(View.FLayout.FAlignBottom) then begin
-          Result := GetXY(StackList, View.FLayout.FAlignBottom, BX, BY, BW, BH);
-          if Result < 0 then Exit;
-          H := (BY + BH + View.FLayout.FAlignBottom.Margins.Bottom) - Y;
-        end else if AutoH then
-          H := PH - Y;
-      end else if Assigned(View.FLayout.FAlignBottom) then begin
-        Result := GetXY(StackList, View.FLayout.FAlignBottom, AX, AY, AW, AH);
+        Y := AY + AH / 2;
+        DecHD2 := True;
+      end;
+    end else if Assigned(Layout.FAlignTop) then begin
+      Result := GetXY(StackList, Layout.FAlignTop, AX, AY, AW, AH);
+      if Result < 0 then Exit;
+      Y := AY + Layout.FAlignTop.Margins.Top;
+      if Assigned(Layout.FAlignBottom) then begin
+        Result := GetXY(StackList, Layout.FAlignBottom, BX, BY, BW, BH);
         if Result < 0 then Exit;
-        Y := AY + AH - View.FLayout.FAlignBottom.Margins.Bottom;
+        H := (BY + BH + Layout.FAlignBottom.Margins.Bottom) - Y;
+      end else if AutoH then
+        H := PH - Y;
+    end else if Assigned(Layout.FAlignBottom) then begin
+      Result := GetXY(StackList, Layout.FAlignBottom, AX, AY, AW, AH);
+      if Result < 0 then Exit;
+      Y := AY + AH - Layout.FAlignBottom.Margins.Bottom;
+      if AutoH then begin
+        H := Y;
+        Y := 0;
+      end else
+        DecH := True;
+    end else if Assigned(Layout.FAbove) then begin
+      Result := GetXY(StackList, Layout.FAbove, AX, AY, AW, AH);
+      if Result < 0 then Exit;
+      Y := AY - Layout.FAbove.Margins.Top;
+      if Assigned(Layout.FBelow) then begin
+        Result := GetXY(StackList, Layout.FBelow, BX, BY, BW, BH);
+        if Result < 0 then Exit;
+        H := Y - (BY + BH + Layout.FBelow.Margins.Bottom);
+      end else begin
         if AutoH then begin
           H := Y;
           Y := 0;
         end else
           DecH := True;
-      end else if Assigned(View.FLayout.FAbove) then begin
-        Result := GetXY(StackList, View.FLayout.FAbove, AX, AY, AW, AH);
-        if Result < 0 then Exit;
-        Y := AY - View.FLayout.FAbove.Margins.Top;
-        if Assigned(View.FLayout.FBelow) then begin
-          Result := GetXY(StackList, View.FLayout.FBelow, BX, BY, BW, BH);
-          if Result < 0 then Exit;
-          H := Y - (BY + BH + View.FLayout.FBelow.Margins.Bottom);
-        end else begin
-          if AutoH then begin
-            H := Y;
-            Y := 0;
-          end else
-            DecH := True;
-        end;
-      end else if Assigned(View.FLayout.FBelow) then begin
-        Result := GetXY(StackList, View.FLayout.FBelow, BX, BY, BW, BH);
-        if Result < 0 then Exit;
-        Y := BY + BH + View.FLayout.FBelow.Margins.Bottom;
-        if AutoH then
-          H := PH - Y;
-      end else begin
-        if AutoH then
-          H := PH - Y;
       end;
+    end else if Assigned(Layout.FBelow) then begin
+      Result := GetXY(StackList, Layout.FBelow, BX, BY, BW, BH);
+      if Result < 0 then Exit;
+      Y := BY + BH + Layout.FBelow.Margins.Bottom;
+      if AutoH then
+        H := PH - Y;
+    end else if Layout.FAlignParentTop then begin
+      Y := 0;
+      if AutoH then H := PH;
+    end else if Layout.FAlignParentBottom then begin
+      if AutoH then begin
+        Y := 0;
+        H := PH;
+      end else
+        Y := PH - H;
+    end else begin
+      if AutoH then
+        H := PH - Y;
+    end;
 
-      if View.FLayout.FCenterHorizontal then begin
-        if AutoW then W := PW;
-        if Assigned(Parent) then
-          X := (PW - W) / 2;
-      end else if View.FLayout.FAlignParentLeft then begin
+    if Layout.FCenterHorizontal then begin
+      if AutoW then W := PW;
+      if Assigned(Parent) then
+        X := (PW - W) / 2;
+    end else if Assigned(Layout.FAlignLeft) then begin
+      Result := GetXY(StackList, Layout.FAlignLeft, AX, AY, AW, AH);
+      if Result < 0 then Exit;
+      X := AX - Layout.FAlignLeft.Margins.Left;
+      if Assigned(Layout.FAlignRight) then begin
+        Result := GetXY(StackList, Layout.FAlignRight, BX, BY, BW, BH);
+        if Result < 0 then Exit;
+        W := (BX + BW + Layout.FAlignRight.Margins.Right) - X;
+      end else if AutoW then
+        W := PW - X;
+    end else if Assigned(Layout.FAlignRight) then begin
+      Result := GetXY(StackList, Layout.FAlignRight, AX, AY, AW, AH);
+      if Result < 0 then Exit;
+      X := AX + AW + Layout.FAlignRight.Margins.Right;
+      if AutoW then begin
+        W := X;
         X := 0;
-        if AutoW then W := PW;
-      end else if View.FLayout.FAlignParentRight then begin
-        if AutoW then begin
-          X := 0;
-          W := PW;
-        end else
-          X := PW - W;
-      end else if Assigned(View.FLayout.FAlignLeft) then begin
-        Result := GetXY(StackList, View.FLayout.FAlignLeft, AX, AY, AW, AH);
+      end else
+        DecW := True;
+    end else if Assigned(Layout.FToRightOf) then begin
+      Result := GetXY(StackList, Layout.FToRightOf, AX, AY, AW, AH);
+      if Result < 0 then Exit;
+      X := AX + AW + Layout.FToRightOf.Margins.Right;
+      if Assigned(Layout.FToLeftOf) then begin
+        Result := GetXY(StackList, Layout.FToLeftOf, BX, BY, BW, BH);
         if Result < 0 then Exit;
-        X := AX - View.FLayout.FAlignLeft.Margins.Left;
-        if Assigned(View.FLayout.FAlignRight) then begin
-          Result := GetXY(StackList, View.FLayout.FAlignRight, BX, BY, BW, BH);
-          if Result < 0 then Exit;
-          W := (BX + BW + View.FLayout.FAlignRight.Margins.Right) - X;
-        end else if AutoW then
-          W := PW - X;
-      end else if Assigned(View.FLayout.FAlignRight) then begin
-        Result := GetXY(StackList, View.FLayout.FAlignRight, AX, AY, AW, AH);
-        if Result < 0 then Exit;
-        X := AX + AW + View.FLayout.FAlignRight.Margins.Right;
-        if AutoW then begin
-          W := X;
-          X := 0;
-        end else
-          DecW := True;
-      end else if Assigned(View.FLayout.FToRightOf) then begin
-        Result := GetXY(StackList, View.FLayout.FToRightOf, AX, AY, AW, AH);
-        if Result < 0 then Exit;
-        X := AX + AW + View.FLayout.FToRightOf.Margins.Right;
-        if Assigned(View.FLayout.FToLeftOf) then begin
-          Result := GetXY(StackList, View.FLayout.FToLeftOf, BX, BY, BW, BH);
-          if Result < 0 then Exit;
-          W := (BX - View.FLayout.FToLeftOf.Margins.Left) - X;
-        end else begin
-          if AutoW then
-            W := PW - X;
-        end;
-      end else if Assigned(View.FLayout.FToLeftOf) then begin
-        Result := GetXY(StackList, View.FLayout.FToLeftOf, AX, AY, AW, AH);
-        if Result < 0 then Exit;
-        X := AX - View.FLayout.FToLeftOf.Margins.Left;
-        if AutoW then begin
-          W := X;
-          X := 0;
-        end else
-          DecW := True;
+        W := (BX - Layout.FToLeftOf.Margins.Left) - X;
       end else begin
         if AutoW then
           W := PW - X;
       end;
-
-      if DecH then
-        Y := Y - H
-      else if DecHD2 then
-        Y := Y - H / 2;
-      if DecW then
-        X := X - W;
-
-    finally
-      if StackList.Count > 0 then
-        StackList.Delete(StackList.Count - 1);
+    end else if Assigned(Layout.FToLeftOf) then begin
+      Result := GetXY(StackList, Layout.FToLeftOf, AX, AY, AW, AH);
+      if Result < 0 then Exit;
+      X := AX; // - Layout.FToLeftOf.Margins.Left;
+      if AutoW then begin
+        W := X;
+        X := 0;
+      end else
+        DecW := True;
+    end else if Layout.FAlignParentLeft then begin
+      X := 0;
+      if AutoW then W := PW;
+    end else if Layout.FAlignParentRight then begin
+      if AutoW then begin
+        X := 0;
+        W := PW;
+      end else
+        X := PW - W;
+    end else begin
+      if AutoW then
+        W := PW - X;
     end;
+
+    if DecH then
+      Y := Y - H
+    else if DecHD2 then
+      Y := Y - H / 2;
+    if DecW then
+      X := X - W;
+
+  finally
+    if StackList.Count > 0 then
+      StackList.Delete(StackList.Count - 1);
+  end;
+end;
+
+{ TTextSettings }
+
+function TTextSettings.CalcTextObjectSize(const MaxWidth, SceneScale: Single;
+  const Margins: TBounds; var Size: TSizeF): Boolean;
+const
+  FakeText = 'P|y'; // Do not localize
+
+  function RoundToScale(const Value, Scale: Single): Single;
+  begin
+    if Scale > 0 then
+      Result := Ceil(Value * Scale) / Scale
+    else
+      Result := Ceil(Value);
+  end;
+
+var
+  Layout: TTextLayout;
+  LText: string;
+  LMaxWidth: Single;
+begin
+  Result := False;
+  if (SceneScale >= 0) then
+  begin
+    LMaxWidth := MaxWidth - Margins.Left - Margins.Right;
+    Layout := TTextLayoutManager.DefaultTextLayout.Create;
+    try
+      if FPrefixStyle = TPrefixStyle.HidePrefix then
+        LText := DelAmp(FText)
+      else
+        LText := FText;
+      Layout.BeginUpdate;
+      if LText.IsEmpty then
+        Layout.Text := FakeText
+      else
+        Layout.Text := LText;
+
+      Layout.Font := FFont;
+      if FWordWrap and (LMaxWidth > 1) then
+        Layout.MaxSize := TPointF.Create(LMaxWidth, Layout.MaxSize.Y);
+      Layout.WordWrap := FWordWrap;
+      Layout.Trimming := FTrimming;
+      Layout.VerticalAlign := TTextAlign.Leading;
+      Layout.HorizontalAlign := TTextAlign.Leading;
+      Layout.EndUpdate;
+
+      if LText.IsEmpty then
+        Size.Width := 0
+      else
+        Size.Width := RoundToScale(Layout.Width + Layout.TextRect.Left * 2 + Layout.Font.Size / 3, SceneScale);
+      Size.Width := Size.Width + Margins.Left + Margins.Right;
+      Size.Height := RoundToScale(Layout.Height, SceneScale) + Margins.Top + Margins.Bottom;
+      Result := True;
+    finally
+      Layout.Free;
+    end;
+  end;
+end;
+
+constructor TTextSettings.Create(AOwner: TComponent);
+var
+  DefaultValueService: IInterface;
+  TrimmingDefault: TValue;
+begin
+  if AOwner is TControl then
+    FOwner := TControl(AOwner)
+  else FOwner := nil;
+  FFont := TFont.Create;
+  FFont.OnChanged := DoFontChanged;
+  FColor := TAlphaColorRec.Black;
+  if (csDesigning in AOwner.ComponentState) then begin
+    FIsSizeChange := True;
+    if TView(AOwner).SupportsPlatformService(IFMXDefaultPropertyValueService, DefaultValueService) then
+    begin
+      TrimmingDefault := IFMXDefaultPropertyValueService(DefaultValueService).GetDefaultPropertyValue(Self.ClassName, 'trimming');
+      if not TrimmingDefault.IsEmpty then
+        FTrimming := TrimmingDefault.AsType<TTextTrimming>;
+    end;
+  end else
+    FIsSizeChange := False;
+end;
+
+destructor TTextSettings.Destroy;
+begin
+  FreeAndNil(FFont);
+  inherited;
+end;
+
+procedure TTextSettings.DoChange;
+begin
+  if Assigned(FOnChanged) then
+    FOnChanged(Self);
+  FIsSizeChange := False;
+end;
+
+procedure TTextSettings.DoFontChanged(Sender: TObject);
+begin
+  FIsSizeChange := True;
+  DoChange;
+end;
+
+procedure TTextSettings.DoTextChanged;
+begin
+  if FAutoSize then FIsSizeChange := True;
+  FIsEffectsChange := True;
+  try
+    DoChange;
+  finally
+    FIsEffectsChange := False;
+  end;
+end;
+
+procedure TTextSettings.Draw(const Canvas: TCanvas; const R: TRectF;
+  const Opacity: Single);
+var
+  V, H: TTextAlign;
+  TextStr: string;
+begin
+  if FPrefixStyle = TPrefixStyle.HidePrefix then
+    TextStr := DelAmp(FText)
+  else
+    TextStr := FText;
+  if (Length(TextStr) > 0) then begin
+    V := TTextAlign.Leading;
+    H := TTextAlign.Leading;
+    case FGravity of
+      TLayoutGravity.LeftBottom: V := TTextAlign.Trailing;
+      TLayoutGravity.RightTop: H := TTextAlign.Trailing;
+      TLayoutGravity.RightBottom:
+        begin
+          V := TTextAlign.Trailing;
+          H := TTextAlign.Trailing;
+        end;
+      TLayoutGravity.CenterVertical: V := TTextAlign.Center;
+      TLayoutGravity.CenterHorizontal: H := TTextAlign.Center;
+      TLayoutGravity.CenterHBottom:
+        begin
+          H := TTextAlign.Center;
+          V := TTextAlign.Trailing;
+        end;
+      TLayoutGravity.CenterVRight:
+        begin
+          H := TTextAlign.Trailing;
+          V := TTextAlign.Center;
+        end;
+      TLayoutGravity.Center:
+        begin
+          H := TTextAlign.Center;
+          V := TTextAlign.Center;
+        end;
+    end;
+    FillText(Canvas, R, TextStr, FWordWrap, Opacity, FillTextFlags, H, V);
+  end;
+end;
+
+procedure TTextSettings.FillText(const Canvas: TCanvas; const ARect: TRectF;
+  const AText: string; const WordWrap: Boolean; const AOpacity: Single;
+  const Flags: TFillTextFlags; const ATextAlign, AVTextAlign: TTextAlign);
+var
+  Layout: TTextLayout;
+begin
+  Layout := TTextLayoutManager.TextLayoutByCanvas(Canvas.ClassType).Create(Canvas);
+  try
+    Layout.BeginUpdate;
+    Layout.TopLeft := ARect.TopLeft;
+    Layout.MaxSize := PointF(ARect.Width, ARect.Height);
+    Layout.Text := AText;
+    Layout.WordWrap := WordWrap;
+    Layout.Opacity := AOpacity;
+    Layout.HorizontalAlign := ATextAlign;
+    Layout.VerticalAlign := AVTextAlign;
+    Layout.Font := FFont;
+    Layout.Color := FColor;
+    Layout.Trimming := FTrimming;
+    Layout.RightToLeft := TFillTextFlag.RightToLeft in Flags;
+    Layout.EndUpdate;
+    Layout.RenderLayout(Canvas);
+  finally
+    FreeAndNil(Layout);
+  end;
+end;
+
+function TTextSettings.GetFillTextFlags: TFillTextFlags;
+begin
+  if Assigned(FOwner) then
+    Result := TView(FOwner).FillTextFlags
+  else Result := [];
+end;
+
+function TTextSettings.GetGravity: TLayoutGravity;
+begin
+  Result := FGravity;
+end;
+
+function TTextSettings.GetWordWrap: Boolean;
+begin
+  Result := FWordWrap;
+end;
+
+procedure TTextSettings.SetAutoSize(const Value: Boolean);
+begin
+  if FAutoSize <> Value then begin
+    FAutoSize := Value;
+    if ([csLoading, csDesigning] * FOwner.ComponentState = [csDesigning]) and FAutoSize then
+      FWordWrap := False;
+    if FAutoSize then FIsSizeChange := True;
+    DoChange;
+  end;
+end;
+
+procedure TTextSettings.SetColor(const Value: TAlphaColor);
+begin
+  if FColor <> Value then begin
+    FColor := Value;
+    DoChange;
+  end;
+end;
+
+procedure TTextSettings.SetFont(const Value: TFont);
+begin
+  if (FFont = nil) or (Value = nil) then Exit;
+  if not FFont.Equals(Value) then
+    FFont.Assign(Value);
+end;
+
+procedure TTextSettings.SetGravity(const Value: TLayoutGravity);
+begin
+  if FGravity <> Value then begin
+    FGravity := Value;
+    DoChange;
+  end;
+end;
+
+procedure TTextSettings.SetPrefixStyle(const Value: TPrefixStyle);
+begin
+  if FPrefixStyle <> Value then begin
+    FPrefixStyle := Value;
+    if FAutoSize then FIsSizeChange := True;
+    DoChange;
+  end;
+end;
+
+procedure TTextSettings.SetText(const Value: string);
+begin
+  if FText <> Value then begin
+    FText := Value;
+    if FAutoSize then FIsSizeChange := True;
+    DoTextChanged;
+  end;
+end;
+
+procedure TTextSettings.SetTrimming(const Value: TTextTrimming);
+begin
+  if FTrimming <> Value then begin
+    FTrimming := Value;
+    if FAutoSize then FIsSizeChange := True;
+    DoChange;
+  end;
+end;
+
+procedure TTextSettings.SetWordWrap(const Value: Boolean);
+begin
+  if FWordWrap <> Value then begin
+    FWordWrap := Value;
+    if FAutoSize then FIsSizeChange := True;
+    DoChange;
   end;
 end;
 
