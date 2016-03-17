@@ -9,11 +9,20 @@ FMXUI  (YangYxd)
   TViewGroup 视图组
   TLinearLayout 线性布局
   TRelativeLayout 相对布局
+  
+【参考资料】
+
+  FMXUI布局组件简介 
+  http://www.cnblogs.com/yangyxd/articles/5172352.html
+  
+  FMXUI 跨平台组件库说明
+  http://www.cnblogs.com/yangyxd/articles/5166253.html
 
 【联系我们】
 
   URL: http://www.cnblogs.com/yangyxd
   SVR: https://github.com/yangyxd/FMXUI
+
   
   yangyxd QQ: 2514718952 
   QDAC 官方群: 250530692
