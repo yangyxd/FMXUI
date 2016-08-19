@@ -10,6 +10,9 @@ FMXUI  (YangYxd)
   TLinearLayout 线性布局
   TRelativeLayout 相对布局
   
+  TTextView 文本视图
+  TButtonView 按钮视图
+  
 【参考资料】
 
   FMXUI布局组件简介 
