@@ -6,7 +6,8 @@ interface
 
 uses
   {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
-  FMX.TextLayout, FMX.Objects, System.Rtti,
+  FMX.Utils, FMX.ImgList, FMX.MultiResBitmap, FMX.ActnList, System.Rtti, FMX.Consts,
+  FMX.TextLayout, FMX.Objects, System.ImageList, System.RTLConsts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, System.Math,
   System.Classes, System.Types, System.UITypes, System.SysUtils, System.Math.Vectors,
   FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls, FMX.InertialMovement;
@@ -21,6 +22,9 @@ type
   IViewGroup = interface;
   TView = class;
   TViewGroup = class;
+
+  TDrawable = class;
+  TDrawableIcon = class;
 
   EViewError = class(Exception);
   EViewLayoutError = class(Exception);
@@ -42,13 +46,16 @@ type
   TViewBrush = class(TBrush);
 
   /// <summary>
+  /// 绘制位置
+  /// </summary>
+  TDrawablePosition = (Left, Right, Top, Bottom);
+
+  /// <summary>
   /// 可绘制对象
   /// </summary>
-  TDrawable = class(TPersistent)
+  TDrawableBase = class(TPersistent)
   private
     [Weak] FView: IView;
-    FDefaultKind: TBrushKind;
-    FDefaultColor: TAlphaColor;
     FOnChanged: TNotifyEvent;
 
     FDefault: TViewBrush;
@@ -60,8 +67,8 @@ type
     FEnabled: TViewBrush;
     FActivated: TViewBrush;
 
-    FPadding: TBounds;
     FXRadius, FYRadius: Single;
+    FIsEmpty: Boolean;
 
     function GetStateBrush(const State: TViewState): TViewBrush; overload;
     procedure GetStateBrush(const State: TViewState; var V: TViewBrush); overload;
@@ -71,35 +78,39 @@ type
     function GetBrush(const State: TViewState; AutoCreate: Boolean): TViewBrush;
     procedure SetXRadius(const Value: Single);
     procedure SetYRadius(const Value: Single);
-    procedure SetPadding(const Value: TBounds);
-    function GetPaddings: string;
-    procedure SetPaddings(const Value: string);
   protected
+    function GetEmpty: Boolean; virtual;
+    function GetDrawRect(const ALeft, ATop, ARight, ABottom: Single): TRectF; virtual;
+
     procedure CreateBrush(var Value: TViewBrush);
     procedure DoChange(Sender: TObject);
   public
-    constructor Create(View: IView); overload;
-    constructor Create(View: IView; const ADefaultKind: TBrushKind;
-      const ADefaultColor: TAlphaColor); overload;
+    constructor Create(View: IView; const ADefaultKind: TBrushKind = TBrushKind.None;
+      const ADefaultColor: TAlphaColor = TAlphaColors.Null);
     destructor Destroy; override;
 
     procedure Assign(Source: TPersistent); override;
-    procedure Draw(const Canvas: TCanvas);
-    procedure SetRadius(const X, Y: Single);
+    procedure Change; virtual;
 
-    procedure SetDrawable(const Value: TDrawable); overload;
+    procedure Draw(Canvas: TCanvas); virtual;
+    procedure DrawTo(Canvas: TCanvas; const R: TRectF); virtual;
+
+    procedure SetRadius(const X, Y: Single);
+    procedure SetDrawable(const Value: TDrawableBase); overload;
     procedure SetBrush(State: TViewState; const Value: TBrush); overload;
     procedure SetColor(State: TViewState; const Value: TAlphaColor); overload;
     procedure SetGradient(State: TViewState; const Value: TGradient); overload;
     procedure SetBitmap(State: TViewState; const Value: TBitmap); overload;
     procedure SetBitmap(State: TViewState; const Value: TBrushBitmap); overload;
+
+    // 是否为空
+    property IsEmpty: Boolean read FIsEmpty;
+
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
   published
     // 边框圆角
     property XRadius: Single read FXRadius write SetXRadius;
     property YRadius: Single read FYRadius write SetYRadius;
-    property Padding: TBounds read FPadding write SetPadding;
-    property Paddings: string read GetPaddings write SetPaddings;
 
     property ItemDefault: TViewBrush index 0 read GetValue write SetValue;
     property ItemPressed: TViewBrush index 1 read GetValue write SetValue;
@@ -109,6 +120,128 @@ type
     property ItemChecked: TViewBrush index 5 read GetValue write SetValue;
     property ItemEnabled: TViewBrush index 6 read GetValue write SetValue;
     property ItemActivated: TViewBrush index 7 read GetValue write SetValue;
+  end;
+
+  /// <summary>
+  /// 可绘制对象
+  /// </summary>
+  TDrawable = class(TDrawableBase)
+  private
+    FPadding: TBounds;
+    procedure SetPadding(const Value: TBounds);
+    function GetPaddings: string;
+    procedure SetPaddings(const Value: string);
+  protected
+    function GetDrawRect(const ALeft, ATop, ARight, ABottom: Single): TRectF; override;
+  public
+    constructor Create(View: IView; const ADefaultKind: TBrushKind = TBrushKind.None;
+      const ADefaultColor: TAlphaColor = TAlphaColors.Null);
+    destructor Destroy; override;
+    procedure Assign(Source: TPersistent); override;
+  published
+    property Padding: TBounds read FPadding write SetPadding;
+    property Paddings: string read GetPaddings write SetPaddings;
+  end;
+
+  TViewImageLink = class(TGlyphImageLink)
+  public
+    constructor Create(AOwner: TDrawableIcon); reintroduce;
+    procedure Change; override;
+  end;
+
+  /// <summary>
+  /// 可绘制图标
+  /// </summary>
+  TDrawableIcon = class(TDrawableBase, IInterface, IGlyph, IInterfaceComponentReference)
+  private
+    FWidth: Integer;
+    FHeight: Integer;
+    FPadding: Integer;
+    FPosition: TDrawablePosition;
+    FImageLink: TGlyphImageLink;
+
+    procedure SetHeight(const Value: Integer);
+    procedure SetWidth(const Value: Integer);
+    procedure SetPadding(const Value: Integer);
+    procedure SetPosition(const Value: TDrawablePosition);
+    function GetImages: TCustomImageList;
+  protected
+    { IInterfaceComponentReference }
+    function GetComponent: TComponent;
+    { IInterface }
+    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+    {IGlyph}
+    function GetImageIndex: TImageIndex;
+    procedure SetImageIndex(const Value: TImageIndex);
+    procedure SetImages(const Value: TCustomImageList);
+    procedure ImagesChanged; virtual;
+    function GetImageList: TBaseImageList; inline;
+    procedure SetImageList(const Value: TBaseImageList);
+    function IGlyph.GetImages = GetImageList;
+    procedure IGlyph.SetImages = SetImageList;
+  protected
+    function GetEmpty: Boolean; override;
+    function ImageIndexStored: Boolean; virtual;
+  public
+    constructor Create(View: IView; const ADefaultKind: TBrushKind = TBrushKind.None;
+      const ADefaultColor: TAlphaColor = TAlphaColors.Null);
+    destructor Destroy; override;
+    procedure Assign(Source: TPersistent); override;
+    /// <summary>
+    /// 绘制，并调整原来的区域
+    /// </summary>
+    procedure AdjustDraw(Canvas: TCanvas; var R: TRectF; ExecDraw: Boolean);
+
+    procedure Draw(Canvas: TCanvas); override;
+    procedure DrawTo(Canvas: TCanvas; const R: TRectF); override;
+    procedure DrawImage(Canvas: TCanvas; Index: Integer; const R: TRectF); virtual;
+  published
+    property SizeWidth: Integer read FWidth write SetWidth default 16;
+    property SizeHeight: Integer read FHeight write SetHeight default 16;
+    property Padding: Integer read FPadding write SetPadding default 4;
+    property Position: TDrawablePosition read FPosition write SetPosition default TDrawablePosition.Left;
+    property Images: TCustomImageList read GetImages write SetImages;
+    property ImageIndex: TImageIndex read GetImageIndex write SetImageIndex stored ImageIndexStored default -1;
+  end;
+
+  /// <summary>
+  /// 颜色属性
+  /// </summary>
+  TViewColor = class(TPersistent)
+  private
+    FOnChanged: TNotifyEvent;
+
+    FDefault: TAlphaColor;
+    FPressed: TAlphaColor;
+    FFocused: TAlphaColor;
+    FHovered: TAlphaColor;
+    FSelected: TAlphaColor;
+    FChecked: TAlphaColor;
+    FEnabled: TAlphaColor;
+    FActivated: TAlphaColor;
+    function GetValue(const Index: Integer): TAlphaColor;
+    procedure SetValue(const Index: Integer; const Value: TAlphaColor);
+  protected
+    procedure DoChange(Sender: TObject);
+  public
+    constructor Create(const ADefaultColor: TAlphaColor = TAlphaColorRec.Black);
+    destructor Destroy; override;
+
+    procedure Assign(Source: TPersistent); override;
+    function GetColor(State: TViewState): TAlphaColor;
+    procedure SetColor(State: TViewState; const Value: TAlphaColor);
+    property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
+  published
+    property Default: TAlphaColor index 0 read GetValue write SetValue;
+    property Pressed: TAlphaColor index 1 read GetValue write SetValue;
+    property Focused: TAlphaColor index 2 read GetValue write SetValue;
+    property Hovered: TAlphaColor index 3 read GetValue write SetValue;
+    property Selected: TAlphaColor index 4 read GetValue write SetValue;
+    property Checked: TAlphaColor index 5 read GetValue write SetValue;
+    property Enabled: TAlphaColor index 6 read GetValue write SetValue;
+    property Activated: TAlphaColor index 7 read GetValue write SetValue;
   end;
 
   /// <summary>
@@ -211,10 +344,12 @@ type
     function GetMinWidth: Single;
     function GetWeight: Single;
     function GetViewStates: TViewStates;
+    function GetDrawState: TViewState;
     function GetHeightSize: TViewSize;
     function GetWidthSize: TViewSize;
     function GetViewState: TViewStates;
     function GetOrientation: TOrientation;
+    function GetComponent: TComponent;
     function GetComponentState: TComponentState;
 
     function GetPosition: TPosition;
@@ -276,7 +411,7 @@ type
     [Weak] FOwner: TControl;
     FOnChanged: TNotifyEvent;
     FOnTextChanged: TNotifyEvent;
-    FColor: TAlphaColor;
+    FColor: TViewColor;
     FFont: TFont;
     FPrefixStyle: TPrefixStyle;
     FGravity: TLayoutGravity;
@@ -286,9 +421,10 @@ type
     FAutoSize: Boolean;
     FIsSizeChange: Boolean;
     FIsEffectsChange: Boolean;
+    FIsColorChange: Boolean;
     function GetGravity: TLayoutGravity;
     function GetWordWrap: Boolean;
-    procedure SetColor(const Value: TAlphaColor);
+    procedure SetColor(const Value: TViewColor);
     procedure SetFont(const Value: TFont);
     procedure SetGravity(const Value: TLayoutGravity);
     procedure SetPrefixStyle(const Value: TPrefixStyle);
@@ -301,23 +437,29 @@ type
     procedure DoChange; virtual;
     procedure DoTextChanged;
     procedure DoFontChanged(Sender: TObject);
+    procedure DoColorChanged(Sender: TObject);
   public
     constructor Create(AOwner: TComponent);
     destructor Destroy; override;
     function CalcTextObjectSize(const MaxWidth, SceneScale: Single;
       const Margins: TBounds; var Size: TSizeF): Boolean;
     procedure FillText(const Canvas: TCanvas; const ARect: TRectF; const AText: string; const WordWrap: Boolean; const AOpacity: Single;
-      const Flags: TFillTextFlags; const ATextAlign: TTextAlign; const AVTextAlign: TTextAlign = TTextAlign.Center);
-    procedure Draw(const Canvas: TCanvas; const R: TRectF; const Opacity: Single);
+      const Flags: TFillTextFlags; const ATextAlign: TTextAlign;
+      const AVTextAlign: TTextAlign = TTextAlign.Center; State: TViewState = TViewState.None);
+    procedure Draw(const Canvas: TCanvas; const R: TRectF;
+        const Opacity: Single; State: TViewState);
+
+    property IsColorChange: Boolean read FIsColorChange;
     property IsSizeChange: Boolean read FIsSizeChange;
     property IsEffectsChange: Boolean read FIsEffectsChange;
+
     property Text: string read FText write SetText;
     property FillTextFlags: TFillTextFlags read GetFillTextFlags;
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
     property OnTextChanged: TNotifyEvent read FOnTextChanged write FOnTextChanged;
   published
     property AutoSize: Boolean read FAutoSize write SetAutoSize;
-    property Color: TAlphaColor read FColor write SetColor default TAlphaColorRec.Black;
+    property Color: TViewColor read FColor write SetColor;
     property Font: TFont read FFont write SetFont;
     property PrefixStyle: TPrefixStyle read FPrefixStyle write SetPrefixStyle;
     property Trimming: TTextTrimming read FTrimming write SetTrimming default TTextTrimming.None;
@@ -361,10 +503,12 @@ type
     function GetMinWidth: Single;
     function GetWeight: Single;
     function GetOrientation: TOrientation;
+    function GetComponent: TComponent;
     function GetComponentState: TComponentState;
     function GetOpacity: Single;
     function GetParentControl: TControl;
     function GetPosition: TPosition;
+    function GetDrawState: TViewState;
   protected
     FWeight: Single;
     FGravity: TLayoutGravity;
@@ -377,8 +521,9 @@ type
     FMaxWidth: Single;
     FMaxHeight: Single;
     FLayout: TViewLayout;
+
     function IsDrawing: Boolean;
-    class function CanRePaintBk(const View: IView; State: TViewState): Boolean; virtual;
+    function CanRePaintBk(const View: IView; State: TViewState): Boolean; virtual;
     function GetViewState: TViewStates;
     procedure IncViewState(const State: TViewState); virtual;
     procedure DecViewState(const State: TViewState); virtual;
@@ -414,6 +559,7 @@ type
     procedure PaintBackground; virtual;
     procedure SetGravity(const Value: TLayoutGravity); virtual;
     function AllowUseLayout(): Boolean; virtual;
+    procedure ImagesChanged; virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -432,6 +578,7 @@ type
     property ParentView: IViewGroup read GetParentView;
     property Orientation: TOrientation read GetOrientation write SetOrientation;
     property ViewState: TViewStates read GetViewStates;
+    property DrawState: TViewState read GetDrawState;
   published
     property Align;
     property Anchors;
@@ -545,7 +692,6 @@ type
     destructor Destroy; override;
   end;
 
-procedure Register;
 
 implementation
 
@@ -555,26 +701,6 @@ resourcestring
   SMustSameParent = '必须指定一个与当前组件所属视图中的同级兄弟组件';
   SLocateFailed = '存在循环引用';
   SRefOutLimitMax = '组件引用层级超过上限值: 256';
-
-procedure Register;
-begin
-  RegisterComponents('YxdFMX', [TView, TLinearLayout, TRelativeLayout]);
-end;
-
-procedure RegisterAliases;
-begin
-  AddEnumElementAliases(TypeInfo(TLayoutGravity),
-    ['None', 'LeftTop', 'LeftBottom', 'RightTop', 'RightBottom',
-    'CenterVertical', 'CenterHorizontal', 'CenterHBottom', 'CenterVRight', 'Center']);
-  AddEnumElementAliases(TypeInfo(TViewSize),
-    ['WrapContent', 'FillParent']);
-end;
-
-procedure UnregisterAliases;
-begin
-  RemoveEnumElementAliases(TypeInfo(TLayoutGravity));
-  RemoveEnumElementAliases(TypeInfo(TViewSize));
-end;
 
 type TPrivateControl = class(TControl);
 
@@ -665,11 +791,11 @@ begin
   end;
 end;
 
-{ TDrawable }
+{ TDrawableBase }
 
-procedure TDrawable.Assign(Source: TPersistent);
+procedure TDrawableBase.Assign(Source: TPersistent);
 
-  procedure AssignItem(State: TViewState; const Src: TDrawable);
+  procedure AssignItem(State: TViewState; const Src: TDrawableBase);
   var V: TViewBrush;
   begin
     Src.GetStateBrush(State, V);
@@ -685,7 +811,7 @@ var
   SaveChange: TNotifyEvent;
   Src: TDrawable;
 begin
-  if Source is TDrawable then begin
+  if Source is TDrawableBase then begin
     SaveChange := FOnChanged;
     FOnChanged := nil;
     Src := TDrawable(Source);
@@ -704,19 +830,15 @@ begin
     inherited;
 end;
 
-constructor TDrawable.Create(View: IView);
+procedure TDrawableBase.Change;
 begin
-  Create(View, TBrushKind.None, TAlphaColors.White);
+  DoChange(Self);
 end;
 
-constructor TDrawable.Create(View: IView; const ADefaultKind: TBrushKind;
+constructor TDrawableBase.Create(View: IView; const ADefaultKind: TBrushKind;
   const ADefaultColor: TAlphaColor);
 begin
   FView := View;
-  FPadding := TBounds.Create(TRectF.Empty);
-  FPadding.OnChange := DoChange;
-  FDefaultKind := ADefaultKind;
-  FDefaultColor := ADefaultColor;
   if Assigned(FView) and (csDesigning in FView.GetComponentState) then begin
     CreateBrush(FDefault);
     CreateBrush(FPressed);
@@ -726,18 +848,24 @@ begin
     CreateBrush(FChecked);
     CreateBrush(FEnabled);
     CreateBrush(FActivated);
+    FIsEmpty := GetEmpty;
+  end else
+    FIsEmpty := True;
+  if Assigned(FDefault) then begin
+    FDefault.Color := ADefaultColor;
+    FDefault.Kind := ADefaultKind;
   end;
 end;
 
-procedure TDrawable.CreateBrush(var Value: TViewBrush);
+procedure TDrawableBase.CreateBrush(var Value: TViewBrush);
 begin
   if Assigned(Value) then
     FreeAndNil(Value);
-  Value := TViewBrush.Create(FDefaultKind, FDefaultColor);
+  Value := TViewBrush.Create(TBrushKind.None, TAlphaColorRec.Null);
   Value.OnChanged := DoChange;
 end;
 
-destructor TDrawable.Destroy;
+destructor TDrawableBase.Destroy;
 begin
   FOnChanged := nil;
   FreeAndNil(FDefault);
@@ -748,22 +876,22 @@ begin
   FreeAndNil(FChecked);
   FreeAndNil(FEnabled);
   FreeAndNil(FActivated);
-  FreeAndNil(FPadding);
   inherited;
 end;
 
-procedure TDrawable.DoChange(Sender: TObject);
+procedure TDrawableBase.DoChange(Sender: TObject);
 begin
+  FIsEmpty := GetEmpty;
   if Assigned(FOnChanged) then
     FOnChanged(Sender);
 end;
 
-function TDrawable.GetValue(const Index: Integer): TViewBrush;
+function TDrawableBase.GetValue(const Index: Integer): TViewBrush;
 begin
   Result := GetBrush(TViewState(Index), False);
 end;
 
-function TDrawable.GetBrush(const State: TViewState; AutoCreate: Boolean): TViewBrush;
+function TDrawableBase.GetBrush(const State: TViewState; AutoCreate: Boolean): TViewBrush;
 begin
   GetStateBrush(State, Result);
   if (not Assigned(Result)) and
@@ -774,17 +902,32 @@ begin
   end;
 end;
 
-function TDrawable.GetPaddings: string;
+function TDrawableBase.GetDrawRect(const ALeft, ATop, ARight, ABottom: Single): TRectF;
 begin
-  Result := GetBoundsFloat(FPadding);
+  Result.Left := ALeft;
+  Result.Top := ATop;
+  Result.Right := ARight;
+  Result.Bottom := ABottom;
 end;
 
-function TDrawable.GetStateBrush(const State: TViewState): TViewBrush;
+function TDrawableBase.GetEmpty: Boolean;
+begin
+  Result := ((FDefault = nil) or (FDefault.Kind = TBrushKind.None)) and
+    ((FPressed = nil) or (FPressed.Kind = TBrushKind.None)) and
+    ((FFocused = nil) or (FFocused.Kind = TBrushKind.None)) and
+    ((FHovered = nil) or (FHovered.Kind = TBrushKind.None)) and
+    ((FSelected = nil) or (FSelected.Kind = TBrushKind.None)) and
+    ((FChecked = nil) or (FChecked.Kind = TBrushKind.None)) and
+    ((FEnabled = nil) or (FEnabled.Kind = TBrushKind.None)) and
+    ((FActivated = nil) or (FActivated.Kind = TBrushKind.None));
+end;
+
+function TDrawableBase.GetStateBrush(const State: TViewState): TViewBrush;
 begin
   GetStateBrush(State, Result);
 end;
 
-procedure TDrawable.GetStateBrush(const State: TViewState; var V: TViewBrush);
+procedure TDrawableBase.GetStateBrush(const State: TViewState; var V: TViewBrush);
 begin
   case State of
     TViewState.None: V := FDefault;
@@ -800,33 +943,13 @@ begin
   end;
 end;
 
-procedure TDrawable.Draw(const Canvas: TCanvas);
+procedure TDrawableBase.Draw(Canvas: TCanvas);
 var
-  States: TViewStates;
   V: TViewBrush;
 begin
   if not Assigned(FView) or (csDestroying in FView.GetComponentState) then Exit;
-  States := FView.GetViewState;
-  if States = [] then
-    V := FDefault
-  else begin
-    if TViewState.Enabled in States then
-      GetStateBrush(TViewState.Enabled, V)
-    else if TViewState.Pressed in States then
-      GetStateBrush(TViewState.Pressed, V)
-    else if TViewState.Hovered in States then
-      GetStateBrush(TViewState.Hovered, V)
-    else if TViewState.Activated in States then
-      GetStateBrush(TViewState.Activated, V)
-    else if TViewState.Focused in States then
-      GetStateBrush(TViewState.Focused, V)
-    else if TViewState.Selected in States then
-      GetStateBrush(TViewState.Selected, V)
-    else if TViewState.Checked in States then
-      GetStateBrush(TViewState.Checked, V)
-    else
-      V := FDefault;
-  end;
+  if IsEmpty then Exit;
+  GetStateBrush(FView.GetDrawState, V);
   if V <> FDefault then begin
     if (not Assigned(V)) or (V.Kind = TBrushKind.None) or
       ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid)) then
@@ -835,19 +958,36 @@ begin
   if (not Assigned(V)) or (V.Kind = TBrushKind.None) or
       ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid)) then
     Exit;
-  Canvas.FillRect(RectF(FPadding.Left, FPadding.Top,
-    FView.GetWidth - FPadding.Right,
-    FView.GetHeight - FPadding.Bottom),
-    FXRadius, FYRadius,
-    AllCorners, FView.GetOpacity, V);
+  Canvas.FillRect(GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight),
+    FXRadius, FYRadius, AllCorners, FView.GetOpacity, V);
 end;
 
-procedure TDrawable.SetDrawable(const Value: TDrawable);
+procedure TDrawableBase.DrawTo(Canvas: TCanvas; const R: TRectF);
+var
+  V: TViewBrush;
+begin
+  if not Assigned(FView) or (csDestroying in FView.GetComponentState) then Exit;
+  if IsEmpty then Exit;
+  GetStateBrush(FView.GetDrawState, V);
+  if V <> FDefault then begin
+    if (not Assigned(V)) or (V.Kind = TBrushKind.None) or
+      ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid)) then
+      V := FDefault;
+  end;
+  if (not Assigned(V)) or (V.Kind = TBrushKind.None) or
+      ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid)) then
+    Exit;
+  Canvas.FillRect(
+    GetDrawRect(R.Left, R.Top, R.Right, R.Bottom),
+    FXRadius, FYRadius, AllCorners, FView.GetOpacity, V);
+end;
+
+procedure TDrawableBase.SetDrawable(const Value: TDrawableBase);
 begin
   Assign(Value);
 end;
 
-procedure TDrawable.SetColor(State: TViewState; const Value: TAlphaColor);
+procedure TDrawableBase.SetColor(State: TViewState; const Value: TAlphaColor);
 var V: TBrush;
 begin
   V := GetBrush(State, True);
@@ -855,12 +995,117 @@ begin
   V.Color := Value;
 end;
 
-procedure TDrawable.SetGradient(State: TViewState; const Value: TGradient);
+procedure TDrawableBase.SetGradient(State: TViewState; const Value: TGradient);
 var V: TBrush;
 begin
   V := GetBrush(State, True);
   V.Gradient.Assign(Value);
   V.Kind := TBrushKind.Gradient;
+end;
+
+procedure TDrawableBase.SetRadius(const X, Y: Single);
+begin
+  FYRadius := Y;
+  FXRadius := X;
+  DoChange(Self);
+end;
+
+procedure TDrawableBase.SetBitmap(State: TViewState; const Value: TBrushBitmap);
+var V: TBrush;
+begin
+  V := GetBrush(State, True);
+  V.Bitmap.Assign(Value);
+  V.Kind := TBrushKind.Bitmap;
+end;
+
+procedure TDrawableBase.SetBrush(State: TViewState; const Value: TBrush);
+begin
+  GetBrush(State, True).Assign(Value);
+end;
+
+procedure TDrawableBase.SetBitmap(State: TViewState; const Value: TBitmap);
+var V: TBrush;
+begin
+  V := GetBrush(State, True);
+  V.Bitmap.Bitmap.Assign(Value);
+  V.Kind := TBrushKind.Bitmap;
+end;
+
+procedure TDrawableBase.SetStateBrush(const State: TViewState; const V: TViewBrush);
+begin
+  case State of
+    TViewState.None: FDefault := V;
+    TViewState.Pressed: FPressed := V;
+    TViewState.Focused: FFocused := V;
+    TViewState.Hovered: FHovered := V;
+    TViewState.Selected: FSelected := V;
+    TViewState.Checked: FChecked := V;
+    TViewState.Enabled: FEnabled := V;
+    TViewState.Activated: FActivated := V;
+  end;
+end;
+
+procedure TDrawableBase.SetValue(const Index: Integer; const Value: TViewBrush);
+begin
+  SetBrush(TViewState(Index), Value);
+end;
+
+procedure TDrawableBase.SetXRadius(const Value: Single);
+begin
+  if FXRadius <> Value then begin
+    FXRadius := Value;
+    DoChange(Self);
+  end;
+end;
+
+procedure TDrawableBase.SetYRadius(const Value: Single);
+begin
+  if FYRadius <> Value then begin
+    FYRadius := Value;
+    DoChange(Self);
+  end;
+end;
+
+{ TDrawable }
+
+procedure TDrawable.Assign(Source: TPersistent);
+var
+  LastOnChange: TNotifyEvent;
+begin
+  if Source is TDrawable then begin
+    LastOnChange := FPadding.OnChange;
+    FPadding.OnChange := nil;
+    FPadding.Assign(TDrawable(Source).FPadding);
+    FPadding.OnChange := LastOnChange;
+  end;
+  inherited Assign(Source);
+end;
+
+constructor TDrawable.Create(View: IView; const ADefaultKind: TBrushKind;
+  const ADefaultColor: TAlphaColor);
+begin
+  FPadding := TBounds.Create(TRectF.Empty);
+  FPadding.OnChange := DoChange;
+  inherited Create(View, ADefaultKind, ADefaultColor);
+end;
+
+destructor TDrawable.Destroy;
+begin
+  FreeAndNil(FPadding);
+  inherited Destroy;
+end;
+
+function TDrawable.GetDrawRect(const ALeft, ATop, ARight, ABottom: Single): TRectF;
+begin
+  Result.Left := ALeft + FPadding.Left;
+  Result.Top := ATop + FPadding.Top;
+  Result.Right := ARight - FPadding.Right;
+  Result.Bottom := ABottom - FPadding.Bottom;
+end;
+
+function TDrawable.GetPaddings: string;
+begin
+  Result := GetBoundsFloat(FPadding);
 end;
 
 procedure TDrawable.SetPadding(const Value: TBounds);
@@ -876,66 +1121,332 @@ begin
     Padding.Rect := RectF(V, V, V, V);
 end;
 
-procedure TDrawable.SetRadius(const X, Y: Single);
+{ TDrawableIcon }
+
+procedure TDrawableIcon.AdjustDraw(Canvas: TCanvas; var R: TRectF; ExecDraw: Boolean);
+var
+  DR: TRectF;
+  SW, SH: Single;
 begin
-  FYRadius := Y;
-  FXRadius := X;
+  SW := R.Right - R.Left;
+  SH := R.Bottom - R.Top;
+  case FPosition of
+    TDrawablePosition.Left:
+      begin
+        if ExecDraw then begin        
+          DR.Left := R.Left;
+          DR.Top := (SH - FHeight) / 2;
+          DR.Right := DR.Left + FWidth;
+          DR.Bottom := DR.Top + FHeight;  
+          DrawTo(Canvas, DR);
+        end;
+        R.Left := R.Left + FWidth + FPadding;
+      end;
+    TDrawablePosition.Right: 
+      begin
+        if ExecDraw then begin
+          DR.Left := R.Right - FWidth;
+          DR.Top := (SH - FHeight) / 2;
+          DR.Right := R.Right;
+          DR.Bottom := DR.Top + FHeight;
+          DrawTo(Canvas, DR);
+        end;
+        R.Right := R.Right - FWidth - FPadding;
+      end;
+    TDrawablePosition.Top: 
+      begin
+        if ExecDraw then begin
+          DR.Left := (SW - FWidth) / 2;
+          DR.Top := R.Top;
+          DR.Right := DR.Left + FWidth;
+          DR.Bottom := DR.Top + FHeight;
+          DrawTo(Canvas, DR);
+        end;
+        R.Top := R.Top + FHeight + FPadding;
+      end;
+    TDrawablePosition.Bottom:
+      begin
+        if ExecDraw then begin
+          DR.Left := (SW - FWidth) / 2;
+          DR.Top := R.Bottom - FHeight;
+          DR.Right := DR.Left + FWidth;
+          DR.Bottom := R.Bottom;
+          DrawTo(Canvas, DR);
+        end;
+        R.Bottom := R.Bottom - FHeight - FPadding;
+      end;
+  end;
+end;
+
+procedure TDrawableIcon.Assign(Source: TPersistent);
+begin
+  if Source is TDrawableIcon then begin
+    FWidth := TDrawableIcon(Source).FWidth;
+    FHeight := TDrawableIcon(Source).FHeight;
+    FPadding := TDrawableIcon(Source).FPadding;
+    FPosition := TDrawableIcon(Source).FPosition;
+  end;
+  inherited Assign(Source);
+end;
+
+constructor TDrawableIcon.Create(View: IView; const ADefaultKind: TBrushKind;
+  const ADefaultColor: TAlphaColor);
+begin
+  FView := View;
+  FImageLink := TViewImageLink.Create(Self);
+  FImageLink.OnChange := DoChange;
+  inherited Create(View, ADefaultKind, ADefaultColor);
+  FWidth := 16;
+  FHeight := 16;
+  FPosition := TDrawablePosition.Left;
+  FPadding := 4;
+end;
+
+destructor TDrawableIcon.Destroy;
+begin
+  FImageLink.DisposeOf;
+  inherited;
+end;
+
+procedure TDrawableIcon.Draw(Canvas: TCanvas);
+begin
+  inherited Draw(Canvas);
+  if (ImageIndex >= 0) and Assigned(FImageLink.Images) then
+    DrawImage(Canvas, ImageIndex, GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight));
+end;
+
+procedure TDrawableIcon.DrawImage(Canvas: TCanvas; Index: Integer;
+  const R: TRectF);
+var
+  Images: TCustomImageList;
+  Bitmap: TBitmap;
+  BitmapSize: TSize;
+  BitmapRect: TRectF;
+begin
+  Images := GetImages;
+  if Assigned(Images) and (Index >= 0) and (Index < Images.Count) then begin
+    BitmapSize := TSize.Create(FWidth, FHeight);
+    if BitmapSize.IsZero then
+      Exit;
+    Bitmap := Images.Bitmap(BitmapSize, Index);
+    if Bitmap <> nil then begin
+      BitmapRect := TRectF.Create(0, 0, Bitmap.Width, Bitmap.Height);
+      Canvas.DrawBitmap(Bitmap, BitmapRect, R, 1, True);
+    end;
+  end;
+end;
+
+procedure TDrawableIcon.DrawTo(Canvas: TCanvas; const R: TRectF);
+begin
+  inherited DrawTo(Canvas, R);
+  if (ImageIndex >= 0) and Assigned(FImageLink.Images) then
+    DrawImage(Canvas, ImageIndex, R);
+end;
+
+function TDrawableIcon.GetComponent: TComponent;
+begin
+  Result := FView.GetComponent;
+end;
+
+function TDrawableIcon.GetEmpty: Boolean;
+begin
+  if ImageIndex >= 0 then
+    Result := not Assigned(FImageLink.Images)
+  else begin
+    Result := (FWidth <= 0) or (FHeight <= 0);
+    if not Result then
+      Result := inherited GetEmpty;
+  end;
+end;
+
+function TDrawableIcon.GetImageIndex: TImageIndex;
+begin
+  Result := FImageLink.ImageIndex;
+end;
+
+function TDrawableIcon.GetImageList: TBaseImageList;
+begin
+  Result := GetImages;
+end;
+
+function TDrawableIcon.GetImages: TCustomImageList;
+begin
+  if Assigned(FImageLink.Images) then
+    Result := TCustomImageList(FImageLink.Images)
+  else
+    Result := nil;
+end;
+
+function TDrawableIcon.ImageIndexStored: Boolean;
+begin
+  Result := (ImageIndex <> -1);
+end;
+
+procedure TDrawableIcon.ImagesChanged;
+begin
   DoChange(Self);
 end;
 
-procedure TDrawable.SetBitmap(State: TViewState; const Value: TBrushBitmap);
-var V: TBrush;
+function TDrawableIcon.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
-  V := GetBrush(State, True);
-  V.Bitmap.Assign(Value);
-  V.Kind := TBrushKind.Bitmap;
+  if GetInterface(IID, Obj) then Result := S_OK
+  else Result := E_NOINTERFACE
 end;
 
-procedure TDrawable.SetBrush(State: TViewState; const Value: TBrush);
+procedure TDrawableIcon.SetHeight(const Value: Integer);
 begin
-  GetBrush(State, True).Assign(Value);
+  if FHeight <> Value then begin
+    FHeight := Value;
+    DoChange(Self);
+  end;
 end;
 
-procedure TDrawable.SetBitmap(State: TViewState; const Value: TBitmap);
-var V: TBrush;
+procedure TDrawableIcon.SetImageIndex(const Value: TImageIndex);
 begin
-  V := GetBrush(State, True);
-  V.Bitmap.Bitmap.Assign(Value);
-  V.Kind := TBrushKind.Bitmap;
+  FImageLink.ImageIndex := Value;
 end;
 
-procedure TDrawable.SetStateBrush(const State: TViewState; const V: TViewBrush);
+procedure TDrawableIcon.SetImageList(const Value: TBaseImageList);
+begin
+  ValidateInheritance(Value, TCustomImageList);
+  SetImages(TCustomImageList(Value));
+end;
+
+procedure TDrawableIcon.SetImages(const Value: TCustomImageList);
+begin
+  FImageLink.Images := Value;
+end;
+
+procedure TDrawableIcon.SetPadding(const Value: Integer);
+begin
+  if FPadding <> Value then begin
+    FPadding := Value;
+    DoChange(Self);
+  end;
+end;
+
+procedure TDrawableIcon.SetPosition(const Value: TDrawablePosition);
+begin
+  if FPosition <> Value then begin
+    FPosition := Value;
+    DoChange(Self);
+  end;
+end;
+
+procedure TDrawableIcon.SetWidth(const Value: Integer);
+begin
+  if FWidth <> Value then begin
+    FWidth := Value;
+    DoChange(Self);
+  end;
+end;
+
+function TDrawableIcon._AddRef: Integer;
+begin
+  Result := -1;
+end;
+
+function TDrawableIcon._Release: Integer;
+begin
+  Result := -1;
+end;
+
+{ TViewColor }
+
+procedure TViewColor.Assign(Source: TPersistent);
+var
+  Src: TViewColor;
+begin
+  if Source = nil then begin
+    Self.FPressed := TAlphaColorRec.Null;
+    Self.FFocused := TAlphaColorRec.Null;
+    Self.FHovered := TAlphaColorRec.Null;
+    Self.FSelected := TAlphaColorRec.Null;
+    Self.FChecked := TAlphaColorRec.Null;
+    Self.FEnabled := TAlphaColorRec.Null;
+    Self.FActivated := TAlphaColorRec.Null;
+    if Assigned(FOnChanged) then
+      FOnChanged(Self);
+  end else if Source is TViewColor then begin
+    Src := TViewColor(Source);
+    Self.FDefault := Src.FDefault;
+    Self.FPressed := Src.FPressed;
+    Self.FFocused := Src.FFocused;
+    Self.FHovered := Src.FHovered;
+    Self.FSelected := Src.FSelected;
+    Self.FChecked := Src.FChecked;
+    Self.FEnabled := Src.FEnabled;
+    Self.FActivated := Src.FActivated;
+    if Assigned(FOnChanged) then
+      FOnChanged(Self);
+  end else
+    inherited;
+end;
+
+constructor TViewColor.Create(const ADefaultColor: TAlphaColor);
+begin
+  FDefault := ADefaultColor;
+  FPressed := TAlphaColorRec.Null;
+  FFocused := TAlphaColorRec.Null;
+  FHovered := TAlphaColorRec.Null;
+  FSelected := TAlphaColorRec.Null;
+  FChecked := TAlphaColorRec.Null;
+  FEnabled := TAlphaColorRec.Null;
+  FActivated := TAlphaColorRec.Null;
+end;
+
+destructor TViewColor.Destroy;
+begin
+  inherited;
+end;
+
+procedure TViewColor.DoChange(Sender: TObject);
+begin
+  if Assigned(FOnChanged) then
+    FOnChanged(Sender);
+end;
+
+function TViewColor.GetColor(State: TViewState): TAlphaColor;
 begin
   case State of
-    TViewState.None: FDefault := V;
-    TViewState.Pressed: FPressed := V;
-    TViewState.Focused: FFocused := V;
-    TViewState.Hovered: FHovered := V;
-    TViewState.Selected: FSelected := V;
-    TViewState.Checked: FChecked := V;
-    TViewState.Enabled: FEnabled := V;
-    TViewState.Activated: FActivated := V;
+    TViewState.None: Result := FDefault;
+    TViewState.Pressed: Result := FPressed;
+    TViewState.Focused: Result := FFocused;
+    TViewState.Hovered: Result := FHovered;
+    TViewState.Selected: Result := FSelected;
+    TViewState.Checked: Result := FChecked;
+    TViewState.Enabled: Result := FEnabled;
+    TViewState.Activated: Result := FActivated;
+  else
+    raise EDrawableError.Create(Format(SInvViewValue, [Integer(State)]));
   end;
 end;
 
-procedure TDrawable.SetValue(const Index: Integer; const Value: TViewBrush);
+function TViewColor.GetValue(const Index: Integer): TAlphaColor;
 begin
-  SetBrush(TViewState(Index), Value);
-end;
-procedure TDrawable.SetXRadius(const Value: Single);
-begin
-  if FXRadius <> Value then begin
-    FXRadius := Value;
-    DoChange(Self);
-  end;
+  Result := GetColor(TViewState(Index));
 end;
 
-procedure TDrawable.SetYRadius(const Value: Single);
+procedure TViewColor.SetColor(State: TViewState; const Value: TAlphaColor);
 begin
-  if FYRadius <> Value then begin
-    FYRadius := Value;
-    DoChange(Self);
+  case State of
+    TViewState.None: FDefault := Value;
+    TViewState.Pressed: FPressed := Value;
+    TViewState.Focused: FFocused := Value;
+    TViewState.Hovered: FHovered := Value;
+    TViewState.Selected: FSelected := Value;
+    TViewState.Checked: FChecked := Value;
+    TViewState.Enabled: FEnabled := Value;
+    TViewState.Activated: FActivated := Value;
+  else
+    raise EDrawableError.Create(Format(SInvViewValue, [Integer(State)]));
   end;
+  DoChange(Self);
+end;
+
+procedure TViewColor.SetValue(const Index: Integer; const Value: TAlphaColor);
+begin
+  SetColor(TViewState(Index), Value);
 end;
 
 { TViewLayout }
@@ -1137,7 +1648,7 @@ begin
     (Assigned(ParentControl)) and (ParentControl is TRelativeLayout);
 end;
 
-class function TView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
+function TView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
 begin
   Result := Assigned(View.Background) and
     Assigned(View.Background.GetStateBrush(State));
@@ -1292,9 +1803,38 @@ begin
   Result := HitTest;
 end;
 
+function TView.GetComponent: TComponent;
+begin
+  Result := Self;
+end;
+
 function TView.GetComponentState: TComponentState;
 begin
   Result := ComponentState;
+end;
+
+function TView.GetDrawState: TViewState;
+begin
+  if FViewState = [] then
+    Result := TViewState.None
+  else begin
+    if TViewState.Enabled in FViewState then
+      Result := TViewState.Enabled
+    else if TViewState.Pressed in FViewState then
+      Result := TViewState.Pressed
+    else if TViewState.Hovered in FViewState then
+      Result := TViewState.Hovered
+    else if TViewState.Activated in FViewState then
+      Result := TViewState.Activated
+    else if TViewState.Focused in FViewState then
+      Result := TViewState.Focused
+    else if TViewState.Selected in FViewState then
+      Result := TViewState.Selected
+    else if TViewState.Checked in FViewState then
+      Result := TViewState.Checked
+    else
+      Result := TViewState.None
+  end;
 end;
 
 function TView.GetGravity: TLayoutGravity;
@@ -1404,6 +1944,11 @@ begin
   inherited HitTestChanged;
   if HitTest and (not AutoCapture) then
     AutoCapture := True;
+end;
+
+procedure TView.ImagesChanged;
+begin
+  Repaint;
 end;
 
 procedure TView.IncChildState(State: TViewState);
@@ -2427,9 +2972,10 @@ begin
   if AOwner is TControl then
     FOwner := TControl(AOwner)
   else FOwner := nil;
+  FColor := TViewColor.Create();
+  FColor.OnChanged := DoColorChanged;
   FFont := TFont.Create;
   FFont.OnChanged := DoFontChanged;
-  FColor := TAlphaColorRec.Black;
   if (csDesigning in AOwner.ComponentState) then begin
     FIsSizeChange := True;
     if TView(AOwner).SupportsPlatformService(IFMXDefaultPropertyValueService, DefaultValueService) then
@@ -2445,6 +2991,7 @@ end;
 destructor TTextSettings.Destroy;
 begin
   FreeAndNil(FFont);
+  FreeAndNil(FColor);
   inherited;
 end;
 
@@ -2453,6 +3000,13 @@ begin
   if Assigned(FOnChanged) then
     FOnChanged(Self);
   FIsSizeChange := False;
+  FIsColorChange := False;
+end;
+
+procedure TTextSettings.DoColorChanged(Sender: TObject);
+begin
+  FIsColorChange := True;
+  DoChange;
 end;
 
 procedure TTextSettings.DoFontChanged(Sender: TObject);
@@ -2473,7 +3027,7 @@ begin
 end;
 
 procedure TTextSettings.Draw(const Canvas: TCanvas; const R: TRectF;
-  const Opacity: Single);
+  const Opacity: Single; State: TViewState);
 var
   V, H: TTextAlign;
   TextStr: string;
@@ -2511,16 +3065,19 @@ begin
           V := TTextAlign.Center;
         end;
     end;
-    FillText(Canvas, R, TextStr, FWordWrap, Opacity, FillTextFlags, H, V);
+    FillText(Canvas, R, TextStr, FWordWrap, Opacity, FillTextFlags, H, V, State);
   end;
 end;
 
 procedure TTextSettings.FillText(const Canvas: TCanvas; const ARect: TRectF;
   const AText: string; const WordWrap: Boolean; const AOpacity: Single;
-  const Flags: TFillTextFlags; const ATextAlign, AVTextAlign: TTextAlign);
+  const Flags: TFillTextFlags; const ATextAlign, AVTextAlign: TTextAlign;
+  State: TViewState);
 var
   Layout: TTextLayout;
+  Color: TAlphaColor;
 begin
+  Color := FColor.GetColor(State);
   Layout := TTextLayoutManager.TextLayoutByCanvas(Canvas.ClassType).Create(Canvas);
   try
     Layout.BeginUpdate;
@@ -2532,7 +3089,8 @@ begin
     Layout.HorizontalAlign := ATextAlign;
     Layout.VerticalAlign := AVTextAlign;
     Layout.Font := FFont;
-    Layout.Color := FColor;
+    if Color <> TAlphaColorRec.Null then
+      Layout.Color := Color;
     Layout.Trimming := FTrimming;
     Layout.RightToLeft := TFillTextFlag.RightToLeft in Flags;
     Layout.EndUpdate;
@@ -2570,12 +3128,9 @@ begin
   end;
 end;
 
-procedure TTextSettings.SetColor(const Value: TAlphaColor);
+procedure TTextSettings.SetColor(const Value: TViewColor);
 begin
-  if FColor <> Value then begin
-    FColor := Value;
-    DoChange;
-  end;
+  FColor.Assign(Value);
 end;
 
 procedure TTextSettings.SetFont(const Value: TFont);
@@ -2629,11 +3184,51 @@ begin
   end;
 end;
 
-initialization
-  RegisterAliases;
-  RegisterFmxClasses([TView, TLinearLayout, TRelativeLayout]);
+{ TViewImageLink }
 
-finalization
-  UnregisterAliases;
+procedure TViewImageLink.Change;
+begin
+  if Assigned(OnChange) then
+    OnChange(Images);
+end;
+
+constructor TViewImageLink.Create(AOwner: TDrawableIcon);
+var
+  LGlyph: IGlyph;
+
+  procedure DoCreate();
+  var
+    FContext: TRttiContext;
+    FType: TRttiType;
+    FFiled: TRttiField;
+    V: TValue;
+  begin
+    // 使用 RTTi 设置其它属性
+    FContext := TRttiContext.Create;
+    try
+      FType := FContext.GetType(TGlyphImageLink);
+      FFiled := FType.GetField('FOwner');
+      if FFiled <> nil then begin
+        V := AOwner.GetComponent;
+        FFiled.SetValue(Self, V);
+      end;
+      FFiled := FType.GetField('FGlyph');
+      if FFiled <> nil then begin
+        V := V.From(LGlyph);
+        FFiled.SetValue(Self, V);
+      end;
+    finally
+      FContext.Free;
+    end;
+  end;
+
+begin
+  if AOwner = nil then
+    raise EArgumentNilException.Create(SArgumentNil);
+  if not AOwner.GetInterface(IGlyph, LGlyph) then
+    raise EArgumentException.CreateFMT(SUnsupportedInterface, [AOwner.ClassName, 'IGlyph']);
+  ImageIndex := -1;
+  // DoCreate();
+end;
 
 end.

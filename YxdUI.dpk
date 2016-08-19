@@ -1,5 +1,7 @@
 package YxdUI;
 
+{$I 'CMOV.inc'}
+
 {$R *.res}
 {$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
 {$ALIGN 8}
@@ -30,12 +32,16 @@ package YxdUI;
 requires
   rtl,
   fmx,
+  {$IFDEF UseUDP}
   IndySystem,
-  IndyCore;
+  IndyCore,
+  {$ENDIF}
+  DesignIDE;
 
 contains
   UI.Base in 'source\UI.Base.pas',
   UI.Debug in 'source\UI.Debug.pas',
-  UI.Standard in 'source\UI.Standard.pas';
+  UI.Standard in 'source\UI.Standard.pas',
+  UI.Reg in 'source\UI.Reg.pas';
 
 end.

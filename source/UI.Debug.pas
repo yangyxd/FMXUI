@@ -1,6 +1,6 @@
 {*******************************************************}
 {                                                       }
-{       YxdInclude 日志输出模块                         }
+{       FMXUI 日志输出模块                              }
 {                                                       }
 {       版权所有 (C) 2013      YangYxd                  }
 {                                                       }
@@ -8,7 +8,7 @@
 
 unit UI.Debug;
 
-{$DEFINE UseUDP}  // 是否使用远程输出日志
+{$I 'CMOV.inc'}
 
 interface
 

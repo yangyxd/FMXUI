@@ -6,9 +6,9 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, UI.Base,
   FMX.Controls.Presentation, FMX.StdCtrls, FMX.Layouts, FMX.ExtCtrls,
-  System.ImageList, FMX.ImgList, FMX.Objects, FMX.ListView.Types,
-  FMX.ListView.Appearances, FMX.ListView.Adapters.Base, FMX.ListView,
-  FMX.ListBox, UI.Standard;
+  FMX.ImgList, FMX.Objects, FMX.ListView.Types,
+  FMX.ListView.Appearances, FMX.ListView,
+  FMX.ListBox, UI.Standard, System.ImageList;
 
 type
   TForm1 = class(TForm)
@@ -38,13 +38,14 @@ type
     LinearLayout1: TLinearLayout;
     TextView7: TTextView;
     TextView8: TTextView;
+    ImageList1: TImageList;
+    Button1: TButton;
     procedure FormCreate(Sender: TObject);
-    procedure Button1MouseUp(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Single);
     procedure View5Click(Sender: TObject);
     procedure View8Click(Sender: TObject);
     procedure View1Click(Sender: TObject);
     procedure View3Click(Sender: TObject);
+    procedure ButtonView1Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -58,15 +59,14 @@ implementation
 
 {$R *.fmx}
 
-procedure TForm1.Button1MouseUp(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Single);
-begin
-  ///
-end;
-
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   Self.Fill.Color;
+end;
+
+procedure TForm1.ButtonView1Click(Sender: TObject);
+begin
+  ShowMessage('Clieck Event');
 end;
 
 procedure TForm1.View1Click(Sender: TObject);

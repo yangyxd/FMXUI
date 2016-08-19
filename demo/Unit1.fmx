@@ -5,6 +5,7 @@ object Form1: TForm1
   ClientHeight = 568
   ClientWidth = 340
   Fill.Kind = Solid
+  Position = Designed
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
@@ -26,7 +27,7 @@ object Form1: TForm1
     Size.Width = 340.000000000000000000
     Size.Height = 458.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 2
+    TabOrder = 3
     Orientation = Vertical
     object RelativeLayout2: TRelativeLayout
       Background.Paddings = '0.0'
@@ -44,9 +45,9 @@ object Form1: TForm1
       TabOrder = 0
       object View1: TView
         AdjustViewBounds = False
-        Background.Paddings = '0.0'
         Background.ItemDefault.Color = claSpringgreen
         Background.ItemDefault.Kind = Solid
+        Background.Paddings = '0.0'
         ClipChildren = True
         Clickable = True
         Layout.WidthSize = WrapContent
@@ -63,16 +64,16 @@ object Form1: TForm1
         WidthSize = WrapContent
         HeightSize = WrapContent
         Gravity = LeftTop
-        Position.X = 24.000000000000000000
-        Position.Y = 24.000000000000000000
+        Position.X = 19.000000000000000000
+        Position.Y = 18.000000000000000000
         TabOrder = 0
         OnClick = View1Click
       end
       object View2: TView
         AdjustViewBounds = False
-        Background.Paddings = '0.0'
         Background.ItemDefault.Color = claTomato
         Background.ItemDefault.Kind = Solid
+        Background.Paddings = '0.0'
         ClipChildren = True
         Layout.Below = View1
         Layout.AlignLeft = View1
@@ -90,15 +91,15 @@ object Form1: TForm1
         WidthSize = WrapContent
         HeightSize = WrapContent
         Gravity = LeftTop
-        Position.X = 24.000000000000000000
-        Position.Y = 90.000000000000000000
+        Position.X = 19.000000000000000000
+        Position.Y = 84.000000000000000000
         TabOrder = 1
       end
       object View8: TView
         AdjustViewBounds = False
-        Background.Paddings = '0.0'
         Background.ItemDefault.Color = claTurquoise
         Background.ItemDefault.Kind = Solid
+        Background.Paddings = '0.0'
         ClipChildren = True
         Clickable = True
         Layout.ToRightOf = View2
@@ -117,15 +118,15 @@ object Form1: TForm1
         WidthSize = WrapContent
         HeightSize = WrapContent
         Gravity = LeftTop
-        Position.X = 74.000000000000000000
-        Position.Y = 140.000000000000000000
+        Position.X = 69.000000000000000000
+        Position.Y = 134.000000000000000000
         TabOrder = 2
         OnClick = View8Click
       end
       object Label1: TLabel
         StyledSettings = [Family, Style, FontColor]
-        Position.X = 152.000000000000000000
-        Position.Y = 16.000000000000000000
+        Position.X = 128.000000000000000000
+        Position.Y = 33.000000000000000000
         Size.Width = 120.000000000000000000
         Size.Height = 25.000000000000000000
         Size.PlatformDefault = False
@@ -135,9 +136,9 @@ object Form1: TForm1
       object TextView2: TTextView
         Align = Fit
         AdjustViewBounds = False
-        Background.Paddings = '0.0'
         Background.ItemDefault.Color = claLightgoldenrodyellow
         Background.ItemDefault.Kind = Solid
+        Background.Paddings = '0.0'
         ClipChildren = True
         Layout.ToRightOf = View8
         Layout.Below = Label1
@@ -161,8 +162,8 @@ object Form1: TForm1
         WidthSize = FillParent
         HeightSize = FillParent
         Gravity = LeftTop
-        Size.Width = 184.000000000000000000
-        Size.Height = 168.000000000000000000
+        Size.Width = 189.000000000000000000
+        Size.Height = 151.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 3
         AutoSize = False
@@ -170,7 +171,14 @@ object Form1: TForm1
           '&View TFloatKeyAnimation '#19982'TFlatAnimation'#30340#21306#21035#22312#20110#19981#26159#35774#32622#36215#28857#21644#32456#28857#65292#32780#26159#35774#32622#21464#21270#36807#31243#20013 +
           #30340#20851#38190#28857#12290#22312#23454#38469#20351#29992#26102#65292#21457#34892'TKeys'#19979#27599#19968#20010'Key'#21482#33021#26159'0'#25110'1'#65292#24182#19988'0'#20195#34920#36215#28857#65292'1'#20195#34920#32456#28857#65292#20854#25968#20540#35268#24459#27809#26377#30475#20986#26469#12290
         TextSettings.AutoSize = False
-        TextSettings.Color = claTomato
+        TextSettings.Color.Default = claBlack
+        TextSettings.Color.Pressed = claNull
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Hovered = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Color.Activated = claNull
         TextSettings.PrefixStyle = HidePrefix
         TextSettings.Trimming = Character
         TextSettings.WordWrap = True
@@ -200,24 +208,32 @@ object Form1: TForm1
         Size.Width = 84.000000000000000000
         Size.Height = 17.000000000000000000
         Size.PlatformDefault = False
-        Position.X = 40.000000000000000000
-        Position.Y = 190.000000000000000000
+        Position.X = 35.000000000000000000
+        Position.Y = 184.000000000000000000
         TabOrder = 4
         OnClick = View8Click
         AutoSize = False
         Text = 'TextView6'
         TextSettings.AutoSize = False
+        TextSettings.Color.Default = claBlack
+        TextSettings.Color.Pressed = claNull
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Hovered = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Color.Activated = claNull
         TextSettings.PrefixStyle = HidePrefix
         TextSettings.Gravity = LeftTop
       end
     end
     object LinearLayout1: TLinearLayout
+      Background.ItemDefault.Color = claPaleturquoise
+      Background.ItemDefault.Kind = Solid
       Background.Padding.Left = 4.000000000000000000
       Background.Padding.Top = 8.000000000000000000
       Background.Padding.Right = 16.000000000000000000
       Background.Padding.Bottom = 12.000000000000000000
-      Background.ItemDefault.Color = claPaleturquoise
-      Background.ItemDefault.Kind = Solid
       ClipChildren = True
       Padding.Left = 4.000000000000000000
       Padding.Top = 8.000000000000000000
@@ -236,9 +252,9 @@ object Form1: TForm1
       TabOrder = 2
       Orientation = Horizontal
       object TextView7: TTextView
-        Background.Paddings = '0.0'
         Background.ItemDefault.Color = claSkyblue
         Background.ItemDefault.Kind = Solid
+        Background.Paddings = '0.0'
         ClipChildren = True
         Paddings = '0.0'
         Margin = '0.0'
@@ -254,15 +270,23 @@ object Form1: TForm1
         AutoSize = False
         Text = 'TextView7'
         TextSettings.AutoSize = False
+        TextSettings.Color.Default = claBlack
+        TextSettings.Color.Pressed = claNull
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Hovered = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Color.Activated = claNull
         TextSettings.PrefixStyle = HidePrefix
         TextSettings.Gravity = Center
       end
       object TextView8: TTextView
-        Background.Paddings = '0.0'
         Background.ItemDefault.Color = claSkyblue
         Background.ItemDefault.Kind = Solid
+        Background.Paddings = '0.0'
         ClipChildren = True
-        Paddings = '0.0'
+        Padding.Left = 10.000000000000000000
         Margin = '0.0'
         WidthSize = WrapContent
         HeightSize = WrapContent
@@ -276,14 +300,26 @@ object Form1: TForm1
         AutoSize = False
         Text = 'TextView7'
         TextSettings.AutoSize = False
+        TextSettings.Color.Default = claBlack
+        TextSettings.Color.Pressed = claNull
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Hovered = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Color.Activated = claNull
         TextSettings.PrefixStyle = HidePrefix
         TextSettings.Gravity = Center
+        Drawable.ItemDefault.Color = claYellow
+        Drawable.ItemDefault.Kind = Solid
+        Drawable.Images = ImageList1
+        Drawable.ImageIndex = 0
       end
     end
     object View10: TView
-      Background.Paddings = '0.0'
       Background.ItemDefault.Color = claThistle
       Background.ItemDefault.Kind = Solid
+      Background.Paddings = '0.0'
       ClipChildren = True
       Paddings = '0.0'
       Margin = '0.0'
@@ -301,9 +337,9 @@ object Form1: TForm1
   end
   object RelativeLayout1: TRelativeLayout
     Align = Top
-    Background.Paddings = '0.0'
     Background.ItemDefault.Color = claOrchid
     Background.ItemDefault.Kind = Solid
+    Background.Paddings = '0.0'
     ClipChildren = True
     Paddings = '0.0'
     Margin = '0.0'
@@ -316,27 +352,22 @@ object Form1: TForm1
     TabOrder = 1
     object View3: TView
       AdjustViewBounds = False
-      Background.Padding.Left = 16.000000000000000000
-      Background.Padding.Top = 16.000000000000000000
-      Background.Padding.Right = 16.000000000000000000
-      Background.Padding.Bottom = 16.000000000000000000
-      Background.Paddings = '16.0'
       Background.ItemDefault.Bitmap.Bitmap.PNG = {
         89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
         03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
-        017B494441545847D5984D4EC33010855347390751ABAA825295CB941E077186
-        5CA0DC812528ECD80137286CE10251FECC9B682612E0AC409EE193ACA92796FC
-        F4EA4C6C277F81F73E473B50E4942E7DDF6FEBBA7E85204F91FAFC4807E898B7
-        6DFB4C8284AEEBEEF8717CE0C8461C12CAB2EC90DFF390B860E2251C7A622D03
-        55557D680AFAE11081FC250F890B265E5973686DCDA1D38043EFAA829AA639B2
-        9611E4F708331E160F4C7C66CDA155680D811D9A8A43E7218710763C242E10B4
-        9C7ACB10541CDA585B430B2B6B68980C82B66887344D2F862C832FFEA373EE96
-        BBD198C1851C75E821CBB213CEA9E3E0D0B5254104FE1D7705A7DEB83F521485
-        E79FD131B9A646202AF8F621AF539F0408A03AF565CFCD754A67BF2440C05445
-        D7D91508EC989DCA2E4040709740C210541D5B4F38A6BEC66CED3C051266758D
-        D93ACD081040E7BEEF758CCE7DEAC26C9D900508A0BB84FFE198EAAD8B00010B
-        38F6C29A06B0B3B8E7C77A4098AD9B3C017A723874439153BF20493E0102934A
-        5A821A1FD90000000049454E44AE426082}
+        0179494441545847D5984D4EC33010855347390751ABAA825295CB941E877093
+        720796A0B06307DCA0B0850B44F9336FA2994880B30279864FB2A69E58F2D3AB
+        33B19DFC05DEFB1CED409153BAF47DBFADEBFA15823C45EAF3231DA063DEB6ED
+        330912BAAEBBE3C7F181231B714828CBB2437ECF43E282899770E889B50C5455
+        F5A129E8874304F2973C242E987865CDA1B535874E030EBDAB0A6A9AE6C85A46
+        90DF23CC78583C30F199358756A1350476682A0E9D871C42D8F190B840D072EA
+        2D43507168636D0D2DACACA1613208DAA21DD234BD18B20CBEF88FCEB95BEE46
+        63061772D4A1872CCB4E38A78E8343D7960411F877DC159C7AE3FE4851149E7F
+        46C7E49A1A81A8E0DB87BC4E7D122080EAD4973D37D7299DFD92000153155D67
+        5720B063762ABB0001C15D02094350756C3DE198FA1AB3B5F3144898D53566EB
+        342340009DFBBED7313AF7A90BB37542162080EE12FE8763AAB72E02042CE0D8
+        0B6B1AC0CEE29E1FEB0161B66EF204E8C9E1D00D454EFD8224F904B3064A216E
+        D0190A0000000049454E44AE426082}
       Background.ItemDefault.Bitmap.WrapMode = TileStretch
       Background.ItemDefault.Kind = Bitmap
       Background.ItemPressed.Bitmap.Bitmap.PNG = {
@@ -365,6 +396,11 @@ object Form1: TForm1
         000049454E44AE426082}
       Background.ItemPressed.Bitmap.WrapMode = TileStretch
       Background.ItemPressed.Kind = Bitmap
+      Background.Padding.Left = 16.000000000000000000
+      Background.Padding.Top = 16.000000000000000000
+      Background.Padding.Right = 16.000000000000000000
+      Background.Padding.Bottom = 16.000000000000000000
+      Background.Paddings = '16.0'
       ClipChildren = True
       Clickable = True
       Layout.WidthSize = WrapContent
@@ -390,11 +426,6 @@ object Form1: TForm1
     end
     object View4: TView
       AdjustViewBounds = False
-      Background.Padding.Left = 16.000000000000000000
-      Background.Padding.Top = 16.000000000000000000
-      Background.Padding.Right = 16.000000000000000000
-      Background.Padding.Bottom = 16.000000000000000000
-      Background.Paddings = '16.0'
       Background.ItemDefault.Bitmap.Bitmap.PNG = {
         89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
         03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
@@ -415,6 +446,11 @@ object Form1: TForm1
         49454E44AE426082}
       Background.ItemPressed.Bitmap.WrapMode = TileStretch
       Background.ItemPressed.Kind = Bitmap
+      Background.Padding.Left = 16.000000000000000000
+      Background.Padding.Top = 16.000000000000000000
+      Background.Padding.Right = 16.000000000000000000
+      Background.Padding.Bottom = 16.000000000000000000
+      Background.Paddings = '16.0'
       ClipChildren = True
       Clickable = True
       Layout.WidthSize = WrapContent
@@ -469,7 +505,14 @@ object Form1: TForm1
       AutoSize = False
       Text = #25105#30340
       TextSettings.AutoSize = False
-      TextSettings.Color = claWhite
+      TextSettings.Color.Default = claBlack
+      TextSettings.Color.Pressed = claNull
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Hovered = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Checked = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Color.Activated = claNull
       TextSettings.Font.Size = 18.000000000000000000
       TextSettings.PrefixStyle = HidePrefix
       TextSettings.Gravity = Center
@@ -477,7 +520,6 @@ object Form1: TForm1
   end
   object LinearLayout3: TLinearLayout
     Align = Bottom
-    Background.Paddings = '0.0'
     Background.ItemDefault.Kind = Gradient
     Background.ItemDefault.Gradient.Points = <
       item
@@ -492,6 +534,7 @@ object Form1: TForm1
     Background.ItemDefault.Gradient.StartPosition.Y = 1.000000000000000000
     Background.ItemDefault.Gradient.StopPosition.X = 0.499999970197677600
     Background.ItemDefault.Gradient.StopPosition.Y = 0.000000000000000000
+    Background.Paddings = '0.0'
     ClipChildren = True
     Paddings = '0.0'
     Margin = '0.0'
@@ -502,12 +545,12 @@ object Form1: TForm1
     Size.Height = 60.000000000000000000
     Size.PlatformDefault = False
     Position.Y = 508.000000000000000000
-    TabOrder = 4
+    TabOrder = 5
     Orientation = Horizontal
     object RelativeLayout3: TRelativeLayout
-      Background.Paddings = '0.0'
       Background.ItemPressed.Color = claTeal
       Background.ItemPressed.Kind = Solid
+      Background.Paddings = '0.0'
       ClipChildren = True
       Clickable = True
       Paddings = '0.0'
@@ -523,11 +566,6 @@ object Form1: TForm1
       OnClick = View8Click
       object View5: TView
         AdjustViewBounds = False
-        Background.Padding.Left = 2.000000000000000000
-        Background.Padding.Top = 2.000000000000000000
-        Background.Padding.Right = 2.000000000000000000
-        Background.Padding.Bottom = 2.000000000000000000
-        Background.Paddings = '2.0'
         Background.ItemDefault.Bitmap.Bitmap.PNG = {
           89504E470D0A1A0A0000000D49484452000000360000003608060000008C456A
           DD000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
@@ -606,6 +644,11 @@ object Form1: TForm1
           4141414141C1FF068047A5EF8C4E369073940000000049454E44AE426082}
         Background.ItemPressed.Bitmap.WrapMode = TileStretch
         Background.ItemPressed.Kind = Bitmap
+        Background.Padding.Left = 2.000000000000000000
+        Background.Padding.Top = 2.000000000000000000
+        Background.Padding.Right = 2.000000000000000000
+        Background.Padding.Bottom = 2.000000000000000000
+        Background.Paddings = '2.0'
         ClipChildren = True
         Layout.WidthSize = WrapContent
         Layout.HeightSize = WrapContent
@@ -653,14 +696,22 @@ object Form1: TForm1
         AutoSize = False
         Text = #25105#30340
         TextSettings.AutoSize = False
+        TextSettings.Color.Default = claBlack
+        TextSettings.Color.Pressed = claNull
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Hovered = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Color.Activated = claNull
         TextSettings.PrefixStyle = HidePrefix
         TextSettings.Gravity = Center
       end
     end
     object RelativeLayout4: TRelativeLayout
-      Background.Paddings = '0.0'
       Background.ItemPressed.Color = claTeal
       Background.ItemPressed.Kind = Solid
+      Background.Paddings = '0.0'
       ClipChildren = True
       Clickable = True
       Paddings = '0.0'
@@ -676,11 +727,6 @@ object Form1: TForm1
       TabOrder = 1
       object View6: TView
         AdjustViewBounds = False
-        Background.Padding.Left = 2.000000000000000000
-        Background.Padding.Top = 2.000000000000000000
-        Background.Padding.Right = 2.000000000000000000
-        Background.Padding.Bottom = 2.000000000000000000
-        Background.Paddings = '2.0'
         Background.ItemDefault.Bitmap.Bitmap.PNG = {
           89504E470D0A1A0A0000000D49484452000000360000003608060000008C456A
           DD000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
@@ -718,6 +764,11 @@ object Form1: TForm1
           140A8542A1F86F70B97E02A0CDAEF14E7C89FF0000000049454E44AE426082}
         Background.ItemDefault.Bitmap.WrapMode = TileStretch
         Background.ItemDefault.Kind = Bitmap
+        Background.Padding.Left = 2.000000000000000000
+        Background.Padding.Top = 2.000000000000000000
+        Background.Padding.Right = 2.000000000000000000
+        Background.Padding.Bottom = 2.000000000000000000
+        Background.Paddings = '2.0'
         ClipChildren = True
         Layout.WidthSize = WrapContent
         Layout.HeightSize = WrapContent
@@ -765,14 +816,22 @@ object Form1: TForm1
         AutoSize = False
         Text = #32534#36753
         TextSettings.AutoSize = False
+        TextSettings.Color.Default = claBlack
+        TextSettings.Color.Pressed = claNull
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Hovered = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Color.Activated = claNull
         TextSettings.PrefixStyle = HidePrefix
         TextSettings.Gravity = Center
       end
     end
     object RelativeLayout5: TRelativeLayout
-      Background.Paddings = '0.0'
       Background.ItemPressed.Color = claTeal
       Background.ItemPressed.Kind = Solid
+      Background.Paddings = '0.0'
       ClipChildren = True
       Clickable = True
       Paddings = '0.0'
@@ -788,11 +847,6 @@ object Form1: TForm1
       TabOrder = 0
       object View7: TView
         AdjustViewBounds = False
-        Background.Padding.Left = 2.000000000000000000
-        Background.Padding.Top = 2.000000000000000000
-        Background.Padding.Right = 2.000000000000000000
-        Background.Padding.Bottom = 2.000000000000000000
-        Background.Paddings = '2.0'
         Background.ItemDefault.Bitmap.Bitmap.PNG = {
           89504E470D0A1A0A0000000D49484452000000360000003608060000008C456A
           DD000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
@@ -839,6 +893,11 @@ object Form1: TForm1
           0000000049454E44AE426082}
         Background.ItemDefault.Bitmap.WrapMode = TileStretch
         Background.ItemDefault.Kind = Bitmap
+        Background.Padding.Left = 2.000000000000000000
+        Background.Padding.Top = 2.000000000000000000
+        Background.Padding.Right = 2.000000000000000000
+        Background.Padding.Bottom = 2.000000000000000000
+        Background.Paddings = '2.0'
         ClipChildren = True
         Layout.WidthSize = WrapContent
         Layout.HeightSize = WrapContent
@@ -886,9 +945,81 @@ object Form1: TForm1
         AutoSize = False
         Text = #25628#32034
         TextSettings.AutoSize = False
+        TextSettings.Color.Default = claBlack
+        TextSettings.Color.Pressed = claNull
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Hovered = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Color.Activated = claNull
         TextSettings.PrefixStyle = HidePrefix
         TextSettings.Gravity = Center
       end
     end
+  end
+  object Button1: TButton
+    Position.X = 160.000000000000000000
+    Position.Y = 396.000000000000000000
+    TabOrder = 2
+    Text = 'Button1'
+  end
+  object ImageList1: TImageList
+    Source = <
+      item
+        MultiResBitmap.Width = 64
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap.TransparentColor = 536870912
+        MultiResBitmap = <
+          item
+            Width = 64
+            Height = 16
+            PNG = {
+              89504E470D0A1A0A0000000D4948445200000040000000100806000000A6E779
+              29000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              00AC494441545847ED935B0AC5300844D3EE7FCF2D42042BE30393FCA43950C2
+              BD8E1AC7B61D0EFFE6EAE72C9E7E46CCEE5BC6BA483448358F596500F747F561
+              6C8501D170194D15796FD9C3FADFC433A01A63329A11A83E3F84FEFD41BB0145
+              02D293C672D18B31598D45944BA07C9877F77337F4B0A6693A106D97F13466B3
+              4E4633CAB237808AACBEFC28D6A29029DB7D026878D704BD4DE89220DA7E94CF
+              4475AA707F54DF8B1D0EFFA4B517497927066273B6E80000000049454E44AE42
+              6082}
+            FileName = 'D:\My Documents\Documents\'#25105#30340#30456#20876'\ICO'#22270#26631'\VCLSKINMENU.bmp'
+          end>
+        Name = 'VCLSKINMENU'
+      end>
+    Destination = <
+      item
+        Layers = <
+          item
+            Name = 'VCLSKINMENU'
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'VCLSKINMENU'
+            SourceRect.Left = 16.000000000000000000
+            SourceRect.Right = 32.000000000000000000
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'VCLSKINMENU'
+            SourceRect.Left = 32.000000000000000000
+            SourceRect.Right = 48.000000000000000000
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'VCLSKINMENU'
+            SourceRect.Left = 48.000000000000000000
+            SourceRect.Right = 64.000000000000000000
+          end>
+      end>
+    Left = 240
+    Top = 253
   end
 end
