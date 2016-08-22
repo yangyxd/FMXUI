@@ -523,6 +523,7 @@ type
     FLayout: TViewLayout;
 
     function IsDrawing: Boolean;
+    function IsDesignerControl(Control: TControl): Boolean;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; virtual;
     function GetViewState: TViewStates;
     procedure IncViewState(const State: TViewState); virtual;
@@ -646,7 +647,8 @@ type
   TViewGroup = class(TView, IViewGroup)
   private
   protected
-    function IsAutoSize(View: IView;  Align: TAlignLayout): Boolean;
+    function IsAutoSize(View: IView;  Align: TAlignLayout;
+      AOrientation: TOrientation): Boolean;
     procedure DoAddObject(const AObject: TFmxObject); override;
     procedure DoRemoveObject(const AObject: TFmxObject); override;
     procedure DoLayoutChanged(Sender: TObject); override;
@@ -1135,7 +1137,7 @@ begin
       begin
         if ExecDraw then begin        
           DR.Left := R.Left;
-          DR.Top := (SH - FHeight) / 2;
+          DR.Top := R.Top + (SH - FHeight) / 2;
           DR.Right := DR.Left + FWidth;
           DR.Bottom := DR.Top + FHeight;  
           DrawTo(Canvas, DR);
@@ -1146,7 +1148,7 @@ begin
       begin
         if ExecDraw then begin
           DR.Left := R.Right - FWidth;
-          DR.Top := (SH - FHeight) / 2;
+          DR.Top := R.Top + (SH - FHeight) / 2;
           DR.Right := R.Right;
           DR.Bottom := DR.Top + FHeight;
           DrawTo(Canvas, DR);
@@ -1156,7 +1158,7 @@ begin
     TDrawablePosition.Top: 
       begin
         if ExecDraw then begin
-          DR.Left := (SW - FWidth) / 2;
+          DR.Left := R.Left + (SW - FWidth) / 2;
           DR.Top := R.Top;
           DR.Right := DR.Left + FWidth;
           DR.Bottom := DR.Top + FHeight;
@@ -1167,7 +1169,7 @@ begin
     TDrawablePosition.Bottom:
       begin
         if ExecDraw then begin
-          DR.Left := (SW - FWidth) / 2;
+          DR.Left := R.Left + (SW - FWidth) / 2;
           DR.Top := R.Bottom - FHeight;
           DR.Right := DR.Left + FWidth;
           DR.Bottom := R.Bottom;
@@ -1975,6 +1977,13 @@ begin
   Result := TViewState.Activated in FViewState;
 end;
 
+function TView.IsDesignerControl(Control: TControl): Boolean;
+begin
+  Result := (csDesigning in ComponentState) and
+    (Supports(Control, IDesignerControl) or
+    (Control.ClassNameIs('TDesignRectangle')));
+end;
+
 function TView.IsDrawing: Boolean;
 begin
   Result := FDrawing;
@@ -2297,26 +2306,30 @@ begin
   Realign;
 end;
 
-function TViewGroup.IsAutoSize(View: IView; Align: TAlignLayout): Boolean;
+function TViewGroup.IsAutoSize(View: IView; Align: TAlignLayout;
+  AOrientation: TOrientation): Boolean;
 begin
-  if FOrientation = TOrientation.Horizontal then
-    Result := Assigned(View) and (View.GetHeightSize <> TViewSize.WrapContent)
-  else
-    Result := Assigned(View) and (View.GetWidthSize <> TViewSize.WrapContent);
-  if not Result then begin
-    if FOrientation = TOrientation.Horizontal then
-      Result := Align in [TAlignLayout.Left, TAlignLayout.Right,
-        TAlignLayout.MostLeft, TAlignLayout.MostRight,
-        TAlignLayout.Client, TAlignLayout.Contents,
-        TAlignLayout.HorzCenter, TAlignLayout.Vertical, TAlignLayout.Fit,
-        TAlignLayout.FitLeft, TAlignLayout.FitRight]
+  if Assigned(View) then begin
+    // 实现了 IView 接口时，以 HeightSize 或 WidthSize 为依据
+    if AOrientation = TOrientation.Horizontal then
+      Result := (View.GetHeightSize <> TViewSize.WrapContent)
     else
-      Result := Align in [TAlignLayout.Top, TAlignLayout.Bottom,
-        TAlignLayout.MostTop, TAlignLayout.MostBottom,
-        TAlignLayout.Client, TAlignLayout.Contents,
-        TAlignLayout.VertCenter, TAlignLayout.Horizontal, TAlignLayout.Fit,
-        TAlignLayout.FitLeft, TAlignLayout.FitRight];
-  end;
+      Result := (View.GetWidthSize <> TViewSize.WrapContent)
+  end else if (Align = TAlignLayout.None) or (Align = TAlignLayout.Scale) then
+    // Align 不会调整大小
+    Result := False
+  else if AOrientation = TOrientation.Horizontal then
+    Result := Align in [TAlignLayout.Left, TAlignLayout.Right,
+      TAlignLayout.MostLeft, TAlignLayout.MostRight,
+      TAlignLayout.Client, TAlignLayout.Contents,
+      TAlignLayout.HorzCenter, TAlignLayout.Vertical, TAlignLayout.Fit,
+      TAlignLayout.FitLeft, TAlignLayout.FitRight]
+  else
+    Result := Align in [TAlignLayout.Top, TAlignLayout.Bottom,
+      TAlignLayout.MostTop, TAlignLayout.MostBottom,
+      TAlignLayout.Client, TAlignLayout.Contents,
+      TAlignLayout.VertCenter, TAlignLayout.Horizontal, TAlignLayout.Fit,
+      TAlignLayout.FitLeft, TAlignLayout.FitRight];
 end;
 
 function TViewGroup.RemoveView(View: TView): Integer;
@@ -2333,14 +2346,58 @@ end;
 
 procedure TLinearLayout.DoRealign;
 var
+  CtrlCount, LastAutoSizeIndex: Integer;
+
+  // 检查后面的控件，是否有自动大小的, 有的时候返回 -1
+  function CheckAutoPos(const Index: Integer): Single;
+  var
+    I: Integer;
+    View: IView;
+    Control: TControl;
+    AO: TOrientation;
+  begin
+    if Index <= LastAutoSizeIndex then begin
+      Result := -1;
+      Exit;
+    end;
+    Result := 0;
+
+    if FOrientation = TOrientation.Horizontal then
+      AO := TOrientation.Vertical
+    else
+      AO := TOrientation.Horizontal;
+
+    for I := Index to CtrlCount do begin
+      Control := Controls[I];
+      {$IFDEF MSWINDOWS}
+      if IsDesignerControl(Control) then Continue;
+      {$ENDIF}
+      if not Control.Visible then Continue;
+      View := nil;
+      Supports(Control, IView, View);
+
+      if IsAutoSize(View, Control.Align, AO) then begin
+        LastAutoSizeIndex := I;
+        Result := -1;
+        Break;
+      end else begin
+        if Orientation = TOrientation.Horizontal then
+          Result := Result + Control.Margins.Left + Control.Width + Control.Margins.Right
+        else
+          Result := Result + Control.Margins.Top + Control.Height + Control.Margins.Bottom;
+      end;
+    end;
+  end;
+
+var
   I: Integer;
   WeightSum: Single;
   CurPos: TPointF;
   W, H, Fix: Single;
-  VL, VT, VW, VH, AW, AH: Single;
+  VL, VT, VW, VH, AW, AH, VRB: Single;
   Control: TControl;
   View: IView;
-  SaveAdjustViewBounds: Boolean;
+  SaveAdjustViewBounds, LAutoSize, LAutoPos, LAllowAutoPos: Boolean;
 begin
   if FDisableAlign then
     Exit;
@@ -2348,11 +2405,14 @@ begin
     Exit;
   FDisableAlign := True;
   WeightSum := GetWeightSum(Fix);
+  LastAutoSizeIndex := -1;
+  CtrlCount := ControlsCount - 1;
 
   CurPos := PointF(Padding.Left, Padding.Top);
+  //LogD(Format('CurPos.X: %.2f, CurPos.Y: %.2f', [CurPos.X, CurPos.Y]));
   W := Self.Width - CurPos.X - Padding.Right;
   H := Self.Height - CurPos.Y - Padding.Bottom;
-  if WeightSum = 0 then begin
+  if (WeightSum = 0) and (CheckAutoPos(0) >= 0) then begin
     if Orientation = TOrientation.Horizontal then begin
       if FGravity in [TLayoutGravity.CenterHorizontal, TLayoutGravity.CenterHBottom, TLayoutGravity.Center] then
         CurPos.X := (W - Fix) / 2 + Padding.Left
@@ -2367,8 +2427,10 @@ begin
   end;
 
   if (W > 0) and (H > 0) then begin
+    LAllowAutoPos := True;
+    VRB := 0;
     SaveAdjustViewBounds := False;
-    for I := 0 to ControlsCount - 1 do begin
+    for I := 0 to CtrlCount do begin
       Control := Controls[I];
       {$IFDEF MSWINDOWS}
       if (csDesigning in ComponentState)
@@ -2380,6 +2442,24 @@ begin
       if (Supports(Control, IView, View)) then
         SaveAdjustViewBounds := View.GetAdjustViewBounds;
 
+      LAutoSize := IsAutoSize(View, Control.Align, FOrientation);
+      if LAutoSize and LAllowAutoPos then begin
+        VRB := CheckAutoPos(I + 1);
+        LAutoPos := VRB >= 0;
+        if LAutoPos then
+          LAllowAutoPos := False;
+      end else
+        LAutoPos := False;
+
+      if (csDesigning in ComponentState) then begin
+        {$IFDEF MSWINDOWS}
+        if IsDesignerControl(Control) then begin
+          Dec(CtrlCount);
+          Continue;
+        end;
+        {$ENDIF}
+      end;
+
       if Orientation = TOrientation.Horizontal then begin  // 横排
         VL := CurPos.X + Control.Margins.Left;
         if Assigned(View) and (WeightSum > 0) and (View.GetWeight > 0) then begin
@@ -2387,9 +2467,22 @@ begin
         end else
           VW := Control.Width;
 
-        if IsAutoSize(View, Control.Align) then begin
+        if LAutoSize then begin
           VT := CurPos.Y + Control.Margins.Top;
-          VH := H - Control.Margins.Bottom;
+          // 处理高度
+          if Assigned(View) and (View.GetHeightSize = TViewSize.WrapContent) then begin
+            VH := Control.Height;
+            // 非自动高度时，以重力设置来调整位置
+            case FGravity of
+              TLayoutGravity.LeftTop, TLayoutGravity.RightTop:
+                VT := CurPos.Y + Control.Margins.Top;
+              TLayoutGravity.LeftBottom, TLayoutGravity.RightBottom, TLayoutGravity.CenterHBottom:
+                VT := H - VH - Control.Margins.Bottom + Padding.Top;
+              TLayoutGravity.CenterVertical, TLayoutGravity.Center, TLayoutGravity.CenterVRight:
+                VT := (H - (VH + Control.Margins.Top + Control.Margins.Bottom)) / 2 + Padding.Top + Control.Margins.Top;
+            end;
+          end else
+            VH := H - Control.Margins.Bottom;
         end else begin
           VH := Control.Height;
           case FGravity of
@@ -2398,7 +2491,7 @@ begin
             TLayoutGravity.LeftBottom, TLayoutGravity.RightBottom, TLayoutGravity.CenterHBottom:
               VT := H - VH - Control.Margins.Bottom + Padding.Top;
             TLayoutGravity.CenterVertical, TLayoutGravity.Center, TLayoutGravity.CenterVRight:
-              VT := (H - (VH + Control.Margins.Top + Control.Margins.Bottom)) / 2 + Padding.Top;
+              VT := (H - (VH + Control.Margins.Top + Control.Margins.Bottom)) / 2 + Padding.Top + Control.Margins.Top;
           else
             VT := Control.Position.Y;
           end;
@@ -2409,6 +2502,9 @@ begin
             VH := View.GetMaxHeight;
           if (View.GetMinHeight > 0) and (VH < View.GetMinHeight) then
             VH := View.GetMinHeight;
+
+          if (LAutoPos) and (View.GetWidthSize = TViewSize.FillParent) then
+            VW := (W - VRB) - VL - Control.Margins.Right + Padding.Left;
           AW := VW;
           if (View.GetMaxWidth > 0) and (AW > View.GetMaxWidth) then
             AW := View.GetMaxWidth;
@@ -2416,7 +2512,62 @@ begin
             AW := View.GetMinWidth;
           if AW <> VW then
             VW := AW;
+        end else if LAutoSize then begin // and (FGravity = TLayoutGravity.None) then begin
+          // Align AutoSize
+          AH := VH;
+          if LAutoPos then
+            AW := (W - VRB) - VL - Control.Margins.Right + Padding.Left
+          else
+            AW := Control.Width;
+          VH := Control.Height;  // 高度先默认为原始高度
+
+          case Control.Align of
+            TAlignLayout.Top, TAlignLayout.MostTop: 
+              begin
+                VW := AW;
+              end;
+            TAlignLayout.Left, TAlignLayout.MostLeft: 
+              begin
+                VH := AH;
+              end;
+            TAlignLayout.Right, TAlignLayout.MostRight:
+              begin
+                VW := AW;
+              end;
+            TAlignLayout.Bottom, TAlignLayout.MostBottom: 
+              begin
+                VT := H - VH - Control.Margins.Bottom;
+                VW := AW;
+              end;
+            TAlignLayout.Client, TAlignLayout.Contents:
+              begin
+                VH := AH;
+                VW := AW;
+              end;
+            TAlignLayout.Center, TAlignLayout.Fit, TAlignLayout.FitLeft, TAlignLayout.FitRight: 
+              begin
+                VT := (H - VH) / 2;
+                if LAutoPos then
+                  VL := VL + (AW - VW) / 2;
+              end;
+            TAlignLayout.VertCenter:
+              begin                 
+                VT := (H - VH) / 2;
+                VW := AW;
+              end;
+            TAlignLayout.HorzCenter: 
+              begin
+                if LAutoPos then
+                  VL := VL + (AW - VW) / 2;  
+              end;
+            TAlignLayout.Horizontal:
+              VW := AW;
+            TAlignLayout.Vertical: 
+              VH := AH;
+          end;
+          
         end;
+
         if Assigned(View) and (View.GetWeight > 0) then begin
           Fix := Fix + VW + Control.Margins.Left + Control.Margins.Right;
           WeightSum := WeightSum - View.GetWeight;
@@ -2430,9 +2581,22 @@ begin
         else
           VH := Control.Height;
 
-        if IsAutoSize(View, Control.Align) then begin
+        if LAutoSize then begin
           VL := CurPos.X + Control.Margins.Left;
-          VW := W - Control.Margins.Right;
+          // 处理宽度
+          if Assigned(View) and (View.GetWidthSize = TViewSize.WrapContent) then begin
+            VW := Control.Height;
+            // 非自动高度时，以重力设置来调整位置
+            case FGravity of
+              TLayoutGravity.LeftTop, TLayoutGravity.LeftBottom:
+                VL := CurPos.X + Control.Margins.Left;
+              TLayoutGravity.RightTop, TLayoutGravity.RightBottom, TLayoutGravity.CenterVRight:
+                VL := W - VW - Control.Margins.Right + Padding.Left;
+              TLayoutGravity.CenterHBottom, TLayoutGravity.Center:
+                VL := (W - (VW + Control.Margins.Left + Control.Margins.Right)) / 2 + Padding.Left + Control.Margins.Left;
+            end;
+          end else
+            VW := W - Control.Margins.Right;
         end else begin
           VW := Control.Width;
           case FGravity of
@@ -2441,7 +2605,7 @@ begin
             TLayoutGravity.RightTop, TLayoutGravity.RightBottom, TLayoutGravity.CenterVRight:
               VL := W - VW - Control.Margins.Right + Padding.Left;
             TLayoutGravity.CenterHBottom, TLayoutGravity.Center:
-              VL := (W - (VW + Control.Margins.Left + Control.Margins.Right)) / 2 + Padding.Left;
+              VL := (W - (VW + Control.Margins.Left + Control.Margins.Right)) / 2 + Padding.Left + Control.Margins.Left;
           else
             VL := Control.Position.X;
           end;
@@ -2452,6 +2616,8 @@ begin
             VW := View.GetMaxWidth;
           if (View.GetMinWidth > 0) and (VW < View.GetMinWidth) then
             VW := View.GetMinWidth;
+          if (LAutoPos) and (View.GetHeightSize = TViewSize.FillParent) then
+            VH := (H - VRB) - VT - Control.Margins.Bottom + Padding.Top;
           AH := VH;
           if (View.GetMaxHeight > 0) and (AH > View.GetMaxHeight) then
             AH := View.GetMaxHeight;
@@ -2459,7 +2625,63 @@ begin
             AH := View.GetMinHeight;
           if AH <> VH then
             VH := AH;
+        end else if LAutoSize then begin // and (FGravity = TLayoutGravity.None) then begin
+          // Align AutoSize
+          AW := VW;
+          if LAutoPos then
+            AH := (H - VRB) - VT - Control.Margins.Bottom + Padding.Top
+          else
+            AH := Control.Height;
+          VW := Control.Width;
+
+          case Control.Align of
+            TAlignLayout.Top, TAlignLayout.MostTop:
+              begin
+                VW := AW;
+              end;
+            TAlignLayout.Left, TAlignLayout.MostLeft:
+              begin
+                VH := AH;
+              end;
+            TAlignLayout.Right, TAlignLayout.MostRight:
+              begin
+                VH := AH;
+                VL := W - VW - Control.Margins.Right;
+              end;
+            TAlignLayout.Bottom, TAlignLayout.MostBottom:
+              begin
+                VW := AW;
+                if LAutoPos then
+                  VT := H - VH - Control.Margins.Bottom;
+              end;
+            TAlignLayout.Client, TAlignLayout.Contents:
+              begin
+                VH := AH;
+                VW := AW;
+              end;
+            TAlignLayout.Center, TAlignLayout.Fit, TAlignLayout.FitLeft, TAlignLayout.FitRight:
+              begin
+                VL := (W - VW) / 2;
+                if LAutoPos then
+                  VT := VT + (AH - VH) / 2;
+              end;
+            TAlignLayout.VertCenter:
+              begin
+                if LAutoPos then
+                  VT := VT + (H - VH) / 2;
+              end;
+            TAlignLayout.HorzCenter:
+              begin
+                VL := (AW - VW) / 2;
+              end;
+            TAlignLayout.Horizontal:
+              VW := AW;
+            TAlignLayout.Vertical:
+              VH := AH;
+          end;
+
         end;
+        
         if Assigned(View) and (View.GetWeight > 0) then begin
           Fix := Fix + VH + Control.Margins.Top + Control.Margins.Bottom;
           WeightSum := WeightSum - View.GetWeight;
@@ -2474,7 +2696,7 @@ begin
         View.SetAdjustViewBounds(SaveAdjustViewBounds);
       end else
         Control.SetBounds(VL, VT, VW, VH);
-      
+
     end;
   end;
   FDisableAlign := False;
@@ -2491,8 +2713,7 @@ begin
   for I := 0 to ControlsCount - 1 do begin
     Control := Controls[I];
     {$IFDEF MSWINDOWS}
-    if (csDesigning in ComponentState)
-      and (Supports(Control, IDesignerControl) or (Control.ClassNameIs('TDesignRectangle'))) then Continue;
+    if IsDesignerControl(Control) then Continue;
     {$ENDIF}
     if (not Control.Visible) then Continue;
     // TDesignRectangle
@@ -2761,8 +2982,8 @@ begin
       if AutoW then W := PW;
       if AutoH then H := PH;
       if Assigned(Parent) then begin
-        X := (PW - W) / 2;
-        Y := (PH - H) / 2;
+        X := Parent.Padding.Left + (PW - W) / 2;
+        Y := Parent.Padding.Top + (PH - H) / 2;
       end;
       Exit;
     end;
@@ -2803,7 +3024,7 @@ begin
     end else if Assigned(Layout.FAbove) then begin
       Result := GetXY(StackList, Layout.FAbove, AX, AY, AW, AH);
       if Result < 0 then Exit;
-      Y := AY - Layout.FAbove.Margins.Top;
+      Y := AY + Layout.FAbove.Margins.Top;
       if Assigned(Layout.FBelow) then begin
         Result := GetXY(StackList, Layout.FBelow, BX, BY, BW, BH);
         if Result < 0 then Exit;
@@ -2822,13 +3043,18 @@ begin
       if AutoH then
         H := PH - Y;
     end else if Layout.FAlignParentTop then begin
-      Y := 0;
+      if Assigned(Parent) then
+        Y := Parent.Padding.Top
+      else
+        Y := 0;
       if AutoH then H := PH;
     end else if Layout.FAlignParentBottom then begin
       if AutoH then begin
         Y := 0;
         H := PH;
-      end else
+      end else if Assigned(Parent) then
+        Y := PH - H + Parent.Padding.Top
+      else
         Y := PH - H;
     end else begin
       if AutoH then
@@ -2838,7 +3064,7 @@ begin
     if Layout.FCenterHorizontal then begin
       if AutoW then W := PW;
       if Assigned(Parent) then
-        X := (PW - W) / 2;
+        X := Parent.Padding.Left + (PW - W) / 2;
     end else if Assigned(Layout.FAlignLeft) then begin
       Result := GetXY(StackList, Layout.FAlignLeft, AX, AY, AW, AH);
       if Result < 0 then Exit;
@@ -2880,13 +3106,18 @@ begin
       end else
         DecW := True;
     end else if Layout.FAlignParentLeft then begin
-      X := 0;
+      if Assigned(Parent) then
+        X := Parent.Padding.Left
+      else
+        X := 0;
       if AutoW then W := PW;
     end else if Layout.FAlignParentRight then begin
       if AutoW then begin
         X := 0;
         W := PW;
-      end else
+      end else if Assigned(Parent) then
+        X := PW - W + Parent.Padding.Left
+      else
         X := PW - W;
     end else begin
       if AutoW then

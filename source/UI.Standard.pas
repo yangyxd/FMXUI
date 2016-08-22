@@ -31,6 +31,8 @@ type
     procedure SetTextSettings(const Value: UI.Base.TTextSettings);
     function GetDrawable: TDrawableIcon;
     procedure SetDrawable(const Value: TDrawableIcon);
+    function GetDrawableWidth(): Integer;
+    function GetDrawableHeight(): Integer;
   protected
     procedure Resize; override;
     procedure Loaded; override;
@@ -182,9 +184,9 @@ end;
 procedure TTextView.DoChanged(Sender: TObject);
 begin
   FGravity := FText.Gravity;
-  if FText.IsSizeChange then
-    RecalcSize
-  else
+  if FText.IsSizeChange then begin
+    RecalcSize;
+  end else
     Repaint;
   if FText.IsEffectsChange then
     UpdateEffects;
@@ -260,6 +262,22 @@ begin
   Result := FDrawable;
 end;
 
+function TTextView.GetDrawableHeight: Integer;
+begin
+  if Assigned(FDrawable) and (FDrawable.IsEmpty = False) then
+    Result := FDrawable.SizeHeight
+  else
+    Result := 0;
+end;
+
+function TTextView.GetDrawableWidth: Integer;
+begin
+  if Assigned(FDrawable) and (FDrawable.IsEmpty = False) then
+    Result := FDrawable.SizeWidth
+  else
+    Result := 0;
+end;
+
 function TTextView.GetText: string;
 begin
   Result := FText.Text;
@@ -276,6 +294,8 @@ procedure TTextView.Loaded;
 begin
   inherited;
   FText.OnChanged := DoChanged;
+  if AutoSize then
+    Resize;
   Change;
 end;
 
@@ -294,6 +314,7 @@ var
   R: TRectF;
 begin
   inherited Resize;
+  if csLoading in ComponentState then Exit;  
   if (FDisableAlign) or (not Assigned(FText)) or (not Assigned(Scene)) or
     (not FText.AutoSize) then Exit;
   if not FText.CalcTextObjectSize(FMaxWidth, Scene.GetSceneScale, Margins, ASize) then Exit;
@@ -305,10 +326,11 @@ begin
       R.Height := ASize.Height + Padding.Top + Padding.Bottom;
       SetBoundsRect(R);
     end else if WidthSize = TViewSize.WrapContent then
-      Width := ASize.Width + Padding.Left + Padding.Right
+      Width := ASize.Width + Padding.Left + Padding.Right + GetDrawableWidth
     else if HeightSize = TViewSize.WrapContent then
-      Height := ASize.Height + Padding.Top + Padding.Bottom;
+      Height := ASize.Height + Padding.Top + Padding.Bottom + GetDrawableHeight;
   finally
+    DoLayoutChanged(Self);
     FDisableAlign := False;
   end;
 end;

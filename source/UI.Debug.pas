@@ -18,6 +18,12 @@ uses
   {$ENDIF}
   Windows, SysUtils, Classes;
 
+{$IFDEF UseUDP}
+const
+  UdpSvrAddr = '127.0.0.1';
+  UdpSvrPort = 6699;
+{$ENDIF}
+
 type
   /// <summary>
   /// 输出信息类型
@@ -285,8 +291,8 @@ end;
 constructor TRemoteDebugTrace.Create;
 begin
   udp := TIdUDPClient.Create(nil);
-  FAddr := '127.0.0.1';
-  FPort := 6699;
+  FAddr := UdpSvrAddr;
+  FPort := UdpSvrPort;
 end;
 
 destructor TRemoteDebugTrace.Destroy;
