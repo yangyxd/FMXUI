@@ -2349,12 +2349,13 @@ var
   CtrlCount, LastAutoSizeIndex: Integer;
 
   // 检查后面的控件，是否有自动大小的, 有的时候返回 -1
-  function CheckAutoPos(const Index: Integer): Single;
+  function CheckAutoPos(const Index: Integer; const WeightSum: Single): Single;
   var
     I: Integer;
     View: IView;
     Control: TControl;
     AO: TOrientation;
+    LAutoSize: Boolean;
   begin
     if Index <= LastAutoSizeIndex then begin
       Result := -1;
@@ -2376,7 +2377,13 @@ var
       View := nil;
       Supports(Control, IView, View);
 
-      if IsAutoSize(View, Control.Align, AO) then begin
+      // 如果启用了重力，则无视会影响组件大小的 Align 设置
+      if WeightSum > 0 then begin
+        LAutoSize := Assigned(View) and (IsAutoSize(View, Control.Align, AO));
+      end else
+        LAutoSize := IsAutoSize(View, Control.Align, AO);
+
+      if LAutoSize then begin
         LastAutoSizeIndex := I;
         Result := -1;
         Break;
@@ -2412,7 +2419,7 @@ begin
   //LogD(Format('CurPos.X: %.2f, CurPos.Y: %.2f', [CurPos.X, CurPos.Y]));
   W := Self.Width - CurPos.X - Padding.Right;
   H := Self.Height - CurPos.Y - Padding.Bottom;
-  if (WeightSum = 0) and (CheckAutoPos(0) >= 0) then begin
+  if (WeightSum = 0) and (CheckAutoPos(0, WeightSum) >= 0) then begin
     if Orientation = TOrientation.Horizontal then begin
       if FGravity in [TLayoutGravity.CenterHorizontal, TLayoutGravity.CenterHBottom, TLayoutGravity.Center] then
         CurPos.X := (W - Fix) / 2 + Padding.Left
@@ -2444,7 +2451,7 @@ begin
 
       LAutoSize := IsAutoSize(View, Control.Align, FOrientation);
       if LAutoSize and LAllowAutoPos then begin
-        VRB := CheckAutoPos(I + 1);
+        VRB := CheckAutoPos(I + 1, WeightSum);
         LAutoPos := VRB >= 0;
         if LAutoPos then
           LAllowAutoPos := False;
