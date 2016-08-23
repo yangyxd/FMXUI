@@ -1678,7 +1678,7 @@ var
   View: IView;
 begin
   if State = TViewState.None then Exit;
-  if csDestroying in ComponentState then Exit;
+  if (csDestroying in ComponentState) or (csDesigning in ComponentState) then Exit;
   for I := 0 to Controls.Count - 1 do begin
     if Supports(Controls.Items[I], IView, View) then
       View.DecViewState(State);
@@ -1771,6 +1771,7 @@ end;
 procedure TView.DoMouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
+  if (csDesigning in ComponentState) then Exit;
   if TMouseButton.mbLeft = Button then begin
     IncViewState(TViewState.Pressed);
     if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
@@ -1780,6 +1781,7 @@ end;
 procedure TView.DoMouseEnter;
 begin
   inherited DoMouseEnter;
+  if (csDesigning in ComponentState) then Exit;
   IncViewState(TViewState.Hovered);
   if CanRePaintBk(Self, TViewState.Hovered) then Repaint;
 end;
@@ -1787,6 +1789,7 @@ end;
 procedure TView.DoMouseLeave;
 begin
   inherited DoMouseLeave;
+  if (csDesigning in ComponentState) then Exit;
   DecViewState(TViewState.Hovered);
   if CanRePaintBk(Self, TViewState.Hovered) then Repaint;
 end;
@@ -1794,6 +1797,7 @@ end;
 procedure TView.DoMouseUp(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
+  if (csDesigning in ComponentState) then Exit;
   if TMouseButton.mbLeft = Button then begin
     DecViewState(TViewState.Pressed);
     if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
@@ -1959,7 +1963,7 @@ var
   View: IView;
 begin
   if State = TViewState.None then Exit;
-  if csDestroying in ComponentState then Exit;
+  if (csDestroying in ComponentState) or (csDesigning in ComponentState) then Exit;
   for I := 0 to Controls.Count - 1 do begin
     if Supports(Controls.Items[I], IView, View) then
       View.IncViewState(State);
@@ -2489,7 +2493,7 @@ begin
                 VT := (H - (VH + Control.Margins.Top + Control.Margins.Bottom)) / 2 + Padding.Top + Control.Margins.Top;
             end;
           end else
-            VH := H - Control.Margins.Bottom;
+            VH := H - Control.Margins.Bottom - VT;
         end else begin
           VH := Control.Height;
           case FGravity of
@@ -2603,7 +2607,7 @@ begin
                 VL := (W - (VW + Control.Margins.Left + Control.Margins.Right)) / 2 + Padding.Left + Control.Margins.Left;
             end;
           end else
-            VW := W - Control.Margins.Right;
+            VW := W - Control.Margins.Right; // - VL;
         end else begin
           VW := Control.Width;
           case FGravity of

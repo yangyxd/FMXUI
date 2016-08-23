@@ -17,7 +17,18 @@ uses
   ComponentDesigner, DesignIntf, DesignEditors,
   DesignerTypes, PropertyCategories,
   System.Classes, System.Types, System.TypInfo, System.UITypes,
-  FMX.Types, FMX.Styles;
+  FMX.Types, FMX.Styles, FMX.Controls, FMX.StdCtrls, FMX.Edit;
+
+type
+  TViewControlEditor = class(TDefaultEditor)
+  private
+  protected
+    procedure DesignerModified;
+  public
+    function GetVerbCount: Integer; override;
+    function GetVerb(Index: Integer): string; override;
+    procedure ExecuteVerb(Index: Integer); override;
+  end;
 
 {$IFDEF MSWINDOWS}
 // 设置环境变量
@@ -48,6 +59,9 @@ begin
   RegisterComponents(PageName, [TTextView]);
   RegisterComponents(PageName, [TButtonView]);
 
+  RegisterComponentEditor(TView, TViewControlEditor);
+  //RegisterComponentEditor(TCustomButton, TViewControlEditor);
+  //RegisterComponentEditor(TCustomEdit, TViewControlEditor);
   //RegisterPropertyEditor(TypeInfo(TImageIndex), TView, '', TImageIndexProperty);
 end;
 
@@ -67,6 +81,59 @@ begin
   RemoveEnumElementAliases(TypeInfo(TLayoutGravity));
   RemoveEnumElementAliases(TypeInfo(TViewSize));
   RemoveEnumElementAliases(TypeInfo(TDrawablePosition));
+end;
+
+{ TViewControlEditor }
+
+procedure TViewControlEditor.DesignerModified;
+begin
+  if Designer <> nil then
+    Designer.Modified;
+end;
+
+procedure TViewControlEditor.ExecuteVerb(Index: Integer);
+begin
+  if not (Component is TControl) then Exit;
+  case Index of
+    0:
+      begin
+        if TControl(Component).Index > 0 then
+          TControl(Component).Index := TControl(Component).Index - 1;
+      end;
+    1:
+      begin
+        if TControl(Component).Index < TControl(Component).Parent.ChildrenCount - 1 then
+          TControl(Component).Index := TControl(Component).Index + 1;
+      end;
+    2:
+      begin
+        TControl(Component).Index := 0;
+      end;
+    3:
+      begin
+        TControl(Component).Index := TControl(Component).Parent.ChildrenCount - 1;
+      end;
+  end;
+  Designer.SelectComponent(Component);
+  DesignerModified;
+end;
+
+function TViewControlEditor.GetVerb(Index: Integer): string;
+begin
+  case Index of
+    0: Result := '前移';
+    1: Result := '后移';
+    2: Result := '移至最前';
+    3: Result := '移至最后';
+  end;
+end;
+
+function TViewControlEditor.GetVerbCount: Integer;
+begin
+  if (Component is TControl) and (TControl(Component).Parent is TLinearLayout) then
+    Result := 4
+  else
+    Result := 0;
 end;
 
 initialization
