@@ -582,6 +582,7 @@ type
     property DrawState: TViewState read GetDrawState;
   published
     property Align;
+    property Action;
     property Anchors;
     property AdjustViewBounds: Boolean read GetAdjustViewBounds write SetAdjustViewBounds default True;
     property Background: TDrawable read GetBackground write SetBackground;
