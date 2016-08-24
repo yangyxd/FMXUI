@@ -15,15 +15,20 @@ type
   TOnDrawText = procedure (Sender: TObject; Canvas: TCanvas;
     Text: UI.Base.TTextSettings; R: TRectF) of object;
 
+  TOnDrawViewBackgroud = procedure (Sender: TObject; Canvas: TCanvas;
+    const R: TRectF; State: TViewState) of object;
+
 type
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TTextView = class(TView, ICaption)
   private
-    FOnTextChange: TNotifyEvent;
     FText: UI.Base.TTextSettings;
+    FTextHint: string;
     FDrawable: TDrawableIcon;
     FIsChanging: Boolean;
     FOnDrawText: TOnDrawText;
+    FOnTextChange: TNotifyEvent;
+    FOnDrawViewBackgroud: TOnDrawViewBackgroud;
     function GetAutoSize: Boolean;
     function GetText: string;
     procedure SetAutoSize(const Value: Boolean);
@@ -33,12 +38,14 @@ type
     procedure SetDrawable(const Value: TDrawableIcon);
     function GetDrawableWidth(): Integer;
     function GetDrawableHeight(): Integer;
+    procedure SetTextHint(const Value: string);
   protected
     procedure Resize; override;
     procedure Loaded; override;
     procedure DblClick; override;
     procedure ImagesChanged; override;
     procedure PaintBackground; override;
+    procedure DoDrawBackground(var R: TRectF); virtual;
     procedure DoPaintBackground(var R: TRectF); virtual;
     procedure DoPaintText(var R: TRectF); virtual;
     procedure SetGravity(const Value: TLayoutGravity); override;
@@ -61,38 +68,24 @@ type
   published
     property AutoSize: Boolean read GetAutoSize write SetAutoSize default True;
     property Text: string read GetText write SetText stored TextStored;
+    property TextHint: string read FTextHint write SetTextHint;
     property TextSettings: UI.Base.TTextSettings read FText write SetTextSettings;
     property Drawable: TDrawableIcon read GetDrawable write SetDrawable;
     property OnTextChange: TNotifyEvent read FOnTextChange write FOnTextChange;
     property OnDrawText: TOnDrawText read FOnDrawText write FOnDrawText;
+    property OnDrawBackgroud: TOnDrawViewBackgroud read FOnDrawViewBackgroud
+      write FOnDrawViewBackgroud;
   end;
 
 type
-  TOnDrawViewBackgroud = procedure (Sender: TObject; Canvas: TCanvas;
-    R: TRectF; State: TViewState; BgBrush: TViewBrush;
-    BorderBrush: TStrokeBrush) of object;
-
-type
   TStyleView = class(TTextView)
-  private
-    FDefaultBackground: TViewBrush;
-    FDefaultPenBrush: TStrokeBrush;
-    FOnDrawViewBackgroud: TOnDrawViewBackgroud;
   protected
     procedure PaintBackground; override;
-    procedure DoPaintBackground(var R: TRectF); override;
     procedure DoDrawStyleControl(var R: TRectF); virtual;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
-    // Ä¬ÈÏ±³¾°Ë¢×Ó
-    property DefaultBgBrush: TViewBrush read FDefaultBackground;
-    // Ä¬ÈÏ±ß¿òË¢×Ó
-    property DefaultBorderBrush: TStrokeBrush read FDefaultPenBrush;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-  published
-    property OnDrawViewBackgroud: TOnDrawViewBackgroud read FOnDrawViewBackgroud
-      write FOnDrawViewBackgroud;
   end;
 
 type
@@ -105,6 +98,8 @@ type
   protected
     function GetDefaultSize: TSizeF; override;
     procedure Click; override;
+    function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
+    function CreateBackground: TDrawable; override;
   public
     constructor Create(AOwner: TComponent); override;
   protected
@@ -178,7 +173,7 @@ destructor TTextView.Destroy;
 begin
   FreeAndNil(FText);
   FreeAndNil(FDrawable);
-  inherited;
+  inherited Destroy;
 end;
 
 procedure TTextView.DoChanged(Sender: TObject);
@@ -197,6 +192,12 @@ begin
   DoChanged(Sender);
 end;
 
+procedure TTextView.DoDrawBackground(var R: TRectF);
+begin
+  if Assigned(FOnDrawViewBackgroud) then
+    FOnDrawViewBackgroud(Self, Canvas, R, DrawState);
+end;
+
 procedure TTextView.DoLayoutChanged(Sender: TObject);
 begin
   if FText.AutoSize then
@@ -206,7 +207,7 @@ end;
 
 procedure TTextView.DoPaintBackground(var R: TRectF);
 begin
-  R := RectF(R.Left + Padding.Left, R.Left + Padding.Top,
+  R := RectF(R.Left + Padding.Left, R.Top + Padding.Top,
     R.Right - Padding.Right, R.Bottom - Padding.Bottom);
   if Assigned(FDrawable) and (not FDrawable.IsEmpty) then
     FDrawable.AdjustDraw(Canvas, R, True);
@@ -216,10 +217,14 @@ end;
 
 procedure TTextView.DoPaintText(var R: TRectF);
 begin
-  if Assigned(FOnDrawText) then
-    FOnDrawText(Self, Canvas, FText, R)
-  else
-    FText.Draw(Canvas, R, GetAbsoluteOpacity, DrawState);
+  if FText.Text = '' then
+    FText.Draw(Canvas, FTextHint, R, GetAbsoluteOpacity, TViewState(8))
+  else begin
+    if Assigned(FOnDrawText) then
+      FOnDrawText(Self, Canvas, FText, R)
+    else
+      FText.Draw(Canvas, R, GetAbsoluteOpacity, DrawState);
+  end;
 end;
 
 function TTextView.GetAutoSize: Boolean;
@@ -303,8 +308,11 @@ procedure TTextView.PaintBackground;
 var
   R: TRectF;
 begin
-  inherited PaintBackground;
   R := RectF(0, 0, Width, Height);
+  if Assigned(FOnDrawViewBackgroud) then
+    DoDrawBackground(R)
+  else
+    inherited PaintBackground;
   DoPaintBackground(R);
 end;
 
@@ -375,6 +383,15 @@ begin
   FText.Text := Value;
 end;
 
+procedure TTextView.SetTextHint(const Value: string);
+begin
+  if FTextHint <> Value then begin
+    FTextHint := Value;
+    if FText.Text = '' then
+      DoChanged(FText);
+  end;
+end;
+
 procedure TTextView.SetTextSettings(const Value: UI.Base.TTextSettings);
 begin
   FText.Assign(Value);
@@ -395,7 +412,7 @@ end;
 
 function TStyleView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
 begin
-  if Assigned(FOnDrawViewBackgroud) or (FBackground = nil) or (FBackground.IsEmpty) then
+  if Assigned(FOnDrawViewBackgroud) then
     Result := True
   else
     Result := inherited CanRePaintBk(View, State);
@@ -408,81 +425,18 @@ end;
 
 destructor TStyleView.Destroy;
 begin
-  FreeAndNil(FDefaultBackground);
-  FreeAndNil(FDefaultPenBrush);
   inherited Destroy;
 end;
 
 procedure TStyleView.DoDrawStyleControl(var R: TRectF);
-var
-  AState: TViewState;
-  ABorderColor, ABgColor: TAlphaColor;
-  RX, RY: Single;
 begin
-  AState := DrawState;
-  ABorderColor := $7FCCCCCC;
-  ABgColor := $FFF0F1F2;
-  case AState of
-    TViewState.Pressed:
-      begin
-        ABorderColor := $FFCCCCCC;
-        ABgColor := $FFE0E0E0;
-      end;
-    TViewState.Focused, TViewState.Activated:
-      begin
-        ABorderColor := $AFCCCCCC;
-      end;
-    TViewState.Hovered, TViewState.Selected,
-    TViewState.Checked:
-      begin
-        ABorderColor := $AFCCCCCC;
-      end;
-    TViewState.Enabled:
-      begin
-        ABgColor := $FFE0E0E0;
-      end;
-  end;
-
-  if FBackground <> nil then begin
-    RX := FBackground.XRadius;
-    RY := FBackground.YRadius;
-  end else begin
-    RX := 0;
-    RY := 0;
-  end;
-
-  if FDefaultBackground = nil then
-    FDefaultBackground := TViewBrush.Create(TBrushKind.Solid, ABgColor);
-  FDefaultBackground.Color := ABgColor;
-  if FDefaultPenBrush = nil then
-    FDefaultPenBrush := TStrokeBrush.Create(TBrushKind.Solid, ABorderColor);
-  FDefaultPenBrush.Color := ABorderColor;
-
   if Assigned(FOnDrawViewBackgroud) then
-    FOnDrawViewBackgroud(Self, Canvas, R, AState, FDefaultBackground, FDefaultPenBrush)
-  else begin
-    Canvas.FillRect(R, RX, RY, AllCorners, Opacity, FDefaultBackground);
-    Canvas.DrawRect(R, RX, RY, AllCorners, Opacity, FDefaultPenBrush);
-  end;
-end;
-
-procedure TStyleView.DoPaintBackground(var R: TRectF);
-begin
-  if Assigned(FOnDrawViewBackgroud) or (FBackground = nil) or (FBackground.IsEmpty) then
-    DoDrawStyleControl(R);
-  inherited DoPaintBackground(R);
+    FOnDrawViewBackgroud(Self, Canvas, R, DrawState);
 end;
 
 procedure TStyleView.PaintBackground;
-var
-  R: TRectF;
 begin
-  if not Assigned(FOnDrawViewBackgroud) then begin
-    inherited PaintBackground;
-  end else begin
-    R := RectF(0, 0, Width, Height);
-    DoPaintBackground(R);
-  end;
+  inherited PaintBackground;
 end;
 
 { TButtonView }
@@ -494,6 +448,19 @@ begin
   begin
     Click;
     Key := 0;
+  end;
+end;
+
+function TButtonView.CanRePaintBk(const View: IView;
+  State: TViewState): Boolean;
+var
+  Border: TViewBorder;
+begin
+  Result := inherited CanRePaintBk(View, State);
+  if (not Result) and (Assigned(FBackground)) then begin
+    Border := TDrawableBorder(FBackground).Border;
+    Result := Assigned(Border) and (Border.Style <> TViewBorderStyle.None) and
+      (Border.Width > 0) and (Border.Color.GetColor(State) <> TAlphaColorRec.Null);
   end;
 end;
 
@@ -524,6 +491,29 @@ begin
   CanFocus := True;
   Padding.Rect := RectF(4, 4, 4, 4);
   Gravity := TLayoutGravity.Center;
+end;
+
+function TButtonView.CreateBackground: TDrawable;
+begin
+  Result := TDrawableBorder.Create(Self, TBrushKind.Solid, $FFF0F1F2);
+  Result.ItemPressed.Color := $FFE0E0E0;
+  Result.ItemPressed.DefaultColor := Result.ItemPressed.Color;
+  Result.ItemPressed.Kind := TBrushKind.Solid;
+  Result.ItemEnabled.Color := $FFD1D2D3;
+  Result.ItemEnabled.DefaultColor := Result.ItemEnabled.Color;
+  Result.ItemEnabled.Kind := TBrushKind.Solid;
+  with TDrawableBorder(Result).Border do begin
+    Width := 1;
+    Style := TViewBorderStyle.RectBorder;
+    Color.Default := $7FCCCCCC;
+    Color.Pressed := $FFCCCCCC;
+    Color.Focused := $AFCCCCCC;
+    Color.Hovered := $AFCCCCCC;
+    Color.Checked := $AFCCCCCC;
+    Color.Activated := $AFCCCCCC;
+  end;
+  Result.OnChanged := DoBackgroundChanged;
+  Result.OnChanged := DoBackgroundChanged;
 end;
 
 function TButtonView.GetDefaultSize: TSizeF;

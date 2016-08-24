@@ -10,7 +10,7 @@ procedure Register;
 implementation
 
 uses
-  UI.Base, UI.Standard,
+  UI.Base, UI.Standard, UI.Edit,
   {$IFDEF MSWINDOWS}
   Windows, Registry,
   {$ENDIF}
@@ -58,6 +58,7 @@ begin
 
   RegisterComponents(PageName, [TTextView]);
   RegisterComponents(PageName, [TButtonView]);
+  RegisterComponents(PageName, [TEditView]);
 
   RegisterComponentEditor(TView, TViewControlEditor);
   //RegisterComponentEditor(TCustomButton, TViewControlEditor);
@@ -74,6 +75,8 @@ begin
     ['WrapContent', 'FillParent']);
   AddEnumElementAliases(TypeInfo(TDrawablePosition),
     ['Left', 'Right', 'Top', 'Bottom']);
+  AddEnumElementAliases(TypeInfo(TViewBorderStyle),
+    ['None', 'RectBorder', 'LineBottom', 'LineSimple']);
 end;
 
 procedure UnregisterAliases;
@@ -138,7 +141,8 @@ end;
 
 initialization
   RegisterAliases;
-  RegisterFmxClasses([TView, TLinearLayout, TRelativeLayout]);
+  RegisterFmxClasses([TView, TLinearLayout, TRelativeLayout,
+    TTextView, TButtonView, TEditView]);
 
 finalization
   UnregisterAliases;

@@ -4,7 +4,7 @@ interface
 
 uses
   UI.Base,
-  System.Generics.Collections,
+  System.Generics.Collections, System.Rtti,
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   {$IFDEF ANDROID}
   FMX.Platform.Android,
@@ -17,7 +17,7 @@ type
   /// <summary>
   /// Frame 参数
   /// </summary>
-  TFrameParams = TDictionary<string, Variant>;
+  TFrameParams = TDictionary<string, TValue>;
 
   /// <summary>
   /// Frame 视图, Frame 切换处理
@@ -232,7 +232,7 @@ begin
   if FParams = nil then
     Result := ''
   else
-    Result := FParams.Items[CS_Title];
+    Result := FParams.Items[CS_Title].ToString;
 end;
 
 procedure TFrameView.Hide;

@@ -39,6 +39,7 @@ contains
   UI.Debug in 'source\UI.Debug.pas',
   UI.Standard in 'source\UI.Standard.pas',
   UI.Reg in 'source\UI.Reg.pas',
-  UI.Frame in 'source\UI.Frame.pas';
+  UI.Frame in 'source\UI.Frame.pas',
+  UI.Edit in 'source\UI.Edit.pas';
 
 end.
