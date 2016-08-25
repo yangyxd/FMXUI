@@ -77,6 +77,8 @@ begin
     ['Left', 'Right', 'Top', 'Bottom']);
   AddEnumElementAliases(TypeInfo(TViewBorderStyle),
     ['None', 'RectBorder', 'LineBottom', 'LineSimple']);
+  AddEnumElementAliases(TypeInfo(TViewBrushKind),
+    ['None', 'Solid', 'Gradient', 'Bitmap', 'Resource', 'Patch9Bitmap']);
 end;
 
 procedure UnregisterAliases;

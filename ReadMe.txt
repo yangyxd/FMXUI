@@ -12,6 +12,7 @@ FMXUI  (YangYxd)
   
   TTextView 文本视图
   TButtonView 按钮视图
+  TEditView 编辑框视图
   
 【参考资料】
 
@@ -24,7 +25,7 @@ FMXUI  (YangYxd)
 【联系我们】
 
   URL: http://www.cnblogs.com/yangyxd
-  SVR: https://github.com/yangyxd/FMXUI
+  SVN: https://github.com/yangyxd/FMXUI
 
   
   yangyxd QQ: 2514718952 

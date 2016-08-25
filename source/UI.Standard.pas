@@ -495,22 +495,22 @@ end;
 
 function TButtonView.CreateBackground: TDrawable;
 begin
-  Result := TDrawableBorder.Create(Self, TBrushKind.Solid, $FFF0F1F2);
+  Result := TDrawableBorder.Create(Self, TViewBrushKind.Solid, $FFF0F1F2);
   Result.ItemPressed.Color := $FFE0E0E0;
   Result.ItemPressed.DefaultColor := Result.ItemPressed.Color;
-  Result.ItemPressed.Kind := TBrushKind.Solid;
+  Result.ItemPressed.Kind := TViewBrushKind.Solid;
   Result.ItemEnabled.Color := $FFD1D2D3;
   Result.ItemEnabled.DefaultColor := Result.ItemEnabled.Color;
-  Result.ItemEnabled.Kind := TBrushKind.Solid;
+  Result.ItemEnabled.Kind := TViewBrushKind.Solid;
   with TDrawableBorder(Result).Border do begin
     Width := 1;
     Style := TViewBorderStyle.RectBorder;
-    Color.Default := $7FCCCCCC;
-    Color.Pressed := $FFCCCCCC;
-    Color.Focused := $AFCCCCCC;
-    Color.Hovered := $AFCCCCCC;
-    Color.Checked := $AFCCCCCC;
-    Color.Activated := $AFCCCCCC;
+    Color.Default := $AFCCCCCC;
+    Color.Pressed := $FFC0C0C0;
+    Color.Focused := $EFCCCCCC;
+    Color.Hovered := $EFCCCCCC;
+    Color.Checked := $EFCCCCCC;
+    Color.Activated := $EFCCCCCC;
   end;
   Result.OnChanged := DoBackgroundChanged;
   Result.OnChanged := DoBackgroundChanged;

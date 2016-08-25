@@ -43,8 +43,39 @@ type
   /// </summary>
   TViewSize = (WrapContent {ÀÊƒ⁄»›}, FillParent {ÃÓ≥‰∏∏º∂});
 
-  TViewBrushBitmap = class(TBrushBitmap);
-  TViewBrush = class(TBrush);
+  TViewBrushKind = (None, Solid, Gradient, Bitmap, Resource, Patch9Bitmap);
+
+  /// <summary>
+  /// 9 π¨∏ÒŒªÕº
+  /// </summary>
+  TPatch9Bitmap = class(TBrushBitmap)
+  private
+    FBounds: TBounds;
+    procedure SetBounds(const Value: TBounds);
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Assign(Source: TPersistent); override;
+  published
+    property Bounds: TBounds read FBounds write SetBounds;
+  end;
+
+  TViewBrush = class(TBrush)
+  private
+    function GetKind: TViewBrushKind;
+    procedure SetKind(const Value: TViewBrushKind);
+    function IsKindStored: Boolean;
+    function IsPatch9BitmapStored: Boolean;
+    function GetBitmap: TPatch9Bitmap;
+    procedure SetBitmap(const Value: TPatch9Bitmap);
+  protected
+  public
+    constructor Create(const ADefaultKind: TViewBrushKind; const ADefaultColor: TAlphaColor);
+    destructor Destroy; override;
+  published
+    property Kind: TViewBrushKind read GetKind write SetKind stored IsKindStored;
+    property Bitmap: TPatch9Bitmap read GetBitmap write SetBitmap stored IsPatch9BitmapStored;
+  end;
 
   /// <summary>
   /// ªÊ÷∆Œª÷√
@@ -60,44 +91,51 @@ type
     FOnChanged: TNotifyEvent;
 
     FDefaultColor: TAlphaColor;
-    FDefaultKind: TBrushKind;
+    FDefaultKind: TViewBrushKind;
 
-    FDefault: TViewBrush;
-    FPressed: TViewBrush;
-    FFocused: TViewBrush;
-    FHovered: TViewBrush;
-    FSelected: TViewBrush;
-    FChecked: TViewBrush;
-    FEnabled: TViewBrush;
-    FActivated: TViewBrush;
 
     FXRadius, FYRadius: Single;
     FIsEmpty: Boolean;
 
-    function GetStateBrush(const State: TViewState): TViewBrush; overload;
-    procedure GetStateBrush(const State: TViewState; var V: TViewBrush); overload;
-    procedure SetStateBrush(const State: TViewState; const V: TViewBrush);
-    function GetValue(const Index: Integer): TViewBrush;
-    procedure SetValue(const Index: Integer; const Value: TViewBrush);
-    function GetBrush(const State: TViewState; AutoCreate: Boolean): TViewBrush;
+    function GetStateBrush(const State: TViewState): TBrush; overload;
+    procedure GetStateBrush(const State: TViewState; var V: TBrush); overload;
+    procedure SetStateBrush(const State: TViewState; const V: TBrush);
+    function GetBrush(const State: TViewState; AutoCreate: Boolean): TBrush;
     procedure SetXRadius(const Value: Single);
     procedure SetYRadius(const Value: Single);
   protected
+    FDefault: TBrush;
+    FPressed: TBrush;
+    FFocused: TBrush;
+    FHovered: TBrush;
+    FSelected: TBrush;
+    FChecked: TBrush;
+    FEnabled: TBrush;
+    FActivated: TBrush;
+
     function GetEmpty: Boolean; virtual;
     function GetDrawRect(const ALeft, ATop, ARight, ABottom: Single): TRectF; virtual;
+    function GetValue(const Index: Integer): TBrush;
+    procedure SetValue(const Index: Integer; const Value: TBrush);
 
-    procedure CreateBrush(var Value: TViewBrush);
     procedure DoChange(Sender: TObject);
+
+    procedure FillRect9Patch(Canvas: TCanvas; const ARect: TRectF; const XRadius, YRadius: Single; const ACorners: TCorners;
+      const AOpacity: Single; const ABrush: TViewBrush; const ACornerType: TCornerType = TCornerType.Round);
+    procedure FillRect(Canvas: TCanvas; const ARect: TRectF; const XRadius, YRadius: Single; const ACorners: TCorners;
+      const AOpacity: Single; const ABrush: TBrush; const ACornerType: TCornerType = TCornerType.Round); inline;
     procedure DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState); virtual;
   public
-    constructor Create(View: IView; const ADefaultKind: TBrushKind = TBrushKind.None;
+    constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
     destructor Destroy; override;
 
-    function GetStateItem(AState: TViewState): TViewBrush;
+    function GetStateItem(AState: TViewState): TBrush;
 
     procedure Assign(Source: TPersistent); override;
     procedure Change; virtual;
+    procedure CreateBrush(var Value: TBrush); overload; virtual; abstract;
+    function CreateBrush(): TBrush; overload;
 
     procedure Draw(Canvas: TCanvas); virtual;
     procedure DrawTo(Canvas: TCanvas; const R: TRectF); virtual;
@@ -117,15 +155,6 @@ type
     // ±ﬂøÚ‘≤Ω«
     property XRadius: Single read FXRadius write SetXRadius;
     property YRadius: Single read FYRadius write SetYRadius;
-
-    property ItemDefault: TViewBrush index 0 read GetValue write SetValue;
-    property ItemPressed: TViewBrush index 1 read GetValue write SetValue;
-    property ItemFocused: TViewBrush index 2 read GetValue write SetValue;
-    property ItemHovered: TViewBrush index 3 read GetValue write SetValue;
-    property ItemSelected: TViewBrush index 4 read GetValue write SetValue;
-    property ItemChecked: TViewBrush index 5 read GetValue write SetValue;
-    property ItemEnabled: TViewBrush index 6 read GetValue write SetValue;
-    property ItemActivated: TViewBrush index 7 read GetValue write SetValue;
   end;
 
   /// <summary>
@@ -137,27 +166,30 @@ type
     procedure SetPadding(const Value: TBounds);
     function GetPaddings: string;
     procedure SetPaddings(const Value: string);
+    function GetValue(const Index: Integer): TViewBrush;
+    procedure SetValue(const Index: Integer; const Value: TViewBrush);
   protected
     function GetDrawRect(const ALeft, ATop, ARight, ABottom: Single): TRectF; override;
   public
-    constructor Create(View: IView; const ADefaultKind: TBrushKind = TBrushKind.None;
+    constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
+    procedure CreateBrush(var Value: TBrush); override;
   published
     property Padding: TBounds read FPadding write SetPadding;
     property Paddings: string read GetPaddings write SetPaddings;
 
     property XRadius;
     property YRadius;
-    property ItemDefault;
-    property ItemPressed;
-    property ItemFocused;
-    property ItemHovered;
-    property ItemSelected;
-    property ItemChecked;
-    property ItemEnabled;
-    property ItemActivated;
+    property ItemDefault: TViewBrush index 0 read GetValue write SetValue;
+    property ItemPressed: TViewBrush index 1 read GetValue write SetValue;
+    property ItemFocused: TViewBrush index 2 read GetValue write SetValue;
+    property ItemHovered: TViewBrush index 3 read GetValue write SetValue;
+    property ItemSelected: TViewBrush index 4 read GetValue write SetValue;
+    property ItemChecked: TViewBrush index 5 read GetValue write SetValue;
+    property ItemEnabled: TViewBrush index 6 read GetValue write SetValue;
+    property ItemActivated: TViewBrush index 7 read GetValue write SetValue;
   end;
 
   /// <summary>
@@ -211,7 +243,7 @@ type
     function GetEmpty: Boolean; override;
     procedure DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState); override;
   public
-    constructor Create(View: IView; const ADefaultKind: TBrushKind = TBrushKind.None;
+    constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
@@ -261,7 +293,7 @@ type
     function GetEmpty: Boolean; override;
     function ImageIndexStored: Boolean; virtual;
   public
-    constructor Create(View: IView; const ADefaultKind: TBrushKind = TBrushKind.None;
+    constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
@@ -270,6 +302,7 @@ type
     /// </summary>
     procedure AdjustDraw(Canvas: TCanvas; var R: TRectF; ExecDraw: Boolean);
 
+    procedure CreateBrush(var Value: TBrush); override;
     procedure Draw(Canvas: TCanvas); override;
     procedure DrawTo(Canvas: TCanvas; const R: TRectF); override;
     procedure DrawImage(Canvas: TCanvas; Index: Integer; const R: TRectF); virtual;
@@ -283,14 +316,14 @@ type
 
     property XRadius;
     property YRadius;
-    property ItemDefault;
-    property ItemPressed;
-    property ItemFocused;
-    property ItemHovered;
-    property ItemSelected;
-    property ItemChecked;
-    property ItemEnabled;
-    property ItemActivated;
+    property ItemDefault: TBrush index 0 read GetValue write SetValue;
+    property ItemPressed: TBrush index 1 read GetValue write SetValue;
+    property ItemFocused: TBrush index 2 read GetValue write SetValue;
+    property ItemHovered: TBrush index 3 read GetValue write SetValue;
+    property ItemSelected: TBrush index 4 read GetValue write SetValue;
+    property ItemChecked: TBrush index 5 read GetValue write SetValue;
+    property ItemEnabled: TBrush index 6 read GetValue write SetValue;
+    property ItemActivated: TBrush index 7 read GetValue write SetValue;
   end;
 
   /// <summary>
@@ -915,7 +948,7 @@ end;
 procedure TDrawableBase.Assign(Source: TPersistent);
 
   procedure AssignItem(State: TViewState; const Src: TDrawableBase);
-  var V: TViewBrush;
+  var V: TBrush;
   begin
     Src.GetStateBrush(State, V);
     if Assigned(V) then
@@ -954,7 +987,7 @@ begin
   DoChange(Self);
 end;
 
-constructor TDrawableBase.Create(View: IView; const ADefaultKind: TBrushKind;
+constructor TDrawableBase.Create(View: IView; const ADefaultKind: TViewBrushKind;
   const ADefaultColor: TAlphaColor);
 begin
   FView := View;
@@ -975,12 +1008,9 @@ begin
     FIsEmpty := True;
 end;
 
-procedure TDrawableBase.CreateBrush(var Value: TViewBrush);
+function TDrawableBase.CreateBrush: TBrush;
 begin
-  if Assigned(Value) then
-    FreeAndNil(Value);
-  Value := TViewBrush.Create(FDefaultKind, FDefaultColor);
-  Value.OnChanged := DoChange;
+  CreateBrush(Result);
 end;
 
 destructor TDrawableBase.Destroy;
@@ -1008,12 +1038,12 @@ procedure TDrawableBase.DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewSt
 begin
 end;
 
-function TDrawableBase.GetValue(const Index: Integer): TViewBrush;
+function TDrawableBase.GetValue(const Index: Integer): TBrush;
 begin
   Result := GetBrush(TViewState(Index), False);
 end;
 
-function TDrawableBase.GetBrush(const State: TViewState; AutoCreate: Boolean): TViewBrush;
+function TDrawableBase.GetBrush(const State: TViewState; AutoCreate: Boolean): TBrush;
 begin
   GetStateBrush(State, Result);
   if (not Assigned(Result)) and
@@ -1044,12 +1074,12 @@ begin
     ((FActivated = nil) or (FActivated.Kind = TBrushKind.None));
 end;
 
-function TDrawableBase.GetStateBrush(const State: TViewState): TViewBrush;
+function TDrawableBase.GetStateBrush(const State: TViewState): TBrush;
 begin
   GetStateBrush(State, Result);
 end;
 
-procedure TDrawableBase.GetStateBrush(const State: TViewState; var V: TViewBrush);
+procedure TDrawableBase.GetStateBrush(const State: TViewState; var V: TBrush);
 begin
   case State of
     TViewState.None: V := FDefault;
@@ -1065,9 +1095,9 @@ begin
   end;
 end;
 
-function TDrawableBase.GetStateItem(AState: TViewState): TViewBrush;
+function TDrawableBase.GetStateItem(AState: TViewState): TBrush;
 
-  function BrushIsEmpty(V: TViewBrush): Boolean;
+  function BrushIsEmpty(V: TBrush): Boolean;
   begin
     if (not Assigned(V)) or (V.Kind = TBrushKind.None) or
       ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid)) then
@@ -1095,7 +1125,7 @@ end;
 
 procedure TDrawableBase.Draw(Canvas: TCanvas);
 var
-  V: TViewBrush;
+  V: TBrush;
   R: TRectF;
   AState: TViewState;
 begin
@@ -1105,13 +1135,13 @@ begin
   R := GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight);
   V := GetStateItem(AState);
   if V <> nil then
-    Canvas.FillRect(R,FXRadius, FYRadius, AllCorners, FView.GetOpacity, V);
+    FillRect(Canvas, R, FXRadius, FYRadius, AllCorners, FView.GetOpacity, V);
   DoDrawed(Canvas, R, AState);
 end;
 
 procedure TDrawableBase.DrawTo(Canvas: TCanvas; const R: TRectF);
 var
-  V: TViewBrush;
+  V: TBrush;
   VR: TRectF;
   AState: TViewState;
 begin
@@ -1121,8 +1151,40 @@ begin
   V := GetStateItem(AState);
   VR := GetDrawRect(R.Left, R.Top, R.Right, R.Bottom);
   if V <> nil then
-    Canvas.FillRect(VR, FXRadius, FYRadius, AllCorners, FView.GetOpacity, V);
+    FillRect(Canvas, VR, FXRadius, FYRadius, AllCorners, FView.GetOpacity, V);
   DoDrawed(Canvas, VR, AState);
+end;
+
+procedure TDrawableBase.FillRect(Canvas: TCanvas; const ARect: TRectF;
+  const XRadius, YRadius: Single; const ACorners: TCorners;
+  const AOpacity: Single; const ABrush: TBrush;
+  const ACornerType: TCornerType = TCornerType.Round);
+begin
+  if (Ord(ABrush.Kind) = Ord(TViewBrushKind.Patch9Bitmap)) and (ABrush is TViewBrush) then begin
+    FillRect9Patch(Canvas, ARect, XRadius, YRadius, ACorners, AOpacity, TViewBrush(ABrush), ACornerType);
+  end else
+    Canvas.FillRect(ARect, XRadius, YRadius, ACorners, AOpacity, ABrush, ACornerType);
+end;
+
+procedure TDrawableBase.FillRect9Patch(Canvas: TCanvas; const ARect: TRectF;
+  const XRadius, YRadius: Single; const ACorners: TCorners;
+  const AOpacity: Single; const ABrush: TViewBrush;
+  const ACornerType: TCornerType);
+var
+  Bmp: TPatch9Bitmap;
+begin
+  if (ABrush.Bitmap = nil) or (ABrush.Bitmap.Bitmap = nil) or
+    ABrush.Bitmap.Bitmap.IsEmpty then
+    Exit;
+  Bmp := TPatch9Bitmap(ABrush.Bitmap);
+  if Bmp.Bounds.Empty then begin
+    ABrush.OnChanged := nil;
+    ABrush.Kind := TViewBrushKind.Bitmap;
+    Canvas.FillRect(ARect, XRadius, YRadius, ACorners, AOpacity, ABrush, ACornerType);
+    ABrush.Kind := TViewBrushKind.Patch9Bitmap;
+    ABrush.OnChanged := ABrush.BitmapChanged;
+    Exit;
+  end;
 end;
 
 procedure TDrawableBase.SetDrawable(const Value: TDrawableBase);
@@ -1174,7 +1236,7 @@ begin
   V.Kind := TBrushKind.Bitmap;
 end;
 
-procedure TDrawableBase.SetStateBrush(const State: TViewState; const V: TViewBrush);
+procedure TDrawableBase.SetStateBrush(const State: TViewState; const V: TBrush);
 begin
   case State of
     TViewState.None: FDefault := V;
@@ -1188,7 +1250,7 @@ begin
   end;
 end;
 
-procedure TDrawableBase.SetValue(const Index: Integer; const Value: TViewBrush);
+procedure TDrawableBase.SetValue(const Index: Integer; const Value: TBrush);
 begin
   SetBrush(TViewState(Index), Value);
 end;
@@ -1224,12 +1286,20 @@ begin
   inherited Assign(Source);
 end;
 
-constructor TDrawable.Create(View: IView; const ADefaultKind: TBrushKind;
+constructor TDrawable.Create(View: IView; const ADefaultKind: TViewBrushKind;
   const ADefaultColor: TAlphaColor);
 begin
   FPadding := TBounds.Create(TRectF.Empty);
   FPadding.OnChange := DoChange;
   inherited Create(View, ADefaultKind, ADefaultColor);
+end;
+
+procedure TDrawable.CreateBrush(var Value: TBrush);
+begin
+  if Assigned(Value) then
+    FreeAndNil(Value);
+  Value := TViewBrush.Create(FDefaultKind, FDefaultColor);
+  Value.OnChanged := DoChange;
 end;
 
 destructor TDrawable.Destroy;
@@ -1251,6 +1321,11 @@ begin
   Result := GetBoundsFloat(FPadding);
 end;
 
+function TDrawable.GetValue(const Index: Integer): TViewBrush;
+begin
+  Result := inherited GetValue(Index) as TViewBrush;
+end;
+
 procedure TDrawable.SetPadding(const Value: TBounds);
 begin
   FPadding.Assign(Value);
@@ -1262,6 +1337,11 @@ var
 begin
   if Assigned(Padding) and GetFloatValue(Value, V) then
     Padding.Rect := RectF(V, V, V, V);
+end;
+
+procedure TDrawable.SetValue(const Index: Integer; const Value: TViewBrush);
+begin
+  inherited SetValue(Index, Value);
 end;
 
 { TDrawableIcon }
@@ -1332,7 +1412,7 @@ begin
   inherited Assign(Source);
 end;
 
-constructor TDrawableIcon.Create(View: IView; const ADefaultKind: TBrushKind;
+constructor TDrawableIcon.Create(View: IView; const ADefaultKind: TViewBrushKind;
   const ADefaultColor: TAlphaColor);
 begin
   FView := View;
@@ -1343,6 +1423,14 @@ begin
   FHeight := 16;
   FPosition := TDrawablePosition.Left;
   FPadding := 4;
+end;
+
+procedure TDrawableIcon.CreateBrush(var Value: TBrush);
+begin
+  if Assigned(Value) then
+    FreeAndNil(Value);
+  Value := TBrush.Create(TBrushKind(FDefaultKind), FDefaultColor);
+  Value.OnChanged := DoChange;
 end;
 
 destructor TDrawableIcon.Destroy;
@@ -3748,7 +3836,7 @@ begin
   inherited Assign(Source);
 end;
 
-constructor TDrawableBorder.Create(View: IView; const ADefaultKind: TBrushKind;
+constructor TDrawableBorder.Create(View: IView; const ADefaultKind: TViewBrushKind;
   const ADefaultColor: TAlphaColor);
 begin
   inherited Create(View, ADefaultKind, ADefaultColor);
@@ -3917,6 +4005,92 @@ end;
 function TViewBorder.WidthStored: Boolean;
 begin
   Result := Width <> 1;
+end;
+
+{ TViewBrush }
+
+constructor TViewBrush.Create(const ADefaultKind: TViewBrushKind;
+  const ADefaultColor: TAlphaColor);
+var
+  Bmp: TBrushBitmap;
+begin
+  inherited Create(TBrushKind(ADefaultKind), ADefaultColor);
+  Bmp := inherited Bitmap;
+  Bmp.Free;
+  inherited Bitmap := nil;
+  Bmp := TPatch9Bitmap.Create;
+  Bmp.OnChanged := Self.BitmapChanged;
+  Bmp.Bitmap.OnChange := Self.BitmapChanged;
+  TPatch9Bitmap(Bmp).FBounds.OnChange := Self.BitmapChanged;
+  inherited Bitmap := Bmp;
+end;
+
+destructor TViewBrush.Destroy;
+begin
+  inherited Destroy;
+end;
+
+function TViewBrush.GetBitmap: TPatch9Bitmap;
+begin
+  if inherited Bitmap <> nil then
+    Result := inherited Bitmap as TPatch9Bitmap
+  else
+    Result := nil;
+end;
+
+function TViewBrush.GetKind: TViewBrushKind;
+begin
+  Result := TViewBrushKind(inherited Kind);
+end;
+
+function TViewBrush.IsKindStored: Boolean;
+begin
+  Result := inherited Kind <> DefaultKind;
+end;
+
+function TViewBrush.IsPatch9BitmapStored: Boolean;
+begin
+  Result := Kind in [TViewBrushKind.Bitmap, TViewBrushKind.Patch9Bitmap];
+end;
+
+procedure TViewBrush.SetBitmap(const Value: TPatch9Bitmap);
+begin
+  inherited Bitmap.Assign(Value);
+end;
+
+procedure TViewBrush.SetKind(const Value: TViewBrushKind);
+begin
+  inherited Kind := TBrushKind(Value);
+end;
+
+{ TPatch9Bitmap }
+
+procedure TPatch9Bitmap.Assign(Source: TPersistent);
+begin
+  if Source is TPatch9Bitmap then begin
+    WrapMode := TPatch9Bitmap(Source).WrapMode;
+    FBounds.Assign(TPatch9Bitmap(Source).FBounds);
+    Bitmap.Assign(TPatch9Bitmap(Source).Bitmap);
+    DoChanged;
+  end else
+    inherited;
+end;
+
+constructor TPatch9Bitmap.Create;
+begin
+  inherited Create;
+  FBounds := TBounds.Create(RectF(0, 0, 0, 0));
+end;
+
+destructor TPatch9Bitmap.Destroy;
+begin
+  FBounds.Free;
+  inherited;
+end;
+
+procedure TPatch9Bitmap.SetBounds(const Value: TBounds);
+begin
+  FBounds.Assign(Value);
 end;
 
 end.

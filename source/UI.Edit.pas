@@ -584,11 +584,11 @@ end;
 
 function TEditViewBase.CreateBackground: TDrawable;
 begin
-  Result := TEditDrawableBorder.Create(Self, TBrushKind.Solid, $FFFFFFFF);
+  Result := TEditDrawableBorder.Create(Self, TViewBrushKind.Solid, $FFFFFFFF);
   with TDrawableBorder(Result).Border do begin
     Width := 1;
     Style := TViewBorderStyle.RectBorder;
-    Color.Default := $7FCCCCCC;
+    Color.Default := $AFCCCCCC;
     Color.Focused := $FF0066cc;
     Color.Hovered := $FFCCCCCC;
   end;
