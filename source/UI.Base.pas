@@ -1,3 +1,11 @@
+{*******************************************************}
+{                                                       }
+{       FMX UI 核心基础单元                             }
+{                                                       }
+{       版权所有 (C) 2016 YangYxd                       }
+{                                                       }
+{*******************************************************}
+
 unit UI.Base;
 
 interface
@@ -5,7 +13,8 @@ interface
 {$SCOPEDENUMS ON}
 
 uses
-  {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
+  UI.Debug,
+  {$IFDEF MSWINDOWS}Windows, {$ENDIF}
   FMX.Utils, FMX.ImgList, FMX.MultiResBitmap, FMX.ActnList, System.Rtti, FMX.Consts,
   FMX.TextLayout, FMX.Objects, System.ImageList, System.RTLConsts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, System.Math,
@@ -41,7 +50,11 @@ type
   /// <summary>
   /// 视图大小
   /// </summary>
-  TViewSize = (WrapContent {随内容}, FillParent {填充父级});
+  TViewSize = (CustomSize {自定义大小}, WrapContent {随内容}, FillParent {填充父级});
+  /// <summary>
+  /// 滚动条
+  /// </summary>
+  TViewScroll = (None, Horizontal, Vertical);
 
   TViewBrushKind = (None, Solid, Gradient, Bitmap, Resource, Patch9Bitmap);
 
@@ -97,12 +110,14 @@ type
     FXRadius, FYRadius: Single;
     FIsEmpty: Boolean;
 
-    function GetStateBrush(const State: TViewState): TBrush; overload;
+    FCorners: TCorners;
+
     procedure GetStateBrush(const State: TViewState; var V: TBrush); overload;
     procedure SetStateBrush(const State: TViewState; const V: TBrush);
-    function GetBrush(const State: TViewState; AutoCreate: Boolean): TBrush;
     procedure SetXRadius(const Value: Single);
     procedure SetYRadius(const Value: Single);
+    procedure SetCorners(const Value: TCorners);
+    function IsStoredCorners: Boolean;
   protected
     FDefault: TBrush;
     FPressed: TBrush;
@@ -130,6 +145,8 @@ type
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
     destructor Destroy; override;
 
+    function GetBrush(const State: TViewState; AutoCreate: Boolean): TBrush;
+    function GetStateBrush(const State: TViewState): TBrush; overload;
     function GetStateItem(AState: TViewState): TBrush;
 
     procedure Assign(Source: TPersistent); override;
@@ -155,6 +172,7 @@ type
     // 边框圆角
     property XRadius: Single read FXRadius write SetXRadius;
     property YRadius: Single read FYRadius write SetYRadius;
+    property Corners: TCorners read FCorners write SetCorners stored IsStoredCorners;
   end;
 
   /// <summary>
@@ -182,6 +200,7 @@ type
 
     property XRadius;
     property YRadius;
+    property Corners;
     property ItemDefault: TViewBrush index 0 read GetValue write SetValue;
     property ItemPressed: TViewBrush index 1 read GetValue write SetValue;
     property ItemFocused: TViewBrush index 2 read GetValue write SetValue;
@@ -316,6 +335,7 @@ type
 
     property XRadius;
     property YRadius;
+    property Corners;
     property ItemDefault: TBrush index 0 read GetValue write SetValue;
     property ItemPressed: TBrush index 1 read GetValue write SetValue;
     property ItemFocused: TBrush index 2 read GetValue write SetValue;
@@ -439,8 +459,8 @@ type
     property AlignTop: TControl read FAlignTop write SetAlignTop;
     property AlignRight: TControl read FAlignRight write SetAlignRight;
     property AlignBottom: TControl read FAlignBottom write SetAlignBottom;
-    property WidthSize: TViewSize read FWidth write SetWidth;
-    property HeightSize: TViewSize read FHeight write SetHeight;
+    property WidthSize: TViewSize read FWidth write SetWidth default TViewSize.CustomSize;
+    property HeightSize: TViewSize read FHeight write SetHeight default TViewSize.CustomSize;
     property AlignParentLeft: Boolean read FAlignParentLeft write SetAlignParentLeft;
     property AlignParentTop: Boolean read FAlignParentTop write SetAlignParentTop;
     property AlignParentRight: Boolean read FAlignParentRight write SetAlignParentRight;
@@ -476,15 +496,17 @@ type
     function GetDrawState: TViewState;
     function GetHeightSize: TViewSize;
     function GetWidthSize: TViewSize;
-    function GetViewState: TViewStates;
     function GetOrientation: TOrientation;
     function GetComponent: TComponent;
     function GetComponentState: TComponentState;
+    function GetInVisible: Boolean;
 
     function GetPosition: TPosition;
     function GetWidth: Single;
     function GetHeight: Single;
     function GetOpacity: Single;
+
+    function IsAutoSize: Boolean;
 
     procedure IncViewState(const State: TViewState);
     procedure DecViewState(const State: TViewState);
@@ -521,10 +543,11 @@ type
     property Position: TPosition read GetPosition;
     property ParentControl: TControl read GetParentControl;
     property ParentView: IViewGroup read GetParentView;
+    property InVisible: Boolean read GetInVisible;
   end;
 
   /// <summary>
-  /// 可绘制背景层接口
+  /// 视图组接口
   /// </summary>
   IViewGroup = interface(IView)
     ['{73A1B9E5-D4AF-4956-A15F-73B0B8EDADF9}']
@@ -551,6 +574,7 @@ type
     FIsSizeChange: Boolean;
     FIsEffectsChange: Boolean;
     FIsColorChange: Boolean;
+    FLayout: TTextLayout;
     function GetGravity: TLayoutGravity;
     function GetWordWrap: Boolean;
     procedure SetColor(const Value: TViewColor);
@@ -615,6 +639,8 @@ type
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TView = class(TControl, IView)
+  const
+    SmallChangeFraction = 5;
   private
     function GetParentView: IViewGroup;
     function GetClickable: Boolean;
@@ -625,7 +651,6 @@ type
     procedure SetMargin(const Value: string);
     procedure SetWeight(const Value: Single);
     procedure SetOrientation(const Value: TOrientation);
-    function GetViewStates: TViewStates;
     function GetBackground: TDrawable;
     procedure SetMaxHeight(const Value: Single);
     procedure SetMaxWidth(const Value: Single);
@@ -653,8 +678,13 @@ type
     function GetPosition: TPosition;
     function GetDrawState: TViewState;
     function GetViewRect: TRectF;
+    function GetInVisible: Boolean;
+    procedure SetInVisible(const Value: Boolean);
+    procedure SetTempMaxHeight(const Value: Single);
+    procedure SetTempMaxWidth(const Value: Single);
   protected
     FWeight: Single;
+    FInVisible: Boolean;
     FGravity: TLayoutGravity;
     FOrientation: TOrientation;
     FBackground: TDrawable;
@@ -664,12 +694,15 @@ type
     FMinHeight: Single;
     FMaxWidth: Single;
     FMaxHeight: Single;
+    FSaveMaxWidth: Single;
+    FSaveMaxHeight: Single;
     FLayout: TViewLayout;
 
     function IsDrawing: Boolean;
     function IsDesignerControl(Control: TControl): Boolean;
+    function IsAutoSize: Boolean; virtual;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; virtual;
-    function GetViewState: TViewStates;
+    function GetViewStates: TViewStates;
     procedure IncViewState(const State: TViewState); virtual;
     procedure DecViewState(const State: TViewState); virtual;
     procedure IncChildState(State: TViewState); virtual;  // 给所有子控件增加状态
@@ -680,6 +713,7 @@ type
     procedure DoMouseLeave; override;
     procedure EnabledChanged; override;
     procedure HitTestChanged; override;
+    procedure VisibleChanged; override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     function DoSetSize(const ASize: TControlSize; const NewPlatformDefault: Boolean; ANewWidth, ANewHeight: Single;
@@ -689,16 +723,25 @@ type
     procedure Paint; override;
     procedure Loaded; override;
     procedure ReadState(Reader: TReader); override;
-    procedure DoAutoSize; virtual;
     procedure DoOrientation; virtual;
     procedure DoGravity; virtual;
     procedure DoWeight; virtual;
     procedure DoMaxSizeChange; virtual;
     procedure DoMinSizeChange; virtual;
-    procedure DoAdjustViewBounds; virtual;
     procedure DoBackgroundChanged(Sender: TObject); virtual;
+    procedure DoEndUpdate; override;
+    procedure HandleSizeChanged; override;
+
+
+    // 限制组件最大和最小大小
+    procedure DoAdjustViewBounds(var ANewWidth, ANewHeight: Single); virtual;
+    // 布局变化了
     procedure DoLayoutChanged(Sender: TObject); virtual;
+    // 大小改变了
     procedure DoChangeSize(var ANewWidth, ANewHeight: Single); virtual;
+    // 开始计算大小
+    procedure DoRecalcSize(var AWidth, AHeight: Single); virtual;
+
     procedure DoMouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); virtual;
     procedure DoMouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single); virtual;
     procedure PaintBackground; virtual;
@@ -706,6 +749,36 @@ type
     function AllowUseLayout(): Boolean; virtual;
     procedure ImagesChanged; virtual;
     function CreateBackground: TDrawable; virtual;
+    function GetParentMaxWidth: Single;
+    function GetParentMaxHeight: Single;
+  protected
+    FScrollbar: TViewScroll;
+    FDisableMouseWheel: Boolean;
+    procedure SetScrollbar(const Value: TViewScroll);
+    function GetSceneScale: Single;
+    procedure StartScrolling;
+    procedure StopScrolling;
+    procedure InternalAlign; virtual;
+    procedure FreeScrollbar; virtual;
+    procedure InitScrollbar; virtual;
+    procedure SetDisableMouseWheel(const Value: Boolean);
+    procedure UpdateVScrollBar(const Value: Single; const ViewportSize: Single);
+    procedure UpdateHScrollBar(const Value: Single; const ViewportSize: Single);
+    function GetVScrollBar: TScrollBar; virtual;
+    function GetHScrollBar: TScrollBar; virtual;
+    function GetContentBounds: TRectF; virtual;
+  public
+    /// <summary>
+    /// 滚动条样式
+    /// </summary>
+    property ScrollBars: TViewScroll read FScrollbar write SetScrollbar default TViewScroll.None;
+    /// <summary>
+    /// 禁止鼠标滚动
+    /// </summary>
+    property DisableMouseWheel: Boolean read FDisableMouseWheel write SetDisableMouseWheel default False;
+    property HScrollBar: TScrollBar read GetHScrollBar;
+    property VScrollBar: TScrollBar read GetVScrollBar;
+    property ContentBounds: TRectF read GetContentBounds;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -725,42 +798,130 @@ type
     function FindAndCloneStyleResource<T: TFmxObject>(const AStyleLookup: string; var AResource: T): Boolean;
 
     property ParentView: IViewGroup read GetParentView;
+    /// <summary>
+    /// 组件的布局方式。Horizontal，水平布局； Vertical，垂直布局。默认为Horizontal。
+    /// </summary>
     property Orientation: TOrientation read GetOrientation write SetOrientation;
+    /// <summary>
+    /// 组件当前的状态
+    /// </summary>
     property ViewState: TViewStates read GetViewStates;
+    /// <summary>
+    /// 组件当前的绘制状态
+    /// </summary>
     property DrawState: TViewState read GetDrawState;
+    /// <summary>
+    /// 组件内容有效区域（返回减去Padding后的值）
+    /// </summary>
     property ViewRect: TRectF read GetViewRect;
+
+    /// <summary>
+    /// 临时最大高度, 设置为0时，恢复原始的MaxHeight
+    /// </summary>
+    property TempMaxHeight: Single read FMaxHeight write SetTempMaxHeight;
+    /// <summary>
+    /// 临时最大高度, 设置为0时，恢复原始的MaxWidth
+    /// </summary>
+    property TempMaxWidth: Single read FMaxWidth write SetTempMaxWidth;
   published
+    /// <summary>
+    /// 组件相对于容器的对齐方式。当容器为非布局组件时有效，在部分布局组件中有效，但不建议使用。
+    /// </summary>
     property Align;
-    property Action;
+    /// <summary>
+    /// 组件在容器中的缩放和定位方式。当容器为非布局组件时有效。
+    /// </summary>
     property Anchors;
+    /// <summary>
+    /// 是否允许根据MaxWidth, MaxHeight, MinWidth, MinHeight属性来限制组件大小
+    /// </summary>
     property AdjustViewBounds: Boolean read GetAdjustViewBounds write SetAdjustViewBounds default True;
+    /// <summary>
+    /// 视图背景。视图背景是一个TDrawable对象，可通过设置此属性的子项，来实现不同的显示效果，详见TDrawable的属性说明。
+    /// </summary>
     property Background: TDrawable read GetBackground write SetBackground;
-    property Cursor;
-    property ClipChildren;
-    property ClipParent;
+    /// <summary>
+    /// 是否响应点击事件。同HitTest属性
+    /// </summary>
     property Clickable: Boolean read GetClickable write SetClickable default False;
+    /// <summary>
+    /// 是否剪切超出组件可视区域的图形输出
+    /// </summary>
+    property ClipChildren default True;
+    /// <summary>
+    /// 相对布局属性。当容器是TRelativeLayout相对布局时有效。Layout是一个TViewLayout对象，详请参考TViewLayout属性说明。
+    /// </summary>
+    property Layout: TViewLayout read GetLayout write SetLayout;
+    /// <summary>
+    /// 组件内容四周留白大小。会自动设置Padding的四边会相同的值。
+    /// </summary>
+    property Paddings: string read GetPaddings write SetPaddings;
+    /// <summary>
+    /// 布局时与其它组件四周的距离。此属性是一个字符串形式的浮点数，用于一次设置Margins的四边为相同的大小。
+    /// </summary>
+    property Margin: string read GetMargin write SetMargin;
+    /// <summary>
+    /// 组件是否可视。Visible 为 True 时有效，InVisible 为 True 时，只显位置不显示内容
+    /// </summary>
+    property InVisible: Boolean read FInVisible write SetInVisible default False;
+    /// <summary>
+    /// 组件宽度调节方式，CustomSize, 指定的固定大小; WrapContent 随内容决定； FillParent，填充容器。
+    /// </summary>
+    property WidthSize: TViewSize read GetWidthSize write SetWidthSize default TViewSize.CustomSize;
+    /// <summary>
+    /// 组件高度调节方式，CustomSize, 指定的固定大小; WrapContent 随内容决定； FillParent，填充容器。
+    /// </summary>
+    property HeightSize: TViewSize read GetHeightSize write SetHeightSize default TViewSize.CustomSize;
+    /// <summary>
+    /// 组件的最小宽度。当AdjustViewBounds为True时有效。
+    /// </summary>
+    property MinWidth: Single read GetMinWidth write SetMinWidth;
+    /// <summary>
+    /// 组件的最小高度。当AdjustViewBounds为True时有效。
+    /// </summary>
+    property MinHeight: Single read GetMinHeight write SetMinHeight;
+    /// <summary>
+    /// 组件的最大宽度。当AdjustViewBounds为True时有效。
+    /// </summary>
+    property MaxWidth: Single read GetMaxWidth write SetMaxWidth;
+    /// <summary>
+    /// 组件的最大高度。当AdjustViewBounds为True时有效。
+    /// </summary>
+    property MaxHeight: Single read GetMaxHeight write SetMaxHeight;
+    /// <summary>
+    /// 组件本身作为容器时，内部的重力。也就是子组件的位于容器的位置。
+    ///    LeftTop, 左上角;
+    ///    LeftBottom, 左下角;
+    ///    RightTop, 右上角;
+    ///    RightBottom, 右下角;
+    ///    CenterVertical, 垂直居中（可左右移动）;
+    ///    CenterHorizontal, 水平居中（可上下移动）;
+    ///    CenterHBottom, 底部水平居中;
+    ///    CenterVRight, 靠右垂直居中;
+    ///    Center, 完全居中;
+    /// </summary>
+    property Gravity: TLayoutGravity read GetGravity write SetGravity;
+    /// <summary>
+    /// 视图在线性布局 TLinearLayout 时，其宽度或高度在容器中所占的大小比例。
+    /// 设为>0时，布局组件会按比例自动调整组件大小。只有容器是TLinearLayout时有效。
+    /// </summary>
+    property Weight: Single read GetWeight write SetWeight;
+
+    property Action;
+    property Cursor;
+    property ClipParent;
     property Enabled;
     property Locked;
-    property Layout: TViewLayout read GetLayout write SetLayout;
     property Opacity;
     property RotationAngle;
     property RotationCenter;
     property Padding;
-    property Paddings: string read GetPaddings write SetPaddings;
     property Margins;
-    property Margin: string read GetMargin write SetMargin;
     property PopupMenu;
     property Visible;
+    property HitTest default False;
     property Width;
     property Height;
-    property WidthSize: TViewSize read GetWidthSize write SetWidthSize;
-    property HeightSize: TViewSize read GetHeightSize write SetHeightSize;
-    property MinWidth: Single read GetMinWidth write SetMinWidth;
-    property MinHeight: Single read GetMinHeight write SetMinHeight;
-    property MaxWidth: Single read GetMaxWidth write SetMaxWidth;
-    property MaxHeight: Single read GetMaxHeight write SetMaxHeight;
-    property Gravity: TLayoutGravity read GetGravity write SetGravity;
-    property Weight: Single read GetWeight write SetWeight;
     property Scale;
     property Size;
     property Position;
@@ -787,9 +948,6 @@ type
     property OnMouseLeave;
   end;
 
-  //TViewEditor = class(TDefaultEditor)
-
-
   /// <summary>
   /// 基本视图组
   /// </summary>
@@ -797,15 +955,18 @@ type
   TViewGroup = class(TView, IViewGroup)
   private
   protected
-    function IsAutoSize(View: IView;  Align: TAlignLayout;
-      AOrientation: TOrientation): Boolean;
+    /// <summary>
+    /// 是否需要自动调整大小
+    /// </summary>
+    function IsAdjustSize(View: IView; Align: TAlignLayout;
+      AParentOrientation: TOrientation): Boolean;
+
     procedure DoAddObject(const AObject: TFmxObject); override;
     procedure DoRemoveObject(const AObject: TFmxObject); override;
     procedure DoLayoutChanged(Sender: TObject); override;
     procedure DoGravity(); override;
     procedure DoMaxSizeChange; override;
     procedure DoMinSizeChange; override;
-    procedure DoAdjustViewBounds; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -818,11 +979,22 @@ type
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TLinearLayout = class(TViewGroup)
+  private
   protected
+    /// <summary>
+    /// 查找最后一个需要自动调整大小的组件
+    /// <param name="AControl">输出需要自动调整大小的组件</param>
+    /// <param name="AdjustSize">输出自动调整大小组件的可用空间</param>
+    /// </summary>
+    function AdjustAutoSizeControl(out AControl: TControl; out AdjustSize: Single): Boolean;
+
     function GetWeightSum(var FixSize: Single): Single;
+    function GetLastWeightView(): TView;
     function IsUseWeight(): Boolean;
     procedure DoRealign; override;
     procedure DoOrientation; override;
+    procedure DoRecalcSize(var AWidth, AHeight: Single); override;
+  public
   published
     property Orientation;
   end;
@@ -839,13 +1011,19 @@ type
     function GetXY(const StackList: TList; const Control: TControl;
       var X, Y, W, H: Single): Integer;
     procedure DoRealign; override;
+    procedure DoRecalcSize(var AWidth, AHeight: Single); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   end;
 
+function GetTimestamp: Int64;
+function LerpColor(const A, B: TAlphaColor; T: Single): TAlphaColor;
 
 implementation
+
+uses
+  {$IFNDEF MSWINDOWS}System.Diagnostics, {$ENDIF}SyncObjs;
 
 resourcestring
   SInvViewValue = '无效的视图状态值: %d';
@@ -853,6 +1031,61 @@ resourcestring
   SMustSameParent = '必须指定一个与当前组件所属视图中的同级兄弟组件';
   SLocateFailed = '存在循环引用';
   SRefOutLimitMax = '组件引用层级超过上限值: 256';
+
+{$IFDEF MSWINDOWS}
+type
+  TGetTickCount64 = function: Int64;
+  TGetSystemTimes = function(var lpIdleTime, lpKernelTime, lpUserTime: TFileTime): BOOL; stdcall;
+{$ENDIF MSWINDOWS}
+var
+  {$IFDEF MSWINDOWS}
+  GetTickCount64: TGetTickCount64;
+  //WinGetSystemTimes: TGetSystemTimes;
+  _StartCounter: Int64;
+  _PerfFreq: Int64;
+  {$ELSE}
+  _Watch: TStopWatch;
+  {$ENDIF}
+
+function GetTimestamp: Int64;
+begin
+  {$IFDEF MSWINDOWS}
+  if _PerfFreq > 0 then begin
+    QueryPerformanceCounter(Result);
+    Result := Trunc((Result - _StartCounter) / _PerfFreq * 1000);
+  end else if Assigned(GetTickCount64) then
+    Result := (GetTickCount64 - _StartCounter)
+  else
+    Result := (GetTickCount - _StartCounter)
+  {$ELSE}
+  Result := _Watch.Elapsed.Ticks div 10000;
+  {$ENDIF}
+end;
+
+type
+  TRGBA = record
+    R, G, B, A: Byte;
+  end;
+  PRGBA = ^TRGBA;
+
+function LerpColor(const A, B: TAlphaColor; T: Single): TAlphaColor;
+var
+  CA, CB, CR: PRGBA;
+begin
+  if T <= 0 then
+    Result := A
+  else if T >= 1 then
+    Result := B
+  else begin
+    CA := @A;
+    CB := @B;
+    CR := @Result;
+    CR.A := CA.A + Round((CB.A - CA.A) * T);
+    CR.G := CA.G + Round((CB.G - CA.G) * T);
+    CR.B := CA.B + Round((CB.B - CA.B) * T);
+    CR.R := CA.R + Round((CB.R - CA.R) * T);
+  end;
+end;
 
 type TPrivateControl = class(TControl);
 
@@ -993,6 +1226,7 @@ begin
   FView := View;
   FDefaultColor := ADefaultColor;
   FDefaultKind := ADefaultKind;
+  FCorners := AllCorners;
 
   if Assigned(FView) and (csDesigning in FView.GetComponentState) then begin
     CreateBrush(FDefault);
@@ -1004,8 +1238,11 @@ begin
     CreateBrush(FEnabled);
     CreateBrush(FActivated);
     FIsEmpty := GetEmpty;
-  end else
+  end else begin
     FIsEmpty := True;
+    if (FDefaultKind = TViewBrushKind.Solid) and (FDefaultColor <> TAlphaColorRec.Null) then
+      CreateBrush(FDefault);
+  end;
 end;
 
 function TDrawableBase.CreateBrush: TBrush;
@@ -1040,7 +1277,12 @@ end;
 
 function TDrawableBase.GetValue(const Index: Integer): TBrush;
 begin
-  Result := GetBrush(TViewState(Index), False);
+  Result := GetBrush(TViewState(Index), not (csLoading in FView.GetComponentState));
+end;
+
+function TDrawableBase.IsStoredCorners: Boolean;
+begin
+  Result := FCorners <> AllCorners;
 end;
 
 function TDrawableBase.GetBrush(const State: TViewState; AutoCreate: Boolean): TBrush;
@@ -1130,12 +1372,12 @@ var
   AState: TViewState;
 begin
   if not Assigned(FView) or (csDestroying in FView.GetComponentState) then Exit;
-  if IsEmpty then Exit;
+  if IsEmpty or FView.InVisible then Exit;
   AState := FView.GetDrawState;
   R := GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight);
   V := GetStateItem(AState);
   if V <> nil then
-    FillRect(Canvas, R, FXRadius, FYRadius, AllCorners, FView.GetOpacity, V);
+    FillRect(Canvas, R, FXRadius, FYRadius, FCorners, FView.GetOpacity, V);
   DoDrawed(Canvas, R, AState);
 end;
 
@@ -1146,12 +1388,12 @@ var
   AState: TViewState;
 begin
   if not Assigned(FView) or (csDestroying in FView.GetComponentState) then Exit;
-  if IsEmpty then Exit;
+  if IsEmpty or FView.InVisible then Exit;
   AState := FView.GetDrawState;
   V := GetStateItem(AState);
   VR := GetDrawRect(R.Left, R.Top, R.Right, R.Bottom);
   if V <> nil then
-    FillRect(Canvas, VR, FXRadius, FYRadius, AllCorners, FView.GetOpacity, V);
+    FillRect(Canvas, VR, FXRadius, FYRadius, FCorners, FView.GetOpacity, V);
   DoDrawed(Canvas, VR, AState);
 end;
 
@@ -1198,6 +1440,14 @@ begin
   V := GetBrush(State, True);
   V.Kind := TBrushKind.Solid;
   V.Color := Value;
+end;
+
+procedure TDrawableBase.SetCorners(const Value: TCorners);
+begin
+  if FCorners <> Value then begin
+    FCorners := Value;
+    DoChange(Self);
+  end;
 end;
 
 procedure TDrawableBase.SetGradient(State: TViewState; const Value: TGradient);
@@ -1454,6 +1704,8 @@ var
   BitmapSize: TSize;
   BitmapRect: TRectF;
 begin
+  if FView.InVisible then
+    Exit;
   Images := GetImages;
   if Assigned(Images) and (Index >= 0) and (Index < Images.Count) then begin
     BitmapSize := TSize.Create(FWidth, FHeight);
@@ -1917,6 +2169,7 @@ begin
     FLayout := TViewLayout.Create(Self);
     FLayout.OnChanged := DoLayoutChanged;
   end;
+  WidthSize := TViewSize.CustomSize;
 end;
 
 function TView.CreateBackground: TDrawable;
@@ -1946,6 +2199,7 @@ end;
 
 destructor TView.Destroy;
 begin
+  FreeScrollbar();
   FreeAndNil(FBackground);
   FreeAndNil(FLayout);
   inherited Destroy;
@@ -1957,18 +2211,30 @@ begin
   inherited DoActivate;
 end;
 
-procedure TView.DoAdjustViewBounds;
+procedure TView.DoAdjustViewBounds(var ANewWidth, ANewHeight: Single);
+var
+  AMaxW, AMaxH: Single;
 begin
-  RecalcSize;
-  if Assigned(ParentControl) then
-    TPrivateControl(ParentControl).Realign;
-end;
+  if FAdjustViewBounds then begin
+    AMaxW := FMaxWidth;
+    AMaxH := FMaxHeight;
 
-procedure TView.DoAutoSize;
-begin
-  RecalcSize;
-  if Assigned(ParentControl) then
-    TPrivateControl(ParentControl).Realign;
+    if Assigned(ParentView) then begin
+      if (AMaxW <= 0) and (WidthSize = TViewSize.WrapContent) then
+        AMaxW := ParentView.MaxWidth;
+      if (AMaxH <= 0) and (HeightSize = TViewSize.WrapContent) then
+        AMaxH := ParentView.MaxHeight;
+    end;
+
+    if (AMaxW > 0) and (ANewWidth > AMaxW) then
+      ANewWidth := AMaxW;
+    if (AMaxH > 0) and (ANewHeight > AMaxH) then
+      ANewHeight := AMaxH;
+    if (FMinWidth > 0) and (ANewWidth < FMinWidth) then
+      ANewWidth := FMinWidth;
+    if (FMinHeight > 0) and (ANewHeight < FMinHeight) then
+      ANewHeight := FMinHeight;
+  end;
 end;
 
 procedure TView.DoBackgroundChanged(Sender: TObject);
@@ -1978,22 +2244,21 @@ end;
 
 procedure TView.DoChangeSize(var ANewWidth, ANewHeight: Single);
 begin
-  if FAdjustViewBounds then begin
-    if (FMaxWidth > 0) and (ANewWidth > FMaxWidth) then
-      ANewWidth := FMaxWidth;
-    if (FMaxHeight > 0) and (ANewHeight > FMaxHeight) then
-      ANewHeight := FMaxHeight;
-    if (FMinWidth > 0) and (ANewWidth < FMinWidth) then
-      ANewWidth := FMinWidth;
-    if (FMinHeight > 0) and (ANewHeight < FMinHeight) then
-      ANewHeight := FMinHeight;
-  end;
+  DoRecalcSize(ANewWidth, ANewHeight);
+  DoAdjustViewBounds(ANewWidth, ANewHeight);
 end;
 
 procedure TView.DoDeactivate;
 begin
   DecViewState(TViewState.Activated);
   inherited DoDeactivate;
+end;
+
+procedure TView.DoEndUpdate;
+begin
+  inherited DoEndUpdate;
+  TempMaxHeight := 0;
+  TempMaxWidth := 0;
 end;
 
 procedure TView.DoGravity;
@@ -2003,29 +2268,24 @@ end;
 
 procedure TView.DoLayoutChanged(Sender: TObject);
 begin
-  if Assigned(ParentControl) then
-    TPrivateControl(ParentControl).Realign;
+  HandleSizeChanged;
 end;
 
 procedure TView.DoMaxSizeChange;
 begin
-  RecalcSize;
-  if Assigned(ParentControl) then
-    TPrivateControl(ParentControl).Realign;
+  HandleSizeChanged;
 end;
 
 procedure TView.DoMinSizeChange;
 begin
-  RecalcSize;
-  if Assigned(ParentControl) then
-    TPrivateControl(ParentControl).Realign;
+  HandleSizeChanged;
 end;
 
 procedure TView.DoMouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
   if (csDesigning in ComponentState) then Exit;
-  if TMouseButton.mbLeft = Button then begin
+  if (TMouseButton.mbLeft = Button) and (Clickable or (not (Self is TViewGroup))) then begin
     IncViewState(TViewState.Pressed);
     if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
   end;
@@ -2051,7 +2311,7 @@ procedure TView.DoMouseUp(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
   if (csDesigning in ComponentState) then Exit;
-  if TMouseButton.mbLeft = Button then begin
+  if (TMouseButton.mbLeft = Button) and (Clickable or (not (Self is TViewGroup))) then begin
     DecViewState(TViewState.Pressed);
     if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
   end;
@@ -2070,6 +2330,11 @@ end;
 function TView.GetComponentState: TComponentState;
 begin
   Result := ComponentState;
+end;
+
+function TView.GetContentBounds: TRectF;
+begin
+  Result := TRectF.Empty;
 end;
 
 function TView.GetDrawState: TViewState;
@@ -2105,7 +2370,17 @@ function TView.GetHeightSize: TViewSize;
 begin
   if Assigned(FLayout) then
     Result := FLayout.FHeight
-  else Result := TViewSize.WrapContent;
+  else Result := TViewSize.CustomSize;
+end;
+
+function TView.GetHScrollBar: TScrollBar;
+begin
+  Result := nil;
+end;
+
+function TView.GetInVisible: Boolean;
+begin
+  Result := FInVisible;
 end;
 
 function TView.GetLayout: TViewLayout;
@@ -2166,6 +2441,30 @@ begin
   Result := ParentControl;
 end;
 
+function TView.GetParentMaxHeight: Single;
+begin
+  if FMaxHeight > 0 then
+    Result := FMaxHeight
+  else begin
+    if Assigned(ParentView) then
+      Result := TView(Parent).GetParentMaxHeight
+    else
+      Result := 0;
+  end;
+end;
+
+function TView.GetParentMaxWidth: Single;
+begin
+  if FMaxWidth > 0 then
+    Result := FMaxWidth
+  else begin
+    if Assigned(ParentView) then
+      Result := TView(Parent).GetParentMaxWidth
+    else
+      Result := 0;
+  end;
+end;
+
 function TView.GetParentView: IViewGroup;
 begin
   Supports(Parent, IViewGroup, Result);
@@ -2176,20 +2475,29 @@ begin
   Result := Position;
 end;
 
+function TView.GetSceneScale: Single;
+begin
+  Result := 0;
+  if Scene <> nil then
+    Result := Scene.GetSceneScale;
+  if Result <= 0 then
+    Result := 1;
+end;
+
 function TView.GetViewRect: TRectF;
 begin
   Result := RectF(Padding.Left, Padding.Top,
     Width - Padding.Right, Height - Padding.Bottom);
 end;
 
-function TView.GetViewState: TViewStates;
+function TView.GetViewStates: TViewStates;
 begin
   Result := FViewState;
 end;
 
-function TView.GetViewStates: TViewStates;
+function TView.GetVScrollBar: TScrollBar;
 begin
-  Result := FViewState;
+  Result := nil;
 end;
 
 function TView.GetWeight: Single;
@@ -2201,7 +2509,14 @@ function TView.GetWidthSize: TViewSize;
 begin
   if Assigned(FLayout) then
     Result := FLayout.FWidth
-  else Result := TViewSize.WrapContent;
+  else Result := TViewSize.CustomSize;
+end;
+
+procedure TView.HandleSizeChanged;
+begin
+  inherited HandleSizeChanged;
+  if Assigned(ParentView) and (Children = nil) then
+    ParentControl.RecalcSize;
 end;
 
 procedure TView.HitTestChanged;
@@ -2224,6 +2539,8 @@ begin
   if State = TViewState.None then Exit;
   if (csDestroying in ComponentState) or (csDesigning in ComponentState) then Exit;
   for I := 0 to Controls.Count - 1 do begin
+    if (State = TViewState.Pressed) and (not Controls.Items[I].HitTest) then
+      Continue;
     if Supports(Controls.Items[I], IView, View) then
       View.IncViewState(State);
   end;
@@ -2235,9 +2552,22 @@ begin
   IncChildState(State);
 end;
 
+procedure TView.InitScrollbar;
+begin
+end;
+
+procedure TView.InternalAlign;
+begin
+end;
+
 function TView.IsActivated: Boolean;
 begin
   Result := TViewState.Activated in FViewState;
+end;
+
+function TView.IsAutoSize: Boolean;
+begin
+  Result := False;
 end;
 
 function TView.IsDesignerControl(Control: TControl): Boolean;
@@ -2296,6 +2626,10 @@ procedure TView.DoOrientation;
 begin
 end;
 
+procedure TView.DoRecalcSize(var AWidth, AHeight: Single);
+begin
+end;
+
 function TView.DoSetSize(const ASize: TControlSize;
   const NewPlatformDefault: Boolean; ANewWidth, ANewHeight: Single;
   var ALastWidth, ALastHeight: Single): Boolean;
@@ -2307,8 +2641,7 @@ end;
 
 procedure TView.DoWeight;
 begin
-  if Assigned(ParentControl) then
-    TPrivateControl(ParentControl).Realign;
+  HandleSizeChanged;
 end;
 
 procedure TView.EnabledChanged;
@@ -2341,6 +2674,10 @@ begin
   Result := StyleObject is T;
   if Result then
     AResource := T(StyleObject);
+end;
+
+procedure TView.FreeScrollbar;
+begin
 end;
 
 procedure TView.Paint;
@@ -2377,10 +2714,7 @@ procedure TView.SetAdjustViewBounds(const Value: Boolean);
 begin
   if FAdjustViewBounds <> Value then begin
     FAdjustViewBounds := Value;
-    if Value then begin
-      if (FMaxWidth > 0) or (FMaxHeight > 0) or (FMinWidth > 0) or (FMinHeight > 0) then
-        DoAdjustViewBounds();
-    end;
+    HandleSizeChanged;
   end;
 end;
 
@@ -2422,6 +2756,13 @@ begin
   HitTest := Value;
 end;
 
+procedure TView.SetDisableMouseWheel(const Value: Boolean);
+begin
+  if FDisableMouseWheel <> Value then begin
+    FDisableMouseWheel := Value;
+  end;
+end;
+
 procedure TView.SetGravity(const Value: TLayoutGravity);
 begin
   if FGravity <> Value then begin
@@ -2432,12 +2773,21 @@ end;
 
 procedure TView.SetHeightSize(const Value: TViewSize);
 begin
-  if (not Assigned(FLayout)) and (Value <> TViewSize.WrapContent) then begin
+  if (not Assigned(FLayout)) and (Value <> TViewSize.CustomSize) then begin
     FLayout := TViewLayout.Create(Self);
     FLayout.OnChanged := DoLayoutChanged;
   end;
   if Assigned(FLayout) then
     FLayout.HeightSize := Value;
+end;
+
+procedure TView.SetInVisible(const Value: Boolean);
+begin
+  if FInVisible <> Value then begin
+    FInVisible := Value;
+    if Visible then
+      Repaint;
+  end;
 end;
 
 procedure TView.SetLayout(const Value: TViewLayout);
@@ -2507,6 +2857,46 @@ begin
     Padding.Rect := RectF(V, V, V, V);
 end;
 
+procedure TView.SetScrollbar(const Value: TViewScroll);
+begin
+  if FScrollbar <> Value then begin
+    FScrollbar := Value;
+    if FScrollbar = TViewScroll.None then
+      FreeScrollbar
+    else
+      InitScrollbar;
+    Repaint;
+  end;
+end;
+
+procedure TView.SetTempMaxHeight(const Value: Single);
+begin
+  if FMaxHeight <> Value then begin
+    if Value > 0 then begin
+      FSaveMaxHeight := FMaxHeight;
+      FMaxHeight := Value;
+      DoMaxSizeChange();
+    end else begin
+      FMaxHeight := FSaveMaxHeight;
+      FSaveMaxHeight := 0;
+    end;
+  end;
+end;
+
+procedure TView.SetTempMaxWidth(const Value: Single);
+begin
+  if FMaxWidth <> Value then begin
+    if Value > 0 then begin
+      FSaveMaxWidth := FMaxWidth;
+      FMaxWidth := Value;
+      DoMaxSizeChange()
+    end else begin
+      FMaxWidth := FSaveMaxWidth;
+      FSaveMaxWidth := 0;
+    end;
+  end;
+end;
+
 procedure TView.SetWeight(const Value: Single);
 begin
   if FWeight <> Value then begin
@@ -2517,12 +2907,64 @@ end;
 
 procedure TView.SetWidthSize(const Value: TViewSize);
 begin
-  if (not Assigned(FLayout)) and (Value <> TViewSize.WrapContent) then begin
+  if (not Assigned(FLayout)) and (Value <> TViewSize.CustomSize) then begin
     FLayout := TViewLayout.Create(Self);
     FLayout.OnChanged := DoLayoutChanged;
   end;
   if Assigned(FLayout) then
     FLayout.WidthSize := Value;
+end;
+
+procedure TView.StartScrolling;
+begin
+  if Scene <> nil then
+    Scene.ChangeScrollingState(Self, True);
+end;
+
+procedure TView.StopScrolling;
+begin
+  if Scene <> nil then
+    Scene.ChangeScrollingState(nil, False);
+end;
+
+procedure TView.UpdateHScrollBar(const Value, ViewportSize: Single);
+begin
+  if HScrollBar <> nil then
+  begin
+    HScrollBar.ValueRange.BeginUpdate;
+    try
+      HScrollBar.ValueRange.Min := Min(Value, ContentBounds.Left);
+      HScrollBar.ValueRange.Max := Max(Value + ViewportSize, ContentBounds.Right);
+      HScrollBar.ValueRange.ViewportSize := ViewportSize;
+      HScrollBar.Value := Value;
+    finally
+      HScrollBar.ValueRange.EndUpdate;
+    end;
+    HScrollBar.SmallChange := HScrollBar.ViewportSize / SmallChangeFraction;
+  end;
+end;
+
+procedure TView.UpdateVScrollBar(const Value, ViewportSize: Single);
+begin
+  if VScrollBar <> nil then
+  begin
+    VScrollBar.ValueRange.BeginUpdate;
+    try
+      VScrollBar.ValueRange.Min := Min(Value, ContentBounds.Top);
+      VScrollBar.ValueRange.Max := Max(Value + ViewportSize, ContentBounds.Bottom);
+      VScrollBar.ValueRange.ViewportSize := ViewportSize;
+      VScrollBar.Value := Value;
+    finally
+      VScrollBar.ValueRange.EndUpdate;
+    end;
+    VScrollBar.SmallChange := VScrollBar.ViewportSize / SmallChangeFraction;
+  end;
+end;
+
+procedure TView.VisibleChanged;
+begin
+  inherited VisibleChanged;
+  HandleSizeChanged;
 end;
 
 { TViewGroup }
@@ -2546,12 +2988,6 @@ end;
 procedure TViewGroup.DoAddObject(const AObject: TFmxObject);
 begin
   inherited;
-  Realign;
-end;
-
-procedure TViewGroup.DoAdjustViewBounds;
-begin
-  //inherited DoAdjustViewBounds;
   Realign;
 end;
 
@@ -2587,25 +3023,31 @@ begin
   Realign;
 end;
 
-function TViewGroup.IsAutoSize(View: IView; Align: TAlignLayout;
-  AOrientation: TOrientation): Boolean;
+// 此处的自动调整大小，是相对于父级线性布局组件相反方向而言，也就是在线性布局中
+// 是否要调整组件的宽度或高度
+function TViewGroup.IsAdjustSize(View: IView; Align: TAlignLayout;
+  AParentOrientation: TOrientation): Boolean;
 begin
   if Assigned(View) then begin
-    // 实现了 IView 接口时，以 HeightSize 或 WidthSize 为依据
-    if AOrientation = TOrientation.Horizontal then
-      Result := (View.GetHeightSize <> TViewSize.WrapContent)
+    // 实现了 IView 接口
+    if AParentOrientation = TOrientation.Horizontal then
+      // 当父级线性布局组件为水平方向时，高度随父组则需要调整高度
+      Result := (View.GetHeightSize = TViewSize.FillParent) or (View.Weight > 0)
     else
-      Result := (View.GetWidthSize <> TViewSize.WrapContent)
+      // 当父组线性布局组件为垂直方向时，判断是否需要调整宽度
+      Result := (View.GetWidthSize = TViewSize.FillParent) or (View.Weight > 0);
   end else if (Align = TAlignLayout.None) or (Align = TAlignLayout.Scale) then
     // Align 不会调整大小
     Result := False
-  else if AOrientation = TOrientation.Horizontal then
+  else if AParentOrientation = TOrientation.Horizontal then
+    // 这些 Align 值需要调整组件高度
     Result := Align in [TAlignLayout.Left, TAlignLayout.Right,
       TAlignLayout.MostLeft, TAlignLayout.MostRight,
       TAlignLayout.Client, TAlignLayout.Contents,
       TAlignLayout.HorzCenter, TAlignLayout.Vertical, TAlignLayout.Fit,
       TAlignLayout.FitLeft, TAlignLayout.FitRight]
   else
+    // 这些 Align 值需要调整组件宽度
     Result := Align in [TAlignLayout.Top, TAlignLayout.Bottom,
       TAlignLayout.MostTop, TAlignLayout.MostBottom,
       TAlignLayout.Client, TAlignLayout.Contents,
@@ -2627,98 +3069,70 @@ end;
 
 procedure TLinearLayout.DoRealign;
 var
-  CtrlCount, LastAutoSizeIndex: Integer;
-
-  // 检查后面的控件，是否有自动大小的, 有的时候返回 -1
-  function CheckAutoPos(const Index: Integer; const WeightSum: Single): Single;
-  var
-    I: Integer;
-    View: IView;
-    Control: TControl;
-    AO: TOrientation;
-    LAutoSize: Boolean;
-  begin
-    if Index <= LastAutoSizeIndex then begin
-      Result := -1;
-      Exit;
-    end;
-    Result := 0;
-
-    if FOrientation = TOrientation.Horizontal then
-      AO := TOrientation.Vertical
-    else
-      AO := TOrientation.Horizontal;
-
-    for I := Index to CtrlCount do begin
-      Control := Controls[I];
-      {$IFDEF MSWINDOWS}
-      if IsDesignerControl(Control) then Continue;
-      {$ENDIF}
-      if not Control.Visible then Continue;
-      View := nil;
-      Supports(Control, IView, View);
-
-      // 如果启用了重力，则无视会影响组件大小的 Align 设置
-      if WeightSum > 0 then begin
-        LAutoSize := Assigned(View) and (IsAutoSize(View, Control.Align, AO));
-      end else
-        LAutoSize := IsAutoSize(View, Control.Align, AO);
-
-      if LAutoSize then begin
-        LastAutoSizeIndex := I;
-        Result := -1;
-        Break;
-      end else begin
-        if Orientation = TOrientation.Horizontal then
-          Result := Result + Control.Margins.Left + Control.Width + Control.Margins.Right
-        else
-          Result := Result + Control.Margins.Top + Control.Height + Control.Margins.Bottom;
-      end;
-    end;
-  end;
-
-var
+  CtrlCount: Integer;
   I: Integer;
   WeightSum: Single;
+  LIsAdjustSize: Boolean;
   CurPos: TPointF;
   W, H, Fix: Single;
-  VL, VT, VW, VH, AW, AH, VRB: Single;
+  VL, VT, VW, VH: Single;
+  MaxW, MaxH: Single;
   Control: TControl;
+  ReSizeView: TView;
   View: IView;
-  SaveAdjustViewBounds, LAutoSize, LAutoPos, LAllowAutoPos: Boolean;
+  SaveAdjustViewBounds, LAutoSize: Boolean;
+  LAdjustControl: TControl;
+  LAdjustSize: Single;
+  IsWeight: Boolean;
 begin
   if FDisableAlign then
     Exit;
   if csLoading in ComponentState then
     Exit;
+  LogD(Self.ClassName + '.DoRealign.');
+
   FDisableAlign := True;
-  WeightSum := GetWeightSum(Fix);
-  LastAutoSizeIndex := -1;
-  CtrlCount := ControlsCount - 1;
 
+  // 得到父级组件的最大高宽
+  MaxW := GetParentMaxWidth;
+  MaxH := GetParentMaxHeight;
+
+  // 得到子组件的开始坐标
   CurPos := PointF(Padding.Left, Padding.Top);
-  //LogD(Format('CurPos.X: %.2f, CurPos.Y: %.2f', [CurPos.X, CurPos.Y]));
-  W := Self.Width - CurPos.X - Padding.Right;
-  H := Self.Height - CurPos.Y - Padding.Bottom;
-  if (WeightSum = 0) and (CheckAutoPos(0, WeightSum) >= 0) then begin
-    if Orientation = TOrientation.Horizontal then begin
-      if FGravity in [TLayoutGravity.CenterHorizontal, TLayoutGravity.CenterHBottom, TLayoutGravity.Center] then
-        CurPos.X := (W - Fix) / 2 + Padding.Left
-      else if FGravity in [TLayoutGravity.RightTop, TLayoutGravity.RightBottom, TLayoutGravity.CenterVRight] then
-        CurPos.X := W - Fix + Padding.Left;
-    end else begin
-      if FGravity in [TLayoutGravity.CenterVertical, TLayoutGravity.CenterVRight, TLayoutGravity.Center] then
-        CurPos.Y := (H - Fix) / 2 + Padding.Top
-      else if FGravity in [TLayoutGravity.LeftBottom, TLayoutGravity.RightBottom, TLayoutGravity.CenterHBottom] then
-        CurPos.Y := H - Fix + Padding.Top;
-    end;
-  end;
+  W := Width - CurPos.X - Padding.Right;
+  H := Height - CurPos.Y - Padding.Bottom;
+  CtrlCount := ControlsCount;
 
-  if (W > 0) and (H > 0) then begin
-    LAllowAutoPos := True;
-    VRB := 0;
-    SaveAdjustViewBounds := False;
-    for I := 0 to CtrlCount do begin
+  // 如果长宽 > 0 时才处理布局
+  if ((W > 0) and (H > 0)) or (CtrlCount > 0) then begin
+    // 获取所有子组件的重力大小之和
+    WeightSum := GetWeightSum(Fix);
+    IsWeight := WeightSum > 0;
+    // 如果 WeightSum 大于0，说明使用了重力, 则不进行组件自动大小处理了
+    LIsAdjustSize := (WeightSum <= 0) and AdjustAutoSizeControl(LAdjustControl, LAdjustSize);
+
+    // 如果没有自动调整指定方向上的大小，则根据重力，自动决定组件的开始位置
+    if (not LIsAdjustSize) then begin
+      if Orientation = TOrientation.Horizontal then begin
+        // 水平布局
+        if FGravity in [TLayoutGravity.CenterHorizontal, TLayoutGravity.CenterHBottom, TLayoutGravity.Center] then
+          // 水平居中
+          CurPos.X := (W - Fix) / 2 + Padding.Left
+        else if FGravity in [TLayoutGravity.RightTop, TLayoutGravity.RightBottom, TLayoutGravity.CenterVRight] then
+          // 右边
+          CurPos.X := W - Fix + Padding.Left;
+      end else begin
+        // 垂直布局
+        if FGravity in [TLayoutGravity.CenterVertical, TLayoutGravity.CenterVRight, TLayoutGravity.Center] then
+          // 垂直居中
+          CurPos.Y := (H - Fix) / 2 + Padding.Top
+        else if FGravity in [TLayoutGravity.LeftBottom, TLayoutGravity.RightBottom, TLayoutGravity.CenterHBottom] then
+          // 底边
+          CurPos.Y := H - Fix + Padding.Top;
+      end;
+    end;
+
+    for I := 0 to CtrlCount - 1 do begin
       Control := Controls[I];
       {$IFDEF MSWINDOWS}
       if (csDesigning in ComponentState)
@@ -2726,268 +3140,435 @@ begin
       {$ENDIF}
       if not Control.Visible then Continue;
 
-      View := nil;
-      if (Supports(Control, IView, View)) then
-        SaveAdjustViewBounds := View.GetAdjustViewBounds;
-
-      LAutoSize := IsAutoSize(View, Control.Align, FOrientation);
-      if LAutoSize and LAllowAutoPos then begin
-        VRB := CheckAutoPos(I + 1, WeightSum);
-        LAutoPos := VRB >= 0;
-        if LAutoPos then
-          LAllowAutoPos := False;
-      end else
-        LAutoPos := False;
-
+      // 如果在设计状态，组件是 DesignerControl 时忽略
       if (csDesigning in ComponentState) then begin
         {$IFDEF MSWINDOWS}
-        if IsDesignerControl(Control) then begin
-          Dec(CtrlCount);
+        if IsDesignerControl(Control) then
           Continue;
-        end;
         {$ENDIF}
       end;
 
-      if Orientation = TOrientation.Horizontal then begin  // 横排
+      // 得到组件IView接口，及是否启用最大最小大小限制
+      View := nil;
+      if (Supports(Control, IView, View)) then
+        SaveAdjustViewBounds := View.GetAdjustViewBounds
+      else
+        SaveAdjustViewBounds := False;
+
+      // 判断组件在另一个方向是否需要自动大小
+      LAutoSize := IsAdjustSize(View, Control.Align, FOrientation);
+
+      // 水平布局
+      if FOrientation = TOrientation.Horizontal then begin
+        // 计算 Left
         VL := CurPos.X + Control.Margins.Left;
+
+        // 计算宽度
         if Assigned(View) and (WeightSum > 0) and (View.GetWeight > 0) then begin
+          // 如果使用重力，则根据重力计算宽度
           VW := (W - Fix) / WeightSum * View.GetWeight - Control.Margins.Left - Control.Margins.Right;
+        end else if Control = LAdjustControl then begin
+          // 如果是需要自动调整大小的组件
+          VW := LAdjustSize - Control.Margins.Right - Control.Margins.Left;
         end else
           VW := Control.Width;
 
+        // 检测宽度大小限制
+        if SaveAdjustViewBounds then begin
+          if (View.GetMaxWidth > 0) and (VW > View.GetMaxWidth) then
+            VW := View.GetMaxWidth;
+          if (View.GetMinWidth > 0) and (VW < View.GetMinWidth) then
+            VW := View.GetMinWidth;
+        end;
+
         if LAutoSize then begin
+          // 自动高度
           VT := CurPos.Y + Control.Margins.Top;
-          // 处理高度
-          if Assigned(View) and (View.GetHeightSize = TViewSize.WrapContent) then begin
-            VH := Control.Height;
-            // 非自动高度时，以重力设置来调整位置
-            case FGravity of
-              TLayoutGravity.LeftTop, TLayoutGravity.RightTop:
-                VT := CurPos.Y + Control.Margins.Top;
-              TLayoutGravity.LeftBottom, TLayoutGravity.RightBottom, TLayoutGravity.CenterHBottom:
-                VT := H - VH - Control.Margins.Bottom + Padding.Top;
-              TLayoutGravity.CenterVertical, TLayoutGravity.Center, TLayoutGravity.CenterVRight:
-                VT := (H - (VH + Control.Margins.Top + Control.Margins.Bottom)) / 2 + Padding.Top + Control.Margins.Top;
-            end;
-          end else
-            VH := H - Control.Margins.Bottom - VT;
+          VH :=  H - VT - Control.Margins.Bottom + Padding.Top;
+
+          // 检测高度大小限制
+          if SaveAdjustViewBounds then begin
+            if (View.GetMaxHeight > 0) and (VH > View.GetMaxHeight) then
+              VH := View.GetMaxHeight;
+            if (View.GetMinHeight > 0) and (VH < View.GetMinHeight) then
+              VH := View.GetMinHeight;
+          end;
         end else begin
           VH := Control.Height;
+
+          // 检测高度大小限制
+          if SaveAdjustViewBounds then begin
+            if (View.GetMaxHeight > 0) and (VH > View.GetMaxHeight) then
+              VH := View.GetMaxHeight;
+            if (View.GetMinHeight > 0) and (VH < View.GetMinHeight) then
+              VH := View.GetMinHeight;
+          end;
+
+          // 非自动高度时，以重力设置来调整位置
           case FGravity of
             TLayoutGravity.LeftTop, TLayoutGravity.RightTop:
+              // 顶部
               VT := CurPos.Y + Control.Margins.Top;
             TLayoutGravity.LeftBottom, TLayoutGravity.RightBottom, TLayoutGravity.CenterHBottom:
+              // 底部
               VT := H - VH - Control.Margins.Bottom + Padding.Top;
             TLayoutGravity.CenterVertical, TLayoutGravity.Center, TLayoutGravity.CenterVRight:
+              // 居中
               VT := (H - (VH + Control.Margins.Top + Control.Margins.Bottom)) / 2 + Padding.Top + Control.Margins.Top;
           else
-            VT := Control.Position.Y;
+            begin
+              if Align in [TAlignLayout.None, TAlignLayout.Scale] then
+                // 自定义位置
+                VT := Control.Position.Y
+              else
+                // 使用 Align 属性，默认左上角
+                VT := CurPos.Y + Control.Margins.Top;
+            end;
           end;
         end;
 
-        if Assigned(View) and (SaveAdjustViewBounds) then begin
-          if (View.GetHeightSize = TViewSize.WrapContent) and (View.GetMaxHeight > 0) and (VH > View.GetMaxHeight) then
-            VH := View.GetMaxHeight;
-          if (View.GetMinHeight > 0) and (VH < View.GetMinHeight) then
-            VH := View.GetMinHeight;
-
-          if (LAutoPos) and (View.GetWidthSize = TViewSize.FillParent) then
-            VW := (W - VRB) - VL - Control.Margins.Right + Padding.Left;
-          AW := VW;
-          if (View.GetMaxWidth > 0) and (AW > View.GetMaxWidth) then
-            AW := View.GetMaxWidth;
-          if (View.GetMinWidth > 0) and (AW < View.GetMinWidth) then
-            AW := View.GetMinWidth;
-          if AW <> VW then
-            VW := AW;
-        end else if LAutoSize then begin // and (FGravity = TLayoutGravity.None) then begin
-          // Align AutoSize
-          AH := VH;
-          if LAutoPos then
-            AW := (W - VRB) - VL - Control.Margins.Right + Padding.Left
-          else
-            AW := Control.Width;
-          VH := Control.Height;  // 高度先默认为原始高度
-
+        // 根据 Align 来调整单个组件的位置
+        if not LAutoSize then begin
           case Control.Align of
-            TAlignLayout.Top, TAlignLayout.MostTop: 
-              begin
-                VW := AW;
-              end;
-            TAlignLayout.Left, TAlignLayout.MostLeft: 
-              begin
-                VH := AH;
-              end;
-            TAlignLayout.Right, TAlignLayout.MostRight:
-              begin
-                VW := AW;
-              end;
-            TAlignLayout.Bottom, TAlignLayout.MostBottom: 
-              begin
-                VT := H - VH - Control.Margins.Bottom;
-                VW := AW;
-              end;
-            TAlignLayout.Client, TAlignLayout.Contents:
-              begin
-                VH := AH;
-                VW := AW;
-              end;
-            TAlignLayout.Center, TAlignLayout.Fit, TAlignLayout.FitLeft, TAlignLayout.FitRight: 
-              begin
-                VT := (H - VH) / 2;
-                if LAutoPos then
-                  VL := VL + (AW - VW) / 2;
-              end;
-            TAlignLayout.VertCenter:
-              begin                 
-                VT := (H - VH) / 2;
-                VW := AW;
-              end;
-            TAlignLayout.HorzCenter: 
-              begin
-                if LAutoPos then
-                  VL := VL + (AW - VW) / 2;  
-              end;
-            TAlignLayout.Horizontal:
-              VW := AW;
-            TAlignLayout.Vertical: 
-              VH := AH;
+            TAlignLayout.Bottom, TAlignLayout.MostBottom:
+              VT := H - VH - Control.Margins.Bottom + Padding.Top;
+            TAlignLayout.Center, TAlignLayout.VertCenter:
+              VT := (H - VH) / 2 + Padding.Top;
           end;
-          
         end;
 
+        // 重置重力设置
         if Assigned(View) and (View.GetWeight > 0) then begin
           Fix := Fix + VW + Control.Margins.Left + Control.Margins.Right;
           WeightSum := WeightSum - View.GetWeight;
         end;
-        CurPos.X := VL + VW + Control.Margins.Right;
 
-      end else begin // 竖排
+      // 垂直布局
+      end else begin
+
+        // 计算 Top
         VT := CurPos.Y + Control.Margins.Top;
-        if Assigned(View) and (WeightSum > 0) and (View.GetWeight > 0) then
-          VH := (H - Fix) / WeightSum * View.GetWeight - Control.Margins.Top - Control.Margins.Bottom
-        else
+        // 计算高度
+        if Assigned(View) and (WeightSum > 0) and (View.GetWeight > 0) then begin
+          // 如果使用重力，则根据重力计算宽度
+          VH := (H - Fix) / WeightSum * View.GetWeight - Control.Margins.Top - Control.Margins.Bottom;
+        end else if Control = LAdjustControl then begin
+          // 如果是需要自动调整大小的组件
+          VH := LAdjustSize - Control.Margins.Bottom - Control.Margins.Top;
+        end else
           VH := Control.Height;
 
+        // 检测高度大小限制
+        if SaveAdjustViewBounds then begin
+          if (View.GetMaxHeight > 0) and (VH > View.GetMaxHeight) then
+            VH := View.GetMaxHeight;
+          if (View.GetMinHeight > 0) and (VH < View.GetMinHeight) then
+            VH := View.GetMinHeight;
+        end;
+
         if LAutoSize then begin
+          // 自动宽度
           VL := CurPos.X + Control.Margins.Left;
-          // 处理宽度
-          if Assigned(View) and (View.GetWidthSize = TViewSize.WrapContent) then begin
-            VW := Control.Height;
-            // 非自动高度时，以重力设置来调整位置
-            case FGravity of
-              TLayoutGravity.LeftTop, TLayoutGravity.LeftBottom:
-                VL := CurPos.X + Control.Margins.Left;
-              TLayoutGravity.RightTop, TLayoutGravity.RightBottom, TLayoutGravity.CenterVRight:
-                VL := W - VW - Control.Margins.Right + Padding.Left;
-              TLayoutGravity.CenterHBottom, TLayoutGravity.Center:
-                VL := (W - (VW + Control.Margins.Left + Control.Margins.Right)) / 2 + Padding.Left + Control.Margins.Left;
-            end;
-          end else
-            VW := W - Control.Margins.Right; // - VL;
+          VW := W - VL - Control.Margins.Right + Padding.Left;
+
+          // 检测宽度大小限制
+          if SaveAdjustViewBounds then begin
+            if (View.GetMaxWidth > 0) and (VW > View.GetMaxWidth) then
+              VW := View.GetMaxWidth;
+            if (View.GetMinWidth > 0) and (VW < View.GetMinWidth) then
+              VW := View.GetMinWidth;
+          end;
         end else begin
           VW := Control.Width;
+
+          // 检测宽度大小限制
+          if SaveAdjustViewBounds then begin
+            if (View.GetMaxWidth > 0) and (VW > View.GetMaxWidth) then
+              VW := View.GetMaxWidth;
+            if (View.GetMinWidth > 0) and (VW < View.GetMinWidth) then
+              VW := View.GetMinWidth;
+          end;
+
+          // 非自动宽度时，以重力设置来调整位置
           case FGravity of
             TLayoutGravity.LeftTop, TLayoutGravity.LeftBottom:
+              // 左边
               VL := CurPos.X + Control.Margins.Left;
             TLayoutGravity.RightTop, TLayoutGravity.RightBottom, TLayoutGravity.CenterVRight:
+              // 右边
               VL := W - VW - Control.Margins.Right + Padding.Left;
             TLayoutGravity.CenterHBottom, TLayoutGravity.Center:
+              // 中间
               VL := (W - (VW + Control.Margins.Left + Control.Margins.Right)) / 2 + Padding.Left + Control.Margins.Left;
           else
-            VL := Control.Position.X;
+            begin
+              if Align in [TAlignLayout.None, TAlignLayout.Scale] then
+                // 自定义位置
+                VL := Control.Position.X
+              else
+                // 使用 Align 属性，默认左上角
+                VL := CurPos.X + Control.Margins.Left;
+            end;
           end;
         end;
 
-        if Assigned(View) and (SaveAdjustViewBounds) then begin
-          if (View.GetWidthSize = TViewSize.WrapContent) and (View.GetMaxWidth > 0) and (VW > View.GetMaxWidth) then
-            VW := View.GetMaxWidth;
-          if (View.GetMinWidth > 0) and (VW < View.GetMinWidth) then
-            VW := View.GetMinWidth;
-          if (LAutoPos) and (View.GetHeightSize = TViewSize.FillParent) then
-            VH := (H - VRB) - VT - Control.Margins.Bottom + Padding.Top;
-          AH := VH;
-          if (View.GetMaxHeight > 0) and (AH > View.GetMaxHeight) then
-            AH := View.GetMaxHeight;
-          if (View.GetMinHeight > 0) and (AH < View.GetMinHeight) then
-            AH := View.GetMinHeight;
-          if AH <> VH then
-            VH := AH;
-        end else if LAutoSize then begin // and (FGravity = TLayoutGravity.None) then begin
-          // Align AutoSize
-          AW := VW;
-          if LAutoPos then
-            AH := (H - VRB) - VT - Control.Margins.Bottom + Padding.Top
-          else
-            AH := Control.Height;
-          VW := Control.Width;
-
+        // 根据 Align 来调整单个组件的位置
+        if not LAutoSize then begin
           case Control.Align of
-            TAlignLayout.Top, TAlignLayout.MostTop:
-              begin
-                VW := AW;
-              end;
-            TAlignLayout.Left, TAlignLayout.MostLeft:
-              begin
-                VH := AH;
-              end;
             TAlignLayout.Right, TAlignLayout.MostRight:
-              begin
-                VH := AH;
-                VL := W - VW - Control.Margins.Right;
-              end;
-            TAlignLayout.Bottom, TAlignLayout.MostBottom:
-              begin
-                VW := AW;
-                if LAutoPos then
-                  VT := H - VH - Control.Margins.Bottom;
-              end;
-            TAlignLayout.Client, TAlignLayout.Contents:
-              begin
-                VH := AH;
-                VW := AW;
-              end;
-            TAlignLayout.Center, TAlignLayout.Fit, TAlignLayout.FitLeft, TAlignLayout.FitRight:
-              begin
-                VL := (W - VW) / 2;
-                if LAutoPos then
-                  VT := VT + (AH - VH) / 2;
-              end;
-            TAlignLayout.VertCenter:
-              begin
-                if LAutoPos then
-                  VT := VT + (H - VH) / 2;
-              end;
-            TAlignLayout.HorzCenter:
-              begin
-                VL := (AW - VW) / 2;
-              end;
-            TAlignLayout.Horizontal:
-              VW := AW;
-            TAlignLayout.Vertical:
-              VH := AH;
+              VL := W - VW - Control.Margins.Right + Padding.Left;
+            TAlignLayout.Center, TAlignLayout.HorzCenter:
+              VL := (W - VW) / 2 + Padding.Left;
           end;
-
         end;
-        
+
+        // 重置重力设置
         if Assigned(View) and (View.GetWeight > 0) then begin
           Fix := Fix + VH + Control.Margins.Top + Control.Margins.Bottom;
           WeightSum := WeightSum - View.GetWeight;
         end;
-        CurPos.Y := VT + VH + Control.Margins.Bottom;
-
       end;
 
+      // 调整组件大小
       if Assigned(View) then begin
-        View.SetAdjustViewBounds(False);
         Control.SetBounds(VL, VT, VW, VH);
-        View.SetAdjustViewBounds(SaveAdjustViewBounds);
+        //SetAdjustViewBounds(SaveAdjustViewBounds);
       end else
         Control.SetBounds(VL, VT, VW, VH);
 
+      // 重新计算Fix，以组件调整后的真实大小为准
+      if FOrientation = TOrientation.Horizontal then
+        Fix := Fix + Control.Width - VW
+      else
+        Fix := Fix + Control.Height - VH;
+
+      // 更新当前坐标
+      if FOrientation = TOrientation.Horizontal then begin
+        CurPos.X := VL + Control.Width + Control.Margins.Right;
+      end else
+        CurPos.Y := VT + Control.Height + Control.Margins.Bottom;
     end;
-  end;
+
+    // 判断是否组件大小为随内容。如果是，根据内容大小调整大小
+    if Orientation = TOrientation.Horizontal then begin
+      VW := CurPos.X + Padding.Right;
+      VH := Height;
+
+      // 高度超过上限
+      if (VW > MaxW) and (MaxW > 0) then begin
+        // 如果使用了 Weight
+        if IsWeight then begin
+          // 获取最后使用 Weight 属性的组件，重新调整大小
+          ReSizeView := GetLastWeightView();
+          if Assigned(ReSizeView) then begin
+            ReSizeView.TempMaxWidth := ReSizeView.Width - (VW - MaxW);
+            ReSizeView.Width := ReSizeView.TempMaxWidth;
+          end;
+        end;
+        VW := MaxW;
+      end;
+
+      if (WidthSize = TViewSize.WrapContent) and (Width <> VW) then
+        SetBounds(Left, Top, VW, VH);
+
+    end else begin
+      VW := Width;
+      VH := CurPos.Y + Padding.Bottom;
+
+      // 高度超过上限
+      if (VH > MaxH) and (MaxH > 0) then begin
+        // 如果使用了 Weight
+        if IsWeight then begin
+          // 获取最后使用 Weight 属性的组件，重新调整大小
+          ReSizeView := GetLastWeightView();
+          if Assigned(ReSizeView) then begin
+            ReSizeView.TempMaxHeight := ReSizeView.Height - (VH - MaxH);
+            ReSizeView.Height := ReSizeView.TempMaxHeight;
+          end;
+        end;
+        VH := MaxH;
+      end;
+
+      if (HeightSize = TViewSize.WrapContent) and (Height <> VH) then
+        SetBounds(Left, Top, VW, VH);
+
+    end;
+
+  end else
+    inherited DoRealign;
   FDisableAlign := False;
+  LogD(Self.ClassName + '.DoRealign OK.');
+end;
+
+procedure TLinearLayout.DoRecalcSize(var AWidth, AHeight: Single);
+var
+  I: Integer;
+  P, Control: TControl;
+  IsAW, IsAH, IsASW, IsASH: Boolean;
+  V: Single;
+begin
+  if IsUpdating then
+    Exit;
+  if not Assigned(ParentView) then begin
+    P := ParentControl;
+    IsAW := False;
+    IsAH := False;
+
+    // 在水平上是否自动大小
+    IsASW := IsAdjustSize(nil, Align, TOrientation.Vertical);
+    // 在垂直上是否自动大小
+    IsASH := IsAdjustSize(nil, Align, TOrientation.Horizontal);
+
+    // 水平方向
+    if (FOrientation = TOrientation.Horizontal) and (not IsASW) then begin
+      if WidthSize = TViewSize.WrapContent then begin
+        AWidth := Padding.Left + Padding.Right;
+        IsAW := True;
+      end else if WidthSize = TViewSize.FillParent then begin
+        if Assigned(P) then
+          AWidth := P.Width - P.Padding.Left - P.Padding.Right - Margins.Left - Margins.Right
+        else
+          AWidth := Padding.Left + Padding.Right;
+      end;
+    end;
+
+    // 垂直方向
+    if (FOrientation = TOrientation.Vertical) and (not IsASH) then begin
+      if HeightSize = TViewSize.WrapContent then begin
+        AHeight := Padding.Top + Padding.Bottom;
+        IsAH := True;
+      end else if HeightSize = TViewSize.FillParent then begin
+        if Assigned(P) then
+          AHeight := P.Height - P.Padding.Top - P.Padding.Bottom - Margins.Top - Margins.Bottom
+        else
+          AHeight := Padding.Top + Padding.Bottom;
+      end;
+    end;
+
+    // 如果有需要自动大小的，则将子控件大小加起来
+    if IsAW or IsAH then begin
+      for I := 0 to ChildrenCount - 1 do begin
+        Control := Controls[I];
+        {$IFDEF MSWINDOWS}
+        if IsDesignerControl(Control) then Continue;
+        {$ENDIF}
+        if not Control.Visible then Continue;
+        if IsAW then
+          AWidth := AWidth + Control.Width + Control.Margins.Left + Control.Margins.Right;
+        if IsAH then
+          AHeight := AHeight + Control.Height + Control.Margins.Top + Control.Margins.Bottom;
+      end;
+    end;
+
+  end else begin
+
+    if FDisableAlign then
+      Exit;
+
+    // 在水平上是否自动大小
+    IsASW := IsAdjustSize(Self, Align, TOrientation.Vertical);
+    // 在垂直上是否自动大小
+    IsASH := IsAdjustSize(Self, Align, TOrientation.Horizontal);
+
+    IsAW := (WidthSize = TViewSize.WrapContent) and (not IsASW);
+    IsAH := (HeightSize = TViewSize.WrapContent) and (not IsASH);
+
+    if IsAW then AWidth := Padding.Left + Padding.Right;
+    if IsAH then AHeight := Padding.Top + Padding.Bottom;
+
+    // 如果有需要自动大小的，则将子控件大小加起来
+    if IsAW or IsAH then begin
+      for I := 0 to ChildrenCount - 1 do begin
+        Control := Controls[I];
+        {$IFDEF MSWINDOWS}
+        if IsDesignerControl(Control) then Continue;
+        {$ENDIF}
+        if not Control.Visible then Continue;
+        
+        if IsAW then begin
+          V := Control.Position.X + Control.Width + Control.Margins.Right;
+          if V > AWidth then
+            AWidth := V;
+        end;
+        if IsAH then begin
+          V := Control.Position.Y + Control.Height + Control.Margins.Bottom;
+          if V > AHeight then
+            AHeight := V;
+        end;
+      end;
+    end;
+
+  end;
+end;
+
+function TLinearLayout.AdjustAutoSizeControl(out AControl: TControl;
+  out AdjustSize: Single): Boolean;
+var
+  I: Integer;
+  Control: TControl;
+  View: IView;
+  AO, FO: TOrientation;
+  NewSize: Single;
+begin
+  Result := False;
+  AControl := nil;
+  AdjustSize := 0;
+  NewSize := 0;
+
+  // 得到一个相反的布局方面，用于 IsAutoSize
+  FO := FOrientation;
+  if FO = TOrientation.Horizontal then
+    AO := TOrientation.Vertical
+  else
+    AO := TOrientation.Horizontal;
+
+  for I := ControlsCount - 1 downto 0 do begin
+    Control := Controls[I];
+    {$IFDEF MSWINDOWS}
+    if IsDesignerControl(Control) then Continue;
+    {$ENDIF}
+    if not Control.Visible then Continue;
+    // 如果还没有找到需要自动大小的组件，则进行检测
+    if (AControl = nil) then begin
+      View := nil;
+      Supports(Control, IView, View);
+      if (IsAdjustSize(View, Control.Align, AO)) then begin
+        AControl := Control;
+        Continue;
+      end;
+    end;
+    //  累加非自动大小控件的大小
+    if FO = TOrientation.Horizontal then
+      NewSize := NewSize + Control.Margins.Left + Control.Width + Control.Margins.Right
+    else
+      NewSize := NewSize + Control.Margins.Top + Control.Height + Control.Margins.Bottom;
+  end;
+
+  // 如果存在有需要自动大小的组件，则调整其大小
+  if AControl <> nil then begin
+    Result := True;
+    if FO = TOrientation.Horizontal then
+      AdjustSize := FSize.Width - Padding.Left - Padding.Right - NewSize
+    else
+      AdjustSize := FSize.Height - Padding.Top - Padding.Bottom - NewSize
+  end;
+end;
+
+function TLinearLayout.GetLastWeightView: TView;
+var
+  I: Integer;
+  Control: TControl;
+  View: IView;
+begin
+  Result := nil;
+  for I := ControlsCount - 1 downto 0 do begin
+    Control := Controls[I];
+    if (not Control.Visible) then Continue;
+    if (Supports(Control, IView, View)) and (View.GetWeight > 0) then begin
+      Result := Control as TView;
+      Break;
+    end
+  end;
 end;
 
 function TLinearLayout.GetWeightSum(var FixSize: Single): Single;
@@ -3004,11 +3585,10 @@ begin
     if IsDesignerControl(Control) then Continue;
     {$ENDIF}
     if (not Control.Visible) then Continue;
-    // TDesignRectangle
     if (Supports(Control, IView, View)) and (View.GetWeight > 0) then
       Result := Result + View.GetWeight
     else begin
-      if Orientation = TOrientation.Horizontal then       
+      if FOrientation = TOrientation.Horizontal then
         FixSize := FixSize + Control.Width + Control.Margins.Left + Control.Margins.Right
       else
         FixSize := FixSize + Control.Height + Control.Margins.Top + Control.Margins.Bottom;
@@ -3166,7 +3746,7 @@ var
   VL, VT, VW, VH: Single;
   View: TControl;
   LView: IView;
-  SaveAdjustViewBounds: Boolean;
+  //SaveAdjustViewBounds: Boolean;
 begin
   if FDisableAlign or (not Assigned(FViewList)) then
     Exit;
@@ -3180,7 +3760,7 @@ begin
   if (W > 0) and (H > 0) then begin
     FViewList.Clear;
     DoAlignControl(CurPos.X, CurPos.Y, FSize.Width, FSize.Height);
-    SaveAdjustViewBounds := False;
+    //SaveAdjustViewBounds := False;
     List := TList.Create;
     try
       for I := 0 to FViewList.Count - 1 do begin
@@ -3193,15 +3773,56 @@ begin
         VT := VT + View.Margins.Top;
         VW := VW - View.Margins.Left - View.Margins.Right;
         VH := VH - View.Margins.Top - View.Margins.Bottom;
-        LView.SetAdjustViewBounds(False);
+        //LView.SetAdjustViewBounds(False);
         View.SetBounds(VL, VT, VW, VH);
-        LView.SetAdjustViewBounds(SaveAdjustViewBounds);
+        //LView.SetAdjustViewBounds(SaveAdjustViewBounds);
       end;
     finally
       List.Free;
     end;
   end;
   FDisableAlign := False;
+end;
+
+procedure TRelativeLayout.DoRecalcSize(var AWidth, AHeight: Single);
+var
+  I: Integer;
+  Control: TControl;
+  IsAW, IsAH: Boolean;
+  V: Single;
+begin
+  if IsUpdating then
+    Exit;
+
+  IsAW := (WidthSize = TViewSize.WrapContent) and
+    (not IsAdjustSize(nil, Align, TOrientation.Vertical));
+  IsAH := (HeightSize = TViewSize.WrapContent) and
+    (not IsAdjustSize(nil, Align, TOrientation.Horizontal));
+
+  // 如果有需要自动大小的，则将子控件大小加起来
+  if IsAW or IsAH then begin
+
+    if IsAW then AWidth := 0;
+    if IsAH then AHeight := 0;
+
+    for I := 0 to ChildrenCount - 1 do begin
+      Control := Controls[I];
+      {$IFDEF MSWINDOWS}
+      if IsDesignerControl(Control) then Continue;
+      {$ENDIF}
+      if not Control.Visible then Continue;
+      if IsAW then begin
+        V := Control.Width + Control.Position.X + Control.Margins.Right + Padding.Right;
+        if V > AWidth then
+          AWidth := V;
+      end;
+      if IsAH then begin
+        V := Control.Height + Control.Position.Y + Control.Margins.Bottom + Padding.Bottom;
+        if V > AHeight then
+          AHeight := V;
+      end;
+    end;
+  end;
 end;
 
 function TRelativeLayout.GetXY(const StackList: TList; const Control: TControl;
@@ -3263,8 +3884,8 @@ begin
     DecW := False;
     DecHD2 := False;
 
-    AutoW := View.WidthSize <> TViewSize.WrapContent;
-    AutoH := View.HeightSize <> TViewSize.WrapContent;
+    AutoW := View.WidthSize = TViewSize.FillParent;
+    AutoH := View.HeightSize = TViewSize.FillParent;
 
     if (Layout.FCenterInParent) or (Layout.FCenterVertical and Layout.FCenterHorizontal) then begin
       if AutoW then W := PW;
@@ -3441,45 +4062,51 @@ const
   end;
 
 var
-  Layout: TTextLayout;
   LText: string;
   LMaxWidth: Single;
 begin
   Result := False;
   if (SceneScale >= 0) then
   begin
-    LMaxWidth := MaxWidth - Margins.Left - Margins.Right;
-    Layout := TTextLayoutManager.DefaultTextLayout.Create;
-    try
-      if FPrefixStyle = TPrefixStyle.HidePrefix then
-        LText := DelAmp(FText)
-      else
-        LText := FText;
-      Layout.BeginUpdate;
-      if LText.IsEmpty then
-        Layout.Text := FakeText
-      else
-        Layout.Text := LText;
-
-      Layout.Font := FFont;
-      if FWordWrap and (LMaxWidth > 1) then
-        Layout.MaxSize := TPointF.Create(LMaxWidth, Layout.MaxSize.Y);
-      Layout.WordWrap := FWordWrap;
-      Layout.Trimming := FTrimming;
-      Layout.VerticalAlign := TTextAlign.Leading;
-      Layout.HorizontalAlign := TTextAlign.Leading;
-      Layout.EndUpdate;
-
-      if LText.IsEmpty then
-        Size.Width := 0
-      else
-        Size.Width := RoundToScale(Layout.Width + Layout.TextRect.Left * 2 + Layout.Font.Size / 3, SceneScale);
-      Size.Width := Size.Width + Margins.Left + Margins.Right;
-      Size.Height := RoundToScale(Layout.Height, SceneScale) + Margins.Top + Margins.Bottom;
-      Result := True;
-    finally
-      Layout.Free;
+    if Margins <> nil then
+      LMaxWidth := MaxWidth - Margins.Left - Margins.Right
+    else
+      LMaxWidth := MaxWidth;
+    if FLayout = nil then begin
+      //FLayout := TTextLayoutManager.DefaultTextLayout.Create;
+      FLayout := TTextLayoutManager.TextLayoutByCanvas
+        (TCanvasManager.MeasureCanvas.ClassType)
+        .Create(TCanvasManager.MeasureCanvas);
     end;
+    if FPrefixStyle = TPrefixStyle.HidePrefix then
+      LText := DelAmp(FText)
+    else
+      LText := FText;
+    FLayout.BeginUpdate;
+    FLayout.Font.Assign(FFont);
+    if FWordWrap and (LMaxWidth > 1) then
+      FLayout.MaxSize := TPointF.Create(LMaxWidth, FLayout.MaxSize.Y);
+    FLayout.WordWrap := FWordWrap;
+    FLayout.Trimming := FTrimming;
+    FLayout.VerticalAlign := TTextAlign.Leading;
+    FLayout.HorizontalAlign := TTextAlign.Leading;
+    if LText.IsEmpty then
+      FLayout.Text := FakeText
+    else
+      FLayout.Text := LText;
+    FLayout.EndUpdate;
+
+    if LText.IsEmpty then begin
+      Size.Width := 0;
+    end else begin
+      Size.Width := RoundToScale(FLayout.Width + FLayout.TextRect.Left * 2 + FLayout.Font.Size / 3, SceneScale);
+    end;
+    Size.Height := RoundToScale(FLayout.Height, SceneScale);
+    if Margins <> nil then begin
+      Size.Width := Size.Width + Margins.Left + Margins.Right;
+      Size.Height := Size.Height + Margins.Top + Margins.Bottom;
+    end;
+    Result := True;
   end;
 end;
 
@@ -3516,6 +4143,7 @@ destructor TTextSettings.Destroy;
 begin
   FreeAndNil(FFont);
   FreeAndNil(FColor);
+  FreeAndNil(FLayout);
   inherited;
 end;
 
@@ -3858,7 +4486,7 @@ begin
     FBorder.Brush.Color :=  FBorder.Color.GetStateColor(AState);
     case FBorder.FStyle of
       TViewBorderStyle.RectBorder:
-        Canvas.DrawRect(R, XRadius, YRadius, AllCorners, FView.Opacity, FBorder.Brush);
+        Canvas.DrawRect(R, XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush);
       TViewBorderStyle.LineBottom:
         begin
           Canvas.DrawLine(R.BottomRight, PointF(R.Left, R.Bottom), FView.Opacity, FBorder.Brush);
@@ -4092,5 +4720,21 @@ procedure TPatch9Bitmap.SetBounds(const Value: TBounds);
 begin
   FBounds.Assign(Value);
 end;
+
+initialization
+  {$IFDEF MSWINDOWS}
+  GetTickCount64 := GetProcAddress(GetModuleHandle(kernel32), 'GetTickCount64');
+  if not QueryPerformanceFrequency(_PerfFreq) then begin
+    _PerfFreq := -1;
+    if Assigned(GetTickCount64) then
+      _StartCounter := GetTickCount64
+    else
+      _StartCounter := GetTickCount;
+  end else
+    QueryPerformanceCounter(_StartCounter);
+  {$ELSE}
+    _Watch := TStopWatch.Create;
+    _Watch.Start;
+  {$ENDIF}
 
 end.

@@ -1,15 +1,22 @@
+{*******************************************************}
+{                                                       }
+{       FMX UI Frame 管理单元                           }
+{                                                       }
+{       版权所有 (C) 2016 YangYxd                       }
+{                                                       }
+{*******************************************************}
+
 unit UI.Frame;
 
 interface
 
 uses
-  UI.Base,
+  UI.Base, UI.Toast,
   System.Generics.Collections, System.Rtti,
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  {$IFDEF ANDROID}
-  FMX.Platform.Android,
-  {$ENDIF}
-  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs;
+  {$IFDEF ANDROID}FMX.Platform.Android, {$ENDIF}
+  {$IFDEF POSIX}Posix.Signal, {$ENDIF}
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics;
 
 type
   TFrameView = class;
@@ -78,7 +85,9 @@ type
     /// <summary>
     /// 显示一个提示消息
     /// </summary>
-    procedure Hint(const Msg: string);
+    procedure Hint(const Msg: string); overload;
+    procedure Hint(const Msg: Double); overload;
+    procedure Hint(const Msg: Int64); overload;
 
     /// <summary>
     /// 显示 Frame
@@ -130,7 +139,15 @@ begin
   if Assigned(Parent) then begin
     if not Assigned(Parent.Parent) then begin
       if (Parent is TForm) and (Parent.ChildrenCount <= MainFormMinChildren + 1) then begin
-        TForm(Parent).Close;
+        {$IFDEF POSIX}
+          {$IFDEF DEBUG}
+          (Parent as TForm).Close;
+          {$ELSE}
+          Kill(0, SIGKILL);
+          {$ENDIF}
+        {$ELSE}
+        (Parent as TForm).Close;
+        {$ENDIF}
         Result := True;
         Exit;
       end;
@@ -141,8 +158,10 @@ end;
 
 procedure TFrameView.Close;
 begin
-  if CheckFree then Exit;  
+  if CheckFree then Exit;
+  {$IFNDEF AUTOREFCOUNT}
   Free;
+  {$ENDIF}
 end;
 
 class function TFrameView.CreateFrame(Parent: TFmxObject;
@@ -223,7 +242,9 @@ begin
     FLastView.Show;
     FLastView.FNextView := nil;
     FLastView := nil;
+    {$IFNDEF AUTOREFCOUNT}
     Free;
+    {$ENDIF}
   end;
 end;
 
@@ -241,12 +262,19 @@ begin
   DoHide;
 end;
 
+procedure TFrameView.Hint(const Msg: Double);
+begin
+  Toast(FloatToStr(Msg));
+end;
+
+procedure TFrameView.Hint(const Msg: Int64);
+begin
+  Toast(IntToStr(Msg));
+end;
+
 procedure TFrameView.Hint(const Msg: string);
 begin
-  {$IFDEF ANDROID}
-  {$ELSE}
-  ShowMessage(Msg);
-  {$ENDIF}
+  Toast(Msg);
 end;
 
 procedure TFrameView.SetParams(const Value: TFrameParams);

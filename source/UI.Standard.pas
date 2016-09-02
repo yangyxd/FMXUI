@@ -1,3 +1,11 @@
+{*******************************************************}
+{                                                       }
+{       FMX UI 标准组件单元                             }
+{                                                       }
+{       版权所有 (C) 2016 YangYxd                       }
+{                                                       }
+{*******************************************************}
+
 unit UI.Standard;
 
 interface
@@ -5,7 +13,7 @@ interface
 uses
   UI.Base,
   {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
-  FMX.BehaviorManager, FMX.Forms, System.Messaging,
+  FMX.BehaviorManager, FMX.Forms, System.Messaging, FMX.Styles,
   FMX.ActnList, FMX.Objects, System.Math, System.Actions, System.Rtti, FMX.Consts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, FMX.TextLayout,
   System.Classes, System.Types, System.UITypes, System.SysUtils, System.Math.Vectors,
@@ -25,10 +33,11 @@ type
     FText: UI.Base.TTextSettings;
     FTextHint: string;
     FDrawable: TDrawableIcon;
-    FIsChanging: Boolean;
     FOnDrawText: TOnDrawText;
     FOnTextChange: TNotifyEvent;
     FOnDrawViewBackgroud: TOnDrawViewBackgroud;
+    FInFitSize: Boolean;
+
     function GetAutoSize: Boolean;
     function GetText: string;
     procedure SetAutoSize(const Value: Boolean);
@@ -40,7 +49,6 @@ type
     function GetDrawableHeight(): Integer;
     procedure SetTextHint(const Value: string);
   protected
-    procedure Resize; override;
     procedure Loaded; override;
     procedure DblClick; override;
     procedure ImagesChanged; override;
@@ -57,12 +65,37 @@ type
     procedure SetName(const Value: TComponentName); override;
   protected
     function TextStored: Boolean;
+    function IsAutoSize: Boolean; override;
     procedure DoChanged(Sender: TObject); virtual;
     procedure DoDrawableChanged(Sender: TObject);
+    procedure PaddingChanged; override;
+    procedure Resize; override;
+    procedure DoRecalcSize(var AWidth, AHeight: Single); override;
+    procedure DoChangeSize(var ANewWidth, ANewHeight: Single); override;
+    procedure DoAutoSize;
+    procedure DoUpdateContentBounds;
+  protected
+    {Scrollbar}
+    FScrollBarObj: TScrollBar;
+    FContentBounds: TRectF;
+    FDownPoint: TPointF;
+    procedure AniMouseDown(const Touch: Boolean; const X, Y: Single); virtual;
+    procedure AniMouseMove(const Touch: Boolean; const X, Y: Single); virtual;
+    procedure InitScrollbar; override;
+    procedure FreeScrollbar; override;
+    procedure HScrollChange(Sender: TObject);
+    procedure VScrollChange(Sender: TObject);
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
+    procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
+    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); override;
+    function GetVScrollBar: TScrollBar; override;
+    function GetHScrollBar: TScrollBar; override;
+    function GetContentBounds: TRectF; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     function ToString: string; override;
+    procedure SetNewScene(AScene: IScene); override;
     procedure AfterConstruction; override;
     procedure Change;
   published
@@ -71,6 +104,8 @@ type
     property TextHint: string read FTextHint write SetTextHint;
     property TextSettings: UI.Base.TTextSettings read FText write SetTextSettings;
     property Drawable: TDrawableIcon read GetDrawable write SetDrawable;
+    property ScrollBars;
+    property DisableMouseWheel;
     property OnTextChange: TNotifyEvent read FOnTextChange write FOnTextChange;
     property OnDrawText: TOnDrawText read FOnDrawText write FOnDrawText;
     property OnDrawBackgroud: TOnDrawViewBackgroud read FOnDrawViewBackgroud
@@ -133,26 +168,59 @@ begin
   inherited AfterConstruction;
   FText.OnChanged := DoChanged;
   FText.OnTextChanged := FOnTextChange;
-  FIsChanging := False;
+end;
+
+procedure TTextView.AniMouseDown(const Touch: Boolean; const X, Y: Single);
+begin
+  FDownPoint.X := X;
+  FDownPoint.Y := Y;
+end;
+
+procedure TTextView.AniMouseMove(const Touch: Boolean; const X, Y: Single);
+var
+  Offset: Single;
+begin
+  if Assigned(FScrollBarObj) then begin
+    if FScrollbar = TViewScroll.Vertical then begin
+      if (FContentBounds.Height > Height) then begin
+        Offset := Y - FDownPoint.Y;
+        FScrollBarObj.Value := FScrollBarObj.Value - Offset / 100;
+        Exit;
+      end; 
+    end else if FScrollbar = TViewScroll.Horizontal then begin
+      if (FContentBounds.Width > Width) then begin
+        Offset := X - FDownPoint.X;
+        FScrollBarObj.Value := FScrollBarObj.Value - Offset / 100;
+        Exit;
+      end;
+    end;
+  end; 
+end;
+
+procedure TTextView.DoAutoSize;
+var
+  W, H: Single;
+begin
+  if FInFitSize then
+    Exit;
+  W := FSize.Width;
+  H := FSize.Height;
+  DoChangeSize(W, H);
+  if (W <> FSize.Width) or (H <> FSize.Height) then begin
+    FInFitSize := True;
+    SetSize(W, H, False);
+    FInFitSize := False;
+  end;
 end;
 
 procedure TTextView.Change;
 begin
-  if not FIsChanging and ([csLoading, csDestroying] * ComponentState = []) and not Released then
-  begin
-    FIsChanging := True;
-    try
-      DoChanged(FText);
-    finally
-      FIsChanging := False;
-    end;
-  end;
+  DoChanged(FText);
 end;
 
 constructor TTextView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FIsChanging := True;
   FText := UI.Base.TTextSettings.Create(Self);
   if csDesigning in ComponentState then begin
     FDrawable := TDrawableIcon.Create(Self);
@@ -180,11 +248,32 @@ procedure TTextView.DoChanged(Sender: TObject);
 begin
   FGravity := FText.Gravity;
   if FText.IsSizeChange then begin
-    RecalcSize;
+    if AutoSize then
+      DoAutoSize
+    else
+      DoUpdateContentBounds;
   end else
     Repaint;
   if FText.IsEffectsChange then
     UpdateEffects;
+end;
+
+procedure TTextView.DoChangeSize(var ANewWidth, ANewHeight: Single);
+begin
+  inherited DoChangeSize(ANewWidth, ANewHeight);
+  if (Assigned(FScrollBarObj)) then begin
+    case FScrollbar of
+      TViewScroll.Horizontal: 
+        begin
+          FScrollBarObj.Visible := FContentBounds.Right > ANewWidth; 
+        end;
+      TViewScroll.Vertical: 
+        begin
+          FScrollBarObj.Visible := FContentBounds.Bottom > ANewHeight;
+          FContentBounds.Bottom := FContentBounds.Bottom + 4;
+        end;
+    end;
+  end;
 end;
 
 procedure TTextView.DoDrawableChanged(Sender: TObject);
@@ -200,9 +289,8 @@ end;
 
 procedure TTextView.DoLayoutChanged(Sender: TObject);
 begin
-  if FText.AutoSize then
-    Resize;
   inherited DoLayoutChanged(Sender);
+  DoAutoSize;
 end;
 
 procedure TTextView.DoPaintBackground(var R: TRectF);
@@ -216,20 +304,143 @@ begin
 end;
 
 procedure TTextView.DoPaintText(var R: TRectF);
+var
+  SR: TRectF;
 begin
+  if InVisible then
+    Exit;
   if FText.Text = '' then
     FText.Draw(Canvas, FTextHint, R, GetAbsoluteOpacity, TViewState(8))
   else begin
+    if Assigned(FScrollBarObj) and (FScrollBarObj.Visible) then begin    
+      case FScrollbar of
+        TViewScroll.None: SR := R;
+        TViewScroll.Horizontal: 
+          begin
+            SR := FContentBounds;
+            SR.Top := R.Top;
+            SR.Bottom := R.Bottom - FScrollBarObj.Height;
+            OffsetRect(SR, -(FScrollBarObj.Value / 100 * (SR.Width - R.Width)), 0);  
+          end;
+        TViewScroll.Vertical: 
+          begin
+            SR := FContentBounds;
+            SR.Left := R.Left;
+            SR.Right := R.Right - FScrollBarObj.Width;
+            OffsetRect(SR, 0, -(FScrollBarObj.Value / 100 * (SR.Height - R.Height)));  
+          end;
+      end;
+    end else 
+      SR := R;
+
     if Assigned(FOnDrawText) then
-      FOnDrawText(Self, Canvas, FText, R)
+      FOnDrawText(Self, Canvas, FText, SR)
     else
-      FText.Draw(Canvas, R, GetAbsoluteOpacity, DrawState);
+      FText.Draw(Canvas, SR, GetAbsoluteOpacity, DrawState);
+  end;
+end;
+
+procedure TTextView.DoRecalcSize(var AWidth, AHeight: Single);
+var
+  ASize: TSizeF;
+  V, IconS, VW, VH: Single;
+begin
+  if FInFitSize or (Scene = nil) or (not Assigned(FText)) then
+    Exit;
+  FInFitSize := True;
+  try
+    // 计算出文本区域的最大宽度，如果为0，则不自动换行
+    if FText.WordWrap then begin
+      V := AWidth - Padding.Left - Padding.Right;
+      // 如果有icon，并且是在左边或右边，则还需要减去icon大小
+      IconS := GetDrawableWidth;
+      if (IconS > 0) and (FDrawable.Position in [TDrawablePosition.Left, TDrawablePosition.Right]) then
+        V := V - IconS - FDrawable.Padding;
+      if (FScrollbar = TViewScroll.Vertical) and (FScrollBarObj <> nil) then
+        V := V - FScrollBarObj.Width - 1;
+    end else
+      V := 0;
+
+    // 计算文本区域大小
+    if not FText.CalcTextObjectSize(V, Scene.GetSceneScale, nil, ASize) then Exit;
+
+    if ASize.Width < GetDrawableWidth then
+      ASize.Width := GetDrawableWidth;
+    if ASize.Height < GetDrawableHeight then
+      ASize.Height := GetDrawableHeight;
+
+    if (WidthSize = TViewSize.WrapContent) and (HeightSize = TViewSize.WrapContent) then begin
+      V := GetDrawableWidth;
+      AWidth := ASize.Width + Padding.Left + Padding.Right;
+      AHeight := ASize.Height + Padding.Top + Padding.Bottom;
+      if (V > 0) and (FDrawable.Position in [TDrawablePosition.Left, TDrawablePosition.Right]) then
+        AWidth := AWidth + V + FDrawable.Padding;
+      V := GetDrawableHeight;
+      if (V > 0) and (FDrawable.Position in [TDrawablePosition.Top, TDrawablePosition.Bottom]) then
+        AHeight := AHeight + V + FDrawable.Padding;
+    end else if WidthSize = TViewSize.WrapContent then begin
+      V := GetDrawableWidth;
+      if (V > 0) and (FDrawable.Position in [TDrawablePosition.Left, TDrawablePosition.Right]) then
+        AWidth := ASize.Width + Padding.Left + Padding.Right + V + FDrawable.Padding
+      else
+        AWidth := ASize.Width + Padding.Left + Padding.Right;
+    end else if HeightSize = TViewSize.WrapContent then begin
+      V := GetDrawableHeight;
+      if (V > 0) and (FDrawable.Position in [TDrawablePosition.Top, TDrawablePosition.Bottom]) then
+        AHeight := ASize.Height + Padding.Top + Padding.Bottom + V + FDrawable.Padding
+      else
+        AHeight := ASize.Height + Padding.Top + Padding.Bottom;
+    end;
+
+    if FScrollbar <> TViewScroll.None then begin
+      V := GetDrawableWidth;
+      VW := ASize.Width + Padding.Left + Padding.Right;
+      VH := ASize.Height + Padding.Top + Padding.Bottom;
+      if (V > 0) and (FDrawable.Position in [TDrawablePosition.Left, TDrawablePosition.Right]) then
+        VW := VW + V + FDrawable.Padding;
+      V := GetDrawableHeight;
+      if (V > 0) and (FDrawable.Position in [TDrawablePosition.Top, TDrawablePosition.Bottom]) then
+        VH := VH + V + FDrawable.Padding;
+
+      if (FScrollbar = TViewScroll.Horizontal) and (FScrollBarObj <> nil) and (FScrollBarObj.Visible) then
+        VH := VH + FScrollBarObj.Height;
+
+      FContentBounds := RectF(Padding.Left, Padding.Top, VW, VH);
+    end;
+
+  finally
+    FInFitSize := False;
+  end;
+end;
+
+procedure TTextView.DoUpdateContentBounds;
+var
+  W, H: Single;
+begin
+  if (FScrollbar <> TViewScroll.None) and (not (csDestroying in ComponentState)) then begin
+    W := FSize.Width;
+    H := FSize.Height;
+    DoRecalcSize(W, H);
+  end;
+end;
+
+procedure TTextView.FreeScrollbar;
+begin
+  AutoCapture := False;
+  if Assigned(FScrollBarObj) then begin
+    RemoveComponent(FScrollBarObj);
+    FreeAndNil(FScrollBarObj);
   end;
 end;
 
 function TTextView.GetAutoSize: Boolean;
 begin
   Result := FText.AutoSize;
+end;
+
+function TTextView.GetContentBounds: TRectF;
+begin
+
 end;
 
 function TTextView.GetData: TValue;
@@ -283,9 +494,30 @@ begin
     Result := 0;
 end;
 
+function TTextView.GetHScrollBar: TScrollBar;
+begin
+  if FScrollbar = TViewScroll.Horizontal then   
+    Result := FScrollBarObj
+  else
+    Result := nil;
+end;
+
 function TTextView.GetText: string;
 begin
   Result := FText.Text;
+end;
+
+function TTextView.GetVScrollBar: TScrollBar;
+begin
+  if FScrollbar = TViewScroll.Vertical then   
+    Result := FScrollBarObj
+  else
+    Result := nil;
+end;
+
+procedure TTextView.HScrollChange(Sender: TObject);
+begin
+  Repaint;
 end;
 
 procedure TTextView.ImagesChanged;
@@ -295,13 +527,109 @@ begin
   inherited ImagesChanged;
 end;
 
+procedure TTextView.InitScrollbar;
+begin
+  if (csDesigning in ComponentState) then 
+    Exit;
+  case FScrollbar of
+    TViewScroll.Vertical: 
+      begin
+        if Assigned(FScrollBarObj) and (FScrollBarObj.Orientation = TOrientation.Horizontal) then
+          Exit;
+        FScrollBarObj := TSmallScrollBar.Create(Self);
+        FScrollBarObj.Orientation := TOrientation.Vertical;
+        FScrollBarObj.OnChange := VScrollChange;
+        FScrollBarObj.Locked := True;
+        FScrollBarObj.Align := TAlignLayout.Right;
+        FScrollBarObj.SmallChange := SmallChangeFraction;
+        FScrollBarObj.Parent := Self;
+        FScrollBarObj.Visible := True;
+        FScrollBarObj.Stored := False;
+      end;
+    TViewScroll.Horizontal:
+      begin
+        if Assigned(FScrollBarObj) and (FScrollBarObj.Orientation = TOrientation.Vertical) then
+          Exit;
+        FScrollBarObj := TSmallScrollBar.Create(Self);
+        FScrollBarObj.Orientation := TOrientation.Horizontal;
+        FScrollBarObj.OnChange := HScrollChange;
+        FScrollBarObj.Locked := True;
+        FScrollBarObj.Align := TAlignLayout.Bottom;
+        FScrollBarObj.SmallChange := SmallChangeFraction;
+        FScrollBarObj.Parent := Self;
+        FScrollBarObj.Visible := True;  
+        FScrollBarObj.Stored := False;
+      end;
+  end;
+  if (FScrollbar <> TViewScroll.None) then begin
+    DisableDisappear := True;
+    AutoCapture := True;
+    Touch.DefaultInteractiveGestures := Touch.DefaultInteractiveGestures + [TInteractiveGesture.Pan];
+    Touch.InteractiveGestures := Touch.InteractiveGestures + [TInteractiveGesture.Pan];
+  end;
+end;
+
+function TTextView.IsAutoSize: Boolean;
+begin
+  Result := AutoSize;
+end;
+
 procedure TTextView.Loaded;
 begin
   inherited;
   FText.OnChanged := DoChanged;
   if AutoSize then
-    Resize;
+    DoAutoSize;
   Change;
+end;
+
+procedure TTextView.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+begin
+  inherited;
+  if (Button = TMouseButton.mbLeft) and (FScrollbar <> TViewScroll.None) then
+    AniMouseDown(ssTouch in Shift, X, Y);
+end;
+
+procedure TTextView.MouseMove(Shift: TShiftState; X, Y: Single);
+begin
+  inherited;
+  if (FScrollbar <> TViewScroll.None) and (ssLeft in Shift) then
+    AniMouseMove(ssTouch in Shift, X, Y);
+end;
+
+procedure TTextView.MouseWheel(Shift: TShiftState; WheelDelta: Integer;
+  var Handled: Boolean);
+var
+  Offset: Single;
+begin
+  inherited;
+  if (not (Handled or FDisableMouseWheel)) and (not FContentBounds.IsEmpty) then begin
+    if not Assigned(FScrollBarObj) then Exit;    
+    if ssHorizontal in Shift then begin
+      if (FContentBounds.Width > Width) and (FScrollbar = TViewScroll.Horizontal) then begin
+        Offset := FScrollBarObj.SmallChange;
+        Offset := Offset * -1 * (WheelDelta / 120);
+        FScrollBarObj.Value := FScrollBarObj.Value + Offset;
+        Handled := True;
+      end;
+    end else if (FContentBounds.Height > Height) and (FScrollbar = TViewScroll.Vertical) then begin
+      Offset := FScrollBarObj.SmallChange;
+      Offset := Offset * -1 * (WheelDelta / 120);
+      FScrollBarObj.Value := FScrollBarObj.Value + Offset;
+      Handled := True;
+    end else if (FContentBounds.Width > Width) and (FScrollbar = TViewScroll.Horizontal) then begin
+      Offset := FScrollBarObj.SmallChange;
+      Offset := Offset * -1 * (WheelDelta / 120);
+      FScrollBarObj.Value := FScrollBarObj.Value + Offset;
+      Handled := True;
+    end;
+  end;
+end;
+
+procedure TTextView.PaddingChanged;
+begin
+  HandleSizeChanged;
 end;
 
 procedure TTextView.PaintBackground;
@@ -317,30 +645,12 @@ begin
 end;
 
 procedure TTextView.Resize;
-var
-  ASize: TSizeF;
-  R: TRectF;
 begin
   inherited Resize;
-  if csLoading in ComponentState then Exit;  
-  if (FDisableAlign) or (not Assigned(FText)) or (not Assigned(Scene)) or
-    (not FText.AutoSize) then Exit;
-  if not FText.CalcTextObjectSize(FMaxWidth, Scene.GetSceneScale, Margins, ASize) then Exit;
-  FDisableAlign := True;
-  try
-    if (WidthSize = TViewSize.WrapContent) and (HeightSize = TViewSize.WrapContent) then begin
-      R := BoundsRect;
-      R.Width := ASize.Width + Padding.Left + Padding.Right;
-      R.Height := ASize.Height + Padding.Top + Padding.Bottom;
-      SetBoundsRect(R);
-    end else if WidthSize = TViewSize.WrapContent then
-      Width := ASize.Width + Padding.Left + Padding.Right + GetDrawableWidth
-    else if HeightSize = TViewSize.WrapContent then
-      Height := ASize.Height + Padding.Top + Padding.Bottom + GetDrawableHeight;
-  finally
-    DoLayoutChanged(Self);
-    FDisableAlign := False;
-  end;
+  if AutoSize then
+    DoAutoSize
+  else if FScrollbar <> TViewScroll.None then
+    DoUpdateContentBounds;
 end;
 
 procedure TTextView.SetAutoSize(const Value: Boolean);
@@ -378,6 +688,13 @@ begin
     Text := Value;
 end;
 
+procedure TTextView.SetNewScene(AScene: IScene);
+begin
+  inherited SetNewScene(AScene);
+  if not (csLoading in ComponentState) then
+    DoUpdateContentBounds;
+end;
+
 procedure TTextView.SetText(const Value: string);
 begin
   FText.Text := Value;
@@ -406,6 +723,11 @@ end;
 function TTextView.ToString: string;
 begin
   Result := Format('%s ''%s''', [inherited ToString, FText]);
+end;
+
+procedure TTextView.VScrollChange(Sender: TObject);
+begin
+  Repaint;
 end;
 
 { TStyleView }

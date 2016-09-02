@@ -44,7 +44,6 @@ contains
   UI.Dialog in 'source\UI.Dialog.pas',
   UI.Toast.Android in 'source\UI.Toast.Android.pas',
   UI.Toast in 'source\UI.Toast.pas',
-  UI.ListView in 'source\UI.ListView.pas',
-  UI.Toast.AndroidLike in 'source\UI.Toast.AndroidLike.pas';
+  UI.ListView in 'source\UI.ListView.pas';
 
 end.

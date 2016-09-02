@@ -1,3 +1,11 @@
+{*******************************************************}
+{                                                       }
+{       FMX UI EditView ±à¼­¿ò                          }
+{                                                       }
+{       °æÈ¨ËùÓÐ (C) 2016 YangYxd                       }
+{                                                       }
+{*******************************************************}
+
 unit UI.Edit;
 
 interface
@@ -7,17 +15,16 @@ uses
   {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
   FMX.BehaviorManager, FMX.Forms, System.Messaging,
   FMX.Menus, FMX.Presentation.Messages, FMX.Controls.Presentation,
-  FMX.Text, FMX.Edit, FMX.Edit.Style, FMX.Controls.Model, FMX.MagnifierGlass, FMX.SpellChecker,
-  FMX.ActnList, FMX.Objects, System.Math, System.Actions, System.Rtti, FMX.Consts,
+  FMX.Text, FMX.Edit, FMX.Edit.Style, FMX.Controls.Model, FMX.MagnifierGlass,
+  FMX.SpellChecker, FMX.ActnList, FMX.Objects,
+  System.Math, System.Actions, System.Rtti, FMX.Consts,
   System.TypInfo, System.SysUtils, System.Character, System.RTLConsts,
   FMX.Graphics, System.Generics.Collections, FMX.TextLayout,
   System.Classes, System.Types, System.UITypes, System.Math.Vectors,
-  FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls, FMX.InertialMovement;
+  FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls;
 
 type
-  TEditDrawableBorder = class(TDrawableBorder)
-  published
-  end;
+  TEditDrawableBorder = class(TDrawableBorder);
 
 type
   TEditViewBase = class(TView, ICaption)
@@ -293,7 +300,9 @@ type
     procedure ShowCaret;
     procedure HideCaret;
     function GetCaret: TCustomCaret;
+    {$IF CompilerVersion = 30}
     function ITextInput.ReadOnly = GetReadOnly;
+    {$ENDIF}
     { Context menu }
     function CreatePopupMenu: TPopupMenu; virtual;
     function FindContextMenuItem(const AItemName: string): TMenuItem;

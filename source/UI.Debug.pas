@@ -1,6 +1,6 @@
 {*******************************************************}
 {                                                       }
-{       FMXUI 日志输出模块                              }
+{       FMX UI 日志输出模块                             }
 {                                                       }
 {       版权所有 (C) 2013      YangYxd                  }
 {                                                       }
@@ -16,7 +16,10 @@ uses
   {$IFDEF UseUDP}
   IdBaseComponent, IdComponent, IdUDPBase, IdUDPClient,
   {$ENDIF}
-  Windows, SysUtils, Classes;
+  {$IFDEF MSWINDOWS}
+  Windows,
+  {$ENDIF}
+  SyncObjs, SysUtils, Classes;
 
 {$IFDEF UseUDP}
 const
@@ -67,7 +70,11 @@ implementation
 const
   sExceptionLogFmt = '[%s.%s] %s';
   sExceptionLogSFmt = '[%s] %s';
+  {$IFDEF MSWINDOWS}
   sLineLogFmt = '[%s][%s] %s (%d)'#13;
+  {$ELSE}
+  sLineLogFmt = '[%s][%s] %s'#13;
+  {$ENDIF}
   sLogFmt = '[%s][%s] %s (%d)';
   sLogTimeFmt = 'hh:mm:ss.zzz';
   sFileNotExist = 'File does not exist.';
@@ -119,19 +126,19 @@ type
   {$ENDIF}
 
 var
-  locker: TRTLCriticalSection;
+  locker: TCriticalSection;
   FThread: TThread = nil;
   Trace: ITrace = nil;
   UdpTrace: ITrace;
 
 procedure Lock; inline;
 begin
-  EnterCriticalSection(locker);
+  Locker.Enter;
 end;
 
 procedure UnLock; inline;
 begin
-  LeaveCriticalSection(locker);
+  locker.Leave;
 end;
 
 procedure LogInit(New: Boolean);
@@ -321,7 +328,7 @@ procedure TRemoteDebugTrace.Write(sev: TTraceSeverity; const text: string);
 var
   Msg: string;
 begin
-  Msg := Format(sLineLogFmt, [FormatDateTime(sLogTimeFmt, Now), SevToStr[sev], text, GetCurrentThreadId]);
+  Msg := Format(sLineLogFmt, [FormatDateTime(sLogTimeFmt, Now), SevToStr[sev], text{$IFDEF MSWINDOWS}, GetCurrentThreadId{$ENDIF}]);
   Lock;
   prepare;
   udp.Send(Faddr, FPort, Msg);
@@ -336,7 +343,7 @@ procedure TRemoteDebugTrace.Writeln(sev: TTraceSeverity; const text: string);
 var
   Msg: string;
 begin
-  Msg := Format(sLineLogFmt, [FormatDateTime(sLogTimeFmt, Now), SevToStr[sev], text, GetCurrentThreadId]);
+  Msg := Format(sLineLogFmt, [FormatDateTime(sLogTimeFmt, Now), SevToStr[sev], text{$IFDEF MSWINDOWS}, GetCurrentThreadId{$ENDIF}]);
   Lock;
   prepare;
   udp.Send(FAddr, FPort, Msg);
@@ -345,7 +352,7 @@ end;
 {$ENDIF}
 
 initialization
-  InitializeCriticalSection(locker);
+  locker := TCriticalSection.Create;
   LogInit(False);
   {$IFDEF UseUDP}
   UdpTrace := TRemoteDebugTrace.Create;
@@ -353,7 +360,7 @@ initialization
 
 finalization
   FreeAndNil(FThread);
-  DeleteCriticalSection(locker);
+  FreeAndNil(locker);
   if Trace <> nil then
     Trace._Release;
   if UdpTrace <> nil then UdpTrace._Release;
