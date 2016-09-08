@@ -18,7 +18,7 @@ procedure Register;
 implementation
 
 uses
-  UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.ListView,
+  UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.ListView, UI.Toast,
   {$IFDEF MSWINDOWS}
   Windows, Registry,
   {$ENDIF}
@@ -70,6 +70,7 @@ begin
   RegisterComponents(PageName, [TListExView]);
 
   RegisterComponents(PageName, [TDialogStyleManager]);
+  RegisterComponents(PageName, [TToastManager]);
   //RegisterComponents(PageName, [TAlertDialog]);
 
   RegisterComponentEditor(TView, TViewControlEditor);

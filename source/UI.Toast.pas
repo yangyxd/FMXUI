@@ -11,22 +11,29 @@ unit UI.Toast;
 interface
 
 uses
+  UI.Base,
+  {$IFNDEF ANDROID}
+  UI.Toast.AndroidLike,
+  {$ENDIF}
   System.SysUtils,
-  System.Classes,
-  System.Types,
-  FMX.Types,
-  FMX.Controls,
-  FMX.StdCtrls,
-  FMX.Objects,
-  System.UITypes,
-  FMX.Graphics,
-  System.Actions,
-  System.Rtti,
-  System.Generics.Collections,
-  System.Generics.Defaults;
+  System.Classes;
 
 type
   TToastLength = (LongToast, ShortToast);
+
+type
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TToastManager = class(TComponent)
+  private
+    {$IFNDEF ANDROID}
+    FToast: TToast;
+    {$ENDIF}
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+
+    procedure Toast(const Msg: string);
+  end;
 
 procedure Toast(const Msg: string; Duration: TToastLength = ShortToast);
 
@@ -35,16 +42,9 @@ implementation
 {$IFDEF ANDROID}
 uses
   UI.Toast.Android;
-{$ENDIF}
-{$IFDEF MSWINDOWS}
-uses
-  FMX.Dialogs;
-{$ENDIF}
-{$IFDEF IOS}
-uses
-  UI.Toast.AndroidLike;
+{$ELSE}
 var
-  LToast: TToast;
+  [Weak] LToast: TToast = nil;
 {$ENDIF}
 
 {$IFDEF ANDROID}
@@ -54,29 +54,42 @@ begin
 end;
 {$ENDIF}
 
-{$IFDEF IOS}
+{$IFNDEF ANDROID}
 procedure Toast(const Msg: string; Duration: TToastLength = ShortToast);
 begin
-  if Msg <> '' then
-    LToast.Now(Msg);
+  if (LToast <> nil) and (Msg <> '') then
+    LToast.ShowToast(Msg);
 end;
 {$ENDIF}
 
-{$IFDEF MSWINDOWS}
-procedure Toast(const Msg: string; Duration: TToastLength = ShortToast);
+{ TToastManager }
+
+constructor TToastManager.Create(AOwner: TComponent);
 begin
-  ShowMessage(Msg);
+  inherited Create(AOwner);
+  {$IFNDEF ANDROID}
+  if not (csDesigning in ComponentState) then begin
+    FToast := TToast.Create(AOwner);
+    LToast := FToast;
+  end;
+  {$ENDIF}
 end;
-{$ENDIF}
+
+destructor TToastManager.Destroy;
+begin
+  {$IFNDEF ANDROID}
+  FToast := nil;
+  {$ENDIF}
+  inherited;
+end;
+
+procedure TToastManager.Toast(const Msg: string);
+begin
+  UI.Toast.Toast(Msg);
+end;
 
 initialization
-  {$IFDEF IOS}
-  LToast := TToast.Create(nil);
-  {$ENDIF}
 
 finalization
-  {$IFDEF IOS}
-  FreeAndNil(LToast);
-  {$ENDIF}
 
 end.

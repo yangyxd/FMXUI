@@ -12,11 +12,12 @@ interface
 
 uses
   UI.Base, UI.Toast, UI.Dialog,
+  System.NetEncoding,
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   System.Generics.Collections, System.Rtti, System.SyncObjs,
   {$IFDEF ANDROID}FMX.Platform.Android, {$ENDIF}
   {$IFDEF POSIX}Posix.Signal, {$ENDIF}
-  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Platform;
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Platform, IOUtils;
 
 type
   TFrameView = class;
@@ -143,6 +144,11 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    /// <summary>
+    /// 流转化为 string
+    /// </summary>
+    function StreamToString(SrcStream: TStream; const CharSet: string = ''): string;
 
     /// <summary>
     /// 显示等待对话框
@@ -472,6 +478,22 @@ begin
   Hide;
 end;
 
+function TFrameView.StreamToString(SrcStream: TStream; const CharSet: string): string;
+var
+  LReader: TStringStream;
+begin
+  if (CharSet <> '') and (string.CompareText(CharSet, 'utf-8') <> 0) then  // do not translate
+    LReader := TStringStream.Create('', System.SysUtils.TEncoding.GetEncoding(CharSet), True)
+  else
+    LReader := TStringStream.Create('', System.SysUtils.TEncoding.UTF8, False);
+  try
+    LReader.CopyFrom(SrcStream, 0);
+    Result := LReader.DataString;
+  finally
+    LReader.Free;
+  end;
+end;
+
 function TFrameView.StartFrame(FrameClass: TFrameViewClass;
   Params: TFrameParams): TFrameView;
 begin
@@ -521,6 +543,9 @@ begin
   FIsPublic := IsPublic;
   FLocker := TCriticalSection.Create;
   InitData;
+  {$IFNDEF MSWINDOWS}
+  StoragePath := TPath.GetDocumentsPath;
+  {$ENDIF}
 end;
 
 destructor TFrameState.Destroy;

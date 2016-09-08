@@ -328,7 +328,7 @@ type
 
     function GetFirstParent(): TFmxObject;
   protected
-    procedure DoRootClick(Sender: TObject);
+    procedure DoRootClick(Sender: TObject); virtual;
     procedure DoUpdateBackTimer(Sender: TObject);
     procedure DoAsyncDismissTimer(Sender: TObject);
     procedure DoAsyncDismiss();
@@ -697,6 +697,7 @@ type
   protected
     function GetMessage: string; override;
     procedure SetMessage(const Value: string); override;
+    procedure DoRootClick(Sender: TObject); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -2119,6 +2120,10 @@ end;
 destructor TProgressDialog.Destroy;
 begin
   inherited Destroy;
+end;
+
+procedure TProgressDialog.DoRootClick(Sender: TObject);
+begin
 end;
 
 function TProgressDialog.GetMessage: string;
