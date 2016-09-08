@@ -11,20 +11,108 @@ unit UI.Frame;
 interface
 
 uses
-  UI.Base, UI.Toast,
-  System.Generics.Collections, System.Rtti,
+  UI.Base, UI.Toast, UI.Dialog,
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  System.Generics.Collections, System.Rtti, System.SyncObjs,
   {$IFDEF ANDROID}FMX.Platform.Android, {$ENDIF}
   {$IFDEF POSIX}Posix.Signal, {$ENDIF}
-  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics;
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Platform;
 
 type
   TFrameView = class;
   TFrameViewClass = class of TFrameView;
+
   /// <summary>
   /// Frame 参数
   /// </summary>
   TFrameParams = TDictionary<string, TValue>;
+
+  TFrameDataType = (fdt_Integer, fdt_Long, fdt_Int64, fdt_Float, fdt_String,
+    fdt_DateTime, fdt_Number, fdt_Boolean);
+
+  TFrameDataValue = record
+    DataType: TFrameDataType;
+    Value: TValue;
+  end;
+
+  /// <summary>
+  /// Frame 状态数据
+  /// </summary>
+  TFrameStateData = TDictionary<string, TFrameDataValue>;
+
+  TFrameStateDataHelper = class helper for TFrameStateData
+    function GetDataValue(DataType: TFrameDataType; const Value: TValue): TFrameDataValue;
+    function GetString(const Key: string): string;
+    function GetInt(const Key: string; const DefaultValue: Integer = 0): Integer;
+    function GetLong(const Key: string; const DefaultValue: Cardinal = 0): Cardinal;
+    function GetInt64(const Key: string; const DefaultValue: Int64 = 0): Int64;
+    function GetFloat(const Key: string; const DefaultValue: Double = 0): Double;
+    function GetDateTime(const Key: string; const DefaultValue: TDateTime = 0): TDateTime;
+    function GetNumber(const Key: string; const DefaultValue: NativeUInt = 0): NativeUInt;
+    function GetBoolean(const Key: string; const DefaultValue: Boolean = False): Boolean;
+
+    procedure Put(const Key: string; const Value: string); overload; inline;
+    procedure Put(const Key: string; const Value: Integer); overload; inline;
+    procedure Put(const Key: string; const Value: Cardinal); overload; inline;
+    procedure Put(const Key: string; const Value: Int64); overload; inline;
+    procedure Put(const Key: string; const Value: Double); overload; inline;
+    procedure Put(const Key: string; const Value: NativeUInt); overload; inline;
+    procedure Put(const Key: string; const Value: Boolean); overload; inline;
+    procedure PutDateTime(const Key: string; const Value: TDateTime); inline;
+  end;
+
+  /// <summary>
+  /// Frame 状态
+  /// </summary>
+  TFrameState = class(TObject)
+  private
+    [Weak] FOwner: TComponent;
+    FData: TFrameStateData;
+    FIsChange: Boolean;
+    FIsPublic: Boolean;
+    FIsLoad: Boolean;
+    FLocker: TCriticalSection;
+    function GetCount: Integer;
+    function GetStoragePath: string;
+    procedure SetStoragePath(const Value: string);
+  protected
+    procedure InitData;
+    procedure DoValueNotify(Sender: TObject; const Item: TFrameDataValue;
+      Action: TCollectionNotification);
+    function GetUniqueName: string;
+    procedure Load();
+  public
+    constructor Create(AOwner: TComponent; IsPublic: Boolean);
+    destructor Destroy; override;
+
+    procedure Clear();
+    procedure Save();
+
+    function Exist(const Key: string): Boolean;
+    function ContainsKey(const Key: string): Boolean;
+
+    function GetString(const Key: string): string;
+    function GetInt(const Key: string; const DefaultValue: Integer = 0): Integer;
+    function GetLong(const Key: string; const DefaultValue: Cardinal = 0): Cardinal;
+    function GetInt64(const Key: string; const DefaultValue: Int64 = 0): Int64;
+    function GetFloat(const Key: string; const DefaultValue: Double = 0): Double;
+    function GetDateTime(const Key: string; const DefaultValue: TDateTime = 0): TDateTime;
+    function GetNumber(const Key: string; const DefaultValue: NativeUInt = 0): NativeUInt;
+    function GetBoolean(const Key: string; const DefaultValue: Boolean = False): Boolean;
+
+    procedure Put(const Key: string; const Value: string); overload;
+    procedure Put(const Key: string; const Value: Integer); overload;
+    procedure Put(const Key: string; const Value: Cardinal); overload;
+    procedure Put(const Key: string; const Value: Int64); overload;
+    procedure Put(const Key: string; const Value: Double); overload;
+    procedure Put(const Key: string; const Value: NativeUInt); overload;
+    procedure Put(const Key: string; const Value: Boolean); overload;
+    procedure PutDateTime(const Key: string; const Value: TDateTime);
+
+    property Data: TFrameStateData read FData;
+    property Count: Integer read GetCount;
+    property StoragePath: string read GetStoragePath write SetStoragePath;
+  end;
 
   /// <summary>
   /// Frame 视图, Frame 切换处理
@@ -33,11 +121,15 @@ type
   TFrameView = class(FMX.Forms.TFrame)
   private
     FParams: TFrameParams;
+    FPrivateState: TFrameState;
     FOnShow: TNotifyEvent;
     FOnHide: TNotifyEvent;
+    FWaitDialog: TProgressDialog;
     procedure SetParams(const Value: TFrameParams);
     function GetTitle: string;
     procedure SetTitle(const Value: string);
+    function GetPreferences: TFrameState;
+    function GetSharedPreferences: TFrameState;
   protected
     [Weak] FLastView: TFrameView;
     [Weak] FNextView: TFrameView;
@@ -51,6 +143,15 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    /// <summary>
+    /// 显示等待对话框
+    /// </summary>
+    procedure ShowWaitDialog(const AMsg: string; ACancelable: Boolean = True);
+    /// <summary>
+    /// 隐藏等待对话框
+    /// </summary>
+    procedure HideWaitDialog();
 
     /// <summary>
     /// 显示 Frame
@@ -114,6 +215,15 @@ type
     /// 启动此Frame的Frame
     /// </summary>
     property Last: TFrameView read FLastView;
+
+    /// <summary>
+    /// 私有预设参数 (私有，非线程安全)
+    /// </summary>
+    property Preferences: TFrameState read GetPreferences;
+    /// <summary>
+    /// 共有预设参数 (全局，非线程安全)
+    /// </summary>
+    property SharedPreferences: TFrameState read GetSharedPreferences;
   published
     property Title: string read GetTitle write SetTitle;
     property OnShow: TNotifyEvent read FOnShow write FOnShow;
@@ -130,6 +240,12 @@ implementation
 
 const
   CS_Title = 'title';
+
+var
+  /// <summary>
+  /// 公共状态数据
+  /// </summary>
+  FPublicState: TFrameState = nil;
 
 { TFrameView }
 
@@ -218,6 +334,7 @@ begin
   FLastView := nil;
   FNextView := nil;
   FreeAndNil(FParams);
+  FreeAndNil(FPrivateState);
   inherited;
 end;
 
@@ -248,6 +365,20 @@ begin
   end;
 end;
 
+function TFrameView.GetPreferences: TFrameState;
+begin
+  if not Assigned(FPrivateState) then begin
+    FPrivateState := TFrameState.Create(Self, False);
+    FPrivateState.Load;
+  end;
+  Result := FPrivateState;
+end;
+
+function TFrameView.GetSharedPreferences: TFrameState;
+begin
+  Result := FPublicState;
+end;
+
 function TFrameView.GetTitle: string;
 begin
   if FParams = nil then
@@ -260,6 +391,14 @@ procedure TFrameView.Hide;
 begin
   Visible := False;
   DoHide;
+end;
+
+procedure TFrameView.HideWaitDialog;
+begin
+  if Assigned(FWaitDialog) then begin
+    FWaitDialog.Dismiss;
+    FWaitDialog := nil;
+  end;
 end;
 
 procedure TFrameView.Hint(const Msg: Double);
@@ -298,6 +437,8 @@ end;
 
 procedure TFrameView.Show();
 begin
+  if Title <> '' then
+    Application.Title := Title;
   DoShow();
   Visible := True;
 end;
@@ -308,6 +449,18 @@ begin
   Result := CreateFrame(Parent, Title);
   if Result <> nil then
     Result.Show();
+end;
+
+procedure TFrameView.ShowWaitDialog(const AMsg: string; ACancelable: Boolean);
+begin
+  if not Assigned(FWaitDialog) then
+    FWaitDialog := TProgressDialog.Create(Self);
+  FWaitDialog.Cancelable := ACancelable;
+  if not Assigned(FWaitDialog.RootView) then
+    FWaitDialog.InitView(AMsg)
+  else
+    FWaitDialog.Message := AMsg;
+  TDialog(FWaitDialog).Show();
 end;
 
 function TFrameView.StartFrame(FrameClass: TFrameViewClass;
@@ -342,5 +495,465 @@ begin
   if Result <> nil then
     Result.Show();
 end;
+
+{ TFrameState }
+
+procedure TFrameState.Clear;
+begin
+  FLocker.Enter;
+  if FData <> nil then
+    FData.Clear;
+  FLocker.Leave;
+end;
+
+function TFrameState.ContainsKey(const Key: string): Boolean;
+begin
+  FLocker.Enter;
+  Result := FData.ContainsKey(Key);
+  FLocker.Leave;
+end;
+
+constructor TFrameState.Create(AOwner: TComponent; IsPublic: Boolean);
+begin
+  FOwner := AOwner;
+  FData := nil;
+  FIsChange := False;
+  FIsPublic := IsPublic;
+  FLocker := TCriticalSection.Create;
+  InitData;
+end;
+
+destructor TFrameState.Destroy;
+begin
+  Save();
+  FreeAndNil(FData);
+  FreeAndNil(FLocker);
+  inherited;
+end;
+
+procedure TFrameState.DoValueNotify(Sender: TObject; const Item: TFrameDataValue;
+  Action: TCollectionNotification);
+begin
+  if Action <> TCollectionNotification.cnExtracted then
+    FIsChange := True;
+end;
+
+function TFrameState.Exist(const Key: string): Boolean;
+begin
+  FLocker.Enter;
+  Result := FData.ContainsKey(Key);
+  FLocker.Leave;
+end;
+
+function TFrameState.GetBoolean(const Key: string;
+  const DefaultValue: Boolean): Boolean;
+begin
+  FLocker.Enter;
+  Result := FData.GetBoolean(Key, DefaultValue);
+  FLocker.Leave;
+end;
+
+function TFrameState.GetCount: Integer;
+begin
+  if Assigned(FData) then
+    Result := FData.Count
+  else
+    Result := 0;
+end;
+
+function TFrameState.GetDateTime(const Key: string;
+  const DefaultValue: TDateTime): TDateTime;
+begin
+  FLocker.Enter;
+  Result := FData.GetDateTime(Key, DefaultValue);
+  FLocker.Leave;
+end;
+
+function TFrameState.GetFloat(const Key: string;
+  const DefaultValue: Double): Double;
+begin
+  FLocker.Enter;
+  Result := FData.GetFloat(Key, DefaultValue);
+  FLocker.Leave;
+end;
+
+function TFrameState.GetInt(const Key: string;
+  const DefaultValue: Integer): Integer;
+begin
+  FLocker.Enter;
+  Result := FData.GetInt(Key, DefaultValue);
+  FLocker.Leave;
+end;
+
+function TFrameState.GetInt64(const Key: string;
+  const DefaultValue: Int64): Int64;
+begin
+  FLocker.Enter;
+  Result := FData.GetInt64(Key, DefaultValue);
+  FLocker.Leave;
+end;
+
+function TFrameState.GetLong(const Key: string;
+  const DefaultValue: Cardinal): Cardinal;
+begin
+  FLocker.Enter;
+  Result := FData.GetLong(Key, DefaultValue);
+  FLocker.Leave;
+end;
+
+function TFrameState.GetNumber(const Key: string;
+  const DefaultValue: NativeUInt): NativeUInt;
+begin
+  FLocker.Enter;
+  Result := FData.GetNumber(Key, DefaultValue);
+  FLocker.Leave;
+end;
+
+function TFrameState.GetStoragePath: string;
+var
+  SaveStateService: IFMXSaveStateService;
+begin
+  if TPlatformServices.Current.SupportsPlatformService(IFMXSaveStateService, SaveStateService) then
+    Result := SaveStateService.GetStoragePath
+  else
+    Result := '';
+end;
+
+function TFrameState.GetString(const Key: string): string;
+begin
+  FLocker.Enter;
+  Result := FData.GetString(Key);
+  FLocker.Leave;
+end;
+
+function TFrameState.GetUniqueName: string;
+const
+  UniqueNameSeparator = '_';
+  UniqueNamePrefix = 'FM';
+  UniqueNameExtension = '.Data';
+var
+  B: TStringBuilder;
+begin
+  if FIsPublic then
+    Result := 'AppPublicState.Data'
+  else begin
+    B := TStringBuilder.Create(Length(UniqueNamePrefix) + FOwner.ClassName.Length +
+      Length(UniqueNameSeparator) + Length(UniqueNameExtension));
+    try
+      B.Append(UniqueNamePrefix);
+      B.Append(UniqueNameSeparator);
+      B.Append(FOwner.ClassName);
+      B.Append(UniqueNameExtension);
+      Result := B.ToString;
+    finally
+      B.Free;
+    end;
+  end;
+end;
+
+procedure TFrameState.InitData;
+begin
+  if FData <> nil then
+    FData.Clear
+  else begin
+    if FIsPublic then
+      FData := TFrameStateData.Create(97)
+    else
+      FData := TFrameStateData.Create(29);
+    FData.OnValueNotify := DoValueNotify;
+  end;
+end;
+
+procedure TFrameState.Load;
+var
+  AStream: TMemoryStream;
+  SaveStateService: IFMXSaveStateService;
+  Reader: TBinaryReader;
+  ACount, I: Integer;
+  ASize: Int64;
+  AKey: string;
+  AType: TFrameDataType;
+begin
+  FLocker.Enter;
+  if FIsLoad then begin
+    FLocker.Leave;
+    Exit;
+  end;
+  try
+    FData.Clear;
+    AStream := TMemoryStream.Create;
+    if TPlatformServices.Current.SupportsPlatformService(IFMXSaveStateService, SaveStateService) then
+      SaveStateService.GetBlock(GetUniqueName, AStream);
+    ASize := AStream.Size;
+    Reader := nil;
+    if AStream.Size > 0 then begin
+      AStream.Position := 0;
+      Reader := TBinaryReader.Create(AStream);
+      ACount := Reader.ReadInteger;
+      for I := 0 to ACount - 1 do begin
+        if AStream.Position >= ASize then
+          Break;
+        AType := TFrameDataType(Reader.ReadShortInt);
+        AKey := Reader.ReadString;
+        case AType of
+          fdt_Integer: FData.Put(AKey, Reader.ReadInt32);
+          fdt_Long: FData.Put(AKey, Reader.ReadCardinal);
+          fdt_Int64: FData.Put(AKey, Reader.ReadInt64);
+          fdt_Float: FData.Put(AKey, Reader.ReadDouble);
+          fdt_String: FData.Put(AKey, Reader.ReadString);
+          fdt_DateTime: FData.PutDateTime(AKey, Reader.ReadDouble);
+          fdt_Number: FData.Put(AKey, NativeUInt(Reader.ReadUInt64));
+          fdt_Boolean: FData.Put(AKey, Reader.ReadBoolean);
+        else
+          Break;
+        end;
+      end;
+    end;
+  finally
+    FreeAndNil(AStream);
+    FreeAndNil(Reader);
+    FIsChange := False;
+    FIsLoad := True;
+    FLocker.Leave;
+  end;
+end;
+
+procedure TFrameState.Put(const Key: string; const Value: Cardinal);
+begin
+  FLocker.Enter;
+  FData.Put(Key, Value);
+  FLocker.Leave;
+end;
+
+procedure TFrameState.Put(const Key: string; const Value: Integer);
+begin
+  FLocker.Enter;
+  FData.Put(Key, Value);
+  FLocker.Leave;
+end;
+
+procedure TFrameState.Put(const Key, Value: string);
+begin
+  FLocker.Enter;
+  FData.Put(Key, Value);
+  FLocker.Leave;
+end;
+
+procedure TFrameState.Put(const Key: string; const Value: NativeUInt);
+begin
+  FLocker.Enter;
+  FData.Put(Key, Value);
+  FLocker.Leave;
+end;
+
+procedure TFrameState.Put(const Key: string; const Value: Boolean);
+begin
+  FLocker.Enter;
+  FData.Put(Key, Value);
+  FLocker.Leave;
+end;
+
+procedure TFrameState.Put(const Key: string; const Value: Int64);
+begin
+  FLocker.Enter;
+  FData.Put(Key, Value);
+  FLocker.Leave;
+end;
+
+procedure TFrameState.Put(const Key: string; const Value: Double);
+begin
+  FLocker.Enter;
+  FData.Put(Key, Value);
+  FLocker.Leave;
+end;
+
+procedure TFrameState.PutDateTime(const Key: string; const Value: TDateTime);
+begin
+  FLocker.Enter;
+  FData.PutDateTime(Key, Value);
+  FLocker.Leave;
+end;
+
+procedure TFrameState.Save;
+var
+  SaveStateService: IFMXSaveStateService;
+  AStream: TMemoryStream;
+  Writer: TBinaryWriter;
+  ACount: Integer;
+  Item: TPair<string, TFrameDataValue>;
+  ADoubleValue: Double;
+begin
+  FLocker.Enter;
+  if not FIsChange then begin
+    FLocker.Leave;
+    Exit;
+  end;
+  try
+    AStream := TMemoryStream.Create;
+    Writer := TBinaryWriter.Create(AStream);
+    ACount := Count;
+    Writer.Write(ACount);
+    for Item in FData do begin
+      Writer.Write(ShortInt(Ord(Item.Value.DataType)));
+      Writer.Write(Item.Key);
+      case Item.Value.DataType of
+        fdt_Integer: Writer.Write(Item.Value.Value.AsInteger);
+        fdt_Long: Writer.Write(Cardinal(Item.Value.Value.AsInteger));
+        fdt_Int64: Writer.Write(Item.Value.Value.AsInt64);
+        fdt_Float, fdt_DateTime:
+          begin
+            ADoubleValue := Item.Value.Value.AsExtended;
+            Writer.Write(ADoubleValue);
+          end;
+        fdt_String: Writer.Write(Item.Value.Value.AsString);
+        fdt_Number: Writer.Write(Item.Value.Value.AsUInt64);
+        fdt_Boolean: Writer.Write(Item.Value.Value.AsBoolean);
+      end;
+    end;
+    if TPlatformServices.Current.SupportsPlatformService(IFMXSaveStateService, SaveStateService) then
+      SaveStateService.SetBlock(GetUniqueName, AStream);
+  finally
+    FreeAndNil(AStream);
+    FreeAndNil(Writer);
+    FIsChange := False;
+    FLocker.Leave;
+  end;
+end;
+
+procedure TFrameState.SetStoragePath(const Value: string);
+var
+  SaveStateService: IFMXSaveStateService;
+begin
+  if TPlatformServices.Current.SupportsPlatformService(IFMXSaveStateService, SaveStateService) then
+    SaveStateService.SetStoragePath(Value);
+end;
+
+{ TFrameStateDataHelper }
+
+function TFrameStateDataHelper.GetBoolean(const Key: string;
+  const DefaultValue: Boolean): Boolean;
+begin
+  if ContainsKey(Key) then
+    Result := Items[Key].Value.AsBoolean
+  else
+    Result := DefaultValue;
+end;
+
+function TFrameStateDataHelper.GetDataValue(DataType: TFrameDataType;
+  const Value: TValue): TFrameDataValue;
+begin
+  Result.DataType := DataType;
+  Result.Value := Value;
+end;
+
+function TFrameStateDataHelper.GetDateTime(const Key: string;
+  const DefaultValue: TDateTime): TDateTime;
+begin
+  if ContainsKey(Key) then
+    Result := Items[Key].Value.AsExtended
+  else
+    Result := DefaultValue;
+end;
+
+function TFrameStateDataHelper.GetFloat(const Key: string;
+  const DefaultValue: Double): Double;
+begin
+  if ContainsKey(Key) then
+    Result := Items[Key].Value.AsExtended
+  else
+    Result := DefaultValue;
+end;
+
+function TFrameStateDataHelper.GetInt(const Key: string;
+  const DefaultValue: Integer): Integer;
+begin
+  if ContainsKey(Key) then
+    Result := Items[Key].Value.AsInteger
+  else
+    Result := DefaultValue;
+end;
+
+function TFrameStateDataHelper.GetInt64(const Key: string;
+  const DefaultValue: Int64): Int64;
+begin
+  if ContainsKey(Key) then
+    Result := Items[Key].Value.AsInt64
+  else
+    Result := DefaultValue;
+end;
+
+function TFrameStateDataHelper.GetLong(const Key: string;
+  const DefaultValue: Cardinal): Cardinal;
+begin
+  if ContainsKey(Key) then
+    Result := Items[Key].Value.AsInteger
+  else
+    Result := DefaultValue;
+end;
+
+function TFrameStateDataHelper.GetNumber(const Key: string;
+  const DefaultValue: NativeUInt): NativeUInt;
+begin
+  if ContainsKey(Key) then
+    Result := Items[Key].Value.AsOrdinal
+  else
+    Result := DefaultValue;
+end;
+
+function TFrameStateDataHelper.GetString(const Key: string): string;
+begin
+  if ContainsKey(Key) then
+    Result := Items[Key].Value.ToString
+  else
+    Result := '';
+end;
+
+procedure TFrameStateDataHelper.Put(const Key: string; const Value: Cardinal);
+begin
+  AddOrSetValue(Key, GetDataValue(fdt_Long, Value));
+end;
+
+procedure TFrameStateDataHelper.Put(const Key: string; const Value: Integer);
+begin
+  AddOrSetValue(Key, GetDataValue(fdt_Integer, Value));
+end;
+
+procedure TFrameStateDataHelper.Put(const Key, Value: string);
+begin
+  AddOrSetValue(Key, GetDataValue(fdt_String, Value));
+end;
+
+procedure TFrameStateDataHelper.Put(const Key: string; const Value: NativeUInt);
+begin
+  AddOrSetValue(Key, GetDataValue(fdt_Number, Value));
+end;
+
+procedure TFrameStateDataHelper.Put(const Key: string; const Value: Boolean);
+begin
+  AddOrSetValue(Key, GetDataValue(fdt_Boolean, Value));
+end;
+
+procedure TFrameStateDataHelper.Put(const Key: string; const Value: Int64);
+begin
+  AddOrSetValue(Key, GetDataValue(fdt_Int64, Value));
+end;
+
+procedure TFrameStateDataHelper.Put(const Key: string; const Value: Double);
+begin
+  AddOrSetValue(Key, GetDataValue(fdt_Float, Value));
+end;
+
+procedure TFrameStateDataHelper.PutDateTime(const Key: string;
+  const Value: TDateTime);
+begin
+  AddOrSetValue(Key, GetDataValue(fdt_DateTime, Value));
+end;
+
+initialization
+  FPublicState := TFrameState.Create(nil, True);
+  FPublicState.Load;
+
+finalization
+  FreeAndNil(FPublicState);
 
 end.

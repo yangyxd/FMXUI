@@ -48,7 +48,7 @@ uses
   System.TypInfo, System.SysUtils, System.Character, System.RTLConsts,
   FMX.Graphics, System.Generics.Collections, FMX.TextLayout,
   System.Classes, System.Types, System.UITypes, System.Math.Vectors, System.Rtti,
-  FMX.Types, FMX.Controls, FMX.Forms,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.StdCtrls,
   FMX.ListView, FMX.ListView.Appearances, FMX.ListView.Types;
 
 const       
@@ -76,6 +76,17 @@ const
   COLOR_DialogMaskColor = $9f000000;
   COLOR_BodyBackgroundColor = $00ffffff;
   COLOR_MessageTextBackground = $00f00000;
+
+  {$IFDEF MSWINDOWS}
+  COLOR_ProcessBackgroundColor = $7fbababa;
+  {$ENDIF}
+  {$IFDEF IOS}
+  COLOR_ProcessBackgroundColor = $00000000;
+  {$ENDIF}
+  {$IFDEF ANDROID}
+  COLOR_ProcessBackgroundColor = $7f000000;
+  {$ENDIF}
+  COLOR_ProcessTextColor = $fff7f7f7;
 
   {$IFDEF IOS}
   COLOR_ButtonColor = $fff7f7f7;
@@ -114,6 +125,8 @@ type
     FTitleTextColor: TAlphaColor;
     FBackgroundColor: TAlphaColor;
     FBodyBackgroundColor: TAlphaColor;
+    FProcessBackgroundColor: TAlphaColor;
+    FProcessTextColor: TAlphaColor;
     FMessageTextColor: TAlphaColor;
     FMessageTextBackground: TAlphaColor;
     FButtonColor: TViewColor;
@@ -147,6 +160,11 @@ type
     // 消息文本背景颜色
     property MessageTextBackground: TAlphaColor read FMessageTextBackground write FMessageTextBackground;
 
+    // 等待消息框背景颜色
+    property ProcessBackgroundColor: TAlphaColor read FProcessBackgroundColor write FProcessBackgroundColor;
+    // 等待消息框消息文字颜色
+    property ProcessTextColor: TAlphaColor read FProcessTextColor write FProcessTextColor;
+
     // 标题栏高度
     property TitleHeight: Integer read FTitleHeight write FTitleHeight default SIZE_TitleHeight;
     // 标题文本大小
@@ -166,7 +184,6 @@ type
 
 type
   TDialogBuilder = class;
-  TAlertDialogBase = class;
   TCustomAlertDialog = class;
 
   /// <summary>
@@ -244,6 +261,7 @@ type
     FButtonNegative: TButtonView;
     FButtonNeutral: TButtonView;
     FListView: TListExView;
+    FAnilndictor: TAniIndicator;
   protected
     procedure AfterDialogKey(var Key: Word; Shift: TShiftState); override;
   public
@@ -251,6 +269,7 @@ type
     destructor Destroy; override;
 
     procedure InitView(StyleMgr: TDialogStyleManager);
+    procedure InitProcessView(StyleMgr: TDialogStyleManager);
     procedure InitMessage(StyleMgr: TDialogStyleManager);
     procedure InitList(StyleMgr: TDialogStyleManager);
     procedure InitButton(StyleMgr: TDialogStyleManager);
@@ -270,72 +289,52 @@ type
     property Dialog: IDialog read FDialog write FDialog;
   end;
 
-  /// <summary>
-  /// 弹出式对话框基类
-  /// </summary>
-  TAlertDialogBase = class(TComponent, IDialog)
+  TDialog = class(TComponent, IDialog)
   private
-    FViewRoot: TDialogView;
-    FTimer: TTimer;
-    FBuilder: TDialogBuilder;
-    FTimerStart: Int64;
-    FDestBgColor: TAlphaColor; 
-    FCancelable: Boolean;
-    FCanceled: Boolean;
-
-    FEventing: Boolean;      // 事件处理中
-    FAllowDismiss: Boolean;  // 需要释放
-
-    FOnKeyListener: TOnDialogKeyListener;
-    FOnKeyListenerA: TOnDialogKeyListenerA;
-    
     FOnCancelListener: TOnDialogListener;
     FOnCancelListenerA: TOnDialogListenerA;
     FOnShowListener: TOnDialogListener;
     FOnShowListenerA: TOnDialogListenerA;
     FOnDismissListener: TOnDialogListener;
     FOnDismissListenerA: TOnDialogListenerA;
-
     procedure SetOnCancelListener(const Value: TOnDialogListener);
     procedure SetOnCancelListenerA(const Value: TOnDialogListenerA);
-    procedure SetOnKeyListener(const Value: TOnDialogKeyListener);
-    function GetItems: TStrings;
-    function GetMessage: string;
-    function GetTitle: string;
-    procedure SetTitle(const Value: string);
-    procedure SetMessage(const Value: string);
-    function GetBuilder: TDialogBuilder;
     function GetView: TControl;
     function GetRootView: TDialogView;
   protected
+    FViewRoot: TDialogView;
+    FTimer: TTimer;
+    FTimerStart: Int64;
+    FDestBgColor: TAlphaColor;
+
+    FCancelable: Boolean;
+    FCanceled: Boolean;
+
+    FEventing: Boolean;      // 事件处理中
+    FAllowDismiss: Boolean;  // 需要释放
+
     procedure SetCancelable(const Value: Boolean);
     function GetCancelable: Boolean;
 
-    procedure InitList(const ListView: TListView; IsMulti: Boolean = False);
-    procedure InitExtPopView();
-    procedure InitSinglePopView();
-    procedure InitMultiPopView();
-    procedure InitListPopView();
-    procedure InitDefaultPopView();
-    procedure InitOK();
+    procedure InitOK(); virtual;
+    procedure DoFreeBuilder(); virtual;
+    procedure DoApplyTitle(); virtual;
+
+    function GetBuilder: TDialogBuilder; virtual;
+    function GetMessage: string; virtual;
+    procedure SetMessage(const Value: string); virtual;
 
     procedure SetBackColor(const Value: TAlphaColor);
+
+    function GetFirstParent(): TFmxObject;
   protected
     procedure DoRootClick(Sender: TObject);
     procedure DoUpdateBackTimer(Sender: TObject);
     procedure DoAsyncDismissTimer(Sender: TObject);
-    procedure DoButtonClick(Sender: TObject);
-    procedure DoListItemClick(const Sender: TObject; const AItem: TListViewItem);
     procedure DoAsyncDismiss();
-    procedure ApplyTitle();
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-
-    /// <summary>
-    /// 以 Builder 的设置来初始化对话框
-    /// </summary>
-    procedure Apply(const ABuilder: TDialogBuilder); virtual;
 
     /// <summary>
     /// 显示对话框
@@ -375,18 +374,11 @@ type
     property RootView: TDialogView read GetRootView;
 
     /// <summary>
-    /// 对话框构造器
-    /// </summary>
-    property Builder: TDialogBuilder read FBuilder;
-
-    /// <summary>
     /// 是否能取消对话框
     /// </summary>
     property Cancelable: Boolean read FCancelable write SetCancelable;
 
-    property Title: string read GetTitle write SetTitle;
     property Message: string read GetMessage write SetMessage;
-    property Items: TStrings read GetItems;
     property Canceled: Boolean read FCanceled;
 
     property OnCancelListener: TOnDialogListener read FOnCancelListener write SetOnCancelListener;
@@ -395,12 +387,57 @@ type
     property OnShowListenerA: TOnDialogListenerA read FOnShowListenerA write FOnShowListenerA;
     property OnDismissListener: TOnDialogListener read FOnDismissListener write FOnDismissListener;
     property OnDismissListenerA: TOnDialogListenerA read FOnDismissListenerA write FOnDismissListenerA;
-    property OnKeyListener: TOnDialogKeyListener read FOnKeyListener write SetOnKeyListener;
-    property OnKeyListenerA: TOnDialogKeyListenerA read FOnKeyListenerA write FOnKeyListenerA;
   end;
 
-  TCustomAlertDialog = class(TAlertDialogBase)
+  /// <summary>
+  /// 弹出式对话框基类
+  /// </summary>
+  TCustomAlertDialog = class(TDialog)
+  private
+    FBuilder: TDialogBuilder;
 
+    FOnKeyListener: TOnDialogKeyListener;
+    FOnKeyListenerA: TOnDialogKeyListenerA;
+
+    procedure SetOnKeyListener(const Value: TOnDialogKeyListener);
+    function GetItems: TStrings;
+  protected
+    function GetTitle: string;
+    procedure SetTitle(const Value: string);
+    function GetMessage: string; override;
+    procedure SetMessage(const Value: string); override;
+    function GetBuilder: TDialogBuilder; override;
+
+    procedure InitList(const ListView: TListView; IsMulti: Boolean = False);
+    procedure InitExtPopView();
+    procedure InitSinglePopView();
+    procedure InitMultiPopView();
+    procedure InitListPopView();
+    procedure InitDefaultPopView();
+
+  protected
+    procedure DoButtonClick(Sender: TObject);
+    procedure DoListItemClick(const Sender: TObject; const AItem: TListViewItem);
+    procedure DoApplyTitle(); override;
+    procedure DoFreeBuilder(); override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+
+    /// <summary>
+    /// 以 Builder 的设置来初始化对话框
+    /// </summary>
+    procedure Apply(const ABuilder: TDialogBuilder); virtual;
+
+    /// <summary>
+    /// 对话框构造器
+    /// </summary>
+    property Builder: TDialogBuilder read FBuilder;
+
+    property Title: string read GetTitle write SetTitle;
+    property Items: TStrings read GetItems;
+    property OnKeyListener: TOnDialogKeyListener read FOnKeyListener write SetOnKeyListener;
+    property OnKeyListenerA: TOnDialogKeyListenerA read FOnKeyListenerA write FOnKeyListenerA;
   end;
 
   /// <summary>
@@ -647,6 +684,29 @@ type
     property OnShowListener;
     property OnKeyListener;
     property OnDismissListener;
+  end;
+
+type
+  /// <summary>
+  /// 等待对话框
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TProgressDialog = class(TDialog)
+  private
+    [Weak] FStyleManager: TDialogStyleManager;
+  protected
+    function GetMessage: string; override;
+    procedure SetMessage(const Value: string); override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    procedure InitView(const AMsg: string);
+    /// <summary>
+    /// 显示一个等待对话框
+    /// </summary>
+    class function Show(AOwner: TComponent; const AMsg: string; ACancelable: Boolean = True): TProgressDialog;
+  published
+    property StyleManager: TDialogStyleManager read FStyleManager write FStyleManager;
   end;
 
 implementation
@@ -1048,9 +1108,270 @@ begin
   FNeutralButtonListenerA := AListener;
 end;
 
-{ TAlertDialogBase }
+{ TDialog }
 
-procedure TAlertDialogBase.Apply(const ABuilder: TDialogBuilder);
+procedure TDialog.AsyncDismiss;
+begin
+  DoAsyncDismiss();
+end;
+
+procedure TDialog.Cancel;
+begin
+  if (not FCanceled) then begin
+    FCanceled := True;
+    if Assigned(FOnCancelListenerA) then
+      FOnCancelListenerA(Self)
+    else if Assigned(FOnCancelListener) then
+      FOnCancelListener(Self);
+  end;
+  DoAsyncDismiss;
+end;
+
+procedure TDialog.Close;
+begin
+  Dismiss;
+end;
+
+constructor TDialog.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FCancelable := True;
+  FCanceled := False;
+end;
+
+destructor TDialog.Destroy;
+begin
+  Dec(DialogRef);
+  if Assigned(Self) then begin
+    if (FViewRoot <> nil) then begin
+      if Assigned(FTimer) then
+        FTimer.OnTimer := nil;
+      FEventing := False;
+      Dismiss;
+      FViewRoot := nil;
+    end;
+    if Assigned(FTimer) then
+      FTimer := nil;
+  end;
+  FViewRoot := nil;
+  inherited Destroy;
+end;
+
+procedure TDialog.Dismiss;
+var
+  LParent: TFmxObject;
+begin
+  if not Assigned(Self) then
+    Exit;
+  if FEventing then begin
+    FAllowDismiss := True;
+    Exit;
+  end;
+  if Assigned(FOnDismissListenerA) then begin
+    FOnDismissListenerA(Self);
+    FOnDismissListenerA := nil;
+    FOnDismissListener := nil;
+  end else if Assigned(FOnDismissListener) then begin
+    FOnDismissListener(Self);
+    FOnDismissListener := nil;
+  end;
+  DoFreeBuilder();
+  if (FViewRoot <> nil) and Assigned(FViewRoot.Parent) then begin
+    LParent := FViewRoot.Parent;
+    FViewRoot.Parent.RemoveObject(FViewRoot);
+    FreeAndNil(FViewRoot);
+    if LParent <> nil then begin
+      if LParent is TControl then
+        TControl(LParent).SetFocus
+      else if LParent is TCustomForm then
+        // 暂不处理
+    end;
+  end;
+  if not (csDestroying in ComponentState) then
+    DisposeOf;
+end;
+
+procedure TDialog.DoApplyTitle;
+begin
+end;
+
+procedure TDialog.DoAsyncDismiss;
+begin
+  if Assigned(Self) and Assigned(Owner) then begin
+    if FEventing then begin
+      FAllowDismiss := True;
+      Exit;
+    end;
+    FreeAndNil(FTimer);
+    if (FViewRoot <> nil) and (FViewRoot.FLayBubble <> nil) then
+      FViewRoot.FLayBubble.Visible := False;
+    FDestBgColor := $00000000;
+    FTimer := TTimer.Create(Owner);
+    FTimer.OnTimer := DoAsyncDismissTimer;
+    FTimer.Interval := 15;
+    FTimer.Enabled := True;
+    FTimerStart := GetTimestamp;
+  end;
+end;
+
+procedure TDialog.DoAsyncDismissTimer(Sender: TObject);
+var
+  T: Single;
+begin
+  if Assigned(Self) then begin
+    T := (GetTimestamp - FTimerStart) / 200;
+    if FViewRoot <> nil then
+      FViewRoot.Background.ItemDefault.Color := LerpColor(FViewRoot.Background.ItemDefault.Color, FDestBgColor, T);
+    if T > 1 then begin
+      if Assigned(FTimer) then
+        FTimer.Enabled := False;
+      Dismiss;
+    end;
+  end;
+end;
+
+procedure TDialog.DoFreeBuilder;
+begin
+end;
+
+procedure TDialog.DoRootClick(Sender: TObject);
+begin
+  if FCancelable then
+    Cancel;
+end;
+
+procedure TDialog.DoUpdateBackTimer(Sender: TObject);
+var
+  T: Single;
+begin
+  if Assigned(Self) and (Assigned(FTimer)) then begin
+    if csDestroying in ComponentState then
+      Exit;
+    T := (GetTimestamp - FTimerStart) / 1000;
+    if FViewRoot <> nil then begin
+      FViewRoot.Background.ItemDefault.Color := LerpColor(FViewRoot.Background.ItemDefault.Color, FDestBgColor, T);
+      if (T > 0.5) and (FViewRoot.FLayBubble <> nil) then
+        FViewRoot.FLayBubble.Visible := True;
+    end;
+    if T > 1 then
+      FreeAndNil(FTimer);
+  end;
+end;
+
+function TDialog.GetBuilder: TDialogBuilder;
+begin
+  Result := nil;
+end;
+
+function TDialog.GetCancelable: Boolean;
+begin
+  Result := FCancelable;
+end;
+
+function TDialog.GetFirstParent: TFmxObject;
+var
+  P: TFmxObject;
+begin
+  if Owner is TFmxObject then begin
+    P := TFmxObject(Owner);
+    while P.Parent <> nil do
+      P := P.Parent;
+    Result := P;
+  end else
+    Result := nil;
+end;
+
+function TDialog.GetMessage: string;
+begin
+  Result := '';
+end;
+
+function TDialog.GetRootView: TDialogView;
+begin
+  Result := FViewRoot;
+end;
+
+function TDialog.GetView: TControl;
+begin
+  if FViewRoot <> nil then
+    Result := FViewRoot.FLayBubble
+  else
+    Result := nil;
+end;
+
+procedure TDialog.Hide;
+begin
+  if FViewRoot <> nil then
+    FViewRoot.Hide;
+end;
+
+procedure TDialog.InitOK;
+begin
+  if FViewRoot <> nil then
+    FViewRoot.InitOK;
+end;
+
+procedure TDialog.NotifyDataSetChanged;
+begin
+  if Assigned(FViewRoot) then
+    FViewRoot.Repaint;
+end;
+
+procedure TDialog.SetBackColor(const Value: TAlphaColor);
+begin
+  FreeAndNil(FTimer);
+  if FDestBgColor <> Value then begin
+    FViewRoot.Background.ItemDefault.Color := FDestBgColor;
+    FDestBgColor := Value;
+    FTimer := TTimer.Create(Owner);
+    FTimer.OnTimer := DoUpdateBackTimer;
+    FTimer.Interval := 20;
+    FTimer.Enabled := True;
+    FTimerStart := GetTimestamp;
+  end;
+end;
+
+procedure TDialog.SetCancelable(const Value: Boolean);
+begin
+  FCancelable := Value;
+end;
+
+procedure TDialog.SetMessage(const Value: string);
+begin
+end;
+
+procedure TDialog.SetOnCancelListener(const Value: TOnDialogListener);
+begin
+  FOnCancelListener := Value;
+end;
+
+procedure TDialog.SetOnCancelListenerA(const Value: TOnDialogListenerA);
+begin
+  FOnCancelListenerA := Value;
+end;
+
+procedure TDialog.Show;
+begin
+  try
+    if Assigned(FViewRoot) then begin
+      DoApplyTitle();
+
+      if Assigned(FOnShowListenerA) then
+        FOnShowListenerA(Self)
+      else if Assigned(FOnCancelListener) then
+        FOnCancelListener(Self);
+
+      FViewRoot.Show;
+    end;
+  except
+    {$IFDEF WINDOWS}LogE(Self, 'Show', Exception(ExceptObject)); {$ENDIF}
+    Dismiss;
+  end;
+end;
+
+{ TCustomAlertDialog }
+
+procedure TCustomAlertDialog.Apply(const ABuilder: TDialogBuilder);
 begin
   Inc(DialogRef);
   FBuilder := ABuilder;
@@ -1074,129 +1395,22 @@ begin
   InitOK();
 end;
 
-procedure TAlertDialogBase.ApplyTitle;
+procedure TCustomAlertDialog.DoApplyTitle;
 begin
   SetTitle(FBuilder.FTitle);
 end;
 
-procedure TAlertDialogBase.AsyncDismiss;
-begin
-  DoAsyncDismiss;
-end;
-
-procedure TAlertDialogBase.Cancel;
-begin
-  if (not FCanceled) then begin
-    FCanceled := True;
-    if Assigned(FOnCancelListenerA) then     
-      FOnCancelListenerA(Self)
-    else if Assigned(FOnCancelListener) then     
-      FOnCancelListener(Self);
-  end;
-  DoAsyncDismiss;
-end;
-
-procedure TAlertDialogBase.Close;
-begin
-  Dismiss;
-end;
-
-constructor TAlertDialogBase.Create(AOwner: TComponent);
+constructor TCustomAlertDialog.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FCancelable := True;
-  FCanceled := False;
 end;
 
-destructor TAlertDialogBase.Destroy;
+destructor TCustomAlertDialog.Destroy;
 begin
-  Dec(DialogRef);
-  if Assigned(Self) then begin
-    if (FViewRoot <> nil) then begin
-      if Assigned(FTimer) then
-        FTimer.OnTimer := nil;
-      FEventing := False;
-      Dismiss;
-      FViewRoot := nil;
-    end;
-    if Assigned(FTimer) then
-      FTimer := nil;
-  end;
-  FViewRoot := nil;
   inherited Destroy;
 end;
 
-procedure TAlertDialogBase.Dismiss;
-var
-  LParent: TFmxObject;
-begin
-  if not Assigned(Self) then
-    Exit;
-  if FEventing then begin
-    FAllowDismiss := True;
-    Exit;
-  end;
-  if Assigned(FOnDismissListenerA) then begin
-    FOnDismissListenerA(Self);
-    FOnDismissListenerA := nil;
-    FOnDismissListener := nil;
-  end else if Assigned(FOnDismissListener) then begin
-    FOnDismissListener(Self);
-    FOnDismissListener := nil;  
-  end;
-  if Assigned(FBuilder) then
-    FreeAndNil(FBuilder);
-  if (FViewRoot <> nil) and Assigned(FViewRoot.Parent) then begin
-    LParent := FViewRoot.Parent;
-    FViewRoot.Parent.RemoveObject(FViewRoot);
-    FreeAndNil(FViewRoot);
-    if LParent <> nil then begin
-      if LParent is TControl then
-        TControl(LParent).SetFocus
-      else if LParent is TCustomForm then
-        // 暂不处理
-    end;
-  end;
-  if not (csDestroying in ComponentState) then
-    DisposeOf;
-end;
-
-procedure TAlertDialogBase.DoAsyncDismiss;
-begin
-  if Assigned(Self) and Assigned(Owner) then begin
-    if FEventing then begin
-      FAllowDismiss := True;
-      Exit;
-    end;
-    FreeAndNil(FTimer);
-    if (FViewRoot <> nil) and (FViewRoot.FLayBubble <> nil) then
-      FViewRoot.FLayBubble.Visible := False;
-    FDestBgColor := $00000000;
-    FTimer := TTimer.Create(Owner);
-    FTimer.OnTimer := DoAsyncDismissTimer;
-    FTimer.Interval := 15;
-    FTimer.Enabled := True;
-    FTimerStart := GetTimestamp;
-  end;
-end;
-
-procedure TAlertDialogBase.DoAsyncDismissTimer(Sender: TObject);
-var
-  T: Single;
-begin
-  if Assigned(Self) then begin
-    T := (GetTimestamp - FTimerStart) / 200;
-    if FViewRoot <> nil then
-      FViewRoot.Background.ItemDefault.Color := LerpColor(FViewRoot.Background.ItemDefault.Color, FDestBgColor, T);
-    if T > 1 then begin
-      if Assigned(FTimer) then
-        FTimer.Enabled := False;
-      Dismiss;
-    end;
-  end;
-end;
-
-procedure TAlertDialogBase.DoButtonClick(Sender: TObject);
+procedure TCustomAlertDialog.DoButtonClick(Sender: TObject);
 begin
   if FViewRoot <> nil then begin
     FEventing := True;
@@ -1234,7 +1448,13 @@ begin
   end;
 end;
 
-procedure TAlertDialogBase.DoListItemClick(const Sender: TObject;
+procedure TCustomAlertDialog.DoFreeBuilder;
+begin
+  if Assigned(FBuilder) then
+    FreeAndNil(FBuilder);
+end;
+
+procedure TCustomAlertDialog.DoListItemClick(const Sender: TObject;
   const AItem: TListViewItem);
 var
   B: Boolean;
@@ -1275,41 +1495,12 @@ begin
   end;
 end;
 
-procedure TAlertDialogBase.DoRootClick(Sender: TObject);
-begin
-  if FCancelable then
-    Cancel;
-end;
-
-procedure TAlertDialogBase.DoUpdateBackTimer(Sender: TObject);
-var
-  T: Single;
-begin
-  if Assigned(Self) and (Assigned(FTimer)) then begin
-    if csDestroying in ComponentState then
-      Exit;
-    T := (GetTimestamp - FTimerStart) / 1000;
-    if FViewRoot <> nil then begin
-      FViewRoot.Background.ItemDefault.Color := LerpColor(FViewRoot.Background.ItemDefault.Color, FDestBgColor, T);
-      if (T > 0.5) and (FViewRoot.FLayBubble <> nil) then
-        FViewRoot.FLayBubble.Visible := True;
-    end;
-    if T > 1 then
-      FreeAndNil(FTimer);
-  end;
-end;
-
-function TAlertDialogBase.GetBuilder: TDialogBuilder;
+function TCustomAlertDialog.GetBuilder: TDialogBuilder;
 begin
   Result := FBuilder;
 end;
 
-function TAlertDialogBase.GetCancelable: Boolean;
-begin
-  Result := FCancelable;
-end;
-
-function TAlertDialogBase.GetItems: TStrings;
+function TCustomAlertDialog.GetItems: TStrings;
 begin
   if Assigned(FBuilder) then
     Result := FBuilder.FItems
@@ -1317,7 +1508,7 @@ begin
     Result := nil;
 end;
 
-function TAlertDialogBase.GetMessage: string;
+function TCustomAlertDialog.GetMessage: string;
 begin
   if Assigned(FBuilder) then
     Result := FBuilder.FMessage
@@ -1325,12 +1516,7 @@ begin
     Result := '';
 end;
 
-function TAlertDialogBase.GetRootView: TDialogView;
-begin
-  Result := FViewRoot;
-end;
-
-function TAlertDialogBase.GetTitle: string;
+function TCustomAlertDialog.GetTitle: string;
 begin
   if Assigned(FBuilder) then
     Result := FBuilder.FTitle
@@ -1338,35 +1524,7 @@ begin
     Result := '';
 end;
 
-function TAlertDialogBase.GetView: TControl;
-begin
-  if FViewRoot <> nil then
-    Result := FViewRoot.FLayBubble
-  else
-    Result := nil;
-end;
-
-procedure TAlertDialogBase.Hide;
-begin
-  if FViewRoot <> nil then
-    FViewRoot.Hide;
-end;
-
-procedure TAlertDialogBase.InitDefaultPopView;
-
-  function GetParent: TFmxObject;
-  var
-    P: TFmxObject;
-  begin
-    if Owner is TFmxObject then begin
-      P := TFmxObject(Owner);
-      while P.Parent <> nil do
-        P := P.Parent;
-      Result := P;
-    end else
-      Result := nil;
-  end;
-
+procedure TCustomAlertDialog.InitDefaultPopView;
 var
   StyleManager: TDialogStyleManager;
   BtnCount: Integer;
@@ -1382,7 +1540,7 @@ begin
   FViewRoot.Dialog := Self;
   FViewRoot.BeginUpdate;
   FViewRoot.OnClick := DoRootClick;
-  FViewRoot.Parent := GetParent;
+  FViewRoot.Parent := GetFirstParent;
   if FViewRoot.Parent = nil then begin
     Dismiss;
     Exit;
@@ -1483,7 +1641,7 @@ begin
     SetBackColor(StyleManager.FDialogMaskColor);
 end;
 
-procedure TAlertDialogBase.InitExtPopView;
+procedure TCustomAlertDialog.InitExtPopView;
 begin
   InitDefaultPopView;
   if Assigned(FViewRoot.FMsgMessage) then
@@ -1495,7 +1653,7 @@ begin
   end;
 end;
 
-procedure TAlertDialogBase.InitList(const ListView: TListView; IsMulti: Boolean);
+procedure TCustomAlertDialog.InitList(const ListView: TListView; IsMulti: Boolean);
 var
   I, J: Integer;
   Item: TListViewItem;
@@ -1518,7 +1676,7 @@ begin
   end;
 end;
 
-procedure TAlertDialogBase.InitListPopView;
+procedure TCustomAlertDialog.InitListPopView;
 var
   ListView: TListView;
 begin
@@ -1538,7 +1696,7 @@ begin
   ListView.OnItemClick := DoListItemClick;
 end;
 
-procedure TAlertDialogBase.InitMultiPopView;
+procedure TCustomAlertDialog.InitMultiPopView;
 var
   ListView: TListView;
 begin
@@ -1559,13 +1717,7 @@ begin
   ListView.OnItemClick := DoListItemClick;
 end;
 
-procedure TAlertDialogBase.InitOK;
-begin
-  if FViewRoot <> nil then
-    FViewRoot.InitOK;
-end;
-
-procedure TAlertDialogBase.InitSinglePopView;
+procedure TCustomAlertDialog.InitSinglePopView;
 var
   ListView: TListView;
 begin
@@ -1589,53 +1741,18 @@ begin
   ListView.OnItemClick := DoListItemClick;
 end;
 
-procedure TAlertDialogBase.NotifyDataSetChanged;
-begin
-  if Assigned(FViewRoot) then
-    FViewRoot.Repaint;
-end;
-
-procedure TAlertDialogBase.SetBackColor(const Value: TAlphaColor);
-begin
-  FreeAndNil(FTimer);
-  if FDestBgColor <> Value then begin
-    FViewRoot.Background.ItemDefault.Color := FDestBgColor;
-    FDestBgColor := Value;
-    FTimer := TTimer.Create(Owner);
-    FTimer.OnTimer := DoUpdateBackTimer;
-    FTimer.Interval := 20;
-    FTimer.Enabled := True;
-    FTimerStart := GetTimestamp;
-  end;
-end;
-
-procedure TAlertDialogBase.SetCancelable(const Value: Boolean);
-begin
-  FCancelable := Value;
-end;
-
-procedure TAlertDialogBase.SetMessage(const Value: string);
+procedure TCustomAlertDialog.SetMessage(const Value: string);
 begin
   if Assigned(FBuilder) then
     FBuilder.FMessage := Value;
 end;
 
-procedure TAlertDialogBase.SetOnCancelListener(const Value: TOnDialogListener);
-begin
-  FOnCancelListener := Value;
-end;
-
-procedure TAlertDialogBase.SetOnCancelListenerA(const Value: TOnDialogListenerA);
-begin
-  FOnCancelListenerA := Value;
-end;
-
-procedure TAlertDialogBase.SetOnKeyListener(const Value: TOnDialogKeyListener);
+procedure TCustomAlertDialog.SetOnKeyListener(const Value: TOnDialogKeyListener);
 begin
   FOnKeyListener := Value;
 end;
 
-procedure TAlertDialogBase.SetTitle(const Value: string);
+procedure TCustomAlertDialog.SetTitle(const Value: string);
 begin
   if Assigned(FBuilder) then
     FBuilder.FTitle := Value;
@@ -1643,24 +1760,6 @@ begin
     FViewRoot.SetTitle(Value);
 end;
 
-procedure TAlertDialogBase.Show;
-begin
-  try
-    if Assigned(FViewRoot) then begin
-      ApplyTitle();
-      
-      if Assigned(FOnShowListenerA) then
-        FOnShowListenerA(Self)
-      else if Assigned(FOnCancelListener) then
-        FOnCancelListener(Self); 
-          
-      FViewRoot.Show;
-    end;
-  except
-    {$IFDEF WINDOWS}LogE(Self, 'Show', Exception(ExceptObject)); {$ENDIF}
-    Dismiss;
-  end;
-end;
 
 { TDialogView }
 
@@ -1690,6 +1789,7 @@ begin
   FButtonNegative := nil;
   FButtonNeutral := nil;
   FListView := nil;
+  FAnilndictor := nil;
   inherited Destroy;
 end;
 
@@ -1769,12 +1869,17 @@ begin
   {$ENDIF}
   FListView.Transparent := True;
   FListView.Parent := FMsgBody;
+  FListView.HitTest := True;
+  FListView.CanFocus := True;
+  FListView.CanSwipeDelete := False;
+  FListView.ControlType := TControlType.Platform;
   FListView.WidthSize := TViewSize.FillParent;
   FListView.HeightSize := TViewSize.WrapContent;
 end;
 
 procedure TDialogView.InitMessage(StyleMgr: TDialogStyleManager);
 begin
+  if FMsgMessage <> nil then Exit;  
   // 内容区
   FMsgMessage := TTextView.Create(Owner);
   {$IFDEF MSWINDOWS}
@@ -1801,7 +1906,64 @@ end;
 procedure TDialogView.InitOK;
 begin
   EndUpdate;
+  if Assigned(FAnilndictor) then
+    FAnilndictor.Enabled := True;
+  if Assigned(FLayBubble) then
+    FLayBubble.RecalcSize;
   HandleSizeChanged;
+end;
+
+procedure TDialogView.InitProcessView(StyleMgr: TDialogStyleManager);
+begin
+  CanFocus := False;
+  FLayBubble := TLinearLayout.Create(Owner);
+  {$IFDEF MSWINDOWS}
+  FLayBubble.Name := 'LayBubble' + IntToStr(DialogRef);
+  {$ENDIF}
+  // 消息框主体
+  FLayBubble.Parent := Self;
+  FLayBubble.Margin := '16';
+  FLayBubble.Paddings := '16';
+  FLayBubble.ClipChildren := True;
+  FLayBubble.Background.ItemDefault.Color := StyleMgr.ProcessBackgroundColor;
+  FLayBubble.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+  FLayBubble.Background.XRadius := StyleMgr.FBackgroundRadius;
+  FLayBubble.Background.YRadius := StyleMgr.FBackgroundRadius;
+  FLayBubble.Gravity := TLayoutGravity.Center;
+  FLayBubble.Layout.CenterInParent := True;
+  FLayBubble.Clickable := True;
+  FLayBubble.WidthSize := TViewSize.WrapContent;
+  FLayBubble.HeightSize := TViewSize.WrapContent;
+  FLayBubble.Orientation := TOrientation.Vertical;
+  FLayBubble.CanFocus := False;
+  FLayBubble.AdjustViewBounds := True;
+  FLayBubble.MaxWidth := Width - FLayBubble.Margins.Left - FLayBubble.Margins.Right;
+  FLayBubble.MaxHeight := Height - FLayBubble.Margins.Top - FLayBubble.Margins.Bottom;
+
+  // 等待动画
+  FAnilndictor := TAniIndicator.Create(Owner);
+  {$IFDEF MSWINDOWS}
+  FAnilndictor.Name := 'Anilndictor' + IntToStr(DialogRef);
+  {$ENDIF}
+  FAnilndictor.Parent := FLayBubble;
+  FAnilndictor.Align := TAlignLayout.Center;
+  // 消息内容
+  FMsgMessage := TTextView.Create(Owner);
+  {$IFDEF MSWINDOWS}
+  FMsgMessage.Name := 'FMsgMessage' + IntToStr(DialogRef);
+  {$ENDIF}
+  FMsgMessage.Parent := FLayBubble;
+  FMsgMessage.Clickable := False;
+  FMsgMessage.Margins.Top := 24;
+  FMsgMessage.Padding.Left := 24;
+  FMsgMessage.Padding.Right := 24;
+  FMsgMessage.WidthSize := TViewSize.WrapContent;
+  FMsgMessage.HeightSize := TViewSize.WrapContent;
+  FMsgMessage.Gravity := TLayoutGravity.Center;
+  FMsgMessage.TextSettings.WordWrap := True;
+  FMsgMessage.TextSettings.Color.Default := StyleMgr.ProcessTextColor;
+  FMsgMessage.TextSettings.Font.Size := StyleMgr.MessageTextSize;
+  FMsgMessage.AutoSize := True;
 end;
 
 procedure TDialogView.InitView(StyleMgr: TDialogStyleManager);
@@ -1888,6 +2050,8 @@ begin
   FDialogMaskColor := COLOR_DialogMaskColor;
   FTitleBackGroundColor := COLOR_TitleBackGroundColor;
   FTitleTextColor := COLOR_TitleTextColor;
+  FProcessBackgroundColor := COLOR_ProcessBackgroundColor;
+  FProcessTextColor := COLOR_ProcessTextColor;
   FBackgroundColor := COLOR_BackgroundColor;
   FBodyBackgroundColor := COLOR_BodyBackgroundColor;
   FMessageTextBackground := COLOR_MessageTextBackground;
@@ -1942,6 +2106,80 @@ end;
 procedure TDialogStyleManager.SetButtonTextColor(const Value: TTextColor);
 begin
   FButtonTextColor.Assign(Value);
+end;
+
+
+{ TProgressDialog }
+
+constructor TProgressDialog.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+end;
+
+destructor TProgressDialog.Destroy;
+begin
+  inherited Destroy;
+end;
+
+function TProgressDialog.GetMessage: string;
+begin
+  if Assigned(FViewRoot) and (Assigned(FViewRoot.FMsgMessage)) then
+    Result := FViewRoot.FMsgMessage.Text
+  else
+    Result := '';
+end;
+
+procedure TProgressDialog.InitView(const AMsg: string);
+var
+  Style: TDialogStyleManager;
+begin
+  Inc(DialogRef);
+  Style := FStyleManager;
+  if Style = nil then
+    Style := GetDefaultStyleMgr;
+
+  // 初始化基础     
+  FViewRoot := TDialogView.Create(Owner);
+  FViewRoot.Dialog := Self;
+  FViewRoot.BeginUpdate;
+  FViewRoot.OnClick := DoRootClick;
+  FViewRoot.Parent := GetFirstParent;
+  if FViewRoot.Parent = nil then begin
+    Dismiss;
+    Exit;
+  end;
+  FViewRoot.Clickable := True;
+  FViewRoot.Align := TAlignLayout.Client;
+  FViewRoot.Index := FViewRoot.Parent.ChildrenCount - 1;
+  FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+  FViewRoot.InitProcessView(Style);
+  if AMsg = '' then
+    FViewRoot.FMsgMessage.Visible := False
+  else begin
+    FViewRoot.FMsgMessage.Text := AMsg;
+    FViewRoot.FMsgMessage.Visible := True;
+  end;
+
+  SetBackColor(Style.FDialogMaskColor);
+  InitOK();
+end;
+
+procedure TProgressDialog.SetMessage(const Value: string);
+begin
+  if Assigned(FViewRoot) and (Assigned(FViewRoot.FMsgMessage)) then begin
+    FViewRoot.FMsgMessage.Text := Value;
+    FViewRoot.FMsgMessage.Visible := Value <> '';
+    FViewRoot.Realign;
+  end;
+end;
+
+class function TProgressDialog.Show(AOwner: TComponent; const AMsg: string;
+  ACancelable: Boolean): TProgressDialog;
+begin
+  Result := TProgressDialog.Create(AOwner);
+  Result.Cancelable := ACancelable;
+  Result.InitView(AMsg);
+  TDialog(Result).Show();
 end;
 
 initialization

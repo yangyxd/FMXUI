@@ -203,8 +203,16 @@ var
 begin
   if FInFitSize then
     Exit;
-  W := FSize.Width;
-  H := FSize.Height;
+  W := GetParentMaxWidth;
+  H := GetParentMaxHeight;
+  if (MaxHeight > 0) and (W > MaxWidth) then
+    W := MaxWidth;
+  if (MaxHeight > 0) and (H > MaxHeight) then
+    H := MaxHeight;
+  if W <= 0 then
+    W := FSize.Width;
+  if H <= 0 then
+    H := FSize.Height;
   DoChangeSize(W, H);
   if (W <> FSize.Width) or (H <> FSize.Height) then begin
     FInFitSize := True;

@@ -597,9 +597,9 @@ begin
   with TDrawableBorder(Result).Border do begin
     Width := 1;
     Style := TViewBorderStyle.RectBorder;
-    Color.Default := $AFCCCCCC;
+    Color.Default := $BFC0C0C0;
     Color.Focused := $FF0066cc;
-    Color.Hovered := $FFCCCCCC;
+    Color.Hovered := $FFC0C0C0;
   end;
   Result.OnChanged := DoBackgroundChanged;
 end;

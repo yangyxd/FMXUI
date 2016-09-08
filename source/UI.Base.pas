@@ -400,6 +400,7 @@ type
   private
     [Weak] FView: IView;
     FOnChanged: TNotifyEvent;
+
     FToLeftOf: TControl;
     FToRightOf: TControl;
     FAbove: TControl;
@@ -962,7 +963,6 @@ type
       AParentOrientation: TOrientation): Boolean;
 
     procedure DoAddObject(const AObject: TFmxObject); override;
-    procedure DoRemoveObject(const AObject: TFmxObject); override;
     procedure DoLayoutChanged(Sender: TObject); override;
     procedure DoGravity(); override;
     procedure DoMaxSizeChange; override;
@@ -1005,13 +1005,14 @@ type
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TRelativeLayout = class(TViewGroup)
   private
-    FViewList: TList;
+    FViewList: TList<TControl>;
     procedure DoAlignControl(const X, Y, W, H: Single);
   protected
-    function GetXY(const StackList: TList; const Control: TControl;
+    function GetXY(const StackList: TList<TControl>; const Control: TControl;
       var X, Y, W, H: Single): Integer;
     procedure DoRealign; override;
     procedure DoRecalcSize(var AWidth, AHeight: Single); override;
+    procedure DoRemoveObject(const AObject: TFmxObject); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1085,6 +1086,44 @@ begin
     CR.B := CA.B + Round((CB.B - CA.B) * T);
     CR.R := CA.R + Round((CB.R - CA.R) * T);
   end;
+end;
+
+function ComponentStateToString(const State: TComponentState): string;
+
+  procedure Write(var P: PChar; const V: string);
+  var
+    PV, PM: PChar;
+  begin
+    PV := PChar(V);
+    PM := PV + Length(V);
+    while PV < PM do begin
+      P^ := PV^;     
+      Inc(P);
+      Inc(PV); 
+    end;
+  end;
+    
+var
+  P, P1: PChar;
+begin
+  SetLength(Result, 256);
+  P := PChar(Result);
+  P1 := P;   
+  if csLoading in State then Write(P, 'csLoading,');
+  if csReading in State then Write(P, 'csReading,');
+  if csWriting in State then Write(P, 'csWriting,');
+  if csDestroying in State then Write(P, 'csDestroying,');
+  if csDesigning in State then Write(P, 'csDesigning,');
+  if csAncestor in State then Write(P, 'csAncestor,');
+  if csUpdating in State then Write(P, 'csUpdating,');
+  if csFixups in State then Write(P, 'csFixups,');
+  if csFreeNotification in State then Write(P, 'csFreeNotification,');
+  if csInline in State then Write(P, 'csInline,');
+  if csDesignInstance in State then Write(P, 'csDesignInstance,');
+  if (P - P1) > 0 then
+    SetLength(Result, P - P1 - 1)
+  else
+    Result := '';
 end;
 
 type TPrivateControl = class(TControl);
@@ -1708,13 +1747,13 @@ begin
     Exit;
   Images := GetImages;
   if Assigned(Images) and (Index >= 0) and (Index < Images.Count) then begin
-    BitmapSize := TSize.Create(FWidth, FHeight);
+    BitmapSize := TSize.Create(FWidth * 2, FHeight * 2);
     if BitmapSize.IsZero then
       Exit;
     Bitmap := Images.Bitmap(BitmapSize, Index);
     if Bitmap <> nil then begin
       BitmapRect := TRectF.Create(0, 0, Bitmap.Width, Bitmap.Height);
-      Canvas.DrawBitmap(Bitmap, BitmapRect, R, 1, True);
+      Canvas.DrawBitmap(Bitmap, BitmapRect, R, FView.GetOpacity, False);
     end;
   end;
 end;
@@ -3017,12 +3056,6 @@ begin
     Realign;
 end;
 
-procedure TViewGroup.DoRemoveObject(const AObject: TFmxObject);
-begin
-  inherited;
-  Realign;
-end;
-
 // 此处的自动调整大小，是相对于父级线性布局组件相反方向而言，也就是在线性布局中
 // 是否要调整组件的宽度或高度
 function TViewGroup.IsAdjustSize(View: IView; Align: TAlignLayout;
@@ -3087,7 +3120,7 @@ var
 begin
   if FDisableAlign then
     Exit;
-  if csLoading in ComponentState then
+  if (csLoading in ComponentState) or (csDestroying in ComponentState) then
     Exit;
   LogD(Self.ClassName + '.DoRealign.');
 
@@ -3407,7 +3440,7 @@ var
   IsAW, IsAH, IsASW, IsASH: Boolean;
   V: Single;
 begin
-  if IsUpdating then
+  if IsUpdating or (csDestroying in ComponentState) then
     Exit;
   if not Assigned(ParentView) then begin
     P := ParentControl;
@@ -3473,8 +3506,8 @@ begin
     IsAW := (WidthSize = TViewSize.WrapContent) and (not IsASW);
     IsAH := (HeightSize = TViewSize.WrapContent) and (not IsASH);
 
-    if IsAW then AWidth := Padding.Left + Padding.Right;
-    if IsAH then AHeight := Padding.Top + Padding.Bottom;
+    if IsAW then AWidth := 0;
+    if IsAH then AHeight := 0;
 
     // 如果有需要自动大小的，则将子控件大小加起来
     if IsAW or IsAH then begin
@@ -3496,8 +3529,10 @@ begin
             AHeight := V;
         end;
       end;
-    end;
 
+      if IsAW then AWidth := AWidth + Padding.Left + Padding.Right;
+      if IsAH then AHeight := AHeight + Padding.Top + Padding.Bottom;
+    end;
   end;
 end;
 
@@ -3607,7 +3642,7 @@ end;
 constructor TRelativeLayout.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FViewList := TList.Create;
+  FViewList := TList<TControl>.Create;
 end;
 
 destructor TRelativeLayout.Destroy;
@@ -3621,7 +3656,7 @@ var
   R: TRectF;
   AlignList: TInterfaceList;
   ALastWidth, ALastHeight: Single;
-  List: TList;
+  List: TList<TControl>;
 
   function InsertBefore(const C1, C2: IAlignableObject; AAlign: TAlignLayout): Boolean;
   begin
@@ -3638,7 +3673,7 @@ var
     end;
   end;
 
-  procedure DoAlign(List: TList; AAlign: TAlignLayout);
+  procedure DoAlign(List: TList<TControl>; AAlign: TAlignLayout);
   var
     I, J: Integer;
     Control: TControl;
@@ -3667,7 +3702,7 @@ var
     end;
   end;
 
-  procedure DoGetList(const List: TList);
+  procedure DoGetList(const List: TList<TControl>);
   var
     View: IView;
     Control: TControl;
@@ -3704,7 +3739,7 @@ begin
   ALastHeight := H;
   R := RectF(0, 0, W, H);
   R := Padding.PaddingRect(R);
-  List := TList.Create;
+  List := TList<TControl>.Create;
   try
     DoGetList(List);
     // Align
@@ -3739,7 +3774,7 @@ end;
 
 procedure TRelativeLayout.DoRealign;
 var
-  List: TList;
+  List: TList<TControl>;
   W, H: Single;
   I: Integer;
   CurPos: TPointF;
@@ -3750,7 +3785,7 @@ var
 begin
   if FDisableAlign or (not Assigned(FViewList)) then
     Exit;
-  if csLoading in ComponentState then
+  if (csLoading in ComponentState) or (csDestroying in ComponentState) then
     Exit;
   FDisableAlign := True;
   CurPos := PointF(Padding.Left, Padding.Top);
@@ -3761,7 +3796,7 @@ begin
     FViewList.Clear;
     DoAlignControl(CurPos.X, CurPos.Y, FSize.Width, FSize.Height);
     //SaveAdjustViewBounds := False;
-    List := TList.Create;
+    List := TList<TControl>.Create;
     try
       for I := 0 to FViewList.Count - 1 do begin
         View := FViewList[I];
@@ -3791,7 +3826,7 @@ var
   IsAW, IsAH: Boolean;
   V: Single;
 begin
-  if IsUpdating then
+  if IsUpdating or (csDestroying in ComponentState) then
     Exit;
 
   IsAW := (WidthSize = TViewSize.WrapContent) and
@@ -3825,7 +3860,43 @@ begin
   end;
 end;
 
-function TRelativeLayout.GetXY(const StackList: TList; const Control: TControl;
+procedure TRelativeLayout.DoRemoveObject(const AObject: TFmxObject);
+
+  procedure RemoveLink(var Data: TControl);
+  begin
+    if Data = AObject then
+      Data := nil;
+  end;
+
+var
+  I: Integer;
+  Item: TControl;
+  View: IView;
+  Layout: TViewLayout;
+begin
+  if not (csDestroying in ComponentState) then begin
+    // 删除对象时，解除所有引用到它的地方
+    for I := 0 to ControlsCount - 1 do begin
+      Item := Controls[I];
+      if Supports(Item, IView, View) then begin
+        Layout := View.Layout;
+        if Layout = nil then Continue;
+        RemoveLink(Layout.FToLeftOf);
+        RemoveLink(Layout.FToRightOf);
+        RemoveLink(Layout.FAbove);
+        RemoveLink(Layout.FBelow);
+        RemoveLink(Layout.FAlignBaseline);
+        RemoveLink(Layout.FAlignLeft);
+        RemoveLink(Layout.FAlignTop);
+        RemoveLink(Layout.FAlignRight);
+        RemoveLink(Layout.FAlignBottom);
+      end;
+    end;
+  end;
+  inherited DoRemoveObject(AObject);
+end;
+
+function TRelativeLayout.GetXY(const StackList: TList<TControl>; const Control: TControl;
   var X, Y, W, H: Single): Integer;
 var
   View: IView;
@@ -3840,6 +3911,7 @@ var
 begin
   Result := 1;
   if not Assigned(Control) then Exit;
+  if csDestroying in Control.ComponentState then Exit;
 
   W := Control.Width + Control.Margins.Left + Control.Margins.Right;
   H := Control.Height + Control.Margins.Top + Control.Margins.Bottom;

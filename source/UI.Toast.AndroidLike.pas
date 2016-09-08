@@ -142,7 +142,7 @@ begin
   FTextColor := TAlphaColorRec.Black;
   FToastBoxColor := TAlphaColorRec.Gray;
   FToastBoxHeight := 50;
-  FToastBoxAlign := TAlignLayout.alCenter;
+  FToastBoxAlign := TAlignLayout.Center;
   FTextFont := TFont.Create;
   FVersion := COMPONENT_VERSION;
   FInfo := INFO_URL;
@@ -163,7 +163,7 @@ begin
     self.FTextfield.Name := self.Name + 'Textfield';
     self.FTextfield.Parent := self.FLayout;
     self.FTextfield.Text := '';
-    self.FTextfield.Align := TAlignLayout.alClient;
+    self.FTextfield.Align := TAlignLayout.Client;
     self.FTextfield.StyledSettings := [];
     self.FTimer := TTimer.Create(AOwner);
     self.FTimer.Name := self.Name + 'Timer';
