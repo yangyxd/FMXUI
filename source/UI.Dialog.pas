@@ -46,9 +46,9 @@ interface
 uses
   UI.Base, UI.Standard, UI.ListView, {$IFDEF WINDOWS}UI.Debug, {$ENDIF}
   System.TypInfo, System.SysUtils, System.Character, System.RTLConsts,
-  FMX.Graphics, System.Generics.Collections, FMX.TextLayout,
+  FMX.Graphics, System.Generics.Collections, FMX.TextLayout, FMX.Ani,
   System.Classes, System.Types, System.UITypes, System.Math.Vectors, System.Rtti,
-  FMX.Types, FMX.Controls, FMX.Forms, FMX.StdCtrls,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.StdCtrls, FMX.Utils,
   FMX.ListView, FMX.ListView.Appearances, FMX.ListView.Types;
 
 const       
@@ -301,6 +301,7 @@ type
     procedure SetOnCancelListenerA(const Value: TOnDialogListenerA);
     function GetView: TControl;
     function GetRootView: TDialogView;
+    function GetIsDismiss: Boolean;
   protected
     FViewRoot: TDialogView;
     FTimer: TTimer;
@@ -309,6 +310,7 @@ type
 
     FCancelable: Boolean;
     FCanceled: Boolean;
+    FIsDismiss: Boolean;
 
     FEventing: Boolean;      // 事件处理中
     FAllowDismiss: Boolean;  // 需要释放
@@ -380,6 +382,7 @@ type
 
     property Message: string read GetMessage write SetMessage;
     property Canceled: Boolean read FCanceled;
+    property IsDismiss: Boolean read GetIsDismiss;
 
     property OnCancelListener: TOnDialogListener read FOnCancelListener write SetOnCancelListener;
     property OnCancelListenerA: TOnDialogListenerA read FOnCancelListenerA write SetOnCancelListenerA;
@@ -418,6 +421,8 @@ type
   protected
     procedure DoButtonClick(Sender: TObject);
     procedure DoListItemClick(const Sender: TObject; const AItem: TListViewItem);
+    procedure DoListUpdateObjects(const Sender: TObject; const AItem: TListViewItem);
+    procedure DoListSingleUpdateObjects(const Sender: TObject; const AItem: TListViewItem);
     procedure DoApplyTitle(); override;
     procedure DoFreeBuilder(); override;
   public
@@ -1142,8 +1147,9 @@ end;
 
 destructor TDialog.Destroy;
 begin
-  Dec(DialogRef);
+  AtomicDecrement(DialogRef);
   if Assigned(Self) then begin
+    FIsDismiss := True;
     if (FViewRoot <> nil) then begin
       if Assigned(FTimer) then
         FTimer.OnTimer := nil;
@@ -1151,8 +1157,10 @@ begin
       Dismiss;
       FViewRoot := nil;
     end;
-    if Assigned(FTimer) then
+    if Assigned(FTimer) then begin
+      FTimer.Enabled := False;
       FTimer := nil;
+    end;
   end;
   FViewRoot := nil;
   inherited Destroy;
@@ -1168,6 +1176,9 @@ begin
     FAllowDismiss := True;
     Exit;
   end;
+  if FIsDismiss then
+    Exit;
+  FIsDismiss := True;
   if Assigned(FOnDismissListenerA) then begin
     FOnDismissListenerA(Self);
     FOnDismissListenerA := nil;
@@ -1282,6 +1293,11 @@ begin
     Result := nil;
 end;
 
+function TDialog.GetIsDismiss: Boolean;
+begin
+  Result := (not Assigned(Self)) or FIsDismiss;
+end;
+
 function TDialog.GetMessage: string;
 begin
   Result := '';
@@ -1363,6 +1379,11 @@ begin
         FOnCancelListener(Self);
 
       FViewRoot.Show;
+
+      if Assigned(FViewRoot.FLayBubble) then begin
+        FViewRoot.FLayBubble.Opacity := 0;
+        TAnimator.AnimateFloat(FViewRoot.FLayBubble, 'Opacity', 1, 0.3);
+      end;
     end;
   except
     {$IFDEF WINDOWS}LogE(Self, 'Show', Exception(ExceptObject)); {$ENDIF}
@@ -1374,7 +1395,7 @@ end;
 
 procedure TCustomAlertDialog.Apply(const ABuilder: TDialogBuilder);
 begin
-  Inc(DialogRef);
+  AtomicIncrement(DialogRef);
   FBuilder := ABuilder;
   if ABuilder = nil then Exit;
   if ABuilder.View <> nil then
@@ -1408,6 +1429,7 @@ end;
 
 destructor TCustomAlertDialog.Destroy;
 begin
+  FreeAndNil(FBuilder);
   inherited Destroy;
 end;
 
@@ -1470,6 +1492,7 @@ begin
         B := not FBuilder.FCheckedItems[AItem.Index];
         FBuilder.FCheckedItems[AItem.Index] := B;
       end;
+      AItem.Objects.AccessoryObject.Visible := B;
       FViewRoot.FListView.Repaint;
 
       if Assigned(FBuilder.FOnCheckboxClickListenerA) then
@@ -1478,6 +1501,12 @@ begin
         FBuilder.FOnCheckboxClickListener(Self, AItem.Index, B);
 
     end else begin
+      if FBuilder.FIsSingleChoice then begin
+        if Builder.FCheckedItem >= 0 then
+          FViewRoot.FListView.Items[Builder.FCheckedItem].Objects.AccessoryObject.Visible := False;
+        AItem.Objects.AccessoryObject.Visible := True;
+        Builder.FCheckedItem := AItem.Index;
+      end;
 
       if Assigned(FBuilder.OnClickListenerA) then
         FBuilder.OnClickListenerA(Self, AItem.Index)
@@ -1494,6 +1523,20 @@ begin
     FAllowDismiss := False;
     DoAsyncDismiss;
   end;
+end;
+
+procedure TCustomAlertDialog.DoListSingleUpdateObjects(const Sender: TObject;
+  const AItem: TListViewItem);
+begin
+  AItem.Objects.TextObject.Width := AItem.Objects.TextObject.Width - (AItem.Objects.AccessoryObject.Width);
+  AItem.Objects.AccessoryObject.Visible := AItem.Index = FViewRoot.FListView.ItemIndex;
+end;
+
+procedure TCustomAlertDialog.DoListUpdateObjects(const Sender: TObject;
+  const AItem: TListViewItem);
+begin
+  AItem.Objects.TextObject.Width := AItem.Objects.TextObject.Width - (AItem.Objects.AccessoryObject.Width);
+  AItem.Objects.AccessoryObject.Visible := FBuilder.FCheckedItems[AItem.Index];
 end;
 
 function TCustomAlertDialog.GetBuilder: TDialogBuilder;
@@ -1709,13 +1752,18 @@ begin
 
   // 初始化列表
   ListView := FViewRoot.FListView;
-  ListView.EditMode := True;
-  ListView.ItemAppearance.ItemAppearance := 'ListItemShowCheck';
+  ListView.EditMode := False;
+  ListView.ItemAppearance.ItemAppearance := 'ListItem';
+  ListView.ItemAppearance.ItemEditAppearance := 'ListItemShowCheck';
+  ListView.ItemAppearanceObjects.ItemObjects.Accessory.AccessoryType := TAccessoryType.Checkmark;
   ListView.BeginUpdate;
   ListView.Items.Clear;
   InitList(ListView, True);
+  if Length(Builder.FCheckedItems) < ListView.Items.Count then
+    SetLength(Builder.FCheckedItems, ListView.Items.Count);
   ListView.EndUpdate;
   ListView.OnItemClick := DoListItemClick;
+  ListView.OnUpdateObjects := DoListUpdateObjects;
 end;
 
 procedure TCustomAlertDialog.InitSinglePopView;
@@ -1730,16 +1778,19 @@ begin
 
   // 初始化列表
   ListView := FViewRoot.FListView;
-  ListView.ItemAppearance.ItemAppearance := 'Custom';
+  ListView.ItemAppearance.ItemAppearance := 'ListItem';
+  ListView.ItemAppearance.ItemEditAppearance := 'ListItemShowCheck';
+  ListView.ItemAppearanceObjects.ItemObjects.Accessory.AccessoryType := TAccessoryType.Checkmark;
   ListView.BeginUpdate;
   ListView.Items.Clear;
   InitList(ListView);
-  ListView.EndUpdate;
   if (Builder.FCheckedItem >= 0) and (Builder.FCheckedItem < ListView.Items.Count) then begin
     ListView.ItemIndex := Builder.FCheckedItem;
-    ListView.ScrollViewPos := 0;
+    //ListView.ScrollViewPos := 0;
   end;
+  ListView.EndUpdate;
   ListView.OnItemClick := DoListItemClick;
+  ListView.OnUpdateObjects := DoListSingleUpdateObjects;
 end;
 
 procedure TCustomAlertDialog.SetMessage(const Value: string);
@@ -2039,6 +2090,7 @@ end;
 procedure TDialogView.Show;
 begin
   Visible := True;
+  BringToFront;
   RecalcSize;
   Realign;
 end;
@@ -2155,7 +2207,6 @@ begin
   end;
   FViewRoot.Clickable := True;
   FViewRoot.Align := TAlignLayout.Client;
-  FViewRoot.Index := FViewRoot.Parent.ChildrenCount - 1;
   FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
   FViewRoot.InitProcessView(Style);
   if AMsg = '' then

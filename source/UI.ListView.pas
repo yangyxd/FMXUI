@@ -28,6 +28,7 @@ type
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TListExView = class(TListView, IView)
   private
+    FOnFooterClick: TAppearanceListView.TItemEvent;
     procedure SetLayout(const Value: TViewLayout);
     procedure SetBackground(const Value: TDrawable);
     procedure SetWeight(const Value: Single);
@@ -96,6 +97,10 @@ type
     procedure DoChange; override;
     function GetLocalRect: TRectF; override;
   protected
+    FButtonClick: Boolean;
+    function FindLocalItemObjectAtPosition(const ItemIndex: Integer; const Position: TPointF): TListItemDrawable;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -117,6 +122,78 @@ type
     property Weight: Single read GetWeight write SetWeight;
     property Layout: TViewLayout read GetLayout write SetLayout;
     property Transparent default True;
+    property OnFooterClick: TAppearanceListView.TItemEvent read FOnFooterClick write FOnFooterClick;
+  end;
+
+type
+  /// <summary>
+  /// 自定义 ListViewItem
+  /// 底部详细，右上角备注，带图标
+  /// </summary>
+  TRightBottomItemAppearance = class(TPresetItemObjects)
+  public const
+    cTextMarginAccessory = 8;
+    cDefaultImagePlaceOffsetX = -3;
+    cDefaultImageTextPlaceOffsetX = 4;
+    RightTextName = 'RightText';
+    DetailTextName = 'DetailText';
+    NoteTextName = 'NoteText';
+  private
+    FRightText: TTextObjectAppearance;
+    FDetailText: TTextObjectAppearance;
+    FNoteText: TTextObjectAppearance;
+    procedure SetNoteText(const Value: TTextObjectAppearance);
+    procedure SetRightText(const Value: TTextObjectAppearance);
+    procedure SetDetailText(const Value: TTextObjectAppearance);
+  protected
+    function DefaultHeight: Integer; override;
+    procedure UpdateSizes(const FinalSize: TSizeF); override;
+    function GetGroupClass: TPresetItemObjects.TGroupClass; override;
+    procedure SetObjectData(const AListViewItem: TListViewItem; const AIndex: string; const AValue: TValue; var AHandled: Boolean); override;
+  public
+    constructor Create(const Owner: TControl); override;
+    destructor Destroy; override;
+  published
+    property Image;
+    property Text;
+    property RightText: TTextObjectAppearance read FRightText write SetRightText;
+    property DetailText: TTextObjectAppearance read FDetailText write SetDetailText;
+    property NoteText: TTextObjectAppearance read FNoteText write SetNoteText;
+    property Accessory;
+  end;
+
+  TRightBottomDeleteAppearance = class(TRightBottomItemAppearance)
+  private const
+    cDefaultGlyph = TGlyphButtonType.Delete;
+  public
+    constructor Create(const Owner: TControl); override;
+  published
+    property GlyphButton;
+  end;
+
+  TRightBottomShowCheckAppearance = class(TRightBottomItemAppearance)
+  private const
+    cDefaultGlyph = TGlyphButtonType.Checkbox;
+  public
+    constructor Create(const Owner: TControl); override;
+  published
+    property GlyphButton;
+  end;
+
+  TListFooterAppearance = class(TPresetItemObjects)
+  private const
+    cDefaultHeaderHeight = 60;
+  private
+    FLoading: Boolean;
+  protected
+    procedure UpdateSizes(const FinalSize: TSizeF); override;
+    function DefaultHeight: Integer; override;
+    function GetGroupClass: TPresetItemObjects.TGroupClass; override;
+  public
+    constructor Create(const Owner: TControl); override;
+  published
+    property Text;
+    property Loading: Boolean read FLoading write FLoading;
   end;
 
 implementation
@@ -235,6 +312,24 @@ begin
   DoChangeSize(ANewWidth, ANewHeight);
   Result := inherited DoSetSize(ASize, NewPlatformDefault, ANewWidth, ANewHeight,
     ALastWidth, ALastHeight);
+end;
+
+function TListExView.FindLocalItemObjectAtPosition(const ItemIndex: Integer;
+  const Position: TPointF): TListItemDrawable;
+var
+  I: Integer;
+  Item: TListItem;
+begin
+  if (ItemIndex < 0) or (ItemIndex >= Adapter.Count) then
+    Exit(nil);
+
+  Item := Adapter[ItemIndex];
+
+  for I := 0 to Item.Count - 1 do
+    if Item.View[I].InLocalRect(Position) then
+      Exit(Item.View[I]);
+
+  Result := nil;
 end;
 
 function TListExView.GetAdjustViewBounds: Boolean;
@@ -382,6 +477,34 @@ begin
   Result := False;
 end;
 
+procedure TListExView.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+begin
+  inherited MouseDown(Button, Shift, X, Y);
+  if not ShouldHandleEvents then
+    Exit;
+  if Button = TMouseButton.mbLeft then
+    FButtonClick := True
+  else
+    FButtonClick := False;
+end;
+
+procedure TListExView.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+var
+  Item: TListViewItem;
+begin
+  inherited MouseUp(Button, Shift, X, Y);
+  if FButtonClick and Assigned(FOnFooterClick) then begin
+    FButtonClick := False;
+    if Items.Count > 0 then begin
+      Item := Items[Items.Count - 1];
+      if FindLocalItemObjectAtPosition(Item.Index, PointF(X, Y)) <> nil then
+        FOnFooterClick(Self, Item);
+    end;
+  end;
+end;
+
 procedure TListExView.SetAdjustViewBounds(const Value: Boolean);
 begin
   if FAdjustViewBounds <> Value then begin
@@ -513,6 +636,259 @@ begin
 
 end;
 
+{ TRightBottomItemAppearance }
+
+const
+  cMultiDetailMember = 'DetailText';
+  cMultiNoteMember = 'NoteText';
+  cMultiRightMember = 'RightText';
+
+constructor TRightBottomItemAppearance.Create(const Owner: TControl);
+var
+  LastFontSize: Single;
+begin
+  inherited;
+  Accessory.DefaultValues.AccessoryType := TAccessoryType.More;
+  Accessory.DefaultValues.Visible := True;
+  Accessory.RestoreDefaults;
+  LastFontSize := Text.DefaultValues.Font.Size;
+  Text.DefaultValues.Font.Size := LastFontSize + 4;
+  Text.DefaultValues.VertAlign := TListItemAlign.Trailing;
+  Text.DefaultValues.TextVertAlign := TTextAlign.Leading;
+  Text.DefaultValues.Height := 65;  // Item will be bottom aligned, with text top aligned
+  Text.DefaultValues.Visible := True;
+  Text.RestoreDefaults;
+
+  FDetailText := TTextObjectAppearance.Create;
+  FDetailText.Name := DetailTextName;
+  FDetailText.DefaultValues.Assign(Text.DefaultValues);
+  FDetailText.DefaultValues.Font.Size := LastFontSize;
+  FDetailText.DefaultValues.VertAlign := TListItemAlign.Trailing;
+  FDetailText.DefaultValues.TextVertAlign := TTextAlign.Leading;
+  FDetailText.DefaultValues.Height := 42;  // Move text down
+  FDetailText.DefaultValues.IsDetailText := True; // Use detail font
+  FDetailText.RestoreDefaults;
+  FDetailText.OnChange := Self.ItemPropertyChange;
+  FDetailText.Owner := Self;
+
+  FNoteText := TTextObjectAppearance.Create;
+  FNoteText.Name := NoteTextName;
+  FNoteText.DefaultValues.Assign(FDetailText.DefaultValues);
+  FNoteText.DefaultValues.Height := 26;  // Move text down
+  FNoteText.DefaultValues.IsDetailText := True; // Use detail font
+  FNoteText.RestoreDefaults;
+  FNoteText.OnChange := Self.ItemPropertyChange;
+  FNoteText.Owner := Self;
+
+  FRightText := TTextObjectAppearance.Create;
+  FRightText.Name := RightTextName;
+  FRightText.DefaultValues.Assign(FDetailText.DefaultValues);
+  FRightText.DefaultValues.Align := TListItemAlign.Trailing;
+  FRightText.DefaultValues.TextAlign := TTextAlign.Trailing;
+  FRightText.DefaultValues.VertAlign := TListItemAlign.Leading;
+  FRightText.DefaultValues.TextVertAlign := TTextAlign.Center;
+  FRightText.DefaultValues.Height := 38;  // Move text down
+  FRightText.DefaultValues.IsDetailText := True; // Use detail font
+  FRightText.DefaultValues.PlaceOffset.X := -32;
+  FRightText.RestoreDefaults;
+  FRightText.OnChange := Self.ItemPropertyChange;
+  FRightText.Owner := Self;
+
+  // Define livebindings members that make up MultiDetail
+  FDetailText.DataMembers :=
+    TObjectAppearance.TDataMembers.Create(
+      TObjectAppearance.TDataMember.Create(
+        cMultiDetailMember, // Displayed by LiveBindings
+        Format('Data["%s"]', [DetailTextName])));   // Expression to access value from TListViewItem
+  FNoteText.DataMembers :=
+    TObjectAppearance.TDataMembers.Create(
+      TObjectAppearance.TDataMember.Create(
+        cMultiNoteMember, // Displayed by LiveBindings
+        Format('Data["%s"]', [NoteTextName])));   // Expression to access value from TListViewItem
+  FRightText.DataMembers :=
+    TObjectAppearance.TDataMembers.Create(
+      TObjectAppearance.TDataMember.Create(
+        cMultiRightMember, // Displayed by LiveBindings
+        Format('Data["%s"]', [RightTextName])));   // Expression to access value from TListViewItem
+
+  Image.DefaultValues.Width := cDefaultImageWidth;
+  Image.DefaultValues.Height := cDefaultImageHeight;
+  Image.RestoreDefaults;
+
+  GlyphButton.DefaultValues.VertAlign := TListItemAlign.Center;
+  GlyphButton.RestoreDefaults;
+
+  // Define the appearance objects
+  AddObject(Text, True);
+  AddObject(FDetailText, True);
+  AddObject(FNoteText, True);
+  AddObject(FRightText, True);
+  AddObject(Image, True);
+  AddObject(Accessory, True);
+  AddObject(GlyphButton, IsItemEdit);  // GlyphButton is only visible when in edit mode
+end;
+
+function TRightBottomItemAppearance.DefaultHeight: Integer;
+begin
+  Result := 70;
+end;
+
+destructor TRightBottomItemAppearance.Destroy;
+begin
+  FDetailText.Free;
+  FNoteText.Free;
+  FRightText.Free;
+  inherited;
+end;
+
+function TRightBottomItemAppearance.GetGroupClass: TPresetItemObjects.TGroupClass;
+begin
+  Result := TRightBottomItemAppearance;
+end;
+
+procedure TRightBottomItemAppearance.SetDetailText(
+  const Value: TTextObjectAppearance);
+begin
+  FDetailText.Assign(Value);
+end;
+
+procedure TRightBottomItemAppearance.SetNoteText(
+  const Value: TTextObjectAppearance);
+begin
+  FNoteText.Assign(Value);
+end;
+
+procedure TRightBottomItemAppearance.SetObjectData(
+  const AListViewItem: TListViewItem; const AIndex: string;
+  const AValue: TValue; var AHandled: Boolean);
+begin
+  inherited;
+end;
+
+procedure TRightBottomItemAppearance.SetRightText(
+  const Value: TTextObjectAppearance);
+begin
+  FRightText.Assign(Value);
+end;
+
+procedure TRightBottomItemAppearance.UpdateSizes(const FinalSize: TSizeF);
+var
+  LInternalWidth: Single;
+  LImagePlaceOffset: Single;
+  LImageTextPlaceOffset: Single;
+begin
+  BeginUpdate;
+  try
+    inherited;
+
+    // Update the widths and positions of renderening objects within a TListViewItem
+    if Image.ActualWidth = 0 then
+    begin
+      LImagePlaceOffset := 0;
+      LImageTextPlaceOffset := 0;
+    end else begin
+      LImagePlaceOffset := cDefaultImagePlaceOffsetX;
+      LImageTextPlaceOffset := cDefaultImageTextPlaceOffsetX;
+    end;
+    Image.InternalPlaceOffset.X := GlyphButton.ActualWidth + LImagePlaceOffset;
+    if Image.ActualWidth > 0 then
+      Text.InternalPlaceOffset.X :=
+        Image.ActualPlaceOffset.X +  Image.ActualWidth + LImageTextPlaceOffset
+    else
+      Text.InternalPlaceOffset.X :=
+        0 + GlyphButton.ActualWidth;
+    FDetailText.InternalPlaceOffset.X := Text.InternalPlaceOffset.X;
+    FNoteText.InternalPlaceOffset.X := Text.InternalPlaceOffset.X;
+    FRightText.InternalPlaceOffset.X := Text.InternalPlaceOffset.X;
+    LInternalWidth := FinalSize.Width - Text.ActualPlaceOffset.X - Accessory.ActualWidth;
+    if Accessory.ActualWidth > 0 then
+      LInternalWidth := LInternalWidth - cTextMarginAccessory;
+    Text.InternalWidth := Max(1, LInternalWidth);
+    FDetailText.InternalWidth := Text.InternalWidth;
+    FNoteText.InternalWidth := Text.InternalWidth;
+    FRightText.InternalWidth := Text.InternalWidth;
+  finally
+    EndUpdate;
+  end;
+end;
+
+{ TRightBottomDeleteAppearance }
+
+constructor TRightBottomDeleteAppearance.Create(const Owner: TControl);
+begin
+  inherited;
+  GlyphButton.DefaultValues.ButtonType := cDefaultGlyph;
+  GlyphButton.DefaultValues.Visible := True;
+  GlyphButton.RestoreDefaults;
+end;
+
+{ TRightBottomShowCheckAppearance }
+
+constructor TRightBottomShowCheckAppearance.Create(const Owner: TControl);
+begin
+  inherited;
+  GlyphButton.DefaultValues.ButtonType := cDefaultGlyph;
+  GlyphButton.DefaultValues.Visible := True;
+  GlyphButton.RestoreDefaults;
+end;
+
+{ TListFooterAppearance }
+
+constructor TListFooterAppearance.Create(const Owner: TControl);
+begin
+  inherited;
+  Text.DefaultValues.Visible := True;
+  Text.DefaultValues.Align := TListItemAlign.Center;
+  Text.DefaultValues.TextAlign := TTextAlign.Center;
+  Text.DefaultValues.TextVertAlign := TTextAlign.Center;
+  Text.DefaultValues.VertAlign := TListItemAlign.Center;
+  Text.RestoreDefaults;
+  AddObject(Text, True);
+end;
+
+function TListFooterAppearance.DefaultHeight: Integer;
+begin
+  Result := cDefaultHeaderHeight;
+end;
+
+function TListFooterAppearance.GetGroupClass: TPresetItemObjects.TGroupClass;
+begin
+  Result := TListFooterAppearance;
+end;
+
+procedure TListFooterAppearance.UpdateSizes(const FinalSize: TSizeF);
+begin
+  BeginUpdate;
+  try
+    inherited;
+    Text.InternalWidth := FinalSize.Width;
+  finally
+    EndUpdate;
+  end;
+end;
+
+const
+  // Will be added to the uses list when appearance is used
+  sThisUnit = 'UI.ListView';
+
 initialization
+  // MultiDetailItem group
+  TAppearancesRegistry.RegisterAppearance(
+    TRightBottomItemAppearance, 'CustomRightBottomItem',
+    [TRegisterAppearanceOption.Item], sThisUnit);
+  TAppearancesRegistry.RegisterAppearance(
+    TRightBottomDeleteAppearance, 'CustomRightBottomItemDelete',
+    [TRegisterAppearanceOption.ItemEdit], sThisUnit);
+  TAppearancesRegistry.RegisterAppearance(
+    TRightBottomShowCheckAppearance, 'CustomRightBottomItemShowCheck',
+    [TRegisterAppearanceOption.ItemEdit], sThisUnit);
+  TAppearancesRegistry.RegisterAppearance(TListFooterAppearance, 'CustomFooterAppearance',
+    [TRegisterAppearanceOption.Header, TRegisterAppearanceOption.Footer], sThisUnit);
+
+finalization
+  TAppearancesRegistry.UnregisterAppearances(
+    TArray<TItemAppearanceObjectsClass>.Create(
+      TRightBottomItemAppearance, TRightBottomDeleteAppearance,
+      TRightBottomShowCheckAppearance, TListFooterAppearance));
 
 end.

@@ -459,8 +459,10 @@ end;
 
 procedure TFrameView.ShowWaitDialog(const AMsg: string; ACancelable: Boolean);
 begin
-  if not Assigned(FWaitDialog) then
+  if (not Assigned(FWaitDialog)) or (FWaitDialog.IsDismiss) then begin
+    FWaitDialog := nil;
     FWaitDialog := TProgressDialog.Create(Self);
+  end;
   FWaitDialog.Cancelable := ACancelable;
   if not Assigned(FWaitDialog.RootView) then
     FWaitDialog.InitView(AMsg)

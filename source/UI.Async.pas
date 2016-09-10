@@ -11,8 +11,8 @@ unit UI.Async;
 interface
 
 uses
-  {$IFDEF MSWINDOWS} Winapi.ActiveX, {$ENDIF}
-  System.Classes, System.SysUtils;
+  {$IFDEF MSWINDOWS} ActiveX, {$ENDIF}
+  Classes, SysUtils;
 
 type
   TAsync = class;
@@ -38,10 +38,9 @@ type
     FComplete: TExecuteEvent;
     FCompleteA: TExecuteEventA;
     FData: Pointer;
-    FMessage: string;
-    FDouble: Double;
-    FTag: NativeInt;
     FDataInterface: IInterface;
+    FMessage: string;
+    FTag: NativeInt;
     {$IFDEF MSWINDOWS}
     FComInitialized: Boolean;
     {$ENDIF}
@@ -58,6 +57,8 @@ type
     /// </summary>
     procedure Execute(); virtual;
 
+    procedure Start();
+
     /// <summary>
     /// 异步执行过程 （非线程安全）
     /// </summary>
@@ -70,9 +71,8 @@ type
     function SetExecuteComplete(AValue: TExecuteEventA): TAsync; overload;
 
     function SetData(const Data: Pointer): TAsync;
-    function SetStringValue(const Data: string): TAsync;
-    function SetDataInterFace(Value: IInterface): TAsync;
-    function SetFloatValue(const Value: Double): TAsync;
+    function SetDataInterface(const Data: IInterface): TAsync;
+    function SetMessage(const Data: string): TAsync;
     function SetTag(Value: NativeInt): TAsync;
 
     /// <summary>
@@ -81,9 +81,8 @@ type
     procedure ComNeeded(AInitFlags: Cardinal = 0);
 
     property Data: Pointer read FData write FData;
-    property DataInterFace: IInterface read FDataInterface write FDataInterface;
-    property ValueAsFloat: Double read FDouble write FDouble;
-    property ValueAsString: string read FMessage write FMessage;
+    property DataInterface: IInterface read FDataInterface write FDataInterface;
+    property Message: string read FMessage write FMessage;
     property Tag: NativeInt read FTag write FTag;
     property ComInitialized: Boolean read GetComInitialized;
   end;
@@ -111,6 +110,7 @@ begin
   if ComInitialized then
     CoUninitialize;
   {$ENDIF}
+  FDataInterface := nil;
   inherited Destroy;
 end;
 
@@ -165,10 +165,10 @@ begin
   FData := Data;
 end;
 
-function TAsync.SetDataInterFace(Value: IInterface): TAsync;
+function TAsync.SetDataInterface(const Data: IInterface): TAsync;
 begin
   Result := Self;
-  FDataInterface := Value;
+  FDataInterface := Data;
 end;
 
 function TAsync.SetExecute(AValue: TExecuteEvent): TAsync;
@@ -195,13 +195,7 @@ begin
   FCompleteA := AValue;
 end;
 
-function TAsync.SetFloatValue(const Value: Double): TAsync;
-begin
-  Result := Self;
-  FDouble := Value;
-end;
-
-function TAsync.SetStringValue(const Data: string): TAsync;
+function TAsync.SetMessage  (const Data: string): TAsync;
 begin
   Result := Self;
   FMessage := Data;
@@ -213,24 +207,32 @@ begin
   FTag := Value;
 end;
 
+procedure TAsync.Start;
+begin
+  Execute;
+end;
+
 { TAsyncThread }
 
 procedure TAsyncThread.Execute;
 begin
   if Assigned(FAsync) then begin
     try
-      // 先执行异步任务
-      FAsync.DoExecute;
-    except
+      try
+        // 先执行异步任务
+        FAsync.DoExecute;
+      except
+      end;
+      try
+        // 然后执行同步任务
+        if FAsync.IsNeedExecuteComplete then
+          Synchronize(Self, FAsync.DoExecuteComplete);
+      except
+      end;
+    finally
+      FAsync.DisposeOf;
+      FAsync := nil;
     end;
-    try
-      // 然后执行同步任务
-      if FAsync.IsNeedExecuteComplete then
-        Synchronize(Self, FAsync.DoExecuteComplete);
-    except
-    end;
-    FAsync.DisposeOf;
-    FAsync := nil;
   end;
 end;
 

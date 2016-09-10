@@ -1,7 +1,7 @@
 FMXUI  (YangYxd)
 
 【简介】
-  本源码库还刚启动，更多的功能还在开发。FMXUI的开发忠旨是发掘FMX界面设计的优点，再整合进入Android界面设计的优点。使用过Java搞Android界面设计朋友看到后应该会有一定的熟悉感。 
+  FMXUI的开发忠旨是发掘FMX界面设计的优点，再整合进入Android界面设计的优点。使用过Java搞Android界面设计朋友看到后应该会有一定的熟悉感。 
 
 【类介绍】
 
@@ -13,6 +13,17 @@ FMXUI  (YangYxd)
   TTextView 文本视图
   TButtonView 按钮视图
   TEditView 编辑框视图
+  TFrameView Frame视图扩展类
+  TListExView ListView扩展类
+  
+  TAsync 异步任务处理类
+  TToastManager Toast管理器
+  
+  TDialogStyleManager 对话框样式管理器
+  TDialogBuilder 常用对话框构造类
+  TDialog 对话框基础类
+  TAlertDialog 常用对话框实体类
+  TProgressDialog 等待对话框实体类    
   
 【参考资料】
 
@@ -26,8 +37,16 @@ FMXUI  (YangYxd)
 
   URL: http://www.cnblogs.com/yangyxd
   SVN: https://github.com/yangyxd/FMXUI
-
   
-  yangyxd QQ: 2514718952 
+  YangYxd QQ: 2514718952 
   QDAC 官方群: 250530692
+  
+【版权声明】
+
+  本源码库版权归 YangYxd 所有，保留所有权利。您可以免费使用此代码库于任何地方，但请在软件中注明。
+  本源码库遵守BSD开源协议，您可以修改本源码库的代码，但必须在修改后的代码中包含本项目代码中的版权协议。
+  
+  版权所有 (C) 2016 YangYxd
+  
+
 
