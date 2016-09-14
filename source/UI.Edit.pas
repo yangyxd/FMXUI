@@ -355,6 +355,8 @@ type
     destructor Destroy; override;
     function GetCharX(a: Integer): Single;
 
+    procedure PlayClickEffect(); override;
+
     { ITextActions }
     procedure DeleteSelection;
     procedure CopyToClipboard;
@@ -596,7 +598,8 @@ begin
   Result := TEditDrawableBorder.Create(Self, TViewBrushKind.Solid, $FFFFFFFF);
   with TDrawableBorder(Result).Border do begin
     Width := 1;
-    Style := TViewBorderStyle.RectBorder;
+    DefaultStyle := TViewBorderStyle.RectBorder;
+    Style := DefaultStyle;
     Color.Default := $BFC0C0C0;
     Color.Focused := $FF0066cc;
     Color.Hovered := $FFC0C0C0;
@@ -2512,6 +2515,10 @@ begin
     Model.SelStart := LCaretPosition;
     Model.SelLength := 0;
   end;
+end;
+
+procedure TCustomEditView.PlayClickEffect;
+begin
 end;
 
 procedure TCustomEditView.PMGetTextContentRect(

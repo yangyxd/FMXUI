@@ -222,6 +222,7 @@ type
     FBrush: TStrokeBrush;
     FColor: TViewColor;
     FStyle: TViewBorderStyle;
+    FDefaultStyle: TViewBorderStyle;
     procedure SetColor(const Value: TViewColor);
     procedure SetStyle(const Value: TViewBorderStyle);
     procedure SetWidth(const Value: Single);
@@ -234,20 +235,22 @@ type
     procedure SetCap(const Value: TStrokeCap);
     procedure SetJoin(const Value: TStrokeJoin);
     function WidthStored: Boolean;
+    function StyleStored: Boolean;
   protected
     procedure DoChanged();
   public
-    constructor Create();
+    constructor Create(ADefaultStyle: TViewBorderStyle = TViewBorderStyle.None);
     destructor Destroy; override;
 
     procedure Assign(Source: TPersistent); override;
 
     property OnChanged: TNotifyEvent read FOnChanged write SetOnChanged;
     property Brush: TStrokeBrush read FBrush;
+    property DefaultStyle: TViewBorderStyle read FDefaultStyle write FDefaultStyle;
   published
     property Color: TViewColor read FColor write SetColor;
     property Width: Single read GetWidth write SetWidth stored WidthStored;
-    property Style: TViewBorderStyle read FStyle write SetStyle default TViewBorderStyle.None;
+    property Style: TViewBorderStyle read FStyle write SetStyle stored StyleStored;
     property Dash: TStrokeDash read GetDash write SetDash default TStrokeDash.Solid;
     property Cap: TStrokeCap read GetCap write SetCap default TStrokeCap.Flat;
     property Join: TStrokeJoin read GetJoin write SetJoin default TStrokeJoin.Miter;
@@ -732,6 +735,7 @@ type
     procedure DoBackgroundChanged(Sender: TObject); virtual;
     procedure DoEndUpdate; override;
     procedure HandleSizeChanged; override;
+    procedure Click; override;
 
 
     // 限制组件最大和最小大小
@@ -783,6 +787,9 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    procedure PlaySoundEffect(ASoundConstant: Integer);
+    procedure PlayClickEffect(); virtual;
 
     procedure SetBounds(X, Y, AWidth, AHeight: Single); override;
     procedure SetBackground(const Value: TDrawable); overload;
@@ -2195,6 +2202,12 @@ begin
     Assigned(View.Background.GetStateBrush(State));
 end;
 
+procedure TView.Click;
+begin
+  PlayClickEffect;
+  inherited Click;
+end;
+
 constructor TView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -2742,6 +2755,16 @@ procedure TView.PaintBackground;
 begin
   if Assigned(FBackground) then
     FBackground.Draw(Canvas);
+end;
+
+procedure TView.PlayClickEffect;
+begin
+  PlaySoundEffect(0);
+end;
+
+procedure TView.PlaySoundEffect(ASoundConstant: Integer);
+begin
+
 end;
 
 procedure TView.ReadState(Reader: TReader);
@@ -4611,11 +4634,12 @@ begin
     inherited;
 end;
 
-constructor TViewBorder.Create;
+constructor TViewBorder.Create(ADefaultStyle: TViewBorderStyle);
 begin
   FBrush := TStrokeBrush.Create(TBrushKind.Solid, TAlphaColorRec.Null);
   FColor := TViewColor.Create();
-  FStyle := TViewBorderStyle.None;
+  FStyle := ADefaultStyle;
+  FDefaultStyle := ADefaultStyle;
 end;
 
 destructor TViewBorder.Destroy;
@@ -4700,6 +4724,11 @@ begin
     FBrush.Thickness := Value;
     DoChanged;
   end;
+end;
+
+function TViewBorder.StyleStored: Boolean;
+begin
+  Result := FStyle <> FDefaultStyle;
 end;
 
 function TViewBorder.WidthStored: Boolean;

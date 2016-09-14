@@ -50,6 +50,7 @@ type
     function GetFloat(const Key: string; const DefaultValue: Double = 0): Double;
     function GetDateTime(const Key: string; const DefaultValue: TDateTime = 0): TDateTime;
     function GetNumber(const Key: string; const DefaultValue: NativeUInt = 0): NativeUInt;
+    function GetPointer(const Key: string): Pointer;
     function GetBoolean(const Key: string; const DefaultValue: Boolean = False): Boolean;
 
     procedure Put(const Key: string; const Value: string); overload; inline;
@@ -125,12 +126,16 @@ type
     FPrivateState: TFrameState;
     FOnShow: TNotifyEvent;
     FOnHide: TNotifyEvent;
+    FOnReStart: TNotifyEvent;
     FWaitDialog: TProgressDialog;
+    FShowing: Boolean;
     procedure SetParams(const Value: TFrameParams);
     function GetTitle: string;
     procedure SetTitle(const Value: string);
     function GetPreferences: TFrameState;
     function GetSharedPreferences: TFrameState;
+    function GetParams: TFrameParams;
+    function GetDataAsPointer: Pointer;
   protected
     [Weak] FLastView: TFrameView;
     [Weak] FNextView: TFrameView;
@@ -138,9 +143,17 @@ type
 
     procedure DoShow(); virtual;
     procedure DoHide(); virtual;
+    procedure DoReStart(); virtual;
+
+    function GetData: TValue; override;
+    procedure SetData(const Value: TValue); override;
 
     // 检查是否需要释放，如果需要，就释放掉
     function CheckFree(): Boolean;
+    // 内部 Show 实现
+    procedure InternalShow(TriggerOnShow: Boolean);
+  protected
+    procedure AfterDialogKey(var Key: Word; Shift: TShiftState); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -188,6 +201,10 @@ type
     /// 开始一个视图，并隐藏当前视图
     /// </summary>
     function StartFrame(FrameClass: TFrameViewClass; const Title: string): TFrameView; overload;
+    /// <summary>
+    /// 开始一个视图，并隐藏当前视图
+    /// </summary>
+    function StartFrame(FrameClass: TFrameViewClass; const Title: string; const Data: Pointer): TFrameView; overload;
 
     /// <summary>
     /// 显示一个提示消息
@@ -195,6 +212,7 @@ type
     procedure Hint(const Msg: string); overload;
     procedure Hint(const Msg: Double); overload;
     procedure Hint(const Msg: Int64); overload;
+    procedure Hint(const AFormat: string; const Args: array of const); overload;
 
     /// <summary>
     /// 显示 Frame
@@ -216,7 +234,7 @@ type
     /// <summary>
     /// 启动时的参数
     /// </summary>
-    property Params: TFrameParams read FParams write SetParams;
+    property Params: TFrameParams read GetParams write SetParams;
     /// <summary>
     /// 启动此Frame的Frame
     /// </summary>
@@ -230,10 +248,17 @@ type
     /// 共有预设参数 (全局，非线程安全)
     /// </summary>
     property SharedPreferences: TFrameState read GetSharedPreferences;
+    /// <summary>
+    /// 是否正在Show
+    /// </summary>
+    property Showing: Boolean read FShowing;
+
+    property DataAsPointer: Pointer read GetDataAsPointer;
   published
     property Title: string read GetTitle write SetTitle;
     property OnShow: TNotifyEvent read FOnShow write FOnShow;
     property OnHide: TNotifyEvent read FOnHide write FOnHide;
+    property OnReStart: TNotifyEvent read FOnReStart write FOnReStart;
   end;
 
 type
@@ -245,7 +270,8 @@ var
 implementation
 
 const
-  CS_Title = 'title';
+  CS_Title = 'cs_p_title';
+  CS_Data = 'cs_p_data';
 
 var
   /// <summary>
@@ -254,6 +280,16 @@ var
   FPublicState: TFrameState = nil;
 
 { TFrameView }
+
+procedure TFrameView.AfterDialogKey(var Key: Word; Shift: TShiftState);
+begin
+  // 如果按下了返回键，且允许取消对话框，则关闭对话框
+  if Assigned(Self) and (Key in [vkEscape, vkHardwareBack]) then begin
+    Key := 0;
+    Finish;
+  end else
+    inherited AfterDialogKey(Key, Shift);
+end;
 
 function TFrameView.CheckFree: Boolean;
 begin
@@ -327,6 +363,7 @@ end;
 function TFrameView.MakeFrame(FrameClass: TFrameViewClass): TFrameView;
 begin
   Result := FrameClass.Create(Parent);
+  Result.Name := '';
   Result.Parent := Parent;
   Result.Align := TAlignLayout.Client;
   Result.FLastView := Self;
@@ -350,6 +387,12 @@ begin
     FOnHide(Self);
 end;
 
+procedure TFrameView.DoReStart;
+begin
+  if Assigned(FOnReStart) then
+    FOnReStart(Self);
+end;
+
 procedure TFrameView.DoShow;
 begin
   if Assigned(FOnShow) then
@@ -362,13 +405,39 @@ begin
     Close
   else begin
     if CheckFree then Exit;
-    FLastView.Show;
+    FLastView.InternalShow(False);
     FLastView.FNextView := nil;
     FLastView := nil;
     {$IFNDEF AUTOREFCOUNT}
     Free;
     {$ENDIF}
   end;
+end;
+
+function TFrameView.GetData: TValue;
+begin
+  if (FParams = nil) or (not FParams.ContainsKey(CS_Data)) then
+    Result := nil
+  else
+    Result := FParams.Items[CS_Data];
+end;
+
+function TFrameView.GetDataAsPointer: Pointer;
+var
+  V: TValue;
+begin
+  V := Data;
+  if V.IsEmpty then
+    Result := nil
+  else
+    Result := V.AsVarRec.VPointer;
+end;
+
+function TFrameView.GetParams: TFrameParams;
+begin
+  if FParams = nil then
+    FParams := TFrameParams.Create(9);
+  Result := FParams;
 end;
 
 function TFrameView.GetPreferences: TFrameState;
@@ -387,7 +456,7 @@ end;
 
 function TFrameView.GetTitle: string;
 begin
-  if FParams = nil then
+  if (FParams = nil) or (not FParams.ContainsKey(CS_Title)) then
     Result := ''
   else
     Result := FParams.Items[CS_Title].ToString;
@@ -407,6 +476,11 @@ begin
   end;
 end;
 
+procedure TFrameView.Hint(const AFormat: string; const Args: array of const);
+begin
+  Toast(Format(AFormat, Args));
+end;
+
 procedure TFrameView.Hint(const Msg: Double);
 begin
   Toast(FloatToStr(Msg));
@@ -417,9 +491,31 @@ begin
   Toast(IntToStr(Msg));
 end;
 
+procedure TFrameView.InternalShow(TriggerOnShow: Boolean);
+begin
+  if FShowing then Exit;  
+  FShowing := True;
+  if Title <> '' then
+    Application.Title := Title;
+  if TriggerOnShow then
+    DoShow()
+  else
+    DoReStart();
+  Visible := True;
+  FShowing := False;
+end;
+
 procedure TFrameView.Hint(const Msg: string);
 begin
   Toast(Msg);
+end;
+
+procedure TFrameView.SetData(const Value: TValue);
+begin
+  if Params.ContainsKey(CS_Data) then
+    Params.Items[CS_Data] := Value
+  else
+    Params.Add(CS_Data, Value);
 end;
 
 procedure TFrameView.SetParams(const Value: TFrameParams);
@@ -431,22 +527,15 @@ end;
 
 procedure TFrameView.SetTitle(const Value: string);
 begin
-  if FParams = nil then begin
-    if Value = '' then Exit;
-    FParams := TFrameParams.Create(9);
-  end;
-  if FParams.ContainsKey(CS_Title) then
-    FParams.Items[CS_Title] := Value
-  else if Value <> '' then         
-    FParams.Add(CS_Title, Value);
+  if Params.ContainsKey(CS_Title) then
+    Params.Items[CS_Title] := Value
+  else if Value <> '' then
+    Params.Add(CS_Title, Value);
 end;
 
 procedure TFrameView.Show();
 begin
-  if Title <> '' then
-    Application.Title := Title;
-  DoShow();
-  Visible := True;
+  InternalShow(True);
 end;
 
 class function TFrameView.ShowFrame(Parent: TFmxObject;
@@ -476,6 +565,16 @@ function TFrameView.StartFrame(FrameClass: TFrameViewClass;
 begin
   Result := MakeFrame(FrameClass);
   Result.Title := Title;
+  Result.Show();
+  Hide;
+end;
+
+function TFrameView.StartFrame(FrameClass: TFrameViewClass; const Title: string;
+  const Data: Pointer): TFrameView;
+begin
+  Result := MakeFrame(FrameClass);
+  Result.Title := Title;
+  Result.Data := Data;
   Result.Show();
   Hide;
 end;
@@ -925,6 +1024,14 @@ begin
     Result := Items[Key].Value.AsOrdinal
   else
     Result := DefaultValue;
+end;
+
+function TFrameStateDataHelper.GetPointer(const Key: string): Pointer;
+begin
+  if ContainsKey(Key) then
+    Result := Items[Key].Value.AsVarRec.VPointer
+  else
+    Result := nil;
 end;
 
 function TFrameStateDataHelper.GetString(const Key: string): string;

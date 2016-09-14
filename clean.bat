@@ -1,2 +1,0 @@
-cmdex cleanup(".\")
-pause

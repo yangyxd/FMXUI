@@ -91,6 +91,8 @@ type
     function GetVScrollBar: TScrollBar; override;
     function GetHScrollBar: TScrollBar; override;
     function GetContentBounds: TRectF; override;
+    function CreateBackground: TDrawable; override;
+    function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -133,7 +135,6 @@ type
   protected
     function GetDefaultSize: TSizeF; override;
     procedure Click; override;
-    function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
     function CreateBackground: TDrawable; override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -221,6 +222,18 @@ begin
   end;
 end;
 
+function TTextView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
+var
+  Border: TViewBorder;
+begin
+  Result := inherited CanRePaintBk(View, State);
+  if (not Result) and (Assigned(FBackground)) then begin
+    Border := TDrawableBorder(FBackground).Border;
+    Result := Assigned(Border) and (Border.Style <> TViewBorderStyle.None) and
+      (Border.Width > 0) and (Border.Color.GetColor(State) <> TAlphaColorRec.Null);
+  end;
+end;
+
 procedure TTextView.Change;
 begin
   DoChanged(FText);
@@ -237,6 +250,17 @@ begin
     FDrawable.OnChanged := DoDrawableChanged;
   end;
   SetAcceptsControls(False);
+end;
+
+function TTextView.CreateBackground: TDrawable;
+begin
+  Result := TDrawableBorder.Create(Self);
+  with TDrawableBorder(Result).Border do begin
+    Width := 1;
+    Color.Default := $BFC0C0C0;
+    Color.Pressed := $FFC0C0C0;
+  end;
+  Result.OnChanged := DoBackgroundChanged;
 end;
 
 procedure TTextView.DblClick;
@@ -778,19 +802,6 @@ begin
   begin
     Click;
     Key := 0;
-  end;
-end;
-
-function TButtonView.CanRePaintBk(const View: IView;
-  State: TViewState): Boolean;
-var
-  Border: TViewBorder;
-begin
-  Result := inherited CanRePaintBk(View, State);
-  if (not Result) and (Assigned(FBackground)) then begin
-    Border := TDrawableBorder(FBackground).Border;
-    Result := Assigned(Border) and (Border.Style <> TViewBorderStyle.None) and
-      (Border.Width > 0) and (Border.Color.GetColor(State) <> TAlphaColorRec.Null);
   end;
 end;
 
