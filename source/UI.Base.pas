@@ -90,6 +90,14 @@ type
     property Bitmap: TPatch9Bitmap read GetBitmap write SetBitmap stored IsPatch9BitmapStored;
   end;
 
+  TViewImagesBrush = class(TBrush)
+  private
+    FImageIndex: Integer;
+    procedure SetImageIndex(const Value: Integer);
+  published
+    property ImageIndex: Integer read FImageIndex write SetImageIndex;
+  end;
+
   /// <summary>
   /// ªÊ÷∆Œª÷√
   /// </summary>
@@ -148,6 +156,7 @@ type
     function GetBrush(const State: TViewState; AutoCreate: Boolean): TBrush;
     function GetStateBrush(const State: TViewState): TBrush; overload;
     function GetStateItem(AState: TViewState): TBrush;
+    function GetStateImagesItem(AState: TViewState): TBrush;
 
     procedure Assign(Source: TPersistent); override;
     procedure Change; virtual;
@@ -313,7 +322,8 @@ type
     procedure IGlyph.SetImages = SetImageList;
   protected
     function GetEmpty: Boolean; override;
-    function ImageIndexStored: Boolean; virtual;
+    function GetStateImageIndex(): Integer; overload;
+    function GetStateImageIndex(State: TViewState): Integer; overload; virtual;
   public
     constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
@@ -334,7 +344,6 @@ type
     property Padding: Integer read FPadding write SetPadding default 4;
     property Position: TDrawablePosition read FPosition write SetPosition default TDrawablePosition.Left;
     property Images: TCustomImageList read GetImages write SetImages;
-    property ImageIndex: TImageIndex read GetImageIndex write SetImageIndex stored ImageIndexStored default -1;
 
     property XRadius;
     property YRadius;
@@ -1383,14 +1392,47 @@ begin
   end;
 end;
 
+function TDrawableBase.GetStateImagesItem(AState: TViewState): TBrush;
+
+  function BrushIsEmpty(V: TBrush): Boolean;
+  begin
+    if (not Assigned(V)) or (V.Kind = TBrushKind.None) or
+      ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid))
+    then begin
+      if (V is TViewImagesBrush) and (TViewImagesBrush(V).FImageIndex >= 0) then
+        Result := False
+      else
+        Result := True
+    end else
+      Result := False;
+  end;
+
+begin
+  GetStateBrush(AState, Result);
+  if Result <> FDefault then begin
+    if BrushIsEmpty(Result) then
+    begin
+      if (AState = TViewState.Pressed) then begin
+        Result := FFocused;
+        if BrushIsEmpty(Result) then
+          Result := FDefault
+      end else
+        Result := FDefault;
+    end;
+  end;
+  if BrushIsEmpty(Result) then
+    Result := nil;
+end;
+
 function TDrawableBase.GetStateItem(AState: TViewState): TBrush;
 
   function BrushIsEmpty(V: TBrush): Boolean;
   begin
     if (not Assigned(V)) or (V.Kind = TBrushKind.None) or
-      ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid)) then
+      ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid))
+    then begin
       Result := True
-    else
+    end else
       Result := False;
   end;
 
@@ -1725,7 +1767,8 @@ procedure TDrawableIcon.CreateBrush(var Value: TBrush);
 begin
   if Assigned(Value) then
     FreeAndNil(Value);
-  Value := TBrush.Create(TBrushKind(FDefaultKind), FDefaultColor);
+  Value := TViewImagesBrush.Create(TBrushKind(FDefaultKind), FDefaultColor);
+  TViewImagesBrush(Value).FImageIndex := -1;
   Value.OnChanged := DoChange;
 end;
 
@@ -1736,8 +1779,11 @@ begin
 end;
 
 procedure TDrawableIcon.Draw(Canvas: TCanvas);
+var
+  ImageIndex: Integer;
 begin
   inherited Draw(Canvas);
+  ImageIndex := GetStateImageIndex();
   if (ImageIndex >= 0) and Assigned(FImageLink.Images) then
     DrawImage(Canvas, ImageIndex, GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight));
 end;
@@ -1766,8 +1812,11 @@ begin
 end;
 
 procedure TDrawableIcon.DrawTo(Canvas: TCanvas; const R: TRectF);
+var
+  ImageIndex: Integer;
 begin
   inherited DrawTo(Canvas, R);
+  ImageIndex := GetStateImageIndex();
   if (ImageIndex >= 0) and Assigned(FImageLink.Images) then
     DrawImage(Canvas, ImageIndex, R);
 end;
@@ -1779,7 +1828,7 @@ end;
 
 function TDrawableIcon.GetEmpty: Boolean;
 begin
-  if ImageIndex >= 0 then
+  if GetStateImageIndex >= 0 then
     Result := not Assigned(FImageLink.Images)
   else begin
     Result := (FWidth <= 0) or (FHeight <= 0);
@@ -1806,9 +1855,24 @@ begin
     Result := nil;
 end;
 
-function TDrawableIcon.ImageIndexStored: Boolean;
+function TDrawableIcon.GetStateImageIndex: Integer;
 begin
-  Result := (ImageIndex <> -1);
+  if Assigned(FView) then
+    Result := GetStateImageIndex(FView.GetDrawState)
+  else
+    Result := -1;
+end;
+
+function TDrawableIcon.GetStateImageIndex(State: TViewState): Integer;
+var
+  V: TBrush;
+begin
+  Result := -1;
+  if Assigned(FView) then begin
+    V := GetStateImagesItem(State);
+    if Assigned(V) then
+      Result := TViewImagesBrush(V).FImageIndex;
+  end;
 end;
 
 procedure TDrawableIcon.ImagesChanged;
@@ -4820,6 +4884,17 @@ end;
 procedure TPatch9Bitmap.SetBounds(const Value: TBounds);
 begin
   FBounds.Assign(Value);
+end;
+
+{ TViewImagesBrush }
+
+procedure TViewImagesBrush.SetImageIndex(const Value: Integer);
+begin
+  if FImageIndex <> Value then begin
+    FImageIndex := Value;
+    if Assigned(OnChanged) then
+      OnChanged(Self);
+  end;
 end;
 
 initialization

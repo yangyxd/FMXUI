@@ -62,16 +62,24 @@ const
   BUTTON_NEUTRAL = -3;
 
 const
+  // 颜色、字体等默认设置项
   {$IFDEF IOS}
   COLOR_BackgroundColor = $fff7f7f7;
   COLOR_TitleTextColor = $ff077dfe;
   COLOR_MessageTextColor = $ff000000;
   COLOR_TitleBackGroundColor = $00000000;
   {$ELSE}
-  COLOR_BackgroundColor = $fff8f8f8;
-  COLOR_TitleTextColor = $ff077dfe;
-  COLOR_MessageTextColor = $ff101010;
-  COLOR_TitleBackGroundColor = $1f000000;
+  {$IFDEF MSWINDOWS}
+    COLOR_BackgroundColor = $ffffffff;
+    COLOR_TitleTextColor = $ff000000;
+    COLOR_MessageTextColor = $ff101010;
+    COLOR_TitleBackGroundColor = $ffffffff;
+  {$ELSE}
+    COLOR_BackgroundColor = $ffc0c0c0;
+    COLOR_TitleTextColor = $ff000000;
+    COLOR_MessageTextColor = $ff101010;
+    COLOR_TitleBackGroundColor = $ffffffff;
+  {$ENDIF}
   {$ENDIF}
   COLOR_DialogMaskColor = $9f000000;
   COLOR_BodyBackgroundColor = $00ffffff;
@@ -96,8 +104,8 @@ const
   {$ELSE}
   COLOR_ButtonColor = $fff8f8f8;
   COLOR_ButtonPressColor = $ffd9d9d9;
-  COLOR_ButtonTextColor = $FF077dfe;
-  COLOR_ButtonTextPressColor = $FF0049f5;
+  COLOR_ButtonTextColor = $FF101010;
+  COLOR_ButtonTextPressColor = $FF000000;
   {$ENDIF}
 
 
@@ -107,10 +115,16 @@ const
 
   {$IFDEF IOS}
   SIZE_BackgroundRadius = 15;
-  {$ELSE}
-  SIZE_BackgroundRadius = 2;
-  {$ENDIF}
   SIZE_TitleHeight = 38;
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+    SIZE_BackgroundRadius = 2;
+    SIZE_TitleHeight = 48;
+    {$ELSE}
+    SIZE_BackgroundRadius = 2;
+    SIZE_TitleHeight = 48;
+    {$ENDIF}
+  {$ENDIF}
   SIZE_ICON = 32;
   SIZE_ButtonBorder = 1;
 
@@ -1924,7 +1938,7 @@ begin
   FListView.HitTest := True;
   FListView.CanFocus := True;
   FListView.CanSwipeDelete := False;
-  FListView.ControlType := TControlType.Platform;
+  //FListView.ControlType := TControlType.Platform;
   FListView.WidthSize := TViewSize.FillParent;
   FListView.HeightSize := TViewSize.WrapContent;
 end;
@@ -2136,10 +2150,20 @@ begin
 
   FButtonTextColor := TTextColor.Create(COLOR_ButtonTextColor);
   FButtonTextColor.Pressed := COLOR_ButtonTextPressColor;
+
+  if Assigned(Owner) and (not (csDesigning in ComponentState)) then begin
+    if DefaultStyleManager <> nil then begin
+      DefaultStyleManager.DisposeOf;
+      DefaultStyleManager := nil;
+    end;
+    DefaultStyleManager := Self;
+  end;
 end;
 
 destructor TDialogStyleManager.Destroy;
 begin
+  if (DefaultStyleManager = Self) and (not (csDesigning in ComponentState)) then
+    DefaultStyleManager := nil;
   FreeAndNil(FButtonColor);
   FreeAndNil(FButtonBorder);
   FreeAndNil(FButtonTextColor);

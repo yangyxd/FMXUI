@@ -554,7 +554,7 @@ end;
 
 procedure TTextView.ImagesChanged;
 begin
-  if Assigned(FDrawable) and (FDrawable.ImageIndex >= 0) then
+  if Assigned(FDrawable) then
     FDrawable.Change;
   inherited ImagesChanged;
 end;
