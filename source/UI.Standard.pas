@@ -845,7 +845,8 @@ begin
   Result.ItemEnabled.Kind := TViewBrushKind.Solid;
   with TDrawableBorder(Result).Border do begin
     Width := 1;
-    Style := TViewBorderStyle.RectBorder;
+    DefaultStyle := TViewBorderStyle.RectBorder;
+    Style := DefaultStyle;
     Color.Default := $AFCCCCCC;
     Color.Pressed := $FFC0C0C0;
     Color.Focused := $EFCCCCCC;

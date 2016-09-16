@@ -64,13 +64,17 @@ type
   TPatch9Bitmap = class(TBrushBitmap)
   private
     FBounds: TBounds;
+    FRemoveBlackLine: Boolean;
     procedure SetBounds(const Value: TBounds);
+    procedure SetRemoveBlackLine(const Value: Boolean);
   public
     constructor Create;
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
   published
     property Bounds: TBounds read FBounds write SetBounds;
+    // 是否移除黑线(.9.png一般会有一条黑线，移除时，等于是将原图截掉最外围的1像索)
+    property BlackLine: Boolean read FRemoveBlackLine write SetRemoveBlackLine;
   end;
 
   TViewBrush = class(TBrush)
@@ -1502,19 +1506,92 @@ procedure TDrawableBase.FillRect9Patch(Canvas: TCanvas; const ARect: TRectF;
   const ACornerType: TCornerType);
 var
   Bmp: TPatch9Bitmap;
+  AOnChanged: TNotifyEvent;
+  AO: Single;
+  BL, BT, BR, BB: Single;
+  BW, BH: Single;
 begin
   if (ABrush.Bitmap = nil) or (ABrush.Bitmap.Bitmap = nil) or
     ABrush.Bitmap.Bitmap.IsEmpty then
     Exit;
+
   Bmp := TPatch9Bitmap(ABrush.Bitmap);
-  if Bmp.Bounds.Empty then begin
-    ABrush.OnChanged := nil;
-    ABrush.Kind := TViewBrushKind.Bitmap;
-    Canvas.FillRect(ARect, XRadius, YRadius, ACorners, AOpacity, ABrush, ACornerType);
-    ABrush.Kind := TViewBrushKind.Patch9Bitmap;
-    ABrush.OnChanged := ABrush.BitmapChanged;
-    Exit;
+  AOnChanged := ABrush.OnChanged;
+  ABrush.OnChanged := nil;
+  ABrush.Kind := TViewBrushKind.Bitmap;
+
+  if Bmp.FRemoveBlackLine then
+    AO := 1
+  else
+    AO := 0;
+
+  if (Bmp.FBounds.Left = 0) and (Bmp.FBounds.Top = 0) and (Bmp.FBounds.Right = 0) and (Bmp.FBounds.Bottom = 0) then begin
+    if AO = 0 then
+      Canvas.FillRect(ARect, XRadius, YRadius, ACorners, AOpacity, ABrush, ACornerType)
+    else
+      Canvas.DrawBitmap(Bmp.Bitmap, RectF(AO, AO, Bmp.Bitmap.Width - 1, Bmp.Bitmap.Height - 1),
+        ARect, AOpacity);
+  end else begin
+    // 九宫格绘图
+    BW := Bmp.Bitmap.Width;
+    BH := Bmp.Bitmap.Height;
+
+    BL := Bmp.FBounds.Left;
+    BT := Bmp.FBounds.Top;
+    BR := Bmp.FBounds.Right;
+    BB := Bmp.FBounds.Bottom;
+
+    // 左上
+    Canvas.DrawBitmap(Bmp.Bitmap,
+      RectF(AO, AO, BL + AO, BT + AO),
+      RectF(ARect.Left, ARect.Top, ARect.Left + BL, ARect.Top + BT),
+      AOpacity);
+    // 顶部
+    Canvas.DrawBitmap(Bmp.Bitmap,
+      RectF(BL + AO, AO, BW - BR - AO, BT + AO),
+      RectF(ARect.Left + BL, ARect.Top, ARect.Right - BR, ARect.Top + BT),
+      AOpacity);
+    // 右上
+    Canvas.DrawBitmap(Bmp.Bitmap,
+      RectF(BW - BR - AO, AO, BW - AO, BT + AO),
+      RectF(ARect.Right - BR, ARect.Top, ARect.Right, ARect.Top + BT),
+      AOpacity);
+
+    // 左中
+    Canvas.DrawBitmap(Bmp.Bitmap,
+      RectF(AO, BT + AO, BL + AO, BH - BB - AO),
+      RectF(ARect.Left, ARect.Top + BT, ARect.Left + BL, ARect.Bottom - BB),
+      AOpacity);
+    // 中间
+    Canvas.DrawBitmap(Bmp.Bitmap,
+      RectF(BL + AO, BT + AO, BW - BR - AO, BH - BB - AO),
+      RectF(ARect.Left + BL, ARect.Top + BT, ARect.Right - BR, ARect.Bottom - BB),
+      AOpacity);
+    // 右中
+    Canvas.DrawBitmap(Bmp.Bitmap,
+      RectF(BW - BR - AO, BT + AO, BW - AO, BH - BB - AO),
+      RectF(ARect.Right - BR, ARect.Top + BT, ARect.Right, ARect.Bottom - BB),
+      AOpacity);
+
+    // 左下
+    Canvas.DrawBitmap(Bmp.Bitmap,
+      RectF(AO, BH - BB - AO, BL + AO, BH - AO),
+      RectF(ARect.Left, ARect.Bottom - BB, ARect.Left + BL, ARect.Bottom),
+      AOpacity);
+    // 下中
+    Canvas.DrawBitmap(Bmp.Bitmap,
+      RectF(BL + AO, BH - BB - AO, BW - BR - AO, BH - AO),
+      RectF(ARect.Left + BL, ARect.Bottom - BB, ARect.Right - BR, ARect.Bottom),
+      AOpacity);
+    // 右下
+    Canvas.DrawBitmap(Bmp.Bitmap,
+      RectF(BW - BR - AO, BH - BB - AO, BW - AO, BH - AO),
+      RectF(ARect.Right - BR, ARect.Bottom - BB, ARect.Right, ARect.Bottom),
+      AOpacity);
   end;
+
+  ABrush.Kind := TViewBrushKind.Patch9Bitmap;
+  ABrush.OnChanged := AOnChanged;
 end;
 
 procedure TDrawableBase.SetDrawable(const Value: TDrawableBase);
@@ -4873,6 +4950,7 @@ constructor TPatch9Bitmap.Create;
 begin
   inherited Create;
   FBounds := TBounds.Create(RectF(0, 0, 0, 0));
+  FBounds.OnChange := Bitmap.OnChange;
 end;
 
 destructor TPatch9Bitmap.Destroy;
@@ -4884,6 +4962,15 @@ end;
 procedure TPatch9Bitmap.SetBounds(const Value: TBounds);
 begin
   FBounds.Assign(Value);
+end;
+
+procedure TPatch9Bitmap.SetRemoveBlackLine(const Value: Boolean);
+begin
+  if FRemoveBlackLine <> Value then begin
+    FRemoveBlackLine := Value;
+    if Assigned(OnChanged) then
+      OnChanged(Self);
+  end;
 end;
 
 { TViewImagesBrush }
