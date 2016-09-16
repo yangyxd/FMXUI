@@ -2,20 +2,14 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'Form1'
-  ClientHeight = 691
-  ClientWidth = 970
+  ClientHeight = 270
+  ClientWidth = 466
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
   DesignerMasterStyle = 0
-  object Button1: TButton
-    Position.X = 16.000000000000000000
-    Position.Y = 16.000000000000000000
-    TabOrder = 3
-    Text = 'Button1'
-    OnClick = Button1Click
-  end
   object ButtonView1: TButtonView
+    Anchors = [akLeft, akTop, akRight, akBottom]
     Background.Paddings = '0.0'
     Background.ItemDefault.Bitmap.Bitmap.PNG = {
       89504E470D0A1A0A0000000D4948445200000040000000200806000000A29D7E
@@ -94,14 +88,14 @@ object Form1: TForm1
     Padding.Right = 4.000000000000000000
     Padding.Bottom = 4.000000000000000000
     HitTest = True
-    Size.Width = 305.000000000000000000
-    Size.Height = 105.000000000000000000
+    Size.Width = 384.000000000000000000
+    Size.Height = 139.000000000000000000
     Size.PlatformDefault = False
-    Position.X = 64.000000000000000000
-    Position.Y = 88.000000000000000000
-    TabOrder = 5
+    Position.X = 40.000000000000000000
+    Position.Y = 104.000000000000000000
+    TabOrder = 4
     AutoSize = False
-    Text = 'ButtonView1'
+    Text = #25353#38062#30340#32972#26223#20351#29992#20102'9'#23467#26684#32472#22270#65292#32553#25918#26102#19981#20250#22833#30495
     TextSettings.AutoSize = False
     TextSettings.Color.Default = claBlack
     TextSettings.Color.Pressed = claNull
@@ -113,6 +107,7 @@ object Form1: TForm1
     TextSettings.Color.Activated = claNull
     TextSettings.Color.HintText = claGray
     TextSettings.PrefixStyle = HidePrefix
+    TextSettings.WordWrap = True
     TextSettings.Gravity = Center
     Drawable.ItemDefault.ImageIndex = -1
     Drawable.ItemPressed.ImageIndex = -1
@@ -122,5 +117,16 @@ object Form1: TForm1
     Drawable.ItemChecked.ImageIndex = -1
     Drawable.ItemEnabled.ImageIndex = -1
     Drawable.ItemActivated.ImageIndex = -1
+  end
+  object Label1: TLabel
+    AutoSize = True
+    Position.X = 16.000000000000000000
+    Position.Y = 16.000000000000000000
+    Size.Width = 433.000000000000000000
+    Size.Height = 33.000000000000000000
+    Size.PlatformDefault = False
+    Text = 
+      #35774#32622' Background '#23646#24615#20013#30340' ItemDefault , '#21152#36733#19968#20010#22270#20687#21518#65292' '#35774#32622' Bounds '#20026#22270#20687#19978#19979#24038#21491#30340#36793#26694#22823#23567 +
+      #65292#24182#23558' Kind '#35774#32622#20026' Patch9Bitmap '#21363#21487#12290
   end
 end

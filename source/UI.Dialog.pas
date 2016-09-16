@@ -1832,11 +1832,9 @@ end;
 procedure TDialogView.AfterDialogKey(var Key: Word; Shift: TShiftState);
 begin
   // 如果按下了返回键，且允许取消对话框，则关闭对话框
-  if Assigned(Dialog) and (Dialog.Cancelable) and (Key in [vkEscape, vkHardwareBack]) then begin
-    Key := 0;
+  if Assigned(Dialog) and (Dialog.Cancelable) and (Key in [vkEscape, vkHardwareBack]) then
     Dialog.Cancel;
-  end else
-    inherited AfterDialogKey(Key, Shift);
+  Key := 0;
 end;
 
 constructor TDialogView.Create(AOwner: TComponent);

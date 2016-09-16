@@ -138,18 +138,18 @@
         <DCCReference Include="DesignIDE.dcp"/>
         <DCCReference Include="IndySystem.dcp"/>
         <DCCReference Include="IndyCore.dcp"/>
-        <DCCReference Include="source\UI.Base.pas"/>
-        <DCCReference Include="source\UI.Debug.pas"/>
-        <DCCReference Include="source\UI.Standard.pas"/>
-        <DCCReference Include="source\UI.Reg.pas"/>
-        <DCCReference Include="source\UI.Frame.pas"/>
-        <DCCReference Include="source\UI.Edit.pas"/>
-        <DCCReference Include="source\UI.Dialog.pas"/>
-        <DCCReference Include="source\UI.Toast.Android.pas"/>
-        <DCCReference Include="source\UI.Toast.pas"/>
-        <DCCReference Include="source\UI.ListView.pas"/>
-        <DCCReference Include="source\UI.Async.pas"/>
-        <DCCReference Include="source\UI.Toast.AndroidLike.pas"/>
+        <DCCReference Include="UI.Async.pas"/>
+        <DCCReference Include="UI.Base.pas"/>
+        <DCCReference Include="UI.Debug.pas"/>
+        <DCCReference Include="UI.Dialog.pas"/>
+        <DCCReference Include="UI.Edit.pas"/>
+        <DCCReference Include="UI.Frame.pas"/>
+        <DCCReference Include="UI.ListView.pas"/>
+        <DCCReference Include="UI.Reg.pas"/>
+        <DCCReference Include="UI.Standard.pas"/>
+        <DCCReference Include="UI.Toast.Android.pas"/>
+        <DCCReference Include="UI.Toast.AndroidLike.pas"/>
+        <DCCReference Include="UI.Toast.pas"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -214,16 +214,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployClass Name="DependencyModule">
-                    <Platform Name="Win32">
-                        <Operation>0</Operation>
-                        <Extensions>.dll;.bpl</Extensions>
-                    </Platform>
-                    <Platform Name="OSX32">
-                        <Operation>1</Operation>
-                        <Extensions>.dylib</Extensions>
-                    </Platform>
-                </DeployClass>
+                <DeployClass Name="ProjectiOSDeviceResourceRules"/>
                 <DeployClass Name="ProjectOSXResource">
                     <Platform Name="OSX32">
                         <RemoteDir>Contents\Resources</RemoteDir>
@@ -534,7 +525,16 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <DeployClass Name="ProjectiOSDeviceResourceRules"/>
+                <DeployClass Name="DependencyModule">
+                    <Platform Name="Win32">
+                        <Operation>0</Operation>
+                        <Extensions>.dll;.bpl</Extensions>
+                    </Platform>
+                    <Platform Name="OSX32">
+                        <Operation>1</Operation>
+                        <Extensions>.dylib</Extensions>
+                    </Platform>
+                </DeployClass>
                 <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>

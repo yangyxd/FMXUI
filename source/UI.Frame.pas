@@ -136,6 +136,7 @@ type
     function GetSharedPreferences: TFrameState;
     function GetParams: TFrameParams;
     function GetDataAsPointer: Pointer;
+    function GetIsWaitDismiss: Boolean;
   protected
     [Weak] FLastView: TFrameView;
     [Weak] FNextView: TFrameView;
@@ -166,7 +167,9 @@ type
     /// <summary>
     /// 显示等待对话框
     /// </summary>
-    procedure ShowWaitDialog(const AMsg: string; ACancelable: Boolean = True);
+    procedure ShowWaitDialog(const AMsg: string; ACancelable: Boolean = True); overload;
+    procedure ShowWaitDialog(const AMsg: string; OnDismissListener: TOnDialogListener; ACancelable: Boolean = True); overload;
+    procedure ShowWaitDialog(const AMsg: string; OnDismissListener: TOnDialogListenerA; ACancelable: Boolean = True); overload;
     /// <summary>
     /// 隐藏等待对话框
     /// </summary>
@@ -254,6 +257,11 @@ type
     property Showing: Boolean read FShowing;
 
     property DataAsPointer: Pointer read GetDataAsPointer;
+
+    /// <summary>
+    /// 等待对话框是否被取消了
+    /// </summary>
+    property IsWaitDismiss: Boolean read GetIsWaitDismiss;
   published
     property Title: string read GetTitle write SetTitle;
     property OnShow: TNotifyEvent read FOnShow write FOnShow;
@@ -433,6 +441,11 @@ begin
     Result := V.AsVarRec.VPointer;
 end;
 
+function TFrameView.GetIsWaitDismiss: Boolean;
+begin
+  Result := Assigned(FWaitDialog) and (FWaitDialog.IsDismiss);
+end;
+
 function TFrameView.GetParams: TFrameParams;
 begin
   if FParams = nil then
@@ -495,8 +508,11 @@ procedure TFrameView.InternalShow(TriggerOnShow: Boolean);
 begin
   if FShowing then Exit;  
   FShowing := True;
-  if Title <> '' then
+  if Title <> '' then begin
     Application.Title := Title;
+    if Assigned(Parent) and (Parent is TCustomForm) then
+      TCustomForm(Parent).Caption := Title;
+  end;
   if TriggerOnShow then
     DoShow()
   else
@@ -544,6 +560,22 @@ begin
   Result := CreateFrame(Parent, Title);
   if Result <> nil then
     Result.Show();
+end;
+
+procedure TFrameView.ShowWaitDialog(const AMsg: string;
+  OnDismissListener: TOnDialogListener; ACancelable: Boolean);
+begin
+  ShowWaitDialog(AMsg, ACancelable);
+  if Assigned(FWaitDialog) then
+    FWaitDialog.OnDismissListener := OnDismissListener;
+end;
+
+procedure TFrameView.ShowWaitDialog(const AMsg: string;
+  OnDismissListener: TOnDialogListenerA; ACancelable: Boolean);
+begin
+  ShowWaitDialog(AMsg, ACancelable);
+  if Assigned(FWaitDialog) then
+    FWaitDialog.OnDismissListenerA := OnDismissListener;
 end;
 
 procedure TFrameView.ShowWaitDialog(const AMsg: string; ACancelable: Boolean);

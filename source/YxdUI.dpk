@@ -35,17 +35,17 @@ requires
   IndyCore;
 
 contains
-  UI.Base in 'source\UI.Base.pas',
-  UI.Debug in 'source\UI.Debug.pas',
-  UI.Standard in 'source\UI.Standard.pas',
-  UI.Reg in 'source\UI.Reg.pas',
-  UI.Frame in 'source\UI.Frame.pas',
-  UI.Edit in 'source\UI.Edit.pas',
-  UI.Dialog in 'source\UI.Dialog.pas',
-  UI.Toast.Android in 'source\UI.Toast.Android.pas',
-  UI.Toast in 'source\UI.Toast.pas',
-  UI.ListView in 'source\UI.ListView.pas',
-  UI.Async in 'source\UI.Async.pas',
-  UI.Toast.AndroidLike in 'source\UI.Toast.AndroidLike.pas';
+  UI.Async in 'UI.Async.pas',
+  UI.Base in 'UI.Base.pas',
+  UI.Debug in 'UI.Debug.pas',
+  UI.Dialog in 'UI.Dialog.pas',
+  UI.Edit in 'UI.Edit.pas',
+  UI.Frame in 'UI.Frame.pas',
+  UI.ListView in 'UI.ListView.pas',
+  UI.Reg in 'UI.Reg.pas',
+  UI.Standard in 'UI.Standard.pas',
+  UI.Toast.Android in 'UI.Toast.Android.pas',
+  UI.Toast.AndroidLike in 'UI.Toast.AndroidLike.pas',
+  UI.Toast in 'UI.Toast.pas';
 
 end.
