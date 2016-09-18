@@ -1,0 +1,221 @@
+object BoundsDesigner: TBoundsDesigner
+  Left = 0
+  Top = 0
+  Caption = 'Form2'
+  ClientHeight = 451
+  ClientWidth = 683
+  Position = OwnerFormCenter
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnShow = FormShow
+  DesignerMasterStyle = 0
+  object Layout1: TLayout
+    Align = Right
+    Padding.Left = 9.000000000000000000
+    Padding.Top = 9.000000000000000000
+    Padding.Right = 9.000000000000000000
+    Padding.Bottom = 9.000000000000000000
+    Position.X = 555.000000000000000000
+    Size.Width = 128.000000000000000000
+    Size.Height = 413.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    object Button2: TButton
+      Align = Top
+      Cancel = True
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 9.000000000000000000
+      Position.Y = 43.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 4
+      Text = #21462#28040
+      OnClick = Button2Click
+    end
+    object btnOk: TButton
+      Align = Top
+      Default = True
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 9.000000000000000000
+      Position.Y = 9.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      Text = #30830#23450
+      OnClick = btnOkClick
+    end
+    object labelScale: TLabel
+      Align = Top
+      Position.X = 9.000000000000000000
+      Position.Y = 77.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      Text = #32553#25918': '
+    end
+    object trackScale: TTrackBar
+      Align = Top
+      CanParentFocus = True
+      Max = 10.000000000000000000
+      Min = 0.100000001490116100
+      Orientation = Horizontal
+      Position.X = 9.000000000000000000
+      Position.Y = 103.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 19.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      Value = 1.000000000000000000
+      OnChange = trackScaleChange
+      OnMouseDown = trackScaleMouseDown
+    end
+    object edtScale: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 5
+      Text = '100'
+      Position.X = 48.000000000000000000
+      Position.Y = 80.000000000000000000
+      Size.Width = 49.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      OnChangeTracking = edtScaleChangeTracking
+    end
+    object Label5: TLabel
+      Position.X = 100.000000000000000000
+      Position.Y = 82.000000000000000000
+      Text = '%'
+    end
+    object Button1: TButton
+      Align = Top
+      Margins.Top = 10.000000000000000000
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 9.000000000000000000
+      Position.Y = 132.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 3
+      Text = #33258#21160#32553#25918
+      OnClick = Button1Click
+    end
+  end
+  object Layout3: TLayout
+    Align = Bottom
+    Position.Y = 413.000000000000000000
+    Size.Width = 683.000000000000000000
+    Size.Height = 38.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 4
+    object Label1: TLabel
+      AutoSize = True
+      Position.X = 8.000000000000000000
+      Position.Y = 12.000000000000000000
+      Size.Width = 49.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Left:'
+    end
+    object edtLeft: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 5
+      Position.X = 40.000000000000000000
+      Position.Y = 8.000000000000000000
+      Size.Width = 57.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      OnChange = edtLeftChange
+      OnExit = edtLeftExit
+    end
+    object Label2: TLabel
+      AutoSize = True
+      Position.X = 109.000000000000000000
+      Position.Y = 12.000000000000000000
+      Size.Width = 41.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Top:'
+    end
+    object edtTop: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 4
+      Position.X = 141.000000000000000000
+      Position.Y = 8.000000000000000000
+      Size.Width = 57.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      OnChange = edtLeftChange
+      OnExit = edtLeftExit
+    end
+    object Label3: TLabel
+      AutoSize = True
+      Position.X = 205.000000000000000000
+      Position.Y = 12.000000000000000000
+      Size.Width = 49.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Right:'
+    end
+    object edtRight: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 3
+      Position.X = 245.000000000000000000
+      Position.Y = 8.000000000000000000
+      Size.Width = 57.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      OnChange = edtLeftChange
+    end
+    object Label4: TLabel
+      AutoSize = True
+      Position.X = 309.000000000000000000
+      Position.Y = 12.000000000000000000
+      Size.Width = 57.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Bottom:'
+    end
+    object edtBottom: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 2
+      Position.X = 360.000000000000000000
+      Position.Y = 8.000000000000000000
+      Size.Width = 57.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      OnChange = edtLeftChange
+    end
+  end
+  object Panel1: TPanel
+    Align = Client
+    Size.Width = 555.000000000000000000
+    Size.Height = 413.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 6
+    object ScrollBox1: TScrollBox
+      Align = Client
+      Margins.Left = 2.000000000000000000
+      Margins.Top = 2.000000000000000000
+      Margins.Right = 2.000000000000000000
+      Margins.Bottom = 2.000000000000000000
+      Size.Width = 551.000000000000000000
+      Size.Height = 409.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = 'scrollboxstyle'
+      TabOrder = 1
+      Viewport.Width = 551.000000000000000000
+      Viewport.Height = 409.000000000000000000
+      object Preview: TPaintBox
+        Size.Width = 10.000000000000000000
+        Size.Height = 10.000000000000000000
+        Size.PlatformDefault = False
+        OnMouseMove = PreviewMouseMove
+        OnPaint = PreviewPaint
+      end
+    end
+  end
+end

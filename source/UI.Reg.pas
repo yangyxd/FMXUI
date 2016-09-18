@@ -19,13 +19,15 @@ implementation
 
 uses
   UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.ListView, UI.Toast,
+  UI.Design.Bounds,
   {$IFDEF MSWINDOWS}
   Windows, Registry,
   {$ENDIF}
   ComponentDesigner, DesignIntf, DesignEditors,
-  DesignerTypes, PropertyCategories,
+  DesignerTypes, PropertyCategories, VCLEditors,
   System.Classes, System.Types, System.TypInfo, System.UITypes,
-  FMX.Types, FMX.Styles, FMX.Controls, FMX.StdCtrls, FMX.Edit;
+  System.Generics.Collections,
+  FMX.Ani, FMX.Types, FMX.Styles, FMX.Controls, FMX.StdCtrls, FMX.Edit;
 
 type
   TViewControlEditor = class(TDefaultEditor)
@@ -36,6 +38,14 @@ type
     function GetVerbCount: Integer; override;
     function GetVerb(Index: Integer): string; override;
     procedure ExecuteVerb(Index: Integer); override;
+  end;
+
+  TPatchBoundsProperty = class(TClassProperty)
+  private
+  protected
+    procedure Edit; override;
+  public
+    function GetAttributes: TPropertyAttributes; override;
   end;
 
 {$IFDEF MSWINDOWS}
@@ -74,6 +84,7 @@ begin
   //RegisterComponents(PageName, [TAlertDialog]);
 
   RegisterComponentEditor(TView, TViewControlEditor);
+  RegisterPropertyEditor(TypeInfo(TPatchBounds), TPersistent, '', TPatchBoundsProperty);
   //RegisterComponentEditor(TCustomButton, TViewControlEditor);
   //RegisterComponentEditor(TCustomEdit, TViewControlEditor);
   //RegisterPropertyEditor(TypeInfo(TImageIndex), TView, '', TImageIndexProperty);
@@ -157,6 +168,34 @@ begin
     Result := 4
   else
     Result := 0;
+end;
+
+{ TPatchBoundsProperty }
+
+procedure TPatchBoundsProperty.Edit;
+var
+  Component: TObject;
+  Dialog: TBoundsDesigner;
+begin
+  Component := GetComponent(0);
+  if not (Component is TPatch9Bitmap) then 
+    Exit;  
+  Dialog := TBoundsDesigner.Create(nil);
+  try
+    Dialog.Caption := '9¹¬¸ñ»æÍ¼±à¼­Æ÷';
+    Dialog.Bitmap := TPatch9Bitmap(Component).Bitmap;
+    Dialog.Bounds := TPatch9Bitmap(Component).Bounds.Rect;
+    if Dialog.ShowModal = mrOK then begin
+      TPatch9Bitmap(Component).Bounds.Rect := Dialog.Bounds;
+    end;
+  finally
+    Dialog.Free;
+  end;
+end;
+
+function TPatchBoundsProperty.GetAttributes: TPropertyAttributes;
+begin
+  Result := [paMultiSelect, paSubProperties, paReadOnly, paDialog];
 end;
 
 initialization

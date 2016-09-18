@@ -22,10 +22,10 @@ object Form1: TForm1
       868501D4B0A007B0DC016A5818400D0B03A861E1D5D8FC017F39BA907F3B362F
       589B311F02023738ED79CA2E0000000049454E44AE426082}
     Background.ItemDefault.Bitmap.WrapMode = Tile
-    Background.ItemDefault.Bitmap.Bounds.Left = 10.000000000000000000
-    Background.ItemDefault.Bitmap.Bounds.Top = 10.000000000000000000
-    Background.ItemDefault.Bitmap.Bounds.Right = 10.000000000000000000
-    Background.ItemDefault.Bitmap.Bounds.Bottom = 10.000000000000000000
+    Background.ItemDefault.Bitmap.Bounds.Left = 9.000000000000000000
+    Background.ItemDefault.Bitmap.Bounds.Top = 7.000000000000000000
+    Background.ItemDefault.Bitmap.Bounds.Right = 7.000000000000000000
+    Background.ItemDefault.Bitmap.Bounds.Bottom = 7.000000000000000000
     Background.ItemDefault.Bitmap.BlackLine = True
     Background.ItemDefault.Kind = Patch9Bitmap
     Background.ItemPressed.Bitmap.Bitmap.PNG = {
@@ -88,11 +88,11 @@ object Form1: TForm1
     Padding.Right = 4.000000000000000000
     Padding.Bottom = 4.000000000000000000
     HitTest = True
-    Size.Width = 384.000000000000000000
-    Size.Height = 139.000000000000000000
+    Size.Width = 377.000000000000000000
+    Size.Height = 121.000000000000000000
     Size.PlatformDefault = False
-    Position.X = 40.000000000000000000
-    Position.Y = 104.000000000000000000
+    Position.X = 32.000000000000000000
+    Position.Y = 96.000000000000000000
     TabOrder = 4
     AutoSize = False
     Text = #25353#38062#30340#32972#26223#20351#29992#20102'9'#23467#26684#32472#22270#65292#32553#25918#26102#19981#20250#22833#30495

@@ -15,6 +15,17 @@ interface
 uses
   UI.Debug,
   {$IFDEF MSWINDOWS}Windows, {$ENDIF}
+  {$IFDEF ANDROID}
+  Androidapi.Helpers,
+  Androidapi.Jni,
+  Androidapi.JNI.Media,
+  Androidapi.JNIBridge,
+  Androidapi.JNI.JavaTypes,
+  Androidapi.JNI.GraphicsContentViewText,
+  Androidapi.JNI.Util,
+  FMX.Helpers.Android,
+  {$ENDIF}
+  FMX.BehaviorManager,
   FMX.Utils, FMX.ImgList, FMX.MultiResBitmap, FMX.ActnList, System.Rtti, FMX.Consts,
   FMX.TextLayout, FMX.Objects, System.ImageList, System.RTLConsts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, System.Math,
@@ -58,21 +69,23 @@ type
 
   TViewBrushKind = (None, Solid, Gradient, Bitmap, Resource, Patch9Bitmap);
 
+  TPatchBounds = class(TBounds);
+
   /// <summary>
   /// 9 宫格位图
   /// </summary>
   TPatch9Bitmap = class(TBrushBitmap)
   private
-    FBounds: TBounds;
+    FBounds: TPatchBounds;
     FRemoveBlackLine: Boolean;
-    procedure SetBounds(const Value: TBounds);
+    procedure SetBounds(const Value: TPatchBounds);
     procedure SetRemoveBlackLine(const Value: Boolean);
   public
     constructor Create;
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
   published
-    property Bounds: TBounds read FBounds write SetBounds;
+    property Bounds: TPatchBounds read FBounds write SetBounds;
     // 是否移除黑线(.9.png一般会有一条黑线，移除时，等于是将原图截掉最外围的1像索)
     property BlackLine: Boolean read FRemoveBlackLine write SetRemoveBlackLine;
   end;
@@ -714,7 +727,6 @@ type
     FSaveMaxWidth: Single;
     FSaveMaxHeight: Single;
     FLayout: TViewLayout;
-
     function IsDrawing: Boolean;
     function IsDesignerControl(Control: TControl): Boolean;
     function IsAutoSize: Boolean; virtual;
@@ -785,6 +797,11 @@ type
     function GetVScrollBar: TScrollBar; virtual;
     function GetHScrollBar: TScrollBar; virtual;
     function GetContentBounds: TRectF; virtual;
+  protected
+    {$IFDEF ANDROID}
+    FAudioManager: JAudioManager;
+    procedure InitAudioManager();
+    {$ENDIF}
   public
     /// <summary>
     /// 滚动条样式
@@ -1235,6 +1252,16 @@ begin
   end;
 end;
 
+function GetPPI(Context: TFmxObject): Single;
+var
+  DeviceBehavior: IDeviceBehavior;
+begin
+  if TBehaviorServices.Current.SupportsBehaviorService(IDeviceBehavior, DeviceBehavior, Context) then
+    Result := DeviceBehavior.GetDisplayMetrics(Context).PixelsPerInch
+  else
+    Result := 160;
+end;
+
 { TDrawableBase }
 
 procedure TDrawableBase.Assign(Source: TPersistent);
@@ -1520,9 +1547,16 @@ begin
   ABrush.OnChanged := nil;
   ABrush.Kind := TViewBrushKind.Bitmap;
 
-  if Bmp.FRemoveBlackLine then
-    AO := 1
-  else
+  if Bmp.FRemoveBlackLine then begin
+    {$IFNDEF MSWINDOWS}
+    // 移动平台，使用PPI计算出1个dp所占用的像索
+    // 感觉直接设为2效果更好
+    AO := 2; //1 * GetPPI(Self.FView as TFmxObject) / 160;
+    //if AO < 0 then AO := 1;
+    {$ELSE}
+    AO := 1;
+    {$ENDIF}
+  end else
     AO := 0;
 
   if (Bmp.FBounds.Left = 0) and (Bmp.FBounds.Top = 0) and (Bmp.FBounds.Right = 0) and (Bmp.FBounds.Bottom = 0) then begin
@@ -2395,6 +2429,9 @@ begin
   FreeScrollbar();
   FreeAndNil(FBackground);
   FreeAndNil(FLayout);
+  {$IFDEF ANDROID}
+  FAudioManager := nil;
+  {$ENDIF}
   inherited Destroy;
 end;
 
@@ -2753,6 +2790,18 @@ procedure TView.InternalAlign;
 begin
 end;
 
+{$IFDEF ANDROID}
+procedure TView.InitAudioManager();
+var
+  NativeService: JObject;
+begin
+  NativeService := TAndroidHelper.Context.getSystemService(TJContext.JavaClass.AUDIO_SERVICE);
+  if not Assigned(NativeService) then
+    Exit;
+  FAudioManager := TJAudioManager.Wrap((NativeService as ILocalObject).GetObjectID);
+end;
+{$ENDIF}
+
 function TView.IsActivated: Boolean;
 begin
   Result := TViewState.Activated in FViewState;
@@ -2900,12 +2949,30 @@ end;
 
 procedure TView.PlayClickEffect;
 begin
-  PlaySoundEffect(0);
+  {$IFDEF ANDROID}
+  PlaySoundEffect(0); // SoundEffectConstants.CLICK
+  {$ENDIF}
 end;
 
 procedure TView.PlaySoundEffect(ASoundConstant: Integer);
+{$IFDEF ANDROID}
+var
+  RingerMode: Integer;
 begin
-
+  if not Assigned(FAudioManager) then begin
+    InitAudioManager();
+    if not Assigned(FAudioManager) then
+      Exit;
+  end;
+  RingerMode := FAudioManager.getRingerMode;
+  // 静音或者震动时不发出声音
+  if (ringerMode = TJAudioManager.JavaClass.RINGER_MODE_SILENT) or
+    (ringerMode = TJAudioManager.JavaClass.RINGER_MODE_VIBRATE) then
+    Exit;
+  FAudioManager.playSoundEffect(ASoundConstant);
+{$ELSE}
+begin
+{$ENDIF}
 end;
 
 procedure TView.ReadState(Reader: TReader);
@@ -4949,7 +5016,7 @@ end;
 constructor TPatch9Bitmap.Create;
 begin
   inherited Create;
-  FBounds := TBounds.Create(RectF(0, 0, 0, 0));
+  FBounds := TPatchBounds.Create(RectF(0, 0, 0, 0));
   FBounds.OnChange := Bitmap.OnChange;
 end;
 
@@ -4959,7 +5026,7 @@ begin
   inherited;
 end;
 
-procedure TPatch9Bitmap.SetBounds(const Value: TBounds);
+procedure TPatch9Bitmap.SetBounds(const Value: TPatchBounds);
 begin
   FBounds.Assign(Value);
 end;

@@ -46,6 +46,7 @@ contains
   UI.Standard in 'UI.Standard.pas',
   UI.Toast.Android in 'UI.Toast.Android.pas',
   UI.Toast.AndroidLike in 'UI.Toast.AndroidLike.pas',
-  UI.Toast in 'UI.Toast.pas';
+  UI.Toast in 'UI.Toast.pas',
+  UI.Design.Bounds in 'UI.Design.Bounds.pas' {BoundsDesigner};
 
 end.
