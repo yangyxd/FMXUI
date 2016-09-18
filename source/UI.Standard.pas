@@ -227,6 +227,8 @@ var
   Border: TViewBorder;
 begin
   Result := inherited CanRePaintBk(View, State);
+  if (Assigned(FDrawable)) then
+    Result := not FDrawable.IsEmpty;
   if (not Result) and (Assigned(FBackground)) then begin
     Border := TDrawableBorder(FBackground).Border;
     Result := Assigned(Border) and (Border.Style <> TViewBorderStyle.None) and

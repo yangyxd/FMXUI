@@ -118,7 +118,7 @@ type
   /// <summary>
   /// 绘制位置
   /// </summary>
-  TDrawablePosition = (Left, Right, Top, Bottom);
+  TDrawablePosition = (Left, Right, Top, Bottom, Center);
 
   /// <summary>
   /// 可绘制对象
@@ -1847,6 +1847,16 @@ begin
         end;
         R.Bottom := R.Bottom - FHeight - FPadding;
       end;
+    TDrawablePosition.Center:
+      begin
+        if ExecDraw then begin
+          DR.Left := R.Left + (SW - FWidth) / 2;
+          DR.Top := R.Top + (SH - FHeight) / 2;
+          DR.Right := DR.Left + FWidth;
+          DR.Bottom := DR.Top + FHeight;
+          DrawTo(Canvas, DR);
+        end;
+      end;
   end;
 end;
 
@@ -2379,7 +2389,8 @@ end;
 
 procedure TView.Click;
 begin
-  PlayClickEffect;
+  if Assigned(OnClick) then
+    PlayClickEffect;
   inherited Click;
 end;
 

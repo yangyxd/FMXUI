@@ -98,7 +98,7 @@ begin
   AddEnumElementAliases(TypeInfo(TViewSize),
     ['CustomSize', 'WrapContent', 'FillParent']);
   AddEnumElementAliases(TypeInfo(TDrawablePosition),
-    ['Left', 'Right', 'Top', 'Bottom']);
+    ['Left', 'Right', 'Top', 'Bottom', 'Center']);
   AddEnumElementAliases(TypeInfo(TViewBorderStyle),
     ['None', 'RectBorder', 'LineBottom', 'LineSimple']);
   AddEnumElementAliases(TypeInfo(TViewBrushKind),

@@ -68,22 +68,28 @@ const
   COLOR_TitleTextColor = $ff077dfe;
   COLOR_MessageTextColor = $ff000000;
   COLOR_TitleBackGroundColor = $00000000;
+  COLOR_DialogMaskColor = $9f000000;
+  COLOR_BodyBackgroundColor = $00ffffff;
+  COLOR_MessageTextBackground = $00f00000;
   {$ELSE}
   {$IFDEF MSWINDOWS}
     COLOR_BackgroundColor = $ffffffff;
     COLOR_TitleTextColor = $ff000000;
     COLOR_MessageTextColor = $ff101010;
     COLOR_TitleBackGroundColor = $ffffffff;
+    COLOR_DialogMaskColor = $9f000000;
+    COLOR_BodyBackgroundColor = $00ffffff;
+    COLOR_MessageTextBackground = $00f00000;
   {$ELSE}
-    COLOR_BackgroundColor = $ffc0c0c0;
+    COLOR_BackgroundColor = $fff0f0f0;
     COLOR_TitleTextColor = $ff000000;
     COLOR_MessageTextColor = $ff101010;
     COLOR_TitleBackGroundColor = $ffffffff;
+    COLOR_DialogMaskColor = $9f000000;
+    COLOR_BodyBackgroundColor = $ffffffff;
+    COLOR_MessageTextBackground = $00f00000;
   {$ENDIF}
   {$ENDIF}
-  COLOR_DialogMaskColor = $9f000000;
-  COLOR_BodyBackgroundColor = $00ffffff;
-  COLOR_MessageTextBackground = $00f00000;
 
   {$IFDEF MSWINDOWS}
   COLOR_ProcessBackgroundColor = $7fbababa;
@@ -1478,7 +1484,7 @@ begin
     except
     end;
     FEventing := False;
-    if FAllowDismiss or Builder.FClickButtonDismiss then begin
+    if FAllowDismiss or (Assigned(Builder) and Builder.FClickButtonDismiss) then begin
       FAllowDismiss := False;
       AsyncDismiss;
     end;
@@ -1624,7 +1630,8 @@ begin
       end;
     end;
     FButtomRadius := FViewRoot.FMsgMessage;
-  end;
+  end else
+    FViewRoot.FMsgBody.Visible := False;
 
   // 初始化列表
   if (Length(Builder.FItemArray) > 0) or
@@ -1702,6 +1709,7 @@ end;
 procedure TCustomAlertDialog.InitExtPopView;
 begin
   InitDefaultPopView;
+  FViewRoot.FMsgBody.Visible := True;
   if Assigned(FViewRoot.FMsgMessage) then
     FViewRoot.FMsgMessage.Visible := False;
   with Builder.View do begin
@@ -1739,6 +1747,7 @@ var
   ListView: TListView;
 begin
   InitDefaultPopView;
+  FViewRoot.FMsgBody.Visible := True;
   if Assigned(FViewRoot.FMsgMessage) then begin
     if FBuilder.Message = '' then
       FViewRoot.FMsgMessage.Visible := False;
@@ -1759,6 +1768,7 @@ var
   ListView: TListView;
 begin
   InitDefaultPopView;
+  FViewRoot.FMsgBody.Visible := True;
   if Assigned(FViewRoot.FMsgMessage) then begin
     if FBuilder.Message = '' then
       FViewRoot.FMsgMessage.Visible := False;
@@ -1785,6 +1795,7 @@ var
   ListView: TListView;
 begin
   InitDefaultPopView;
+  FViewRoot.FMsgBody.Visible := True;
   if Assigned(FViewRoot.FMsgMessage) then begin
     if FBuilder.Message = '' then
       FViewRoot.FMsgMessage.Visible := False;
@@ -2087,7 +2098,6 @@ begin
   FMsgBody.Orientation := TOrientation.Vertical;
   FMsgBody.Background.ItemDefault.Color := StyleMgr.BodyBackGroundColor;
   FMsgBody.Background.ItemDefault.Kind := TViewBrushKind.Solid;
-  FMsgBody.Margins.Bottom := 1;
 end;
 
 procedure TDialogView.SetTitle(const AText: string);

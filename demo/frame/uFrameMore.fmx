@@ -1,0 +1,301 @@
+object FrameMore: TFrameMore
+  Size.Width = 320.000000000000000000
+  Size.Height = 576.000000000000000000
+  Size.PlatformDefault = False
+  object LinearLayout1: TLinearLayout
+    Align = Top
+    Background.Paddings = '0.0'
+    Background.ItemDefault.Color = claPurple
+    Background.ItemDefault.Kind = Solid
+    Paddings = '0.0'
+    Margin = '0.0'
+    Gravity = None
+    Size.Width = 320.000000000000000000
+    Size.Height = 50.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Orientation = Horizontal
+    object TextView1: TTextView
+      Background.Paddings = '0.0'
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Hovered = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      Background.Border.Color.Activated = claNull
+      Clickable = True
+      Paddings = '0.0'
+      Margin = '0.0'
+      HeightSize = FillParent
+      Gravity = None
+      HitTest = True
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 3
+      OnClick = TextView1Click
+      AutoSize = False
+      TextSettings.AutoSize = False
+      TextSettings.Color.Default = claBlack
+      TextSettings.Color.Pressed = claNull
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Hovered = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Checked = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Color.Activated = claNull
+      TextSettings.Color.HintText = claGray
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = None
+      Drawable.Position = Center
+      Drawable.Images = ImageList1
+      Drawable.ItemDefault.ImageIndex = 0
+      Drawable.ItemPressed.ImageIndex = 1
+      Drawable.ItemFocused.ImageIndex = -1
+      Drawable.ItemHovered.ImageIndex = -1
+      Drawable.ItemSelected.ImageIndex = -1
+      Drawable.ItemChecked.ImageIndex = -1
+      Drawable.ItemEnabled.ImageIndex = -1
+      Drawable.ItemActivated.ImageIndex = -1
+    end
+    object tvTitle: TTextView
+      Background.Paddings = '0.0'
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Hovered = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      Background.Border.Color.Activated = claNull
+      Paddings = '0.0'
+      Gravity = Center
+      Weight = 1.000000000000000000
+      Margins.Right = 50.000000000000000000
+      Size.Width = 220.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 50.000000000000000000
+      TabOrder = 1
+      AutoSize = False
+      Text = 'tvTitle'
+      TextSettings.AutoSize = False
+      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Pressed = claNull
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Hovered = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Checked = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Color.Activated = claNull
+      TextSettings.Color.HintText = claGray
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
+      Drawable.ItemDefault.ImageIndex = -1
+      Drawable.ItemPressed.ImageIndex = -1
+      Drawable.ItemFocused.ImageIndex = -1
+      Drawable.ItemHovered.ImageIndex = -1
+      Drawable.ItemSelected.ImageIndex = -1
+      Drawable.ItemChecked.ImageIndex = -1
+      Drawable.ItemEnabled.ImageIndex = -1
+      Drawable.ItemActivated.ImageIndex = -1
+    end
+  end
+  object VertScrollBox1: TVertScrollBox
+    Align = Client
+    Size.Width = 320.000000000000000000
+    Size.Height = 526.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Viewport.Width = 320.000000000000000000
+    Viewport.Height = 526.000000000000000000
+    object LinearLayout2: TLinearLayout
+      Align = Top
+      Background.Paddings = '0.0'
+      Paddings = '12.0'
+      Margin = '0.0'
+      HeightSize = WrapContent
+      Gravity = None
+      Padding.Left = 12.000000000000000000
+      Padding.Top = 12.000000000000000000
+      Padding.Right = 12.000000000000000000
+      Padding.Bottom = 12.000000000000000000
+      Size.Width = 320.000000000000000000
+      Size.Height = 104.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      Orientation = Vertical
+      object TextView2: TTextView
+        Background.Paddings = '0.0'
+        Background.Border.Color.Default = xBFC0C0C0
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Hovered = claNull
+        Background.Border.Color.Selected = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Color.Activated = claNull
+        Paddings = '0.0'
+        Margin = '0.0'
+        WidthSize = WrapContent
+        HeightSize = WrapContent
+        Gravity = None
+        Size.Width = 192.000000000000000000
+        Size.Height = 80.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 12.000000000000000000
+        Position.Y = 12.000000000000000000
+        TabOrder = 0
+        AutoSize = False
+        Text = #27426#36814#20351#29992' FMX UI '#13#10#13#10#23448#26041#22320#22336#65306#13#10#13#10'https://github.com/yangyxd/FMXUI'
+        TextSettings.AutoSize = False
+        TextSettings.Color.Default = claBlack
+        TextSettings.Color.Pressed = claNull
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Hovered = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Color.Activated = claNull
+        TextSettings.Color.HintText = claGray
+        TextSettings.PrefixStyle = HidePrefix
+        TextSettings.Gravity = None
+        Drawable.ItemDefault.ImageIndex = -1
+        Drawable.ItemPressed.ImageIndex = -1
+        Drawable.ItemFocused.ImageIndex = -1
+        Drawable.ItemHovered.ImageIndex = -1
+        Drawable.ItemSelected.ImageIndex = -1
+        Drawable.ItemChecked.ImageIndex = -1
+        Drawable.ItemEnabled.ImageIndex = -1
+        Drawable.ItemActivated.ImageIndex = -1
+      end
+    end
+  end
+  object ImageList1: TImageList
+    Source = <
+      item
+        MultiResBitmap.Height = 37
+        MultiResBitmap.Width = 37
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 37
+            Height = 37
+            PNG = {
+              89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
+              03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              017A494441545847D5984D4EC33010855347390751ABAA825295CB941E077193
+              72079620B16307DC00AA64051788F267DE443391006705F20C9F644D3DB1E4A7
+              5767623BF90BBCF739DA8122A774E9FB7E5BD7F51B04798AD4E7473A40C7BC6D
+              DB671224745D77C78FE3034736E29050144587FC9E87C405132FE1D0136B19A8
+              AAEA4353D00F8708E42F79485C30F1CA9A436B6B0E9D061C7A5715D434CD2B6B
+              19417E8F30E361F1C0C467D61C5A85D610D8A1A938741E720861C743E20241CB
+              A9B70C41C5A18DB535B4B0B28686C920688B7648D3F462C832F8E23F3AE76EB9
+              1B8D195CC851871EB22C3BE19C3A0E0E5D5B1244E0DF715770EAC8FD91B22C3D
+              FF8C8EC935350251C1B70F799DFA244000D5A92F7B6EAE533AFB250102A62ABA
+              CEAE4060C7EC5476010282BB041286A0EAD87AC231F535666BE7299030AB6BCC
+              D6694680003AF77DAF6374EE531766EB842C4000DD25FC0FC7546F5D040858C0
+              B117D634809DC53D3FD603C26CDDE409D093C3A11B8A9CFA0549F209EF994C25
+              B7858DF30000000049454E44AE426082}
+            FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_back.png'
+          end>
+        Name = 'btn_back'
+      end
+      item
+        MultiResBitmap.Height = 37
+        MultiResBitmap.Width = 37
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 37
+            Height = 37
+            PNG = {
+              89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
+              03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              0274494441545847CD98BB6E1431184677969E2E04714FF21840CF335023015D
+              C245912225415C0505209A8402CABC402AEA244D9E800A216E8A942AE97787F3
+              8D7F479ECC2E3BEB1DCF7224CBBF9D628E3E7B3CDE749AA0DFEFCFD216D5DBD4
+              74C9F3FC5AAFD7FB4CDB56AFB1FD299AAEF55120709E74962867DC4C6786F11D
+              ABA38996522208BCA09C7733057996655FAC8EE68CF56381CC05A41E515E7233
+              05C7087DE876BB3B368E26B3BE36085D45689DD22F590132AF91DAB5E1448CB5
+              7C085D4428DC434209BD694A48D49642E60AED19E5829B7190D046134B16526B
+              F948E832420F2943A12364369B4CC8333229137A42594A08998F747B6ED42CFF
+              4C4A4B86D403CA5612F20C4D4A9B9A3628A10DBA2409790626858C5E7BBD65A5
+              8424444A498544450A211D8CCF292BE710DD1E62B99B4947490A197D3A9450F8
+              E948BE874E73B2A710D2C7759532145242AD0A89222964E6905AA42C09C157A4
+              F6AD6E8D0CA159845E5197F6D034D1F2DDA6FD374242525BB4C3625426F95B36
+              8C704FE9AD9BD338603A7BCA7AFFF6BDA44C764FAACBC991C0830F10784AF9CD
+              CD3810BD47BB69C356A87DA2235D5CE468C9F75AE5834C5A7F062586E85DBAEB
+              6E94964A521E12D3D55737CDD6BF8195A43C3CFC374D5797CA1E43F6860D9330
+              34290F12FEE679CECD3852EEB1A1497948EB270FAE2496728F8D4CCA8384AEC6
+              924B7E8E8D4CCAC3837FD0D6284FEFB1FB4DEFB1DA5282547E21F69632FC569E
+              456CB949B1DACB1782840ED865CAF0FEA55FCA9B884FFCC374ACA43C3C5807EC
+              3BCA5262883E6E22B12829412ADF115BA10CF7982E8DB7AC8E265A4A2076407B
+              4FE9133B64FCC9EAE9423AFA9FE7927A9B9A804EE72F31832EB3F594A9FA0000
+              000049454E44AE426082}
+            FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_back_pre.png'
+          end>
+        Name = 'btn_back_pre'
+      end
+      item
+        MultiResBitmap.Height = 37
+        MultiResBitmap.Width = 37
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 37
+            Height = 37
+            PNG = {
+              89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
+              03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              01B2494441545847ED98BD4A034110C773092858481054040D3E8B82BE85B5B1
+              B051DF44A3B6F6F682FA125AF88520442B0B3B15EF437F63FE114EEE94BD336B
+              8AFBC130BB3303336CE6F626572B43922433C866188617EF60DAF66657885F48
+              3C15C7F1B115F31DB3E39F56A83F48BAA11A32C1BFA5507FF053DD2A7F26F86F
+              14EA4C5DBA082DE93C66A59D295C541004975A6682DFFF49D5EBF54E1445A1B6
+              29CC8E7F4F5B7FD0C8E33C65876AA1146637BF429D09A40B41FE31640D594026
+              F8C99E9053A4833C2BCC995245F5E154465123141222AF3D6B45C5F050AAD169
+              F049D40A4FDE12EB1677D33D8D7E84ED80F5E367904F28A469D300EFB884F517
+              B6D7F4D054A83F3899750A887AA5A431BBF915EA0F125FAB864CF05F29D49932
+              53C2BC741E73D2CE9429EA4E3A8FAEB433858B6A341ADB4C03B1B629CC8E7F47
+              5B7FD036037BFAFEEA9E5AD63DD5FDD77BAAA22287A19C3CFF62466F238B487F
+              463F417691C2337A61389D81FD9B290C4957B928DF54470AB3E36F2BD41FBC4A
+              CE554326F8CF14EA8FBC53EA83FF45A1CE9499127E9B021EA49D293325FCF8AD
+              00FFBE96FEA09187EF4B9E41E2017CF3ACD53E007AD74C8A11B5096D00000000
+              49454E44AE426082}
+            FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_top_more.png'
+          end>
+        Name = 'btn_top_more'
+      end>
+    Destination = <
+      item
+        Layers = <
+          item
+            Name = 'btn_back'
+            SourceRect.Right = 37.000000000000000000
+            SourceRect.Bottom = 37.000000000000000000
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'btn_back_pre'
+            SourceRect.Right = 37.000000000000000000
+            SourceRect.Bottom = 37.000000000000000000
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'btn_top_more'
+            SourceRect.Right = 37.000000000000000000
+            SourceRect.Bottom = 37.000000000000000000
+          end>
+      end>
+    Left = 152
+    Top = 240
+  end
+end

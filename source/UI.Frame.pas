@@ -337,6 +337,7 @@ begin
   if (Assigned(Parent)) then begin
     try
       Result := Create(Parent);
+      Result.Name := '';
       Result.Parent := Parent;
       Result.Align := TAlignLayout.Client;
       Result.FLastView := nil;
