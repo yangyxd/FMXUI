@@ -32,6 +32,9 @@ FMXUI  (YangYxd)
   
   FMXUI 跨平台组件库说明
   http://www.cnblogs.com/yangyxd/articles/5166253.html
+  
+  FMXUI UI.Dialog 对话框示例
+  http://www.cnblogs.com/yangyxd/articles/5877638.html
 
 【联系我们】
 
