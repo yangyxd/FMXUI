@@ -17,6 +17,7 @@ uses
   System.Generics.Collections, System.Rtti, System.SyncObjs,
   {$IFDEF ANDROID}FMX.Platform.Android, {$ENDIF}
   {$IFDEF POSIX}Posix.Signal, {$ENDIF}
+  FMX.Ani,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Platform, IOUtils;
 
 type
@@ -117,6 +118,70 @@ type
   end;
 
   /// <summary>
+  /// 动画类型
+  /// </summary>
+  TFrameAniType = (None, DefaultAni {默认}, FadeInOut {淡入淡出});
+
+  TNotifyEventA = reference to procedure (Sender: TObject);
+
+  TFrameAnimator = class
+  private type
+    TFrameAnimatorEvent = record
+      OnFinish: TNotifyEvent;
+      OnFinishA: TNotifyEventA;
+    end;
+    TAnimationDestroyer = class
+    private
+      FOnFinishs: TDictionary<Integer, TFrameAnimatorEvent>;
+      procedure DoAniFinished(Sender: TObject);
+      procedure DoAniFinishedEx(Sender: TObject; FreeSender: Boolean);
+    public
+      constructor Create();
+      destructor Destroy; override;
+      procedure Add(Sender: TObject; AOnFinish: TNotifyEvent); overload;
+      procedure Add(Sender: TObject; AOnFinish: TNotifyEventA); overload;
+    end;
+  private class var
+    FDestroyer: TAnimationDestroyer;
+  private
+    class procedure CreateDestroyer;
+    class procedure Uninitialize;
+  public
+    class procedure AnimateFloat(const Target: TFmxObject;
+      const APropertyName: string; const NewValue: Single;
+      AOnFinish: TNotifyEvent = nil; Duration: Single = 0.2;
+      Delay: Single = 0.0; AType: TAnimationType = TAnimationType.In;
+      AInterpolation: TInterpolationType = TInterpolationType.Linear); overload;
+    class procedure AnimateFloat(const Target: TFmxObject;
+      const APropertyName: string; const NewValue: Single;
+      AOnFinish: TNotifyEventA; Duration: Single = 0.2;
+      Delay: Single = 0.0; AType: TAnimationType = TAnimationType.In;
+      AInterpolation: TInterpolationType = TInterpolationType.Linear); overload;
+
+    class procedure AnimateInt(const Target: TFmxObject;
+      const APropertyName: string; const NewValue: Integer;
+      AOnFinish: TNotifyEvent = nil; Duration: Single = 0.2;
+      Delay: Single = 0.0; AType: TAnimationType = TAnimationType.In;
+      AInterpolation: TInterpolationType = TInterpolationType.Linear); overload;
+    class procedure AnimateInt(const Target: TFmxObject;
+      const APropertyName: string; const NewValue: Integer;
+      AOnFinish: TNotifyEventA; Duration: Single = 0.2;
+      Delay: Single = 0.0; AType: TAnimationType = TAnimationType.In;
+      AInterpolation: TInterpolationType = TInterpolationType.Linear); overload;
+
+    class procedure AnimateColor(const Target: TFmxObject;
+      const APropertyName: string; NewValue: TAlphaColor;
+      AOnFinish: TNotifyEvent = nil; Duration: Single = 0.2;
+      Delay: Single = 0.0; AType: TAnimationType = TAnimationType.In;
+      AInterpolation: TInterpolationType = TInterpolationType.Linear); overload;
+    class procedure AnimateColor(const Target: TFmxObject;
+      const APropertyName: string; NewValue: TAlphaColor;
+      AOnFinish: TNotifyEventA; Duration: Single = 0.2;
+      Delay: Single = 0.0; AType: TAnimationType = TAnimationType.In;
+      AInterpolation: TInterpolationType = TInterpolationType.Linear); overload;
+  end;
+
+  /// <summary>
   /// Frame 视图, Frame 切换处理
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
@@ -128,7 +193,11 @@ type
     FOnHide: TNotifyEvent;
     FOnReStart: TNotifyEvent;
     FWaitDialog: TProgressDialog;
-    FShowing: Boolean;
+    FShowing: Boolean;    // 正在显示中
+    FHideing: Boolean;    // 正在隐藏中
+    FAnimateing: Boolean; // 动画执行中
+    FNeedFree: Boolean;   // 需要释放
+    FNeedHide: Boolean;   // 需要隐藏
     procedure SetParams(const Value: TFrameParams);
     function GetTitle: string;
     procedure SetTitle(const Value: string);
@@ -152,9 +221,18 @@ type
     // 检查是否需要释放，如果需要，就释放掉
     function CheckFree(): Boolean;
     // 内部 Show 实现
-    procedure InternalShow(TriggerOnShow: Boolean);
+    procedure InternalShow(TriggerOnShow: Boolean;
+      AOnFinish: TNotifyEventA = nil; Ani: TFrameAniType = TFrameAniType.DefaultAni);
+    procedure InternalHide();
   protected
     procedure AfterDialogKey(var Key: Word; Shift: TShiftState); override;
+  protected
+    /// <summary>
+    /// 播放动画
+    /// </summary>
+    procedure AnimatePlay(Ani: TFrameAniType; IsIn: Boolean; AEvent: TNotifyEventA);
+
+    procedure OnFinishOrClose(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -195,19 +273,19 @@ type
     /// <summary>
     /// 开始一个视图，并隐藏当前视图
     /// </summary>
-    function StartFrame(FrameClass: TFrameViewClass): TFrameView; overload;
+    function StartFrame(FrameClass: TFrameViewClass; Ani: TFrameAniType = TFrameAniType.DefaultAni): TFrameView; overload;
     /// <summary>
     /// 开始一个视图，并隐藏当前视图
     /// </summary>
-    function StartFrame(FrameClass: TFrameViewClass; Params: TFrameParams): TFrameView; overload;
+    function StartFrame(FrameClass: TFrameViewClass; Params: TFrameParams; Ani: TFrameAniType = TFrameAniType.DefaultAni): TFrameView; overload;
     /// <summary>
     /// 开始一个视图，并隐藏当前视图
     /// </summary>
-    function StartFrame(FrameClass: TFrameViewClass; const Title: string): TFrameView; overload;
+    function StartFrame(FrameClass: TFrameViewClass; const Title: string; Ani: TFrameAniType = TFrameAniType.DefaultAni): TFrameView; overload;
     /// <summary>
     /// 开始一个视图，并隐藏当前视图
     /// </summary>
-    function StartFrame(FrameClass: TFrameViewClass; const Title: string; const Data: Pointer): TFrameView; overload;
+    function StartFrame(FrameClass: TFrameViewClass; const Title: string; const Data: Pointer; Ani: TFrameAniType = TFrameAniType.DefaultAni): TFrameView; overload;
 
     /// <summary>
     /// 显示一个提示消息
@@ -220,19 +298,23 @@ type
     /// <summary>
     /// 显示 Frame
     /// </summary>
-    procedure Show(); override;
+    procedure Show(); overload; override;
+    procedure Show(Ani: TFrameAniType; AOnFinish: TNotifyEventA); reintroduce; overload;
     /// <summary>
     /// 关闭 Frame
     /// </summary>
-    procedure Close(); virtual;
+    procedure Close(); overload;
+    procedure Close(Ani: TFrameAniType); overload; virtual;
     /// <summary>
     /// 隐藏 Frame
     /// </summary>
-    procedure Hide(); override;
+    procedure Hide(); overload; override;
+    procedure Hide(Ani: TFrameAniType); reintroduce; overload;
     /// <summary>
     /// 完成当前 Frame (返回上一个 Frame 或 关闭)
     /// </summary>
-    procedure Finish(); virtual;
+    procedure Finish(); overload; virtual;
+    procedure Finish(Ani: TFrameAniType); overload; virtual;
 
     /// <summary>
     /// 启动时的参数
@@ -274,6 +356,10 @@ type
 
 var
   MainFormMinChildren: Integer = 1;
+  /// <summary>
+  /// 默认过场动画
+  /// </summary>
+  DefaultAnimate: TFrameAniType = TFrameAniType.FadeInOut;
 
 implementation
 
@@ -297,6 +383,36 @@ begin
     Finish;
   end else
     inherited AfterDialogKey(Key, Shift);
+end;
+
+procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn: Boolean;
+  AEvent: TNotifyEventA);
+
+  procedure FadeIntOut();
+  var
+    NewValue: Single;
+  begin
+    if IsIn then begin
+      Self.Opacity := 0;
+      NewValue := 1;
+    end else
+      NewValue := 0;
+    TFrameAnimator.AnimateFloat(Self, 'Opacity', NewValue, AEvent);
+  end;
+
+begin
+  case Ani of
+    None:
+      if Assigned(AEvent) then
+        AEvent(Self);
+    DefaultAni:
+      if not (DefaultAnimate in [TFrameAniType.None, TFrameAniType.DefaultAni]) then
+        AnimatePlay(DefaultAnimate, IsIn, AEvent)
+      else if Assigned(AEvent) then
+        AEvent(Self);
+    FadeInOut:
+      FadeIntOut;
+  end;
 end;
 
 function TFrameView.CheckFree: Boolean;
@@ -324,10 +440,19 @@ end;
 
 procedure TFrameView.Close;
 begin
-  if CheckFree then Exit;
-  {$IFNDEF AUTOREFCOUNT}
-  Free;
-  {$ENDIF}
+  Close(TFrameAniType.DefaultAni);
+end;
+
+procedure TFrameView.Close(Ani: TFrameAniType);
+begin
+  // 动画执行中， 设置需要关闭的标识
+  if FAnimateing then
+    FNeedFree := True
+  else begin
+    FAnimateing := True;
+    AnimatePlay(Ani, False, OnFinishOrClose);
+    FAnimateing := False;
+  end;
 end;
 
 class function TFrameView.CreateFrame(Parent: TFmxObject;
@@ -379,6 +504,13 @@ begin
   FNextView := Result;
 end;
 
+procedure TFrameView.OnFinishOrClose(Sender: TObject);
+begin
+  if FNeedHide then
+    InternalHide;
+  if CheckFree then Exit;
+end;
+
 destructor TFrameView.Destroy;
 begin
   if Assigned(FNextView) then
@@ -408,19 +540,19 @@ begin
     FOnShow(Self);
 end;
 
-procedure TFrameView.Finish;
+procedure TFrameView.Finish(Ani: TFrameAniType);
 begin
-  if not Assigned(FLastView) then
-    Close
-  else begin
-    if CheckFree then Exit;
+  if Assigned(FLastView) then begin
     FLastView.InternalShow(False);
     FLastView.FNextView := nil;
     FLastView := nil;
-    {$IFNDEF AUTOREFCOUNT}
-    Free;
-    {$ENDIF}
   end;
+  Close(Ani);
+end;
+
+procedure TFrameView.Finish;
+begin
+  Finish(TFrameAniType.DefaultAni);
 end;
 
 function TFrameView.GetData: TValue;
@@ -478,8 +610,26 @@ end;
 
 procedure TFrameView.Hide;
 begin
-  Visible := False;
-  DoHide;
+  if FHideing then
+    Exit;
+  Hide(TFrameAniType.DefaultAni);
+end;
+
+procedure TFrameView.Hide(Ani: TFrameAniType);
+begin
+  if FAnimateing then
+    FNeedHide := True
+  else begin
+    FAnimateing := True;
+    AnimatePlay(Ani, False,
+      procedure (Sender: TObject) begin
+        InternalHide;
+        if FNeedFree then
+          OnFinishOrClose(Sender);
+        FAnimateing := False;
+      end
+    );
+  end;
 end;
 
 procedure TFrameView.HideWaitDialog;
@@ -505,7 +655,16 @@ begin
   Toast(IntToStr(Msg));
 end;
 
-procedure TFrameView.InternalShow(TriggerOnShow: Boolean);
+procedure TFrameView.InternalHide;
+begin
+  DoHide;
+  FHideing := True;
+  Visible := False;
+  FHideing := False;
+  FNeedHide := False;
+end;
+
+procedure TFrameView.InternalShow(TriggerOnShow: Boolean; AOnFinish: TNotifyEventA; Ani: TFrameAniType);
 begin
   if FShowing then Exit;  
   FShowing := True;
@@ -518,8 +677,14 @@ begin
     DoShow()
   else
     DoReStart();
+  Opacity := 0;
+  FHideing := True;
   Visible := True;
+  FHideing := False;
+  AnimatePlay(Ani, True, AOnFinish);
   FShowing := False;
+  FNeedFree := False;
+  FNeedHide := False;
 end;
 
 procedure TFrameView.Hint(const Msg: string);
@@ -550,9 +715,16 @@ begin
     Params.Add(CS_Title, Value);
 end;
 
-procedure TFrameView.Show();
+procedure TFrameView.Show(Ani: TFrameAniType; AOnFinish: TNotifyEventA);
 begin
-  InternalShow(True);
+  InternalShow(True, AOnFinish, Ani);
+end;
+
+procedure TFrameView.Show;
+begin
+  if FHideing then
+    Exit;
+  Show(TFrameAniType.DefaultAni, nil);
 end;
 
 class function TFrameView.ShowFrame(Parent: TFmxObject;
@@ -594,22 +766,22 @@ begin
 end;
 
 function TFrameView.StartFrame(FrameClass: TFrameViewClass;
-  const Title: string): TFrameView;
+  const Title: string; Ani: TFrameAniType): TFrameView;
 begin
   Result := MakeFrame(FrameClass);
   Result.Title := Title;
-  Result.Show();
-  Hide;
+  Hide(Ani);
+  Result.Show(Ani, nil);
 end;
 
 function TFrameView.StartFrame(FrameClass: TFrameViewClass; const Title: string;
-  const Data: Pointer): TFrameView;
+  const Data: Pointer; Ani: TFrameAniType): TFrameView;
 begin
   Result := MakeFrame(FrameClass);
   Result.Title := Title;
   Result.Data := Data;
-  Result.Show();
-  Hide;
+  Hide(Ani);
+  Result.Show(Ani, nil);
 end;
 
 function TFrameView.StreamToString(SrcStream: TStream; const CharSet: string): string;
@@ -629,19 +801,19 @@ begin
 end;
 
 function TFrameView.StartFrame(FrameClass: TFrameViewClass;
-  Params: TFrameParams): TFrameView;
+  Params: TFrameParams; Ani: TFrameAniType): TFrameView;
 begin
   Result := MakeFrame(FrameClass);
   Result.Params := Params;
-  Result.Show();
-  Hide;
+  Hide(Ani);
+  Result.Show(Ani, nil);
 end;
 
-function TFrameView.StartFrame(FrameClass: TFrameViewClass): TFrameView;
+function TFrameView.StartFrame(FrameClass: TFrameViewClass; Ani: TFrameAniType): TFrameView;
 begin
   Result := MakeFrame(FrameClass);
-  Result.Show();
-  Hide;
+  Hide(Ani);
+  Result.Show(Ani, nil);
 end;
 
 class function TFrameView.ShowFrame(Parent: TFmxObject;
@@ -1116,11 +1288,256 @@ begin
   AddOrSetValue(Key, GetDataValue(fdt_DateTime, Value));
 end;
 
+{ TFrameAnimator }
+
+class procedure TFrameAnimator.AnimateColor(const Target: TFmxObject;
+  const APropertyName: string; NewValue: TAlphaColor; AOnFinish: TNotifyEventA;
+  Duration, Delay: Single; AType: TAnimationType; AInterpolation: TInterpolationType);
+var
+  Animation: TColorAnimation;
+begin
+  TAnimator.StopPropertyAnimation(Target, APropertyName);
+
+  CreateDestroyer;
+
+  Animation := TColorAnimation.Create(Target);
+  FDestroyer.Add(Animation, AOnFinish);
+  Animation.Parent := Target;
+  Animation.AnimationType := AType;
+  Animation.Interpolation := AInterpolation;
+  Animation.OnFinish := FDestroyer.DoAniFinished;
+  Animation.Duration := Duration;
+  Animation.Delay := Delay;
+  Animation.PropertyName := APropertyName;
+  Animation.StartFromCurrent := True;
+  Animation.StopValue := NewValue;
+  Animation.Start;
+
+  if not Animation.Enabled then
+    FDestroyer.DoAniFinishedEx(Animation, False);
+end;
+
+class procedure TFrameAnimator.AnimateColor(const Target: TFmxObject;
+  const APropertyName: string; NewValue: TAlphaColor; AOnFinish: TNotifyEvent;
+  Duration, Delay: Single; AType: TAnimationType; AInterpolation: TInterpolationType);
+var
+  Animation: TColorAnimation;
+begin
+  TAnimator.StopPropertyAnimation(Target, APropertyName);
+
+  CreateDestroyer;
+
+  Animation := TColorAnimation.Create(Target);
+  FDestroyer.Add(Animation, AOnFinish);
+  Animation.Parent := Target;
+  Animation.AnimationType := AType;
+  Animation.Interpolation := AInterpolation;
+  Animation.OnFinish := FDestroyer.DoAniFinished;
+  Animation.Duration := Duration;
+  Animation.Delay := Delay;
+  Animation.PropertyName := APropertyName;
+  Animation.StartFromCurrent := True;
+  Animation.StopValue := NewValue;
+  Animation.Start;
+
+  if not Animation.Enabled then
+    FDestroyer.DoAniFinishedEx(Animation, False);
+end;
+
+class procedure TFrameAnimator.AnimateFloat(const Target: TFmxObject;
+  const APropertyName: string; const NewValue: Single; AOnFinish: TNotifyEvent;
+  Duration, Delay: Single; AType: TAnimationType; AInterpolation: TInterpolationType);
+var
+  Animation: TFloatAnimation;
+begin
+  TAnimator.StopPropertyAnimation(Target, APropertyName);
+
+  CreateDestroyer;
+
+  Animation := TFloatAnimation.Create(nil);
+  FDestroyer.Add(Animation, AOnFinish);
+  Animation.Parent := Target;
+  Animation.AnimationType := AType;
+  Animation.Interpolation := AInterpolation;
+  Animation.OnFinish := FDestroyer.DoAniFinished;
+  Animation.Duration := Duration;
+  Animation.Delay := Delay;
+  Animation.PropertyName := APropertyName;
+  Animation.StartFromCurrent := True;
+  Animation.StopValue := NewValue;
+  Animation.Start;
+
+  if not Animation.Enabled then
+    FDestroyer.DoAniFinishedEx(Animation, False);
+end;
+
+class procedure TFrameAnimator.AnimateFloat(const Target: TFmxObject;
+  const APropertyName: string; const NewValue: Single; AOnFinish: TNotifyEventA;
+  Duration, Delay: Single; AType: TAnimationType; AInterpolation: TInterpolationType);
+var
+  Animation: TFloatAnimation;
+begin
+  TAnimator.StopPropertyAnimation(Target, APropertyName);
+
+  CreateDestroyer;
+
+  Animation := TFloatAnimation.Create(nil);
+  FDestroyer.Add(Animation, AOnFinish);
+  Animation.Parent := Target;
+  Animation.AnimationType := AType;
+  Animation.Interpolation := AInterpolation;
+  Animation.OnFinish := FDestroyer.DoAniFinished;
+  Animation.Duration := Duration;
+  Animation.Delay := Delay;
+  Animation.PropertyName := APropertyName;
+  Animation.StartFromCurrent := True;
+  Animation.StopValue := NewValue;
+  Animation.Start;
+
+  if not Animation.Enabled then
+    FDestroyer.DoAniFinishedEx(Animation, False);
+end;
+
+class procedure TFrameAnimator.AnimateInt(const Target: TFmxObject;
+  const APropertyName: string; const NewValue: Integer; AOnFinish: TNotifyEvent;
+  Duration, Delay: Single; AType: TAnimationType; AInterpolation: TInterpolationType);
+var
+  Animation: TIntAnimation;
+begin
+  CreateDestroyer;
+
+  TAnimator.StopPropertyAnimation(Target, APropertyName);
+
+  Animation := TIntAnimation.Create(nil);
+  FDestroyer.Add(Animation, AOnFinish);
+  Animation.Parent := Target;
+  Animation.AnimationType := AType;
+  Animation.Interpolation := AInterpolation;
+  Animation.OnFinish := FDestroyer.DoAniFinished;
+  Animation.Duration := Duration;
+  Animation.Delay := Delay;
+  Animation.PropertyName := APropertyName;
+  Animation.StartFromCurrent := True;
+  Animation.StopValue := NewValue;
+  Animation.Start;
+
+  if not Animation.Enabled then
+    FDestroyer.DoAniFinishedEx(Animation, False);
+end;
+
+class procedure TFrameAnimator.AnimateInt(const Target: TFmxObject;
+  const APropertyName: string; const NewValue: Integer;
+  AOnFinish: TNotifyEventA; Duration, Delay: Single; AType: TAnimationType;
+  AInterpolation: TInterpolationType);
+var
+  Animation: TIntAnimation;
+begin
+  CreateDestroyer;
+
+  TAnimator.StopPropertyAnimation(Target, APropertyName);
+
+  Animation := TIntAnimation.Create(nil);
+  FDestroyer.Add(Animation, AOnFinish);
+  Animation.Parent := Target;
+  Animation.AnimationType := AType;
+  Animation.Interpolation := AInterpolation;
+  Animation.OnFinish := FDestroyer.DoAniFinished;
+  Animation.Duration := Duration;
+  Animation.Delay := Delay;
+  Animation.PropertyName := APropertyName;
+  Animation.StartFromCurrent := True;
+  Animation.StopValue := NewValue;
+  Animation.Start;
+
+  if not Animation.Enabled then
+    FDestroyer.DoAniFinishedEx(Animation, False);
+end;
+
+class procedure TFrameAnimator.CreateDestroyer;
+begin
+  if FDestroyer = nil then
+    FDestroyer := TAnimationDestroyer.Create;
+end;
+
+class procedure TFrameAnimator.Uninitialize;
+begin
+  FreeAndNil(FDestroyer);
+end;
+
+{ TFrameAnimator.TAnimationDestroyer }
+
+procedure TFrameAnimator.TAnimationDestroyer.Add(Sender: TObject;
+  AOnFinish: TNotifyEvent);
+var
+  Item: TFrameAnimatorEvent;
+begin
+  if not Assigned(AOnFinish) then
+    Exit;
+  Item.OnFinish := AOnFinish;
+  Item.OnFinishA := nil;
+  FOnFinishs.Add(Sender.GetHashCode, Item);
+end;
+
+procedure TFrameAnimator.TAnimationDestroyer.Add(Sender: TObject;
+  AOnFinish: TNotifyEventA);
+var
+  Item: TFrameAnimatorEvent;
+begin
+  if not Assigned(AOnFinish) then
+    Exit;
+  Item.OnFinishA := AOnFinish;
+  Item.OnFinish := nil;
+  FOnFinishs.Add(Sender.GetHashCode, Item);
+end;
+
+constructor TFrameAnimator.TAnimationDestroyer.Create;
+begin
+  FOnFinishs := TDictionary<Integer, TFrameAnimatorEvent>.Create(13);
+end;
+
+destructor TFrameAnimator.TAnimationDestroyer.Destroy;
+begin
+  FreeAndNil(FOnFinishs);
+  inherited;
+end;
+
+procedure TFrameAnimator.TAnimationDestroyer.DoAniFinished(Sender: TObject);
+begin
+  DoAniFinishedEx(Sender, True);
+end;
+
+
+procedure TFrameAnimator.TAnimationDestroyer.DoAniFinishedEx(Sender: TObject;
+  FreeSender: Boolean);
+var
+  Item: TFrameAnimatorEvent;
+  Key: Integer;
+begin
+  Key := Sender.GetHashCode;
+  if FOnFinishs.ContainsKey(Key) then begin
+    Item := FOnFinishs[Key];
+    FOnFinishs.Remove(Key);  // UI操作，默认是单线程，不作同步处理
+  end else begin
+    Item.OnFinish := nil;
+    Item.OnFinishA := nil;
+  end;
+  if FreeSender then
+    TAnimation(Sender).DisposeOf;
+  try
+    if Assigned(Item.OnFinish) then
+      Item.OnFinish(Sender);
+    if Assigned(Item.OnFinishA) then
+      Item.OnFinishA(Sender);
+  except
+  end;
+end;
+
 initialization
   FPublicState := TFrameState.Create(nil, True);
   FPublicState.Load;
 
 finalization
   FreeAndNil(FPublicState);
+  TFrameAnimator.Uninitialize;
 
 end.

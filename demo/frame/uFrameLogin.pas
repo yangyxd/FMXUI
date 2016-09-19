@@ -20,6 +20,7 @@ type
     edtUser: TEditView;
     edtPwd: TEditView;
     procedure ButtonView1Click(Sender: TObject);
+    procedure TextView1Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -70,6 +71,11 @@ procedure TFrmaeLogin.DoShow;
 begin
   inherited;
   tvTitle.Text := Title;
+end;
+
+procedure TFrmaeLogin.TextView1Click(Sender: TObject);
+begin
+  Finish;
 end;
 
 end.
