@@ -1,5 +1,5 @@
 object FrameMain: TFrameMain
-  Size.Width = 324.000000000000000000
+  Size.Width = 352.000000000000000000
   Size.Height = 569.000000000000000000
   Size.PlatformDefault = False
   object LinearLayout1: TLinearLayout
@@ -10,7 +10,7 @@ object FrameMain: TFrameMain
     Paddings = '0.0'
     Margin = '0.0'
     Gravity = None
-    Size.Width = 324.000000000000000000
+    Size.Width = 352.000000000000000000
     Size.Height = 50.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
@@ -70,11 +70,13 @@ object FrameMain: TFrameMain
       Background.Border.Color.Checked = claNull
       Background.Border.Color.Enabled = claNull
       Background.Border.Color.Activated = claNull
+      Clickable = True
       Paddings = '0.0'
       Margin = '0.0'
       Gravity = Center
       Weight = 1.000000000000000000
-      Size.Width = 224.000000000000000000
+      HitTest = True
+      Size.Width = 252.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       Position.X = 50.000000000000000000
@@ -122,7 +124,7 @@ object FrameMain: TFrameMain
       Size.Width = 50.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 274.000000000000000000
+      Position.X = 302.000000000000000000
       TabOrder = 3
       OnClick = TextView2Click
       AutoSize = False
@@ -152,11 +154,11 @@ object FrameMain: TFrameMain
   end
   object VertScrollBox1: TVertScrollBox
     Align = Client
-    Size.Width = 324.000000000000000000
+    Size.Width = 352.000000000000000000
     Size.Height = 519.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
-    Viewport.Width = 324.000000000000000000
+    Viewport.Width = 352.000000000000000000
     Viewport.Height = 519.000000000000000000
     object LinearLayout2: TLinearLayout
       Align = Top
@@ -169,7 +171,7 @@ object FrameMain: TFrameMain
       Padding.Top = 12.000000000000000000
       Padding.Right = 12.000000000000000000
       Padding.Bottom = 12.000000000000000000
-      Size.Width = 324.000000000000000000
+      Size.Width = 352.000000000000000000
       Size.Height = 89.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
@@ -196,8 +198,7 @@ object FrameMain: TFrameMain
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 24.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        HitTest = True
-        Size.Width = 300.000000000000000000
+        Size.Width = 328.000000000000000000
         Size.Height = 37.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -229,6 +230,29 @@ object FrameMain: TFrameMain
         Drawable.ItemActivated.ImageIndex = -1
       end
     end
+    object ListView1: TListView
+      ItemAppearanceClassName = 'TImageListItemBottomDetailAppearance'
+      ItemEditAppearanceClassName = 'TImageListItemBottomDetailShowCheckAppearance'
+      HeaderAppearanceClassName = 'TListHeaderObjects'
+      FooterAppearanceClassName = 'TListHeaderObjects'
+      Transparent = True
+      ItemIndex = 0
+      Align = Client
+      Size.Width = 352.000000000000000000
+      Size.Height = 430.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      ItemAppearanceObjects.ItemObjects.Text.Width = 225.000000000000000000
+      ItemAppearanceObjects.ItemObjects.Text.Height = 44.000000000000000000
+      ItemAppearanceObjects.ItemObjects.Text.PlaceOffset.X = 32.000000000000000000
+      ItemAppearanceObjects.ItemObjects.Detail.Width = 217.000000000000000000
+      ItemAppearanceObjects.ItemObjects.Detail.Height = 52.000000000000000000
+      ItemAppearanceObjects.ItemObjects.Detail.PlaceOffset.X = 32.000000000000000000
+      ItemAppearanceObjects.ItemObjects.Detail.PlaceOffset.Y = 8.000000000000000000
+      ItemAppearanceObjects.ItemObjects.Image.Width = 26.000000000000000000
+      ItemAppearanceObjects.ItemObjects.Image.Height = 26.000000000000000000
+      PullToRefresh = True
+    end
   end
   object ImageList1: TImageList
     Source = <
@@ -243,19 +267,19 @@ object FrameMain: TFrameMain
             PNG = {
               89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
               03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
-              017A494441545847D5984D4EC33010855347390751ABAA825295CB941E077193
-              72079620B16307DC002A251BB840943FF3269A8904382B9067F8246BEA89253F
-              BD3A13DBC95FE0BDCFD10E1439A54BDFF7DBBAAEDF20C853A43E3FD2013AE66D
-              DB3E9320A1EBBA3B7E1C1F38B2118784A2283AE4F73C242E987809879E58CB40
-              55551F9A827E3844207FC943E2828957D61C5A5B73E834E0D0BBAAA0A6695E59
-              CB08F27B84190F8B07263EB3E6D02AB486C00E4DC5A1F39043083B1E1217085A
-              4EBD65082A0E6DACADA1859535344C06415BB4439AA6174396C117FFD13977CB
-              DD68CCE0428E3AF49065D909E7D47170E8DA922002FF8EBB825347EE8F9465E9
-              F967744CAEA911880ABE7DC8EBD4270102A84E7DD973739DD2D92F09103055D1
-              757605023B66A7B20B1010DC2590300455C7D6138EA9AF315B3B4F8184595D63
-              B64E330204D0B9EF7B1DA3739FBA305B27640102E82EE17F38A67AEB2240C002
-              8EBDB0A601EC2CEEF9B11E1066EB264F809E1C0EDD50E4D42F48924F4F4E4C2E
-              D820410C0000000049454E44AE426082}
+              017A494441545847D5984D4EC33010855347390711555541A9DACB941E077193
+              72079620B163076C922D650B1788F267DE443391006705F20C9F644D3DB1E4A7
+              5767623BF90BBCF739DA8122A774E9FB7E53D7F511823C45EAF3231DA0E3B46D
+              DB671224745D77C78FE30347D6E29050144587FC9E87C405132FE0D0136B19A8
+              AAEA4353D00F8708E42F79485C30F1D29A432B6B0E9D051C7A5715D434CD2B6B
+              19417E8F30E361F1C0C4E7D61C5A86D610D8A1A9387411720861C743E202418B
+              A9B70C41C5A1B5B53534B7B28686C92068837648D3743B64197CF11F9D73B7DC
+              8DC60C2EE4A8430F59969D704E1D0787AE2D0922F0EFB82B38F5C6FD91B22C3D
+              FF8C8EC935350251C1B70F799DFA244000D5A92F7B6EAE533AFB250102A62ABA
+              CEAE4060C7EC5476010282BB041286A0EAD86AC231F535666BE7299030AB6BCC
+              D6694680003AF77DAF6374EE531766EB842C4000DD25FC0FC7546F5D040898C3
+              B117D634809DC53D3FD603C26CDDE409D093C3A11B8A9CFA0549F209B43A4BA7
+              2B3DDD940000000049454E44AE426082}
             FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_back.png'
           end>
         Name = 'btn_back'
@@ -299,6 +323,7 @@ object FrameMain: TFrameMain
       item
         MultiResBitmap.Height = 37
         MultiResBitmap.Width = 37
+        MultiResBitmap.LoadSize = 2
         MultiResBitmap = <
           item
             Width = 37
@@ -306,20 +331,21 @@ object FrameMain: TFrameMain
             PNG = {
               89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
               03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
-              01AA494441545847ED98BF4A034110877329142C24082A82069F4541DFC2DA58
-              D8A86FA2515B7B7B417D092DFC8720442B0B3B15BD3BFDC6FC229CDC297B9BAC
-              29EE836176670666D8CCED4DAEE6439AA633C8661CC7171F60DAF66657485848
-              3C9524C9B115F313B3E39F56683848BAA11A72C1BFA5D070F053DD2A7F2EF86F
-              14EA4C5DBA0C4DE92266A59DF129EA52BA88F02755AFD7DB34F4BBB619CC8E7F
-              4FDB70D0C8E3243F540B6530BBF915EA4C245D0AF28F216BC802321145D11372
-              8AB491678539E355540F4E6514354221EFC86BD75A51313C78353A0D3E895AE1
-              C95B429A34F93D7284ED807BEAF12B282414D1B06980775CCAFA1BDB9B9D6543
-              A1E1E094D62920EE9692C5ECE6576838C87BAD1A72C17FA550677C5EC8F3D245
-              CC493BE353D49D74111D69677CA6846D1A3AD13683D9F1EF681B0EDA66604F5F
-              BFEEA965C4EEA9CEBFDE531515050CE5E4D98F19BD852C22BD19FD04D9454ACF
-              E8A5E17406F66FA634245DE5A27C531D19CC8EBFA5D07090F85C35E482FF4CA1
-              E1283AA51EF85F14EA8CCF94F0D714F020ED8CCF94F0EBB702FCFB5A8683461E
-              BE2F79068907F0CDB356FB04986F4CBA9EE2E6760000000049454E44AE426082}
+              01B2494441545847ED98CD4AC34010C79B04143C481154042D3E8B82BE8567EB
+              C18BFA26B6EAD5BB77417D093D885F27BD491228AD8AF9D0FFD87F8448AA6CD2
+              8C39E407C3CECE0CEC30D95D26DB28421CC70B90DD2008AE3F808C32173B4374
+              C1C27351149D49323F113BFCF30CD5038BEE30874CE0DF63A81EF8540F5C3F13
+              F8EF186A8CCDD1985EAFD7A29A49BFDF5FA4AA471886572C4A26F05F32D498DC
+              95B26DBBEB795EC0690AB1C37FC8A91ED8C8D33865272C4C0AB18B9FA1C6581C
+              7381F5A7205B9015C88C65593EE402D285BC30CC98424925A02A931826904800
+              791B5A6B6AAA43A18D8E0D3E8B6103276F0D7A0B77D31336FA296CC7D09FBF82
+              3441224DE9065CD78DA17F2373760F4D86EA81CA6C238170984A1AB18B9FA17A
+              A00BB8650E99C07FC350638A7409CB5433190C064B54F5A864A51CC7D9473710
+              719A42ECF07738D503C528EDF48DEB9E5AE73DF5F8AFF7544DCD082AD9798EA3
+              476F435621498F7E0E3980E4EED17383EA94F637931B2CBA898BF29D79A4103B
+              FC6D86EA51E61F726E465529C1F7FD5786EA812EE0AF57977B861A53A44BF8F5
+              AD00FE23AA7A602357EF254FC0C225BC79361A9FFC51BACA93665DA300000000
+              49454E44AE426082}
             FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_top_more.png'
           end>
         Name = 'btn_top_more'
@@ -349,7 +375,60 @@ object FrameMain: TFrameMain
             SourceRect.Bottom = 37.000000000000000000
           end>
       end>
-    Left = 112
-    Top = 336
+    Left = 224
+    Top = 56
+  end
+  object PrototypeBindSource1: TPrototypeBindSource
+    AutoActivate = True
+    AutoPost = False
+    FieldDefs = <
+      item
+        Name = 'AlphaColor1'
+        FieldType = ftUInteger
+        Generator = 'AlphaColors'
+        ReadOnly = False
+      end
+      item
+        Name = 'BitmapName1'
+        Generator = 'BitmapNames'
+        ReadOnly = False
+      end
+      item
+        Name = 'BitmapName2'
+        Generator = 'BitmapNames'
+        ReadOnly = False
+      end
+      item
+        Name = 'Bitmap1'
+        FieldType = ftBitmap
+        Generator = 'Bitmaps'
+        ReadOnly = False
+      end>
+    ScopeMappings = <>
+    Left = 152
+    Top = 272
+  end
+  object BindingsList1: TBindingsList
+    Methods = <>
+    OutputConverters = <>
+    Left = 76
+    Top = 61
+    object LinkListControlToField1: TLinkListControlToField
+      Category = 'Quick Bindings'
+      DataSource = PrototypeBindSource1
+      FieldName = 'BitmapName1'
+      Control = ListView1
+      FillExpressions = <
+        item
+          SourceMemberName = 'BitmapName2'
+          ControlMemberName = 'Detail'
+        end
+        item
+          SourceMemberName = 'Bitmap1'
+          ControlMemberName = 'Bitmap'
+        end>
+      FillHeaderExpressions = <>
+      FillBreakGroups = <>
+    end
   end
 end

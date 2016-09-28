@@ -602,6 +602,7 @@ type
     FText: string;
     FAutoSize: Boolean;
     FIsSizeChange: Boolean;
+    FIsTextChange: Boolean;
     FIsEffectsChange: Boolean;
     FIsColorChange: Boolean;
     FLayout: TTextLayout;
@@ -644,6 +645,7 @@ type
 
     property IsColorChange: Boolean read FIsColorChange;
     property IsSizeChange: Boolean read FIsSizeChange;
+    property IsTextChange: Boolean read FIsTextChange;
     property IsEffectsChange: Boolean read FIsEffectsChange;
 
     property Text: string read FText write SetText;
@@ -665,13 +667,63 @@ type
   end;
 
   /// <summary>
+  /// 滚动动画控制器
+  /// </summary>
+  TScrollCalculations = class (TAniCalculations)
+  private
+    [Weak] FScrollView: TView;
+    FDownPoint: TPointF;
+    FLastBoundsAnimation: Boolean;
+  protected
+    procedure DoChanged; override;
+    procedure DoStart; override;
+    procedure DoStop; override;
+    procedure LimitsBounds;
+  public
+    constructor Create(AOwner: TPersistent); override;
+    procedure MouseDown(X, Y: Double);
+    procedure MouseUp(X, Y: Double);
+    property ScrollView: TView read FScrollView;
+    property DownPoint: TPointF read FDownPoint write FDownPoint;
+    property Shown;
+    property MouseTarget;
+    property MinTarget;
+    property MaxTarget;
+    property Target;
+  end;
+
+  TViewBase = class(TControl)
+  protected
+    function GetBackground: TDrawable; virtual;
+    function GetMaxHeight: Single; virtual;
+    function GetMaxWidth: Single; virtual;
+    function GetMinHeight: Single; virtual;
+    function GetMinWidth: Single; virtual;
+    function GetViewStates: TViewStates; virtual;
+    procedure SetBackgroundBase(const Value: TDrawable); virtual; abstract;
+    procedure SetMaxHeight(const Value: Single); virtual; abstract;
+    procedure SetMaxWidth(const Value: Single); virtual; abstract;
+    procedure SetMinHeight(const Value: Single); virtual; abstract;
+    procedure SetMinWidth(const Value: Single); virtual; abstract;
+    procedure SetViewStates(const Value: TViewStates); virtual; abstract;
+  public
+    property Background: TDrawable read GetBackground write SetBackgroundBase;
+    property MinWidth: Single read GetMinWidth write SetMinWidth;
+    property MinHeight: Single read GetMinHeight write SetMinHeight;
+    property MaxWidth: Single read GetMaxWidth write SetMaxWidth;
+    property MaxHeight: Single read GetMaxHeight write SetMaxHeight;
+    property ViewState: TViewStates read GetViewStates write SetViewStates;
+  end;
+
+  /// <summary>
   /// 基本视图
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
-  TView = class(TControl, IView)
+  TView = class(TViewBase, IView)
   const
     SmallChangeFraction = 5;
   private
+    FInvaliding: Boolean;
     function GetParentView: IViewGroup;
     function GetClickable: Boolean;
     procedure SetClickable(const Value: Boolean);
@@ -681,11 +733,6 @@ type
     procedure SetMargin(const Value: string);
     procedure SetWeight(const Value: Single);
     procedure SetOrientation(const Value: TOrientation);
-    function GetBackground: TDrawable;
-    procedure SetMaxHeight(const Value: Single);
-    procedure SetMaxWidth(const Value: Single);
-    procedure SetMinHeight(const Value: Single);
-    procedure SetMinWidth(const Value: Single);
     procedure SetAdjustViewBounds(const Value: Boolean);
     function GetLayout: TViewLayout;
     procedure SetLayout(const Value: TViewLayout);
@@ -695,10 +742,6 @@ type
     procedure SetWidthSize(const Value: TViewSize);
     function GetAdjustViewBounds: Boolean;
     function GetGravity: TLayoutGravity;
-    function GetMaxHeight: Single;
-    function GetMaxWidth: Single;
-    function GetMinHeight: Single;
-    function GetMinWidth: Single;
     function GetWeight: Single;
     function GetOrientation: TOrientation;
     function GetComponent: TComponent;
@@ -706,12 +749,25 @@ type
     function GetOpacity: Single;
     function GetParentControl: TControl;
     function GetPosition: TPosition;
-    function GetDrawState: TViewState;
     function GetViewRect: TRectF;
     function GetInVisible: Boolean;
     procedure SetInVisible(const Value: Boolean);
     procedure SetTempMaxHeight(const Value: Single);
     procedure SetTempMaxWidth(const Value: Single);
+    function GetViewRectD: TRectD;
+  protected
+    function GetMaxHeight: Single; override;
+    function GetMaxWidth: Single; override;
+    function GetMinHeight: Single; override;
+    function GetMinWidth: Single; override;
+    function GetViewStates: TViewStates; override;
+    function GetBackground: TDrawable; override;
+    procedure SetMaxHeight(const Value: Single); override;
+    procedure SetMaxWidth(const Value: Single); override;
+    procedure SetMinHeight(const Value: Single); override;
+    procedure SetMinWidth(const Value: Single); override;
+    procedure SetViewStates(const Value: TViewStates); override;
+    procedure SetBackgroundBase(const Value: TDrawable); override;
   protected
     FWeight: Single;
     FInVisible: Boolean;
@@ -731,7 +787,6 @@ type
     function IsDesignerControl(Control: TControl): Boolean;
     function IsAutoSize: Boolean; virtual;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; virtual;
-    function GetViewStates: TViewStates;
     procedure IncViewState(const State: TViewState); virtual;
     procedure DecViewState(const State: TViewState); virtual;
     procedure IncChildState(State: TViewState); virtual;  // 给所有子控件增加状态
@@ -750,6 +805,7 @@ type
   protected
     FAdjustViewBounds: Boolean;
     procedure Paint; override;
+    procedure AfterPaint; override;
     procedure Loaded; override;
     procedure ReadState(Reader: TReader); override;
     procedure DoOrientation; virtual;
@@ -757,6 +813,7 @@ type
     procedure DoWeight; virtual;
     procedure DoMaxSizeChange; virtual;
     procedure DoMinSizeChange; virtual;
+    procedure DoInVisibleChange; virtual;
     procedure DoBackgroundChanged(Sender: TObject); virtual;
     procedure DoEndUpdate; override;
     procedure HandleSizeChanged; override;
@@ -781,22 +838,25 @@ type
     function CreateBackground: TDrawable; virtual;
     function GetParentMaxWidth: Single;
     function GetParentMaxHeight: Single;
+    function GetDrawState: TViewState; virtual;
   protected
     FScrollbar: TViewScroll;
     FDisableMouseWheel: Boolean;
-    procedure SetScrollbar(const Value: TViewScroll);
+    procedure SetScrollbar(const Value: TViewScroll); virtual;
     function GetSceneScale: Single;
+    function GetAniCalculations: TScrollCalculations; virtual;
     procedure StartScrolling;
     procedure StopScrolling;
     procedure InternalAlign; virtual;
     procedure FreeScrollbar; virtual;
     procedure InitScrollbar; virtual;
     procedure SetDisableMouseWheel(const Value: Boolean);
-    procedure UpdateVScrollBar(const Value: Single; const ViewportSize: Single);
-    procedure UpdateHScrollBar(const Value: Single; const ViewportSize: Single);
+    procedure DoSetScrollBarValue(Scroll: TScrollBar; const Value, ViewportSize: Double); virtual;
+    procedure UpdateVScrollBar(const Value: Double; const ViewportSize: Double);
+    procedure UpdateHScrollBar(const Value: Double; const ViewportSize: Double);
     function GetVScrollBar: TScrollBar; virtual;
     function GetHScrollBar: TScrollBar; virtual;
-    function GetContentBounds: TRectF; virtual;
+    function GetContentBounds: TRectD; virtual;
   protected
     {$IFDEF ANDROID}
     FAudioManager: JAudioManager;
@@ -811,9 +871,14 @@ type
     /// 禁止鼠标滚动
     /// </summary>
     property DisableMouseWheel: Boolean read FDisableMouseWheel write SetDisableMouseWheel default False;
+    /// <summary>
+    /// 滚动动画控制器
+    /// </summary>
+    property AniCalculations: TScrollCalculations read GetAniCalculations;
+
     property HScrollBar: TScrollBar read GetHScrollBar;
     property VScrollBar: TScrollBar read GetVScrollBar;
-    property ContentBounds: TRectF read GetContentBounds;
+    property ContentBounds: TRectD read GetContentBounds;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -821,7 +886,8 @@ type
     procedure PlaySoundEffect(ASoundConstant: Integer);
     procedure PlayClickEffect(); virtual;
 
-    procedure SetBounds(X, Y, AWidth, AHeight: Single); override;
+    procedure Invalidate;
+
     procedure SetBackground(const Value: TDrawable); overload;
     procedure SetBackground(const Value: TAlphaColor); overload;
     procedure SetBackground(const Value: TGradient); overload;
@@ -835,6 +901,13 @@ type
     function FindStyleResource<T: TFmxObject>(const AStyleLookup: string; var AResource: T): Boolean; overload;
     function FindAndCloneStyleResource<T: TFmxObject>(const AStyleLookup: string; var AResource: T): Boolean;
 
+    { Rtti Function }
+    class function GetRttiValue(Instance: TObject; const Name: string): TValue; overload;
+    class function GetRttiValue<T>(Instance: TObject; const Name: string): T; overload;
+    class function GetRttiObject(Instance: TObject; const Name: string): TObject;
+    class procedure SetRttiValue(Instance: TObject; const Name: string; const Value: TValue); overload;
+    class procedure SetRttiValue<T>(Instance: TObject; const Name: string; const Value: T); overload;
+
     property ParentView: IViewGroup read GetParentView;
     /// <summary>
     /// 组件的布局方式。Horizontal，水平布局； Vertical，垂直布局。默认为Horizontal。
@@ -843,7 +916,7 @@ type
     /// <summary>
     /// 组件当前的状态
     /// </summary>
-    property ViewState: TViewStates read GetViewStates;
+    property ViewState;
     /// <summary>
     /// 组件当前的绘制状态
     /// </summary>
@@ -852,6 +925,7 @@ type
     /// 组件内容有效区域（返回减去Padding后的值）
     /// </summary>
     property ViewRect: TRectF read GetViewRect;
+    property ViewRectD: TRectD read GetViewRectD;
 
     /// <summary>
     /// 临时最大高度, 设置为0时，恢复原始的MaxHeight
@@ -877,7 +951,7 @@ type
     /// <summary>
     /// 视图背景。视图背景是一个TDrawable对象，可通过设置此属性的子项，来实现不同的显示效果，详见TDrawable的属性说明。
     /// </summary>
-    property Background: TDrawable read GetBackground write SetBackground;
+    property Background;
     /// <summary>
     /// 是否响应点击事件。同HitTest属性
     /// </summary>
@@ -913,19 +987,19 @@ type
     /// <summary>
     /// 组件的最小宽度。当AdjustViewBounds为True时有效。
     /// </summary>
-    property MinWidth: Single read GetMinWidth write SetMinWidth;
+    property MinWidth;
     /// <summary>
     /// 组件的最小高度。当AdjustViewBounds为True时有效。
     /// </summary>
-    property MinHeight: Single read GetMinHeight write SetMinHeight;
+    property MinHeight;
     /// <summary>
     /// 组件的最大宽度。当AdjustViewBounds为True时有效。
     /// </summary>
-    property MaxWidth: Single read GetMaxWidth write SetMaxWidth;
+    property MaxWidth;
     /// <summary>
     /// 组件的最大高度。当AdjustViewBounds为True时有效。
     /// </summary>
-    property MaxHeight: Single read GetMaxHeight write SetMaxHeight;
+    property MaxHeight;
     /// <summary>
     /// 组件本身作为容器时，内部的重力。也就是子组件的位于容器的位置。
     ///    LeftTop, 左上角;
@@ -1004,6 +1078,7 @@ type
     procedure DoGravity(); override;
     procedure DoMaxSizeChange; override;
     procedure DoMinSizeChange; override;
+    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1057,6 +1132,11 @@ type
 
 function GetTimestamp: Int64;
 function LerpColor(const A, B: TAlphaColor; T: Single): TAlphaColor;
+function GetPPI(Context: TFmxObject): Single;
+function RectD(const Left, Top, Right, Bottom: Double): TRectD; overload;
+function RectD(const R: TRectF): TRectD; overload;
+function OffsetRectD(var R: TRectD; const DX, DY: Double): Boolean;
+function GetRectF(const R: TRectD): TRectF;
 
 implementation
 
@@ -1069,6 +1149,7 @@ resourcestring
   SMustSameParent = '必须指定一个与当前组件所属视图中的同级兄弟组件';
   SLocateFailed = '存在循环引用';
   SRefOutLimitMax = '组件引用层级超过上限值: 256';
+  SUnsupportPropertyType = '不支持的属性类型.';
 
 {$IFDEF MSWINDOWS}
 type
@@ -1123,6 +1204,46 @@ begin
     CR.B := CA.B + Round((CB.B - CA.B) * T);
     CR.R := CA.R + Round((CB.R - CA.R) * T);
   end;
+end;
+
+function RectD(const Left, Top, Right, Bottom: Double): TRectD;
+begin
+  Result.Left := Left;
+  Result.Top := Top;
+  Result.Bottom := Bottom;
+  Result.Right := Right;
+end;
+
+function RectD(const R: TRectF): TRectD; overload;
+begin
+  Result.Left := R.Left;
+  Result.Top := R.Top;
+  Result.Bottom := R.Bottom;
+  Result.Right := R.Right;
+end;
+
+function OffsetRectD(var R: TRectD; const DX, DY: Double): Boolean;
+begin
+{$EXCESSPRECISION OFF}
+  if @R <> nil then // Test to increase compatiblity with Windows
+  begin
+    R.Left := R.Left + DX;
+    R.Right := R.Right + DX;
+    R.Top := R.Top + DY;
+    R.Bottom := R.Bottom + DY;
+    Result := True;
+  end
+  else
+    Result := False;
+{$EXCESSPRECISION ON}
+end;
+
+function GetRectF(const R: TRectD): TRectF;
+begin
+  Result.Left := R.Left;
+  Result.Top := R.Top;
+  Result.Right := R.Right;
+  Result.Bottom := R.Bottom;
 end;
 
 function ComponentStateToString(const State: TComponentState): string;
@@ -2373,7 +2494,49 @@ begin
   end;
 end;
 
+{ TViewBase }
+
+function TViewBase.GetBackground: TDrawable;
+begin
+  Result := nil;
+end;
+
+function TViewBase.GetMaxHeight: Single;
+begin
+  Result := 0;
+end;
+
+function TViewBase.GetMaxWidth: Single;
+begin
+  Result := 0;
+end;
+
+function TViewBase.GetMinHeight: Single;
+begin
+  Result := 0;
+end;
+
+function TViewBase.GetMinWidth: Single;
+begin
+  Result := 0;
+end;
+
+function TViewBase.GetViewStates: TViewStates;
+begin
+  Result := [];
+  if Self.FIsFocused then
+    Include(Result, TViewState.Focused);
+  if Self.Pressed then
+    Include(Result, TViewState.Pressed);
+end;
+
 { TView }
+
+procedure TView.AfterPaint;
+begin
+  inherited;
+  FInvaliding := False;
+end;
 
 function TView.AllowUseLayout: Boolean;
 begin
@@ -2507,6 +2670,10 @@ begin
   Repaint;
 end;
 
+procedure TView.DoInVisibleChange;
+begin
+end;
+
 procedure TView.DoLayoutChanged(Sender: TObject);
 begin
   HandleSizeChanged;
@@ -2525,7 +2692,7 @@ end;
 procedure TView.DoMouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
-  if (csDesigning in ComponentState) then Exit;
+  if FInVisible or (csDesigning in ComponentState) then Exit;
   if (TMouseButton.mbLeft = Button) and (Clickable or (not (Self is TViewGroup))) then begin
     IncViewState(TViewState.Pressed);
     if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
@@ -2535,7 +2702,7 @@ end;
 procedure TView.DoMouseEnter;
 begin
   inherited DoMouseEnter;
-  if (csDesigning in ComponentState) then Exit;
+  if FInVisible or (csDesigning in ComponentState) then Exit;
   IncViewState(TViewState.Hovered);
   if CanRePaintBk(Self, TViewState.Hovered) then Repaint;
 end;
@@ -2543,7 +2710,7 @@ end;
 procedure TView.DoMouseLeave;
 begin
   inherited DoMouseLeave;
-  if (csDesigning in ComponentState) then Exit;
+  if FInVisible or (csDesigning in ComponentState) then Exit;
   DecViewState(TViewState.Hovered);
   if CanRePaintBk(Self, TViewState.Hovered) then Repaint;
 end;
@@ -2551,7 +2718,7 @@ end;
 procedure TView.DoMouseUp(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
-  if (csDesigning in ComponentState) then Exit;
+  if FInVisible or (csDesigning in ComponentState) then Exit;
   if (TMouseButton.mbLeft = Button) and (Clickable or (not (Self is TViewGroup))) then begin
     DecViewState(TViewState.Pressed);
     if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
@@ -2573,9 +2740,9 @@ begin
   Result := ComponentState;
 end;
 
-function TView.GetContentBounds: TRectF;
+function TView.GetContentBounds: TRectD;
 begin
-  Result := TRectF.Empty;
+  Result := TRectD.Empty;
 end;
 
 function TView.GetDrawState: TViewState;
@@ -2731,6 +2898,12 @@ begin
     Width - Padding.Right, Height - Padding.Bottom);
 end;
 
+function TView.GetViewRectD: TRectD;
+begin
+  Result := RectD(Padding.Left, Padding.Top,
+    Width - Padding.Right, Height - Padding.Bottom);
+end;
+
 function TView.GetViewStates: TViewStates;
 begin
   Result := FViewState;
@@ -2751,6 +2924,92 @@ begin
   if Assigned(FLayout) then
     Result := FLayout.FWidth
   else Result := TViewSize.CustomSize;
+end;
+
+class procedure TView.SetRttiValue(Instance: TObject; const Name: string; const Value: TValue);
+var
+  FType: TRttiType;
+  FFiled: TRttiField;
+  FContext: TRttiContext;
+begin
+  FContext := TRttiContext.Create;
+  try
+    FType := FContext.GetType(Instance.ClassType);
+    FFiled := FType.GetField(Name);
+    if Assigned(FFiled) then
+      FFiled.SetValue(Instance, Value);
+  finally
+    FContext.Free;
+  end;
+end;
+
+class procedure TView.SetRttiValue<T>(Instance: TObject; const Name: string;
+  const Value: T);
+var
+  FType: TRttiType;
+  FFiled: TRttiField;
+  FContext: TRttiContext;
+begin
+  FContext := TRttiContext.Create;
+  try
+    FType := FContext.GetType(Instance.ClassType);
+    FFiled := FType.GetField(Name);
+    if not Assigned(FFiled) then Exit;
+    if FFiled.FieldType.TypeKind <> PTypeInfo(TypeInfo(T)).Kind then
+      Exit;
+    FFiled.SetValue(Instance, TValue.From(Value));
+  finally
+    FContext.Free;
+  end;
+end;
+
+class function TView.GetRttiValue(Instance: TObject; const Name: string): TValue;
+var
+  FType: TRttiType;
+  FFiled: TRttiField;
+  FContext: TRttiContext;
+begin
+  FContext := TRttiContext.Create;
+  try
+    FType := FContext.GetType(Instance.ClassType);
+    FFiled := FType.GetField(Name);
+    if Assigned(FFiled) then
+      Result := FFiled.GetValue(Instance)
+    else
+      Result := nil;
+  finally
+    FContext.Free;
+  end;
+end;
+
+class function TView.GetRttiValue<T>(Instance: TObject; const Name: string): T;
+var
+  FType: TRttiType;
+  FFiled: TRttiField;
+  FContext: TRttiContext;
+begin
+  FContext := TRttiContext.Create;
+  try
+    FType := FContext.GetType(Instance.ClassType);
+    FFiled := FType.GetField(Name);
+    if not Assigned(FFiled) then  
+      Result := T(nil)
+    else
+      Result := FFiled.GetValue(Instance).AsType<T>();
+  finally
+    FContext.Free;
+  end;
+end;
+
+class function TView.GetRttiObject(Instance: TObject; const Name: string): TObject;
+var
+  V: TValue;
+begin
+  V := GetRttiValue(Instance, Name);
+  if (V.IsEmpty) or (not V.IsObject) then
+    Result := nil
+  else
+    Result := V.AsObject;
 end;
 
 procedure TView.HandleSizeChanged;
@@ -2799,6 +3058,15 @@ end;
 
 procedure TView.InternalAlign;
 begin
+end;
+
+procedure TView.Invalidate;
+begin
+  if not FInvaliding then
+  begin
+    InvalidateRect(LocalRect);
+    FInvaliding := True;
+  end;
 end;
 
 {$IFDEF ANDROID}
@@ -2850,6 +3118,11 @@ begin
   Result := FAdjustViewBounds;
 end;
 
+function TView.GetAniCalculations: TScrollCalculations;
+begin
+  Result := nil;
+end;
+
 function TView.GetBackground: TDrawable;
 begin
   if not Assigned(FBackground) then
@@ -2881,6 +3154,21 @@ end;
 
 procedure TView.DoRecalcSize(var AWidth, AHeight: Single);
 begin
+end;
+
+procedure TView.DoSetScrollBarValue(Scroll: TScrollBar; const Value, ViewportSize: Double);
+begin
+  //Scroll.ValueRange.Min := Min(Value, ContentBounds.Top);
+  //Scroll.ValueRange.Max := Max(Value + ViewportSize, ContentBounds.Bottom);
+  if FScrollbar = TViewScroll.Vertical then begin
+    Scroll.ValueRange.Min := Min(Value, ContentBounds.Top);
+    Scroll.ValueRange.Max := Max(Value + ViewportSize, ContentBounds.Bottom);
+  end else begin
+    Scroll.ValueRange.Min := Min(Value, ContentBounds.Left);
+    Scroll.ValueRange.Max := Max(Value + ViewportSize, ContentBounds.Right);
+  end;
+  Scroll.ValueRange.ViewportSize := ViewportSize;
+  Scroll.Value := Value;
 end;
 
 function TView.DoSetSize(const ASize: TControlSize;
@@ -2944,17 +3232,17 @@ begin
     FDrawing := True;
     try
       PaintBackground();
+      if (csDesigning in ComponentState) and not Locked then
+        DrawDesignBorder;
     finally
       FDrawing := False;
     end;
   end;
-  if (csDesigning in ComponentState) and not Locked then
-    DrawDesignBorder;
 end;
 
 procedure TView.PaintBackground;
 begin
-  if Assigned(FBackground) then
+  if Assigned(FBackground) and (FInVisible = False) then
     FBackground.Draw(Canvas);
 end;
 
@@ -3009,9 +3297,9 @@ begin
   FBackground.SetBitmap(TViewState.None, Value);
 end;
 
-procedure TView.SetBounds(X, Y, AWidth, AHeight: Single);
+procedure TView.SetBackgroundBase(const Value: TDrawable);
 begin
-  inherited SetBounds(X, Y, AWidth, AHeight);
+  SetBackground(Value);
 end;
 
 procedure TView.SetBackground(const Value: TAlphaColor);
@@ -3066,6 +3354,7 @@ procedure TView.SetInVisible(const Value: Boolean);
 begin
   if FInVisible <> Value then begin
     FInVisible := Value;
+    DoInVisibleChange;
     if Visible then
       Repaint;
   end;
@@ -3178,6 +3467,11 @@ begin
   end;
 end;
 
+procedure TView.SetViewStates(const Value: TViewStates);
+begin
+  FViewState := Value;
+end;
+
 procedure TView.SetWeight(const Value: Single);
 begin
   if FWeight <> Value then begin
@@ -3208,37 +3502,37 @@ begin
     Scene.ChangeScrollingState(nil, False);
 end;
 
-procedure TView.UpdateHScrollBar(const Value, ViewportSize: Single);
+procedure TView.UpdateHScrollBar(const Value, ViewportSize: Double);
+var
+  AScroll: TScrollBar;
 begin
-  if HScrollBar <> nil then
+  AScroll := HScrollBar;
+  if AScroll <> nil then
   begin
-    HScrollBar.ValueRange.BeginUpdate;
+    AScroll.ValueRange.BeginUpdate;
     try
-      HScrollBar.ValueRange.Min := Min(Value, ContentBounds.Left);
-      HScrollBar.ValueRange.Max := Max(Value + ViewportSize, ContentBounds.Right);
-      HScrollBar.ValueRange.ViewportSize := ViewportSize;
-      HScrollBar.Value := Value;
+      DoSetScrollBarValue(AScroll, Value, ViewportSize);
     finally
-      HScrollBar.ValueRange.EndUpdate;
+      AScroll.ValueRange.EndUpdate;
     end;
-    HScrollBar.SmallChange := HScrollBar.ViewportSize / SmallChangeFraction;
+    AScroll.SmallChange := AScroll.ViewportSize / SmallChangeFraction;
   end;
 end;
 
-procedure TView.UpdateVScrollBar(const Value, ViewportSize: Single);
+procedure TView.UpdateVScrollBar(const Value, ViewportSize: Double);
+var
+  AScroll: TScrollBar;
 begin
-  if VScrollBar <> nil then
+  AScroll := VScrollBar;
+  if AScroll <> nil then
   begin
-    VScrollBar.ValueRange.BeginUpdate;
+    AScroll.ValueRange.BeginUpdate;
     try
-      VScrollBar.ValueRange.Min := Min(Value, ContentBounds.Top);
-      VScrollBar.ValueRange.Max := Max(Value + ViewportSize, ContentBounds.Bottom);
-      VScrollBar.ValueRange.ViewportSize := ViewportSize;
-      VScrollBar.Value := Value;
+      DoSetScrollBarValue(AScroll, Value, ViewportSize);
     finally
-      VScrollBar.ValueRange.EndUpdate;
+      AScroll.ValueRange.EndUpdate;
     end;
-    VScrollBar.SmallChange := VScrollBar.ViewportSize / SmallChangeFraction;
+    AScroll.SmallChange := AScroll.ViewportSize / SmallChangeFraction;
   end;
 end;
 
@@ -3307,10 +3601,10 @@ begin
     // 实现了 IView 接口
     if AParentOrientation = TOrientation.Horizontal then
       // 当父级线性布局组件为水平方向时，高度随父组则需要调整高度
-      Result := (View.GetHeightSize = TViewSize.FillParent) or (View.Weight > 0)
+      Result := (View.GetHeightSize = TViewSize.FillParent)
     else
       // 当父组线性布局组件为垂直方向时，判断是否需要调整宽度
-      Result := (View.GetWidthSize = TViewSize.FillParent) or (View.Weight > 0);
+      Result := (View.GetWidthSize = TViewSize.FillParent);
   end else if (Align = TAlignLayout.None) or (Align = TAlignLayout.Scale) then
     // Align 不会调整大小
     Result := False
@@ -3333,6 +3627,12 @@ end;
 function TViewGroup.RemoveView(View: TView): Integer;
 begin
   Result := Controls.Remove(View);
+end;
+
+procedure TViewGroup.Resize;
+begin
+  inherited Resize;
+  Realign;
 end;
 
 { TLinearLayout }
@@ -3682,7 +3982,8 @@ var
   IsAW, IsAH, IsASW, IsASH: Boolean;
   V: Single;
 begin
-  if IsUpdating or (csDestroying in ComponentState) then
+  //if IsUpdating or (csDestroying in ComponentState) then
+  if (csDestroying in ComponentState) then
     Exit;
   if not Assigned(ParentView) then begin
     P := ParentControl;
@@ -3705,6 +4006,10 @@ begin
         else
           AWidth := Padding.Left + Padding.Right;
       end;
+    end else begin
+      IsASW := ((WidthSize = TViewSize.WrapContent)) and (FOrientation = TOrientation.Vertical);
+      if IsASW then
+        AWidth := 0;
     end;
 
     // 垂直方向
@@ -3717,22 +4022,42 @@ begin
           AHeight := P.Height - P.Padding.Top - P.Padding.Bottom - Margins.Top - Margins.Bottom
         else
           AHeight := Padding.Top + Padding.Bottom;
-      end;
+      end
+    end else begin
+      IsASH := ((HeightSize = TViewSize.WrapContent)) and (FOrientation = TOrientation.Horizontal);
+      if IsASH then
+        AHeight := 0;
     end;
 
     // 如果有需要自动大小的，则将子控件大小加起来
-    if IsAW or IsAH then begin
+    if IsAW or IsAH or IsASW or IsASH then begin
       for I := 0 to ChildrenCount - 1 do begin
         Control := Controls[I];
         {$IFDEF MSWINDOWS}
         if IsDesignerControl(Control) then Continue;
         {$ENDIF}
         if not Control.Visible then Continue;
+
         if IsAW then
-          AWidth := AWidth + Control.Width + Control.Margins.Left + Control.Margins.Right;
+          AWidth := AWidth + Control.Width + Control.Margins.Left + Control.Margins.Right
+        else if IsASW then begin
+          V := Control.Position.X + Control.Width + Control.Margins.Right;
+          if V > AWidth then
+            AWidth := V;
+        end;
+
         if IsAH then
-          AHeight := AHeight + Control.Height + Control.Margins.Top + Control.Margins.Bottom;
+          AHeight := AHeight + Control.Height + Control.Margins.Top + Control.Margins.Bottom
+        else if IsASH then begin
+          V := Control.Position.Y + Control.Height + Control.Margins.Bottom;
+          if V > AHeight then
+            AHeight := V;
+        end;
       end;
+
+      if IsASW then AWidth := AWidth + Padding.Left + Padding.Right;
+      if IsASH then AHeight := AHeight + Padding.Top + Padding.Bottom;
+
     end;
 
   end else begin
@@ -3753,7 +4078,7 @@ begin
 
     // 如果有需要自动大小的，则将子控件大小加起来
     if IsAW or IsAH then begin
-      for I := 0 to ChildrenCount - 1 do begin
+      for I := 0 to ControlsCount - 1 do begin
         Control := Controls[I];
         {$IFDEF MSWINDOWS}
         if IsDesignerControl(Control) then Continue;
@@ -4413,9 +4738,12 @@ begin
     if LText.IsEmpty then begin
       Size.Width := 0;
     end else begin
-      Size.Width := RoundToScale(FLayout.Width + FLayout.TextRect.Left * 2 + FLayout.Font.Size / 3, SceneScale);
+      Size.Width := RoundToScale(FLayout.Width + FLayout.TextRect.Left * 2 + FLayout.Font.Size * 0.334, SceneScale);
     end;
-    Size.Height := RoundToScale(FLayout.Height, SceneScale);
+    Size.Height := RoundToScale(FLayout.Height + FLayout.TextRect.Top * 2 + FLayout.Font.Size * 0.334, SceneScale);
+    {$IFNDEF MSWINDOWS}
+    Size.Height := Size.Height + FLayout.Font.Size * 0.6;
+    {$ENDIF}
     if Margins <> nil then begin
       Size.Width := Size.Width + Margins.Left + Margins.Right;
       Size.Height := Size.Height + Margins.Top + Margins.Bottom;
@@ -4693,6 +5021,7 @@ procedure TTextSettings.SetText(const Value: string);
 begin
   if FText <> Value then begin
     FText := Value;
+    FIsTextChange := True;
     if FAutoSize then FIsSizeChange := True;
     DoTextChanged;
   end;
@@ -5060,6 +5389,63 @@ begin
     if Assigned(OnChanged) then
       OnChanged(Self);
   end;
+end;
+
+{ TScrollCalculations }
+
+constructor TScrollCalculations.Create(AOwner: TPersistent);
+begin
+  if not (AOwner is TView) then
+    raise EArgumentException.Create('Argument Invalid.');
+  inherited Create(AOwner);
+  FScrollView := TView(AOwner);
+end;
+
+procedure TScrollCalculations.DoChanged;
+begin
+  if (FScrollView <> nil) and not (csDestroying in FScrollView.ComponentState) then begin
+    FScrollView.InternalAlign;
+    LimitsBounds;
+  end;
+  inherited;
+end;
+
+procedure TScrollCalculations.DoStart;
+begin
+  inherited;
+  FLastBoundsAnimation := BoundsAnimation;
+  if (FScrollView <> nil) and not (csDestroying in FScrollView.ComponentState) then
+    FScrollView.StartScrolling;
+end;
+
+procedure TScrollCalculations.DoStop;
+begin
+  inherited;
+  BoundsAnimation := FLastBoundsAnimation;
+  if (FScrollView <> nil) and not (csDestroying in FScrollView.ComponentState) then
+    FScrollView.StopScrolling;
+end;
+
+procedure TScrollCalculations.LimitsBounds;
+begin
+  if not Down then begin
+    if (ViewportPosition.Y < 0) or (ViewportPosition.Y > MaxTarget.Point.Y) then
+      // 临时设置为不允许超过边界, 防止因为速率过快，回弹后又反向滚动
+      // 使用 Rtti 方式直接修改，防止触发相应的处理过程
+      TView.SetRttiValue(Self, 'FBoundsAnimation', False);
+  end;
+end;
+
+procedure TScrollCalculations.MouseDown(X, Y: Double);
+begin
+  FDownPoint := PointF(X, Y);
+  inherited MouseDown(X, Y);
+end;
+
+procedure TScrollCalculations.MouseUp(X, Y: Double);
+begin
+  inherited MouseUp(X, Y);
+  LimitsBounds;
 end;
 
 initialization

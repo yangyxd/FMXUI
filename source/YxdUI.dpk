@@ -41,12 +41,15 @@ contains
   UI.Dialog in 'UI.Dialog.pas',
   UI.Edit in 'UI.Edit.pas',
   UI.Frame in 'UI.Frame.pas',
-  UI.ListView in 'UI.ListView.pas',
+  UI.ListViewEx in 'UI.ListViewEx.pas',
   UI.Reg in 'UI.Reg.pas',
   UI.Standard in 'UI.Standard.pas',
   UI.Toast.Android in 'UI.Toast.Android.pas',
   UI.Toast.AndroidLike in 'UI.Toast.AndroidLike.pas',
   UI.Toast in 'UI.Toast.pas',
-  UI.Design.Bounds in 'UI.Design.Bounds.pas' {BoundsDesigner};
+  UI.Design.Bounds in 'UI.Design.Bounds.pas' {BoundsDesigner},
+  UI.ListView in 'UI.ListView.pas',
+  UI.Utils.ArrayEx in 'UI.Utils.ArrayEx.pas';
 
 end.
+

@@ -150,6 +150,7 @@ begin
   FText.Background.XRadius := 15;
   FText.Background.YRadius := 15;
   FText.TextSettings.Color.Default := $fff0f0f0;
+  FText.TextSettings.WordWrap := True;
   FText.WidthSize := TViewSize.WrapContent;
   FText.HeightSize := TViewSize.WrapContent;
   FText.AutoSize := True;

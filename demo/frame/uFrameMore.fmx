@@ -1,5 +1,5 @@
 object FrameMore: TFrameMore
-  Size.Width = 320.000000000000000000
+  Size.Width = 342.000000000000000000
   Size.Height = 576.000000000000000000
   Size.PlatformDefault = False
   object LinearLayout1: TLinearLayout
@@ -10,7 +10,7 @@ object FrameMore: TFrameMore
     Paddings = '0.0'
     Margin = '0.0'
     Gravity = None
-    Size.Width = 320.000000000000000000
+    Size.Width = 342.000000000000000000
     Size.Height = 50.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
@@ -74,7 +74,7 @@ object FrameMore: TFrameMore
       Gravity = Center
       Weight = 1.000000000000000000
       Margins.Right = 50.000000000000000000
-      Size.Width = 220.000000000000000000
+      Size.Width = 242.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       Position.X = 50.000000000000000000
@@ -106,11 +106,11 @@ object FrameMore: TFrameMore
   end
   object VertScrollBox1: TVertScrollBox
     Align = Client
-    Size.Width = 320.000000000000000000
+    Size.Width = 342.000000000000000000
     Size.Height = 526.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
-    Viewport.Width = 320.000000000000000000
+    Viewport.Width = 342.000000000000000000
     Viewport.Height = 526.000000000000000000
     object LinearLayout2: TLinearLayout
       Align = Top
@@ -123,8 +123,8 @@ object FrameMore: TFrameMore
       Padding.Top = 12.000000000000000000
       Padding.Right = 12.000000000000000000
       Padding.Bottom = 12.000000000000000000
-      Size.Width = 320.000000000000000000
-      Size.Height = 104.000000000000000000
+      Size.Width = 342.000000000000000000
+      Size.Height = 262.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
       Orientation = Vertical
@@ -144,7 +144,7 @@ object FrameMore: TFrameMore
         HeightSize = WrapContent
         Gravity = None
         Size.Width = 192.000000000000000000
-        Size.Height = 80.000000000000000000
+        Size.Height = 84.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 12.000000000000000000
@@ -172,6 +172,126 @@ object FrameMore: TFrameMore
         Drawable.ItemEnabled.ImageIndex = -1
         Drawable.ItemActivated.ImageIndex = -1
       end
+      object LinearLayout3: TLinearLayout
+        Align = Client
+        Background.Paddings = '0.0'
+        Paddings = '12.0'
+        Margin = '0.0'
+        WidthSize = FillParent
+        HeightSize = WrapContent
+        Gravity = None
+        Padding.Left = 12.000000000000000000
+        Padding.Top = 12.000000000000000000
+        Padding.Right = 12.000000000000000000
+        Padding.Bottom = 12.000000000000000000
+        Size.Width = 318.000000000000000000
+        Size.Height = 154.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        Orientation = Vertical
+        object ButtonView1: TButtonView
+          Background.Paddings = '0.0'
+          Background.ItemDefault.Color = claOlivedrab
+          Background.ItemPressed.Color = claOlive
+          Background.Border.Color.Default = claOlive
+          Background.Border.Color.Pressed = claOlive
+          Background.Border.Color.Focused = xEFCCCCCC
+          Background.Border.Color.Hovered = xEFCCCCCC
+          Background.Border.Color.Selected = claNull
+          Background.Border.Color.Checked = xEFCCCCCC
+          Background.Border.Color.Enabled = claNull
+          Background.Border.Color.Activated = xEFCCCCCC
+          Paddings = '4.0'
+          WidthSize = FillParent
+          Padding.Left = 4.000000000000000000
+          Padding.Top = 4.000000000000000000
+          Padding.Right = 4.000000000000000000
+          Padding.Bottom = 4.000000000000000000
+          Margins.Top = 24.000000000000000000
+          Margins.Bottom = 4.000000000000000000
+          Size.Width = 294.000000000000000000
+          Size.Height = 37.000000000000000000
+          Size.PlatformDefault = False
+          Position.X = 12.000000000000000000
+          Position.Y = 36.000000000000000000
+          TabOrder = 1
+          OnClick = ButtonView1Click
+          AutoSize = False
+          Text = 'Dialog Test'
+          TextSettings.AutoSize = False
+          TextSettings.Color.Default = claWhite
+          TextSettings.Color.Pressed = claNull
+          TextSettings.Color.Focused = claNull
+          TextSettings.Color.Hovered = claNull
+          TextSettings.Color.Selected = claNull
+          TextSettings.Color.Checked = claNull
+          TextSettings.Color.Enabled = claNull
+          TextSettings.Color.Activated = claNull
+          TextSettings.Color.HintText = claGray
+          TextSettings.Font.Size = 16.000000000000000000
+          TextSettings.PrefixStyle = HidePrefix
+          TextSettings.Gravity = Center
+          Drawable.ItemDefault.ImageIndex = 0
+          Drawable.ItemPressed.ImageIndex = -1
+          Drawable.ItemFocused.ImageIndex = -1
+          Drawable.ItemHovered.ImageIndex = -1
+          Drawable.ItemSelected.ImageIndex = -1
+          Drawable.ItemChecked.ImageIndex = -1
+          Drawable.ItemEnabled.ImageIndex = -1
+          Drawable.ItemActivated.ImageIndex = -1
+        end
+        object ButtonView2: TButtonView
+          Background.Paddings = '0.0'
+          Background.ItemDefault.Color = claMediumslateblue
+          Background.ItemPressed.Color = claMediumblue
+          Background.Border.Color.Default = claOlive
+          Background.Border.Color.Pressed = claOlive
+          Background.Border.Color.Focused = xEFCCCCCC
+          Background.Border.Color.Hovered = xEFCCCCCC
+          Background.Border.Color.Selected = claNull
+          Background.Border.Color.Checked = xEFCCCCCC
+          Background.Border.Color.Enabled = claNull
+          Background.Border.Color.Activated = xEFCCCCCC
+          Paddings = '4.0'
+          WidthSize = FillParent
+          Padding.Left = 4.000000000000000000
+          Padding.Top = 4.000000000000000000
+          Padding.Right = 4.000000000000000000
+          Padding.Bottom = 4.000000000000000000
+          Margins.Top = 24.000000000000000000
+          Margins.Bottom = 4.000000000000000000
+          Size.Width = 294.000000000000000000
+          Size.Height = 37.000000000000000000
+          Size.PlatformDefault = False
+          Position.X = 12.000000000000000000
+          Position.Y = 101.000000000000000000
+          TabOrder = 0
+          OnClick = ButtonView2Click
+          AutoSize = False
+          Text = 'ListView Test'
+          TextSettings.AutoSize = False
+          TextSettings.Color.Default = claWhite
+          TextSettings.Color.Pressed = claNull
+          TextSettings.Color.Focused = claNull
+          TextSettings.Color.Hovered = claNull
+          TextSettings.Color.Selected = claNull
+          TextSettings.Color.Checked = claNull
+          TextSettings.Color.Enabled = claNull
+          TextSettings.Color.Activated = claNull
+          TextSettings.Color.HintText = claGray
+          TextSettings.Font.Size = 16.000000000000000000
+          TextSettings.PrefixStyle = HidePrefix
+          TextSettings.Gravity = Center
+          Drawable.ItemDefault.ImageIndex = 0
+          Drawable.ItemPressed.ImageIndex = -1
+          Drawable.ItemFocused.ImageIndex = -1
+          Drawable.ItemHovered.ImageIndex = -1
+          Drawable.ItemSelected.ImageIndex = -1
+          Drawable.ItemChecked.ImageIndex = -1
+          Drawable.ItemEnabled.ImageIndex = -1
+          Drawable.ItemActivated.ImageIndex = -1
+        end
+      end
     end
   end
   object ImageList1: TImageList
@@ -187,19 +307,19 @@ object FrameMore: TFrameMore
             PNG = {
               89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
               03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
-              017A494441545847D5984D4EC33010855347390751ABAA825295CB941E077193
-              72079620B16307DC00AA64051788F267DE443391006705F20C9F644D3DB1E4A7
-              5767623BF90BBCF739DA8122A774E9FB7E5BD7F51B04798AD4E7473A40C7BC6D
-              DB671224745D77C78FE3034736E29050144587FC9E87C405132FE1D0136B19A8
-              AAEA4353D00F8708E42F79485C30F1CA9A436B6B0E9D061C7A5715D434CD2B6B
-              19417E8F30E361F1C0C467D61C5A85D610D8A1A938741E720861C743E20241CB
-              A9B70C41C5A18DB535B4B0B28686C920688B7648D3F462C832F8E23F3AE76EB9
-              1B8D195CC851871EB22C3BE19C3A0E0E5D5B1244E0DF715770EAC8FD91B22C3D
+              017A494441545847D5984D4EC33010855347390711555541A9DACB941E077193
+              72079620B163076C930D650B1788F267DE443391006705F20C9F644D3DB1E4A7
+              5767623BF90BBCF739DA8122A774E9FB7E53D7F511823C45EAF3231DA0E3B46D
+              DB671224745D77C78FE30347D6E29050144587FC9E87C405132FE0D0136B19A8
+              AAEA4353D00F8708E42F79485C30F1D29A432B6B0E9D051C7A5715D434CD2B6B
+              19417E8F30E361F1C0C4E7D61C5A86D610D8A1A9387411720861C743E202418B
+              A9B70C41C5A1B5B53534B7B28686C92068837648D3743B64197CF11F9D73B7DC
+              8DC60C2EE4A8430F59969D704E1D0787AE2D0922F0EFB82B38F5C6FD91B22C3D
               FF8C8EC935350251C1B70F799DFA244000D5A92F7B6EAE533AFB250102A62ABA
-              CEAE4060C7EC5476010282BB041286A0EAD87AC231F535666BE7299030AB6BCC
-              D6694680003AF77DAF6374EE531766EB842C4000DD25FC0FC7546F5D040858C0
-              B117D634809DC53D3FD603C26CDDE409D093C3A11B8A9CFA0549F209EF994C25
-              B7858DF30000000049454E44AE426082}
+              CEAE4060C7EC5476010282BB041286A0EAD86AC231F535666BE7299030AB6BCC
+              D6694680003AF77DAF6374EE531766EB842C4000DD25FC0FC7546F5D040898C3
+              B117D634809DC53D3FD603C26CDDE409D093C3A11B8A9CFA0549F20932F04BCB
+              2EB5D0230000000049454E44AE426082}
             FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_back.png'
           end>
         Name = 'btn_back'
@@ -251,21 +371,21 @@ object FrameMore: TFrameMore
             PNG = {
               89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
               03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
-              01B2494441545847ED98BD4A034110C773092858481054040D3E8B82BE85B5B1
-              B051DF44A3B6F6F682FA125AF88520442B0B3B15EF437F63FE114EEE94BD336B
-              8AFBC130BB3303336CE6F626572B43922433C866188617EF60DAF66657885F48
-              3C15C7F1B115F31DB3E39F56A83F48BAA11A32C1BFA5507FF053DD2A7F26F86F
-              14EA4C5DBA082DE93C66A59D295C541004975A6682DFFF49D5EBF54E1445A1B6
-              29CC8E7F4F5B7FD0C8E33C65876AA1146637BF429D09A40B41FE31640D594026
-              F8C99E9053A4833C2BCC995245F5E154465123141222AF3D6B45C5F050AAD169
-              F049D40A4FDE12EB1677D33D8D7E84ED80F5E367904F28A469D300EFB884F517
-              B6D7F4D054A83F3899750A887AA5A431BBF915EA0F125FAB864CF05F29D49932
-              53C2BC741E73D2CE9429EA4E3A8FAEB433858B6A341ADB4C03B1B629CC8E7F47
-              5B7FD036037BFAFEEA9E5AD63DD5FDD77BAAA22287A19C3CFF62466F238B487F
-              463F417691C2337A61389D81FD9B290C4957B928DF54470AB3E36F2BD41FBC4A
-              CE554326F8CF14EA8FBC53EA83FF45A1CE9499127E9B021EA49D293325FCF8AD
-              00FFBE96FEA09187EF4B9E41E2017CF3ACD53E007AD74C8A11B5096D00000000
-              49454E44AE426082}
+              01BB494441545847ED98BF4AC44010C6F3071452C821A8087AF82C0AFA16D69E
+              858DFA267A6A6B6F2FA82FA185A808C26965214911C5FCD16FBC2F4264EF6037
+              9735457E30ECEC7C033B6C36CB244E15F23C5F84ED254972FB056494B9C49962
+              172C3C9F65D98514F31789435F60AA3DB0E82E6B50027D9FA9F6C0A37AE4FA4A
+              A03F30551B8FA336711C77E92A81BE44D71E699ADE70539440BF66AA36C63BE5
+              795E3F8AA284D31212877ECCA93D709067F0969D71634A485C74A66AE3723402
+              EB07B06DD82A6CD675DD37D815AC0F8B99A64DA5A20AB02BD318A6504802FB18
+              465B5A9A43A5838E033E8761136FDE3AFC2EEEA6671CF473C44EE1BFFE24D904
+              8574A41B08C33087FF8BCCD93D74986A0FECCC0E0A4887A59491B8E84CB507BA
+              807BD6A004FA1D53B5A9D225ACD055027D99AE36C6450541F0445709F4015D6D
+              8C8BF27DFF00DD40C6690989433FE4D41E3836B5BD7D93BAA736784F0DFEF59E
+              6A691941233BCF49F4E83DD81AACE8D12F614730E31EDD18EC4E6D5F33C660D1
+              2D5C949FACA384C4A1F7986A8F3ABF908D19B54B05D0DF99AA4D952E616C1700
+              FD85AE3655BA84B1FF0AA09FD0B5070E72F3FEE40958B8867F9E8EF30DFF5578
+              9C36E020B50000000049454E44AE426082}
             FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_top_more.png'
           end>
         Name = 'btn_top_more'
@@ -295,7 +415,7 @@ object FrameMore: TFrameMore
             SourceRect.Bottom = 37.000000000000000000
           end>
       end>
-    Left = 152
-    Top = 240
+    Left = 160
+    Top = 344
   end
 end

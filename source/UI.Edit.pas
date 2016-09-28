@@ -417,6 +417,8 @@ type
     property CanParentFocus;
     property DragMode default TDragMode.dmManual;
     property HitTest default True;
+    property Clickable default True;
+
 
     property Text;
     property TextHint;

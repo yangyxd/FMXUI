@@ -3,24 +3,29 @@ unit uFrameLogin;
 interface
 
 uses
+  FMX.InertialMovement,
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
   UI.Frame, UI.Base, FMX.Controls.Presentation, UI.Standard, FMX.Layouts,
-  System.ImageList, FMX.ImgList, UI.Edit;
+  System.ImageList, FMX.ImgList, UI.Edit, UI.ListView;
 
 type
   TFrmaeLogin = class(TFrame)
-    LinearLayout1: TLinearLayout;
-    tvTitle: TTextView;
     VertScrollBox1: TVertScrollBox;
-    LinearLayout2: TLinearLayout;
-    ButtonView1: TButtonView;
     ImageList1: TImageList;
-    TextView1: TTextView;
+    LinearLayout3: TLinearLayout;
     edtUser: TEditView;
     edtPwd: TEditView;
+    ButtonView1: TButtonView;
+    LinearLayout1: TLinearLayout;
+    TextView1: TTextView;
+    tvTitle: TTextView;
+    ButtonView2: TButtonView;
     procedure ButtonView1Click(Sender: TObject);
     procedure TextView1Click(Sender: TObject);
+    //procedure ListViewEx1ScrollChange(Sender: TObject);
+    procedure TextView3Click(Sender: TObject);
+    procedure ButtonView2Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -35,7 +40,7 @@ implementation
 {$R *.fmx}
 
 uses
-  UI.Dialog, UI.Async, uFrameMain;
+  UI.Dialog, UI.Async, uFrameMain, uFrameListViewTest;
 
 { TFrmaeDialog }
 
@@ -55,7 +60,7 @@ begin
   TAsync.Create()
     .SetExecute(
       procedure (Async: TAsync) begin
-        Sleep(1000);
+        Sleep(100);
       end
     )
     .SetExecuteComplete(
@@ -67,15 +72,69 @@ begin
     ).Start;
 end;
 
+procedure TFrmaeLogin.ButtonView2Click(Sender: TObject);
+begin
+  StartFrame(TFrameListViewTest, 'ListView ≤‚ ‘');
+end;
+
 procedure TFrmaeLogin.DoShow;
 begin
   inherited;
   tvTitle.Text := Title;
 end;
 
+//procedure TFrmaeLogin.ListViewEx1ScrollChange(Sender: TObject);
+//var
+//  Targets: array of TAniCalculations.TTarget;
+//
+//  function GetTargetsValue(Index: Integer): Double;
+//  begin
+//    if Index < Length(Targets) then
+//      Result := Targets[Index].Point.Y
+//    else
+//      Result := 0
+//  end;
+//
+//begin
+//  SetLength(Targets, ListViewEx1.AniCalculations.TargetCount);
+//  ListViewEx1.AniCalculations.GetTargets(Targets);
+//
+//  TextView2.Text := Format(
+//    'ScrollValue: %.3f, ' +
+//    'VScrollBar: %.3f, ' +
+//    'MouseTX: %.3f, %.3f, ' +
+//    'TargetCount: %d, ' +
+//    'Target0: %.3f, ' +
+//    'Target1: %.3f, ' +
+//    'Target2: %.3f, ' +
+//    'DownPoint: %.3f, ' +
+//    'Elasticity: %.3f, ' +
+//    'BoundsAnimation: %d, ' +
+//    'Animation: %d',
+//  [
+//    ListViewEx1.VScrollBarValue,
+//    ListViewEx1.VScrollBar.Value,
+//    ListViewEx1.AniCalculations.MouseTarget.Point.X,
+//    ListViewEx1.AniCalculations.MouseTarget.Point.Y,
+//    Length(Targets),
+//    GetTargetsValue(0),
+//    GetTargetsValue(1),
+//    GetTargetsValue(2),
+//    ListViewEx1.AniCalculations.DownPoint.Y,
+//    ListViewEx1.AniCalculations.Elasticity,
+//    Abs(Ord(ListViewEx1.AniCalculations.BoundsAnimation)),
+//    Abs(Ord(ListViewEx1.AniCalculations.Animation))
+//  ])
+//end;
+
 procedure TFrmaeLogin.TextView1Click(Sender: TObject);
 begin
   Finish;
+end;
+
+procedure TFrmaeLogin.TextView3Click(Sender: TObject);
+begin
+  StartFrame(TFrameMain, 'ª∂”≠ π”√ FMXUI');
 end;
 
 end.

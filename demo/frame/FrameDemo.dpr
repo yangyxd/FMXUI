@@ -6,7 +6,8 @@ uses
   Unit1 in 'Unit1.pas' {Form1},
   uFrameLogin in 'uFrameLogin.pas' {FrmaeLogin: TFrame},
   uFrameMain in 'uFrameMain.pas' {FrameMain: TFrame},
-  uFrameMore in 'uFrameMore.pas' {FrameMore: TFrame};
+  uFrameMore in 'uFrameMore.pas' {FrameMore: TFrame},
+  uFrameListViewTest in 'uFrameListViewTest.pas' {FrameListViewTest: TFrame};
 
 {$R *.res}
 

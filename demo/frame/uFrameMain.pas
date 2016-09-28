@@ -6,7 +6,10 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
   UI.Frame, System.ImageList, FMX.ImgList, UI.Standard, UI.Edit, FMX.Layouts,
-  UI.Base;
+  UI.Base, FMX.ListView.Types, FMX.ListView.Appearances,
+  FMX.ListView.Adapters.Base, Data.Bind.GenData, Fmx.Bind.GenData, System.Rtti,
+  System.Bindings.Outputs, Fmx.Bind.Editors, Data.Bind.EngExt,
+  Fmx.Bind.DBEngExt, Data.Bind.Components, Data.Bind.ObjectScope, FMX.ListView;
 
 type
   TFrameMain = class(TFrame)
@@ -18,6 +21,10 @@ type
     ButtonView1: TButtonView;
     ImageList1: TImageList;
     TextView2: TTextView;
+    ListView1: TListView;
+    PrototypeBindSource1: TPrototypeBindSource;
+    BindingsList1: TBindingsList;
+    LinkListControlToField1: TLinkListControlToField;
     procedure TextView1Click(Sender: TObject);
     procedure TextView2Click(Sender: TObject);
     procedure ButtonView1Click(Sender: TObject);

@@ -18,7 +18,10 @@ procedure Register;
 implementation
 
 uses
-  UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.ListView, UI.Toast,
+  UI.Base, UI.Standard, UI.Edit, UI.Dialog,
+  UI.ListView,
+  UI.ListViewEx,
+  UI.Toast,
   UI.Design.Bounds,
   {$IFDEF MSWINDOWS}
   Windows, Registry,
@@ -78,6 +81,7 @@ begin
   RegisterComponents(PageName, [TButtonView]);
   RegisterComponents(PageName, [TEditView]);
   RegisterComponents(PageName, [TListExView]);
+  RegisterComponents(PageName, [TListViewEx]);
 
   RegisterComponents(PageName, [TDialogStyleManager]);
   RegisterComponents(PageName, [TToastManager]);

@@ -403,8 +403,14 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn: Boolean;
 begin
   case Ani of
     None:
-      if Assigned(AEvent) then
-        AEvent(Self);
+      begin
+        if Assigned(AEvent) then
+          AEvent(Self);
+        if IsIn then
+          Opacity := 1
+        else
+          Opacity := 0;
+      end;
     DefaultAni:
       if not (DefaultAnimate in [TFrameAniType.None, TFrameAniType.DefaultAni]) then
         AnimatePlay(DefaultAnimate, IsIn, AEvent)
@@ -542,7 +548,11 @@ end;
 
 procedure TFrameView.Finish(Ani: TFrameAniType);
 begin
-  if Assigned(FLastView) then begin
+  if Assigned(FNextView) then begin
+    FNextView.FLastView := FLastView;
+    FLastView := nil;
+    FNextView := nil;
+  end else if Assigned(FLastView) then begin
     FLastView.InternalShow(False);
     FLastView.FNextView := nil;
     FLastView := nil;
@@ -732,7 +742,7 @@ class function TFrameView.ShowFrame(Parent: TFmxObject;
 begin
   Result := CreateFrame(Parent, Title);
   if Result <> nil then
-    Result.Show();
+    Result.Show(TFrameAniType.None, nil);
 end;
 
 procedure TFrameView.ShowWaitDialog(const AMsg: string;
@@ -821,7 +831,7 @@ class function TFrameView.ShowFrame(Parent: TFmxObject;
 begin
   Result := CreateFrame(Parent, Params);
   if Result <> nil then
-    Result.Show();
+    Result.Show(TFrameAniType.None, nil);
 end;
 
 { TFrameState }

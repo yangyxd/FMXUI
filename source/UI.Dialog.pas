@@ -44,7 +44,7 @@ unit UI.Dialog;
 interface
 
 uses
-  UI.Base, UI.Standard, UI.ListView, {$IFDEF WINDOWS}UI.Debug, {$ENDIF}
+  UI.Base, UI.Standard, UI.ListViewEx, {$IFDEF WINDOWS}UI.Debug, {$ENDIF}
   System.TypInfo, System.SysUtils, System.Character, System.RTLConsts,
   FMX.Graphics, System.Generics.Collections, FMX.TextLayout, FMX.Ani,
   System.Classes, System.Types, System.UITypes, System.Math.Vectors, System.Rtti,
@@ -1964,7 +1964,7 @@ begin
   FMsgMessage.Clickable := False;
   FMsgMessage.WidthSize := TViewSize.FillParent;
   FMsgMessage.HeightSize := TViewSize.WrapContent;
-  FMsgMessage.Paddings := '8';
+  FMsgMessage.Padding.Rect := RectF(8, 8, 8, 12);
   FMsgMessage.Gravity := TLayoutGravity.CenterVertical;
   FMsgMessage.TextSettings.WordWrap := True;
   FMsgMessage.TextSettings.Color.Default := StyleMgr.MessageTextColor;
@@ -2074,7 +2074,7 @@ begin
   FTitleView.TextSettings.Font.Size := StyleMgr.TitleTextSize;
   FTitleView.TextSettings.Color.Default := StyleMgr.TitleTextColor;
   FTitleView.Gravity := TLayoutGravity.CenterVertical;
-  FTitleView.Paddings := '8.0';
+  FTitleView.Padding.Rect := RectF(8, 4, 8, 4);
   FTitleView.MinHeight := StyleMgr.TitleHeight;
   FTitleView.WidthSize := TViewSize.FillParent;
   FTitleView.Background.ItemDefault.Color := StyleMgr.TitleBackGroundColor;
@@ -2082,7 +2082,7 @@ begin
   FTitleView.Background.XRadius := StyleMgr.FBackgroundRadius;
   FTitleView.Background.YRadius := StyleMgr.FBackgroundRadius;
   FTitleView.Background.Corners := [TCorner.TopLeft];
-  FTitleView.Background.Paddings := '1';
+  FTitleView.Background.Padding.Rect := RectF(1, 1, 1, 0);
   FTitleView.HeightSize := TViewSize.WrapContent;
   // ÄÚÈÝÇø
   FMsgBody := TLinearLayout.Create(Owner);
@@ -2098,6 +2098,7 @@ begin
   FMsgBody.Orientation := TOrientation.Vertical;
   FMsgBody.Background.ItemDefault.Color := StyleMgr.BodyBackGroundColor;
   FMsgBody.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+  FMsgBody.Margins.Rect := RectF(0, 1, 0, 0);
 end;
 
 procedure TDialogView.SetTitle(const AText: string);

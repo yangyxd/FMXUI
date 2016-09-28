@@ -3,15 +3,16 @@ object Form1: TForm1
   Top = 0
   Caption = 'Form1'
   ClientHeight = 531
-  ClientWidth = 321
+  ClientWidth = 317
   Fill.Kind = Solid
+  Quality = HighQuality
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
   OnShow = FormShow
   DesignerMasterStyle = 0
   object ToastManager1: TToastManager
-    Left = 144
-    Top = 248
+    Left = 128
+    Top = 304
   end
 end

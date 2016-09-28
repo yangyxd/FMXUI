@@ -5,7 +5,8 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, UI.Base,
-  FMX.Controls.Presentation, FMX.StdCtrls, UI.Standard, UI.Toast;
+  FMX.Controls.Presentation, FMX.StdCtrls, UI.Standard, UI.Toast, FMX.Layouts,
+  UI.ListView;
 
 type
   TForm1 = class(TForm)
@@ -25,11 +26,18 @@ implementation
 {$R *.fmx}
 
 uses
-  uFrameLogin;
+  {$IFDEF ANDROID}
+  FMX.Context.GLES.Android,
+  {$ENDIF}
+  uFrameLogin, uFrameListViewTest;
 
 procedure TForm1.FormShow(Sender: TObject);
 begin
+  {$IFDEF ANDROID}
+  TCustomAndroidContext.RecreateSharedContext;
+  {$ENDIF}
   TFrmaeLogin.ShowFrame(Self, 'Frame Demo');
+  //TFrameListViewTest.ShowFrame(Self, 'Frame Demo');
 end;
 
 end.
