@@ -314,12 +314,14 @@ var
   Border: TViewBorder;
 begin
   Result := inherited CanRePaintBk(View, State);
-  if (Assigned(FDrawable)) then
-    Result := not FDrawable.IsEmpty;
-  if (not Result) and (Assigned(FBackground)) then begin
-    Border := TDrawableBorder(FBackground).Border;
-    Result := Assigned(Border) and (Border.Style <> TViewBorderStyle.None) and
-      (Border.Width > 0) and (Border.Color.GetColor(State) <> TAlphaColorRec.Null);
+  if (not Result) then begin
+    if (Assigned(FDrawable)) then
+      Result := not FDrawable.IsEmpty;
+    if (not Result) and (Assigned(FBackground)) then begin
+      Border := TDrawableBorder(FBackground).Border;
+      Result := Assigned(Border) and (Border.Style <> TViewBorderStyle.None) and
+        (Border.Width > 0) and (Border.Color.GetColor(State) <> TAlphaColorRec.Null);
+    end;
   end;
 end;
 

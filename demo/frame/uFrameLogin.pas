@@ -7,7 +7,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
   UI.Frame, UI.Base, FMX.Controls.Presentation, UI.Standard, FMX.Layouts,
-  System.ImageList, FMX.ImgList, UI.Edit, UI.ListView;
+  System.ImageList, FMX.ImgList, UI.Edit, UI.ListView, FMX.Edit;
 
 type
   TFrmaeLogin = class(TFrame)
@@ -21,6 +21,9 @@ type
     TextView1: TTextView;
     tvTitle: TTextView;
     ButtonView2: TButtonView;
+    EditView1: TEditView;
+    Edit1: TEdit;
+    EditButton1: TEditButton;
     procedure ButtonView1Click(Sender: TObject);
     procedure TextView1Click(Sender: TObject);
     //procedure ListViewEx1ScrollChange(Sender: TObject);
