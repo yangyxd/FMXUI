@@ -5124,12 +5124,23 @@ end;
 procedure TDrawableBorder.DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState);
 var
   TH: Single;
+  LRect: TRectF;
 begin
   if Assigned(FBorder) and (FBorder.FStyle <> TViewBorderStyle.None) and (FBorder.Width > 0) then begin
     FBorder.Brush.Color :=  FBorder.Color.GetStateColor(AState);
     case FBorder.FStyle of
       TViewBorderStyle.RectBorder:
-        Canvas.DrawRect(R, XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush);
+        begin
+          if FBorder.Width > 1 then begin
+            TH := FBorder.Width / 2;
+            LRect.Left := R.Left + TH;
+            LRect.Top := R.Top + TH;
+            LRect.Right := R.Right - TH;
+            LRect.Bottom := R.Bottom - TH;
+            Canvas.DrawRect(LRect, XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush);
+          end else
+            Canvas.DrawRect(R, XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush);
+        end;
       TViewBorderStyle.LineBottom:
         begin
           Canvas.DrawLine(R.BottomRight, PointF(R.Left, R.Bottom), FView.Opacity, FBorder.Brush);

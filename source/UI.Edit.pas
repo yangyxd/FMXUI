@@ -3070,7 +3070,8 @@ procedure TCustomEditView.UpdateSelectionPointPositions;
 var
   R: TRectF;
 begin
-  Model.Caret.TemporarilyHidden := Model.HasSelection and ParentControl.IsFocused;
+  Model.Caret.TemporarilyHidden := Model.HasSelection and
+    (Assigned(ParentControl)) and ParentControl.IsFocused;
   if HaveSelectionPickers then
   begin
     FLeftSelPt.Visible := (Model.SelLength > 0) and ParentControl.IsFocused and (Model.SelStart + 1 >= FFirstVisibleChar);
