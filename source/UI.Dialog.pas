@@ -44,7 +44,7 @@ unit UI.Dialog;
 interface
 
 uses
-  UI.Base, UI.Standard, UI.ListViewEx, {$IFDEF WINDOWS}UI.Debug, {$ENDIF}
+  UI.Base, UI.Standard, UI.ListView, {$IFDEF WINDOWS}UI.Debug, {$ENDIF}
   System.TypInfo, System.SysUtils, System.Character, System.RTLConsts,
   FMX.Graphics, System.Generics.Collections, FMX.TextLayout, FMX.Ani,
   System.Classes, System.Types, System.UITypes, System.Math.Vectors, System.Rtti,
@@ -73,12 +73,12 @@ const
   COLOR_MessageTextBackground = $00f00000;
   {$ELSE}
   {$IFDEF MSWINDOWS}
-    COLOR_BackgroundColor = $ffffffff;
+    COLOR_BackgroundColor = $fff0f0f0;
     COLOR_TitleTextColor = $ff000000;
     COLOR_MessageTextColor = $ff101010;
     COLOR_TitleBackGroundColor = $ffffffff;
     COLOR_DialogMaskColor = $9f000000;
-    COLOR_BodyBackgroundColor = $00ffffff;
+    COLOR_BodyBackgroundColor = $ffffffff;
     COLOR_MessageTextBackground = $00f00000;
   {$ELSE}
     COLOR_BackgroundColor = $fff0f0f0;
@@ -280,7 +280,7 @@ type
     FButtonPositive: TButtonView;
     FButtonNegative: TButtonView;
     FButtonNeutral: TButtonView;
-    FListView: TListExView;
+    FListView: TListViewEx;
     FAnilndictor: TAniIndicator;
   protected
     procedure AfterDialogKey(var Key: Word; Shift: TShiftState); override;
@@ -298,7 +298,7 @@ type
     procedure Hide; override;
     procedure SetTitle(const AText: string);
 
-    property ListView: TListExView read FListView;
+    property ListView: TListViewEx read FListView;
     property TitleView: TTextView read FTitleView;
     property MessageView: TTextView read FMsgMessage;
     property ButtonLayout: TLinearLayout read FButtonLayout;
@@ -431,7 +431,7 @@ type
     procedure SetMessage(const Value: string); override;
     function GetBuilder: TDialogBuilder; override;
 
-    procedure InitList(const ListView: TListView; IsMulti: Boolean = False);
+    procedure InitList(const ListView: TListViewEx; IsMulti: Boolean = False);
     procedure InitExtPopView();
     procedure InitSinglePopView();
     procedure InitMultiPopView();
@@ -440,9 +440,7 @@ type
 
   protected
     procedure DoButtonClick(Sender: TObject);
-    procedure DoListItemClick(const Sender: TObject; const AItem: TListViewItem);
-    procedure DoListUpdateObjects(const Sender: TObject; const AItem: TListViewItem);
-    procedure DoListSingleUpdateObjects(const Sender: TObject; const AItem: TListViewItem);
+    procedure DoListItemClick(Sender: TObject; ItemIndex: Integer; const ItemView: TControl);
     procedure DoApplyTitle(); override;
     procedure DoFreeBuilder(); override;
   public
@@ -476,7 +474,7 @@ type
     [Weak] FStyleManager: TDialogStyleManager;
     [Weak] FDataObject: TObject;
 
-    FItemArray: TStringDynArray;
+    FItemArray: TArray<string>;
     FData: TValue;
     FView: TControl;
     FViewAutoFree: Boolean;
@@ -493,7 +491,7 @@ type
     FCheckedItem: Integer;
     FTag: Integer;
 
-    FCheckedItems: TBooleanDynArray;
+    FCheckedItems: TArray<Boolean>;
 
     FPositiveButtonText: string;
     FPositiveButtonListener: TOnDialogClickListener;
@@ -593,8 +591,8 @@ type
     /// </summary>
     function SetItems(AItems: TStrings; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
     function SetItems(AItems: TStrings; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
-    function SetItems(const AItems: TStringDynArray; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
-    function SetItems(const AItems: TStringDynArray; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
+    function SetItems(const AItems: TArray<string>; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
+    function SetItems(const AItems: TArray<string>; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
     /// <summary>
     /// 设置一个子视图
     /// </summary>
@@ -602,13 +600,13 @@ type
     /// <summary>
     /// 设置多重选项列表项
     /// </summary>
-    function SetMultiChoiceItems(AItems: TStrings; ACheckedItems: TBooleanDynArray;
+    function SetMultiChoiceItems(AItems: TStrings; ACheckedItems: TArray<Boolean>;
       AListener: TOnDialogMultiChoiceClickListener = nil): TDialogBuilder; overload;
-    function SetMultiChoiceItems(AItems: TStrings; ACheckedItems: TBooleanDynArray;
+    function SetMultiChoiceItems(AItems: TStrings; ACheckedItems: TArray<Boolean>;
       AListener: TOnDialogMultiChoiceClickListenerA): TDialogBuilder; overload;
-    function SetMultiChoiceItems(const AItems: TStringDynArray; ACheckedItems: TBooleanDynArray;
+    function SetMultiChoiceItems(const AItems: TArray<string>; ACheckedItems: TArray<Boolean>;
       AListener: TOnDialogMultiChoiceClickListener = nil): TDialogBuilder; overload;
-    function SetMultiChoiceItems(const AItems: TStringDynArray; ACheckedItems: TBooleanDynArray;
+    function SetMultiChoiceItems(const AItems: TArray<string>; ACheckedItems: TArray<Boolean>;
       AListener: TOnDialogMultiChoiceClickListenerA): TDialogBuilder; overload;
     /// <summary>
     /// 设置单选列表项
@@ -617,9 +615,9 @@ type
       AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
     function SetSingleChoiceItems(AItems: TStrings; ACheckedItem: Integer;
       AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
-    function SetSingleChoiceItems(const AItems: TStringDynArray; ACheckedItem: Integer;
+    function SetSingleChoiceItems(const AItems: TArray<string>; ACheckedItem: Integer;
       AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
-    function SetSingleChoiceItems(const AItems: TStringDynArray; ACheckedItem: Integer;
+    function SetSingleChoiceItems(const AItems: TArray<string>; ACheckedItem: Integer;
       AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
     /// <summary>
     /// 设置列表项选择事件
@@ -651,7 +649,7 @@ type
     property View: TControl read FView;
     property Icon: TObject read FIcon;
     property Items: TStrings read FItems;
-    property ItemArray: TStringDynArray read FItemArray;
+    property ItemArray: TArray<string> read FItemArray;
 
     property StyleManager: TDialogStyleManager read FStyleManager;
 
@@ -665,7 +663,7 @@ type
     property MaskVisible: Boolean read FMaskVisible write FMaskVisible;
     property ClickButtonDismiss: Boolean read FClickButtonDismiss;
     property CheckedItem: Integer read FCheckedItem; 
-    property CheckedItems: TBooleanDynArray read FCheckedItems;
+    property CheckedItems: TArray<Boolean> read FCheckedItems;
     property CheckedCount: Integer read GetCheckedCount;
 
     property DataObject: TObject read FDataObject write FDataObject;
@@ -843,7 +841,7 @@ begin
   FIsSingleChoice := True;
 end;
 
-function TDialogBuilder.SetSingleChoiceItems(const AItems: TStringDynArray;
+function TDialogBuilder.SetSingleChoiceItems(const AItems: TArray<string>;
   ACheckedItem: Integer; AListener: TOnDialogClickListenerA): TDialogBuilder;
 begin
   Result := Self;
@@ -853,7 +851,7 @@ begin
   FIsSingleChoice := True;
 end;
 
-function TDialogBuilder.SetSingleChoiceItems(const AItems: TStringDynArray;
+function TDialogBuilder.SetSingleChoiceItems(const AItems: TArray<string>;
   ACheckedItem: Integer; AListener: TOnDialogClickListener): TDialogBuilder;
 begin
   Result := Self;
@@ -907,7 +905,7 @@ begin
 end;
 
 
-function TDialogBuilder.SetItems(const AItems: TStringDynArray;
+function TDialogBuilder.SetItems(const AItems: TArray<string>;
   AListener: TOnDialogClickListener): TDialogBuilder;
 begin
   Result := Self;
@@ -916,7 +914,7 @@ begin
   FOnClickListener := AListener;
 end;
 
-function TDialogBuilder.SetItems(const AItems: TStringDynArray;
+function TDialogBuilder.SetItems(const AItems: TArray<string>;
   AListener: TOnDialogClickListenerA): TDialogBuilder;
 begin
   Result := Self;
@@ -944,8 +942,8 @@ begin
   FMessage := AMessage;
 end;
 
-function TDialogBuilder.SetMultiChoiceItems(const AItems: TStringDynArray;
-  ACheckedItems: TBooleanDynArray;
+function TDialogBuilder.SetMultiChoiceItems(const AItems: TArray<string>;
+  ACheckedItems: TArray<Boolean>;
   AListener: TOnDialogMultiChoiceClickListenerA): TDialogBuilder;
 begin
   Result := Self;
@@ -955,8 +953,8 @@ begin
   FIsMultiChoice := True;
 end;
 
-function TDialogBuilder.SetMultiChoiceItems(const AItems: TStringDynArray;
-  ACheckedItems: TBooleanDynArray;
+function TDialogBuilder.SetMultiChoiceItems(const AItems: TArray<string>;
+  ACheckedItems: TArray<Boolean>;
   AListener: TOnDialogMultiChoiceClickListener): TDialogBuilder;
 begin
   Result := Self;
@@ -967,7 +965,7 @@ begin
 end;
 
 function TDialogBuilder.SetMultiChoiceItems(AItems: TStrings;
-  ACheckedItems: TBooleanDynArray;
+  ACheckedItems: TArray<Boolean>;
   AListener: TOnDialogMultiChoiceClickListenerA): TDialogBuilder;
 begin
   Result := Self;
@@ -978,7 +976,7 @@ begin
 end;
 
 function TDialogBuilder.SetMultiChoiceItems(AItems: TStrings;
-  ACheckedItems: TBooleanDynArray;
+  ACheckedItems: TArray<Boolean>;
   AListener: TOnDialogMultiChoiceClickListener): TDialogBuilder;
 begin
   result := Self;
@@ -1401,7 +1399,7 @@ begin
       FViewRoot.Show;
 
       if Assigned(FViewRoot.FLayBubble) then begin
-        FViewRoot.FLayBubble.Opacity := 0;
+        FViewRoot.FLayBubble.Opacity := 0.3;
         TAnimator.AnimateFloat(FViewRoot.FLayBubble, 'Opacity', 1, 0.3);
       end;
     end;
@@ -1497,8 +1495,8 @@ begin
     FreeAndNil(FBuilder);
 end;
 
-procedure TCustomAlertDialog.DoListItemClick(const Sender: TObject;
-  const AItem: TListViewItem);
+procedure TCustomAlertDialog.DoListItemClick(Sender: TObject; ItemIndex: Integer;
+  const ItemView: TControl);
 var
   B: Boolean;
 begin
@@ -1507,31 +1505,23 @@ begin
   FAllowDismiss := False;
   try
     if FBuilder.FIsMultiChoice then begin
-      B := False;
-      if Length(FBuilder.FCheckedItems) > AItem.Index then begin
-        B := not FBuilder.FCheckedItems[AItem.Index];
-        FBuilder.FCheckedItems[AItem.Index] := B;
-      end;
-      AItem.Objects.AccessoryObject.Visible := B;
-      FViewRoot.FListView.Repaint;
+      B := TStringsListCheckAdapter(TListViewEx(Sender).Adapter).ItemCheck[ItemIndex];
+      if Length(FBuilder.FCheckedItems) > ItemIndex then
+        FBuilder.FCheckedItems[ItemIndex] := B;
 
       if Assigned(FBuilder.FOnCheckboxClickListenerA) then
-        FBuilder.FOnCheckboxClickListenerA(Self, AItem.Index, B)
+        FBuilder.FOnCheckboxClickListenerA(Self, ItemIndex, B)
       else if Assigned(FBuilder.FOnCheckboxClickListener) then
-        FBuilder.FOnCheckboxClickListener(Self, AItem.Index, B);
+        FBuilder.FOnCheckboxClickListener(Self, ItemIndex, B);
 
     end else begin
-      if FBuilder.FIsSingleChoice then begin
-        if Builder.FCheckedItem >= 0 then
-          FViewRoot.FListView.Items[Builder.FCheckedItem].Objects.AccessoryObject.Visible := False;
-        AItem.Objects.AccessoryObject.Visible := True;
-        Builder.FCheckedItem := AItem.Index;
-      end;
+      if FBuilder.FIsSingleChoice then
+        FBuilder.FCheckedItem := ItemIndex;
 
       if Assigned(FBuilder.OnClickListenerA) then
-        FBuilder.OnClickListenerA(Self, AItem.Index)
+        FBuilder.OnClickListenerA(Self, ItemIndex)
       else if Assigned(FBuilder.OnClickListener) then
-        FBuilder.OnClickListener(Self, AItem.Index);
+        FBuilder.OnClickListener(Self, ItemIndex);
 
       if (not (FBuilder.FIsMultiChoice or FBuilder.FIsSingleChoice)) and (not FAllowDismiss) then
         DoAsyncDismiss;
@@ -1543,20 +1533,6 @@ begin
     FAllowDismiss := False;
     DoAsyncDismiss;
   end;
-end;
-
-procedure TCustomAlertDialog.DoListSingleUpdateObjects(const Sender: TObject;
-  const AItem: TListViewItem);
-begin
-  AItem.Objects.TextObject.Width := AItem.Objects.TextObject.Width - (AItem.Objects.AccessoryObject.Width);
-  AItem.Objects.AccessoryObject.Visible := AItem.Index = FViewRoot.FListView.ItemIndex;
-end;
-
-procedure TCustomAlertDialog.DoListUpdateObjects(const Sender: TObject;
-  const AItem: TListViewItem);
-begin
-  AItem.Objects.TextObject.Width := AItem.Objects.TextObject.Width - (AItem.Objects.AccessoryObject.Width);
-  AItem.Objects.AccessoryObject.Visible := FBuilder.FCheckedItems[AItem.Index];
 end;
 
 function TCustomAlertDialog.GetBuilder: TDialogBuilder;
@@ -1719,32 +1695,40 @@ begin
   end;
 end;
 
-procedure TCustomAlertDialog.InitList(const ListView: TListView; IsMulti: Boolean);
+procedure TCustomAlertDialog.InitList(const ListView: TListViewEx; IsMulti: Boolean);
 var
-  I, J: Integer;
-  Item: TListViewItem;
+  Adapter: IListAdapter;
 begin
-  J := Length(FBuilder.FCheckedItems);
   if Length(FBuilder.FItemArray) > 0 then begin
-    for I := 0 to Length(Builder.FItemArray) - 1 do begin
-      Item := ListView.Items.Add;
-      Item.Text := FBuilder.FItemArray[I];
-      if IsMulti then
-        Item.Checked := (I < J) and FBuilder.FCheckedItems[I];
+    if IsMulti then begin
+      Adapter := TStringsListCheckAdapter.Create(Builder.FItemArray);
+      TStringsListCheckAdapter(Adapter).Checks := FBuilder.FCheckedItems;
+    end else if FBuilder.IsSingleChoice then begin
+      Adapter := TStringsListSingleAdapter.Create(Builder.FItemArray);
+      if (Builder.FCheckedItem >= 0) and (Builder.FCheckedItem < Adapter.Count) then
+        TStringsListSingleAdapter(Adapter).ItemIndex := Builder.FCheckedItem;
+    end else begin
+      Adapter := TStringsListAdapter.Create(Builder.FItemArray);
     end;
   end else if Assigned(FBuilder.FItems) and (FBuilder.FItems.Count > 0) then begin
-    for I := 0 to FBuilder.FItems.Count - 1 do begin
-      Item := ListView.Items.Add;
-      Item.Text := FBuilder.FItems[I];
-      if IsMulti then
-        Item.Checked := (I < J) and FBuilder.FCheckedItems[I];
+    if IsMulti then begin
+      Adapter := TStringsListCheckAdapter.Create(FBuilder.FItems);
+      TStringsListCheckAdapter(Adapter).Checks := FBuilder.FCheckedItems;
+    end else if FBuilder.IsSingleChoice then begin
+      Adapter := TStringsListSingleAdapter.Create(FBuilder.FItems);
+      if (Builder.FCheckedItem >= 0) and (Builder.FCheckedItem < Adapter.Count) then
+        TStringsListSingleAdapter(Adapter).ItemIndex := Builder.FCheckedItem;
+    end else begin
+      Adapter := TStringsListAdapter.Create(FBuilder.FItems);
     end;
   end;
+  ListView.Adapter := Adapter;
+  ListView.Height := ListView.ContentBounds.Height;
 end;
 
 procedure TCustomAlertDialog.InitListPopView;
 var
-  ListView: TListView;
+  ListView: TListViewEx;
 begin
   InitDefaultPopView;
   FViewRoot.FMsgBody.Visible := True;
@@ -1755,17 +1739,13 @@ begin
 
   // 初始化列表
   ListView := FViewRoot.FListView;
-  ListView.ItemAppearance.ItemAppearance := 'Custom';
-  ListView.BeginUpdate;
-  ListView.Items.Clear;
   InitList(ListView);
-  ListView.EndUpdate;
   ListView.OnItemClick := DoListItemClick;
 end;
 
 procedure TCustomAlertDialog.InitMultiPopView;
 var
-  ListView: TListView;
+  ListView: TListViewEx;
 begin
   InitDefaultPopView;
   FViewRoot.FMsgBody.Visible := True;
@@ -1776,23 +1756,16 @@ begin
 
   // 初始化列表
   ListView := FViewRoot.FListView;
-  ListView.EditMode := False;
-  ListView.ItemAppearance.ItemAppearance := 'ListItem';
-  ListView.ItemAppearance.ItemEditAppearance := 'ListItemShowCheck';
-  ListView.ItemAppearanceObjects.ItemObjects.Accessory.AccessoryType := TAccessoryType.Checkmark;
-  ListView.BeginUpdate;
-  ListView.Items.Clear;
   InitList(ListView, True);
-  if Length(Builder.FCheckedItems) < ListView.Items.Count then
-    SetLength(Builder.FCheckedItems, ListView.Items.Count);
+  if Length(Builder.FCheckedItems) < ListView.Count then
+    SetLength(Builder.FCheckedItems, ListView.Count);
   ListView.EndUpdate;
   ListView.OnItemClick := DoListItemClick;
-  ListView.OnUpdateObjects := DoListUpdateObjects;
 end;
 
 procedure TCustomAlertDialog.InitSinglePopView;
 var
-  ListView: TListView;
+  ListView: TListViewEx;
 begin
   InitDefaultPopView;
   FViewRoot.FMsgBody.Visible := True;
@@ -1803,19 +1776,8 @@ begin
 
   // 初始化列表
   ListView := FViewRoot.FListView;
-  ListView.ItemAppearance.ItemAppearance := 'ListItem';
-  ListView.ItemAppearance.ItemEditAppearance := 'ListItemShowCheck';
-  ListView.ItemAppearanceObjects.ItemObjects.Accessory.AccessoryType := TAccessoryType.Checkmark;
-  ListView.BeginUpdate;
-  ListView.Items.Clear;
   InitList(ListView);
-  if (Builder.FCheckedItem >= 0) and (Builder.FCheckedItem < ListView.Items.Count) then begin
-    ListView.ItemIndex := Builder.FCheckedItem;
-    //ListView.ScrollViewPos := 0;
-  end;
-  ListView.EndUpdate;
   ListView.OnItemClick := DoListItemClick;
-  ListView.OnUpdateObjects := DoListSingleUpdateObjects;
 end;
 
 procedure TCustomAlertDialog.SetMessage(const Value: string);
@@ -1938,15 +1900,13 @@ end;
 procedure TDialogView.InitList(StyleMgr: TDialogStyleManager);
 begin
   // 列表
-  FListView := TListExView.Create(Owner);
+  FListView := TListViewEx.Create(Owner);
   {$IFDEF MSWINDOWS}
   FListView.Name := 'FListView' + IntToStr(DialogRef);
   {$ENDIF}
-  FListView.Transparent := True;
   FListView.Parent := FMsgBody;
   FListView.HitTest := True;
   FListView.CanFocus := True;
-  FListView.CanSwipeDelete := False;
   //FListView.ControlType := TControlType.Platform;
   FListView.WidthSize := TViewSize.FillParent;
   FListView.HeightSize := TViewSize.WrapContent;
@@ -2114,8 +2074,8 @@ procedure TDialogView.Show;
 begin
   Visible := True;
   BringToFront;
-  RecalcSize;
   Realign;
+  Width := Width + 0.1;
 end;
 
 { TDialogStyleManager }

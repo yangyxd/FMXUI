@@ -2856,8 +2856,15 @@ begin
   else begin
     if Assigned(ParentView) then
       Result := TView(Parent).GetParentMaxHeight
-    else
-      Result := 0;
+    else begin
+      if HeightSize = TViewSize.WrapContent then begin
+        if Parent is TControl then
+          Result := TControl(Parent).Height
+        else
+          Result := 0
+      end else
+        Result := Height;
+    end;
   end;
 end;
 
@@ -5131,8 +5138,8 @@ begin
     case FBorder.FStyle of
       TViewBorderStyle.RectBorder:
         begin
-          if FBorder.Width > 1 then begin
-            TH := FBorder.Width / 2;
+          if FBorder.Width > 0.1 then begin
+            TH := FBorder.Width / 1.95;
             LRect.Left := R.Left + TH;
             LRect.Top := R.Top + TH;
             LRect.Right := R.Right - TH;

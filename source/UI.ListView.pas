@@ -107,6 +107,7 @@ type
 
     FOffset: Double;
     FLastPosition: Double;
+    FMaxParentHeight: Double;  // 父级控件最大高度（当值>0时，根据列表高度自动调整大小)
     FViewBottom: Double;
     FDividerBrush: TBrush;
 
@@ -157,6 +158,7 @@ type
     FLocalDividerHeight: Single;
     FAllowItemChildClick: Boolean;
     FLastHeight: Single;
+    FResizeing: Boolean;
 
     FOnDrawViewBackgroud: TOnDrawViewBackgroud;
     FOnItemMeasureHeight: TOnItemMeasureHeight;
@@ -181,6 +183,8 @@ type
     procedure DoRealign; override;
     procedure DoInVisibleChange; override;
     procedure DoScrollVisibleChange; override;
+    procedure DoRecalcSize(var AWidth, AHeight: Single); override;
+    procedure DoChangeSize(var ANewWidth, ANewHeight: Single); override;
   protected
     procedure Resize; override;
     procedure Loaded; override;
@@ -201,8 +205,9 @@ type
      
     // 通知数据发生改变
     procedure NotifyDataChanged; virtual;
-    
+
     function IsEnabled(const Index: Integer): Boolean;
+
     property Count: Integer read GetCount;
     property Empty: Boolean read IsEmpty;
     property Adapter: IListAdapter read FAdapter write SetAdapter;
@@ -442,7 +447,13 @@ end;
 
 destructor TListViewEx.Destroy;
 begin
+  FAdapter := nil;
   inherited Destroy;
+end;
+
+procedure TListViewEx.DoChangeSize(var ANewWidth, ANewHeight: Single);
+begin
+  inherited DoChangeSize(ANewWidth, ANewHeight);
 end;
 
 procedure TListViewEx.DoDrawBackground(var R: TRectF);
@@ -468,7 +479,7 @@ var
   W: Single;
 begin
   inherited;
-  if FDisableAlign then
+  if FDisableAlign or IsUpdating then
     Exit;
   if (csDestroying in ComponentState) then
     Exit;
@@ -481,9 +492,24 @@ begin
   {$ELSE}
   W := Width - Padding.Right - Padding.Left;
   {$ENDIF}
+  // 如果列表高度为自动大小时，计算一下父级视图的最大高度，在自动调整大小时会使用
+  if HeightSize = TViewSize.WrapContent then
+    FContentViews.FMaxParentHeight := GetParentMaxHeight
+  else  
+    FContentViews.FMaxParentHeight := 0;
   FContentViews.SetBounds(Padding.Left, Padding.Top, W,
     Height - Padding.Bottom - Padding.Top);
   FDisableAlign := False;
+end;
+
+procedure TListViewEx.DoRecalcSize(var AWidth, AHeight: Single);
+begin
+  if HeightSize = TViewSize.WrapContent then
+    if FContentViews.FViewBottom < FContentBounds.Height then begin
+      AHeight := FContentViews.FViewBottom + Padding.Height
+    end else begin
+      AHeight := FContentBounds.Height + Padding.Height;
+    end;
 end;
 
 procedure TListViewEx.DoScrollVisibleChange;
@@ -595,7 +621,7 @@ procedure TListViewEx.NotifyDataChanged;
 var
   Offset: Double;
 begin
-  if csLoading in ComponentState then
+  if (csLoading in ComponentState) or FContentViews.FDisableAlign then
     Exit;
   FContentViews.FDisableAlign := True;
   try
@@ -632,6 +658,8 @@ begin
       FContentViews.Realign;
     end;
   end;
+
+  RecalcSize;
 end;
 
 procedure TListViewEx.PaintBackground;
@@ -648,10 +676,12 @@ end;
 
 procedure TListViewEx.Resize;
 begin
-  if (csLoading in ComponentState) or
+  if FResizeing or
+    (csLoading in ComponentState) or
     (csDestroying in ComponentState) or
     (csDesigning in ComponentState) then
     Exit;
+  FResizeing := True;
   inherited Resize;
   if Assigned(FAdapter) then begin
     FContentViews.HideViews;
@@ -659,8 +689,10 @@ begin
     FContentViews.FLastRowIndex := -1;
     UpdateScrollBar;
     FContentViews.Realign;
+    RecalcSize;
   end;
   FLastHeight := Height;
+  FResizeing := False;
 end;
 
 procedure TListViewEx.SetAdapter(const Value: IListAdapter);
@@ -670,7 +702,8 @@ begin
     FContentViews.FAdapter := Value;
     if FAdapter is TListAdapterBase then
       (FAdapter as TListAdapterBase).FListView := Self;
-    NotifyDataChanged; 
+    NotifyDataChanged;
+    HandleSizeChanged;
   end;
 end;
 
@@ -894,7 +927,11 @@ begin
   ItemDefaultHeight := FAdapter.ItemDefaultHeight;
   // 计算出当前可显示的第一行位置和最后一行位置
   First := Offset;
-  Last := Offset + Height;
+  // 如果需要自动调整大小，且滚动条偏移为0时，说明正在初始化列表
+  if (FMaxParentHeight > 0) and (Offset = 0) then
+    Last := Offset + FMaxParentHeight // 使用父级视图的最大高度为列表项的底边
+  else
+    Last := Offset + Height; // ListView.FContentBounds.Height;     
   // 分隔条高度
   DividerHeight := ListView.GetDividerHeight;
 
@@ -1153,6 +1190,14 @@ begin
     // 显示的最后一个列表项索引号
     FLastRowIndex := FFirstRowIndex + J;
     EndUpdate;
+    if (FMaxParentHeight > 0) and (FFirstRowIndex = 0) then begin
+      // 当需要自动调整大小，并且显示的首行为第一行时
+      // 如果当前列表视图的底部位置小于父级大小，则使用当前视图底部为列表框高度
+      if FViewBottom < FMaxParentHeight then      
+        SetSize(Width, FViewBottom)
+      else // 如果超出时，则使用父级最大高度为列表视图高度
+        SetSize(Width, FMaxParentHeight)
+    end;
     if AdjustH <> 0 then begin
       // 高度变化了, 更新滚动条状态
       ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom + AdjustH;
