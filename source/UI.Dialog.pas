@@ -309,6 +309,9 @@ type
     property Dialog: IDialog read FDialog write FDialog;
   end;
 
+  TControlClass = type of TControl;
+  TDialogViewPosition = (Top, Bottom, Left, Right, Center);
+
   TDialog = class(TComponent, IDialog)
   private
     FOnCancelListener: TOnDialogListener;
@@ -362,6 +365,36 @@ type
     /// 显示对话框
     /// </summary>
     procedure Show();
+
+    /// <summary>
+    /// 显示对话框
+    /// <param name="Target">定位控件</param>
+    /// <param name="ViewClass">要自动创建的视图类</param>
+    /// <param name="Position">视图位置（默认位于目标下方）</param>
+    /// <param name="PositionOffset">视图偏移位置</param>
+    /// </summary>
+    class function ShowView(const AOwner: TComponent; const Target: TControl;
+      const ViewClass: TControlClass;
+      XOffset: Single = 0; YOffset: Single = 0;
+      Position: TDialogViewPosition = TDialogViewPosition.Bottom): TDialog; overload;
+    /// <summary>
+    /// 显示对话框
+    /// <param name="Target">定位控件</param>
+    /// <param name="View">要显示的视图对象</param>
+    /// <param name="AViewAutoFree">是否自动释放View对象</param>
+    /// <param name="Position">视图位置（默认位于目标下方）</param>
+    /// <param name="PositionOffset">视图偏移位置</param>
+    /// </summary>
+    class function ShowView(const AOwner: TComponent; const Target: TControl;
+      const View: TControl; AViewAutoFree: Boolean = True;
+      XOffset: Single = 0; YOffset: Single = 0;
+      Position: TDialogViewPosition = TDialogViewPosition.Bottom): TDialog; overload;
+
+    /// <summary>
+    /// 在一个目标控件身上查找与其绑定在一起的对象框
+    /// </summary>
+    class function GetDialog(const Target: TControl): IDialog;
+
     /// <summary>
     /// 关闭对话框
     /// </summary>
@@ -1298,6 +1331,15 @@ begin
   Result := FCancelable;
 end;
 
+class function TDialog.GetDialog(const Target: TControl): IDialog;
+begin
+  Result := nil;
+  if Target = nil then Exit;
+  if (Target.Parent = nil) or (not (Target.Parent is TDialogView)) then
+    Exit;
+  Result := (Target.Parent as TDialogView).FDialog;
+end;
+
 function TDialog.GetFirstParent: TFmxObject;
 var
   P: TFmxObject;
@@ -1407,6 +1449,119 @@ begin
     {$IFDEF WINDOWS}LogE(Self, 'Show', Exception(ExceptObject)); {$ENDIF}
     Dismiss;
   end;
+end;
+
+class function TDialog.ShowView(const AOwner: TComponent; const Target: TControl;
+  const ViewClass: TControlClass; XOffset: Single; YOffset: Single;
+  Position: TDialogViewPosition): TDialog;
+var
+  AView: TControl;
+begin
+  AView := ViewClass.Create(AOwner);
+  Result := ShowView(AOwner, Target, AView, True, XOffset, YOffset, Position);
+end;
+
+class function TDialog.ShowView(const AOwner: TComponent; const Target, View: TControl;
+  AViewAutoFree: Boolean; XOffset: Single; YOffset: Single;
+  Position: TDialogViewPosition): TDialog;
+var
+  Dialog: TDialog;
+  X, Y, PW, PH: Single;
+  P: TPointF;
+begin
+  Result := nil;
+  if View = nil then Exit;
+  AtomicIncrement(DialogRef);
+
+  Dialog := TDialog.Create(AOwner);
+  Dialog.FViewRoot := TDialogView.Create(AOwner);
+  Dialog.FViewRoot.Dialog := Dialog;
+  Dialog.FViewRoot.BeginUpdate;
+  Dialog.FViewRoot.OnClick := Dialog.DoRootClick;
+  Dialog.FViewRoot.Parent := Dialog.GetFirstParent;
+  if Dialog.FViewRoot.Parent = nil then begin
+    Dialog.Dismiss;
+    Exit;
+  end;
+
+  Dialog.FViewRoot.Clickable := True;
+  Dialog.FViewRoot.Align := TAlignLayout.Client;
+  Dialog.FViewRoot.Index := Dialog.FViewRoot.Parent.ChildrenCount - 1;
+  Dialog.FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+  Dialog.FViewRoot.CanFocus := False;
+
+  View.Name := '';
+  View.Parent := Dialog.FViewRoot;
+  X := 0;
+  Y := 0;
+  if Assigned(Target) then begin
+    P := TPointF.Zero;
+    P := Target.LocalToAbsolute(P);
+    PW := Target.Width;
+    PH := Target.Height;
+    case Position of
+      Top:
+        begin
+          X := (PW - View.Width) / 2 + P.X + XOffset;
+          Y := P.Y - View.Height - YOffset;
+        end;
+      Bottom:
+        begin
+          X := (PW - View.Width) / 2 + P.X + XOffset;
+          Y := P.Y + PH + YOffset;
+        end;
+      Left:
+        begin
+          X := P.X - View.Width - XOffset;
+          Y := (PH - View.Height) / 2 + P.Y + YOffset;
+        end;
+      Right:
+        begin
+          X := P.X + PW + XOffset;
+          Y := (PH - View.Height) / 2 + P.Y + YOffset;
+        end;
+      Center:
+        begin
+          X := (PW - View.Width) / 2 + P.X + XOffset;
+          Y := (PH - View.Height) / 2 + P.Y + YOffset;
+        end;
+    end;
+  end else begin
+    PW := Dialog.FViewRoot.Width;
+    PH := Dialog.FViewRoot.Height;
+    case Position of
+      Top:
+        begin
+          X := (PW - View.Width) / 2 + XOffset;
+          Y := 0 + YOffset;
+        end;
+      Bottom:
+        begin
+          X := (PW - View.Width) / 2 + XOffset;
+          Y := PH - View.Height - YOffset;
+        end;
+      Left:
+        begin
+          X := 0 + XOffset;
+          Y := (PH - View.Height) / 2 + YOffset;
+        end;
+      Right:
+        begin
+          X := PW - View.Width - XOffset;
+          Y := (PH - View.Height) / 2 + YOffset;
+        end;
+      Center:
+        begin
+          X := (PW - View.Width) / 2 + XOffset;
+          Y := (PH - View.Height) / 2 + YOffset;
+        end;
+    end;
+  end;
+  View.Position.Point := TPointF.Create(X, Y);
+
+  Dialog.SetBackColor(GetDefaultStyleMgr.FDialogMaskColor);
+  Dialog.InitOK;
+  Result := Dialog;
 end;
 
 { TCustomAlertDialog }

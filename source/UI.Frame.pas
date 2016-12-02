@@ -40,7 +40,7 @@ type
   /// <summary>
   /// Frame 状态数据
   /// </summary>
-  TFrameStateData = TDictionary<string, TFrameDataValue>;
+  TFrameStateData = class(TDictionary<string, TFrameDataValue>);
 
   TFrameStateDataHelper = class helper for TFrameStateData
     function GetDataValue(DataType: TFrameDataType; const Value: TValue): TFrameDataValue;
@@ -220,6 +220,8 @@ type
     function GetData: TValue; override;
     procedure SetData(const Value: TValue); override;
 
+    function FinishIsFreeApp: Boolean;
+
     // 检查是否需要释放，如果需要，就释放掉
     function CheckFree(): Boolean;
     // 内部 Show 实现
@@ -398,8 +400,14 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn: Boolean;
     if IsIn then begin
       Self.Opacity := 0;
       NewValue := 1;
-    end else
+    end else begin
       NewValue := 0;
+      if FinishIsFreeApp then begin
+        if Assigned(AEvent) then
+          AEvent(Self);
+        Exit;
+      end;
+    end;
     TFrameAnimator.AnimateFloat(Self, 'Opacity', NewValue, AEvent);
   end;
 
@@ -705,6 +713,12 @@ begin
   FShowing := False;
   FNeedFree := False;
   FNeedHide := False;
+end;
+
+function TFrameView.FinishIsFreeApp: Boolean;
+begin
+  Result := Assigned(Parent) and (not Assigned(Parent.Parent)) and
+    (Parent is TForm) and (Parent.ChildrenCount <= MainFormMinChildren + 1);
 end;
 
 procedure TFrameView.Hint(const Msg: string);
