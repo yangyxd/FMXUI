@@ -2575,7 +2575,7 @@ end;
 
 function TView.CreateBackground: TDrawable;
 begin
-  Result := TDrawable.Create(Self);
+  Result := TDrawableBorder.Create(Self);
   Result.OnChanged := DoBackgroundChanged;
 end;
 
@@ -3046,7 +3046,7 @@ begin
   if State = TViewState.None then Exit;
   if (csDestroying in ComponentState) or (csDesigning in ComponentState) then Exit;
   for I := 0 to Controls.Count - 1 do begin
-    if (State = TViewState.Pressed) and (not Controls.Items[I].HitTest) then
+    if (State = TViewState.Pressed) and (Controls.Items[I].HitTest) then
       Continue;
     if Supports(Controls.Items[I], IView, View) then
       View.IncViewState(State);

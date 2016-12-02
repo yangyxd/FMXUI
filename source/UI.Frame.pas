@@ -191,6 +191,7 @@ type
     FPrivateState: TFrameState;
     FOnShow: TNotifyEvent;
     FOnHide: TNotifyEvent;
+    FOnFinish: TNotifyEvent;
     FOnReStart: TNotifyEvent;
     FWaitDialog: TProgressDialog;
     FShowing: Boolean;    // 正在显示中
@@ -213,6 +214,7 @@ type
 
     procedure DoShow(); virtual;
     procedure DoHide(); virtual;
+    procedure DoFinish(); virtual;
     procedure DoReStart(); virtual;
 
     function GetData: TValue; override;
@@ -348,6 +350,7 @@ type
     property Title: string read GetTitle write SetTitle;
     property OnShow: TNotifyEvent read FOnShow write FOnShow;
     property OnHide: TNotifyEvent read FOnHide write FOnHide;
+    property OnFinish: TNotifyEvent read FOnFinish write FOnFinish;
     property OnReStart: TNotifyEvent read FOnReStart write FOnReStart;
   end;
 
@@ -528,6 +531,12 @@ begin
   inherited;
 end;
 
+procedure TFrameView.DoFinish;
+begin
+  if Assigned(FOnFinish) then
+    FOnFinish(Self);
+end;
+
 procedure TFrameView.DoHide;
 begin
   if Assigned(FOnHide) then
@@ -548,6 +557,7 @@ end;
 
 procedure TFrameView.Finish(Ani: TFrameAniType);
 begin
+  DoFinish();
   if Assigned(FNextView) then begin
     FNextView.FLastView := FLastView;
     FLastView := nil;

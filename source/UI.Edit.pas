@@ -266,6 +266,7 @@ type
     procedure SetReturnKeyType(const Value: TReturnKeyType);
     function GetSelfCaret: TCaret;
     procedure SetSelectionFill(const Value: TBrush);
+    function GetLength: Integer;
   protected
     function GetText: string; override;
     procedure SetText(const Value: string); override;
@@ -381,6 +382,7 @@ type
     property TextHeight: Single read FTextHeight;
     property LineHeight: Single read FLineHeight;
     property LineTop: Single read FLineTop;
+    property Length: Integer read GetLength;
     property SelectionMode: TSelectionMode read FSelectionMode write SetSelectionMode;
     property Model: TEditDataModel read FModel;
     property MaxLength: Integer read GetMaxLength write SetMaxLength default 0;
@@ -1001,6 +1003,7 @@ begin
     begin
       DoChangeTracking;
       SendMessage<string>(MM_EDIT_TEXT_CHANGED, FTextSettingsInfo.Text);
+      Change;
     end;
   end;
 end;
@@ -1455,12 +1458,12 @@ begin
         Shift := 0;
         while (LText.Length > 0) and FMX.Text.FindWordBound(LText, 0, BP, EP) do
         begin
-          if Length(FSpellService.CheckSpelling(LText.Substring(BP, EP - BP + 1))) > 0 then
+          if System.Length(FSpellService.CheckSpelling(LText.Substring(BP, EP - BP + 1))) > 0 then
           begin
             Rgn := FTextLayout.RegionForRange(TTextRange.Create(Shift + BP, EP - BP + 1));
             for J := Low(Rgn) to High(Rgn) do
             begin
-              SetLength(FSpellingRegions, Length(FSpellingRegions) + 1);
+              SetLength(FSpellingRegions, System.Length(FSpellingRegions) + 1);
               FSpellingRegions[High(FSpellingRegions)] := Rgn[J];
               R := ContentRect;
               FSpellingRegions[High(FSpellingRegions)].Offset(-R.Left, -R.Top);
@@ -1471,12 +1474,12 @@ begin
         end;
         FUpdateSpelling := False;
       end;
-      if Length(FSpellingRegions) > 0 then
+      if System.Length(FSpellingRegions) > 0 then
       begin
         if FFirstVisibleChar > 1 then
         begin
           Rgn := FTextLayout.RegionForRange(TTextRange.Create(FFirstVisibleChar - 1, 1));
-          if Length(Rgn) > 0 then
+          if System.Length(Rgn) > 0 then
             VisibleCharPos := Rgn[0].Left
           else
             VisibleCharPos := 0;
@@ -1648,13 +1651,13 @@ begin
       Result := CheckGravity(Result, EditRectWidth, WholeTextWidth);
   end else begin
     Rgn := FTextLayout.RegionForRange(TTextRange.Create(0, 1));
-    if Length(Rgn) > 0 then
+    if System.Length(Rgn) > 0 then
       Result := Rgn[0].Left
     else
       Result := 0;
     if (FFirstVisibleChar - 1) < a then begin
       Rgn := FTextLayout.RegionForRange(TTextRange.Create(FFirstVisibleChar - 1, a - FFirstVisibleChar + 1));
-      if Length(Rgn) > 0 then
+      if System.Length(Rgn) > 0 then
         Result := Result + Rgn[High(Rgn)].Width;
     end;
     EditRectWidth := ViewRect.Width;
@@ -1733,6 +1736,11 @@ end;
 function TCustomEditView.GetKillFocusByReturn: Boolean;
 begin
   Result := Model.KillFocusByReturn;
+end;
+
+function TCustomEditView.GetLength: Integer;
+begin
+  Result := Model.FTextSettingsInfo.Text.Length;
 end;
 
 function TCustomEditView.GetMaxLength: Integer;
@@ -2880,7 +2888,7 @@ function TCustomEditView.ShowContextMenu(
           EditPopupMenu.Parent := Root.GetObject;
         Result := True;
         UpdatePopupMenuItems;
-        if Model.CheckSpelling and (FSpellService <> nil) and (Length(FSpellingRegions) > 0) then
+        if Model.CheckSpelling and (FSpellService <> nil) and (System.Length(FSpellingRegions) > 0) then
           UpdateSpellPopupMenu(ScreenToLocal(ScreenPosition));
         EditPopupMenu.PopupComponent := Self;
         EditPopupMenu.Popup(Round(ScreenPosition.X), Round(ScreenPosition.Y));
@@ -3113,7 +3121,7 @@ begin
       if (LPos > -1) and FMX.Text.FindWordBound(Text, LPos, BP, EP) then
       begin
         Spells := FSpellService.CheckSpelling(Text.Substring(BP, EP - BP + 1));
-        if Length(Spells) > 0 then
+        if System.Length(Spells) > 0 then
         begin
           for J := Low(Spells) to High(Spells) do
           begin
