@@ -119,6 +119,8 @@ const
   FONT_MessageTextSize = 15;
   FONT_ButtonTextSize = 16;
 
+  Title_Gravity = TLayoutGravity.CenterVertical;
+
   {$IFDEF IOS}
   SIZE_BackgroundRadius = 15;
   SIZE_TitleHeight = 38;
@@ -158,6 +160,7 @@ type
     FButtonTextSize: Integer;
     FIconSize: Integer;
     FBackgroundRadius: Single;
+    FTitleGravity: TLayoutGravity;
     procedure SetButtonColor(const Value: TViewColor);
     procedure SetButtonBorder(const Value: TViewBorder);
     procedure SetButtonTextColor(const Value: TTextColor);
@@ -185,6 +188,8 @@ type
     // 等待消息框消息文字颜色
     property ProcessTextColor: TAlphaColor read FProcessTextColor write FProcessTextColor;
 
+    // 标题栏文本重力
+    property TitleGravity: TLayoutGravity read FTitleGravity write FTitleGravity default Title_Gravity;
     // 标题栏高度
     property TitleHeight: Integer read FTitleHeight write FTitleHeight default SIZE_TitleHeight;
     // 标题文本大小
@@ -371,7 +376,8 @@ type
     /// <param name="Target">定位控件</param>
     /// <param name="ViewClass">要自动创建的视图类</param>
     /// <param name="Position">视图位置（默认位于目标下方）</param>
-    /// <param name="PositionOffset">视图偏移位置</param>
+    /// <param name="XOffset">视图偏移横向位置</param>
+    /// <param name="YOffset">视图偏移垂直位置</param>
     /// </summary>
     class function ShowView(const AOwner: TComponent; const Target: TControl;
       const ViewClass: TControlClass;
@@ -383,7 +389,8 @@ type
     /// <param name="View">要显示的视图对象</param>
     /// <param name="AViewAutoFree">是否自动释放View对象</param>
     /// <param name="Position">视图位置（默认位于目标下方）</param>
-    /// <param name="PositionOffset">视图偏移位置</param>
+    /// <param name="XOffset">视图偏移横向位置</param>
+    /// <param name="YOffset">视图偏移垂直位置</param>
     /// </summary>
     class function ShowView(const AOwner: TComponent; const Target: TControl;
       const View: TControl; AViewAutoFree: Boolean = True;
@@ -394,6 +401,11 @@ type
     /// 在一个目标控件身上查找与其绑定在一起的对象框
     /// </summary>
     class function GetDialog(const Target: TControl): IDialog;
+
+    /// <summary>
+    /// 在一个目标控件身上查找与其绑定在一起的对话框，如果找到，关闭它
+    /// </summary>
+    class procedure CloseDialog(const Target: TControl);
 
     /// <summary>
     /// 关闭对话框
@@ -511,6 +523,9 @@ type
     FData: TValue;
     FView: TControl;
     FViewAutoFree: Boolean;
+
+    FUseRootBackColor: Boolean;
+    FRootBackColor: TAlphaColor;
 
     FTitle: string;
     FMessage: string;
@@ -672,6 +687,11 @@ type
     function SetMaskVisible(V: Boolean): TDialogBuilder;
 
     /// <summary>
+    /// 设置 对话框 Root 层背景颜色
+    /// </summary>
+    function SetRootBackColor(const V: TAlphaColor): TDialogBuilder;
+
+    /// <summary>
     /// 设置附加的数据
     /// </summary>
     function SetData(const V: TObject): TDialogBuilder; overload;
@@ -694,6 +714,7 @@ type
     property IsMultiChoice: Boolean read FIsMultiChoice;
     property ItemSingleLine: Boolean read FItemSingleLine;
     property MaskVisible: Boolean read FMaskVisible write FMaskVisible;
+    property RootBackColor: TAlphaColor read FRootBackColor write FRootBackColor;
     property ClickButtonDismiss: Boolean read FClickButtonDismiss;
     property CheckedItem: Integer read FCheckedItem; 
     property CheckedItems: TArray<Boolean> read FCheckedItems;
@@ -789,6 +810,8 @@ begin
   FItemSingleLine := True;
   FClickButtonDismiss := True;
   FMaskVisible := True;
+  FUseRootBackColor := False;
+  FRootBackColor := TAlphaColorRec.Null;
   FIcon := nil;
 end;
 
@@ -818,8 +841,10 @@ begin
   FItems := nil;
   if Assigned(FView) then begin
     FView.Parent := nil;
-    if FViewAutoFree then
-      FreeAndNil(FView);
+    if FViewAutoFree then begin
+      if not (csDestroying in FView.ComponentState) then
+        FreeAndNil(FView);
+    end;
   end;
   inherited;
 end;
@@ -1085,6 +1110,13 @@ begin
   FPositiveButtonListenerA := AListener;    
 end;
 
+function TDialogBuilder.SetRootBackColor(const V: TAlphaColor): TDialogBuilder;
+begin
+  Result := Self;
+  FRootBackColor := V;
+  FUseRootBackColor := True;
+end;
+
 function TDialogBuilder.SetPositiveButton(const AText: string;
   AListener: TOnDialogClickListener): TDialogBuilder;
 begin
@@ -1189,6 +1221,15 @@ begin
   Dismiss;
 end;
 
+class procedure TDialog.CloseDialog(const Target: TControl);
+var
+  Dialog: IDialog;
+begin
+  Dialog := GetDialog(Target);
+  if Assigned(Dialog) then
+    Dialog.Dismiss;
+end;
+
 constructor TDialog.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -1266,8 +1307,12 @@ begin
       Exit;
     end;
     FreeAndNil(FTimer);
-    if (FViewRoot <> nil) and (FViewRoot.FLayBubble <> nil) then
-      FViewRoot.FLayBubble.Visible := False;
+    if (FViewRoot <> nil) then begin
+      if (FViewRoot.FLayBubble <> nil) then
+        FViewRoot.FLayBubble.Visible := False
+      else if FViewRoot.ControlsCount = 1 then // ShowView 时会是这种情况
+        FViewRoot.Controls[0].Visible := False;
+    end;
     FDestBgColor := $00000000;
     FTimer := TTimer.Create(Owner);
     FTimer.OnTimer := DoAsyncDismissTimer;
@@ -1332,12 +1377,19 @@ begin
 end;
 
 class function TDialog.GetDialog(const Target: TControl): IDialog;
+var
+  V: TControl;
 begin
   Result := nil;
-  if Target = nil then Exit;
-  if (Target.Parent = nil) or (not (Target.Parent is TDialogView)) then
-    Exit;
-  Result := (Target.Parent as TDialogView).FDialog;
+  if (Target = nil) or (Target.Parent = nil) then Exit;
+  V := Target.ParentControl;
+  while V <> nil do begin
+    if V is TDialogView then begin
+      Result := (V as TDialogView).FDialog;
+      Break;
+    end;
+    V := V.ParentControl;
+  end;
 end;
 
 function TDialog.GetFirstParent: TFmxObject;
@@ -1441,8 +1493,11 @@ begin
       FViewRoot.Show;
 
       if Assigned(FViewRoot.FLayBubble) then begin
-        FViewRoot.FLayBubble.Opacity := 0.3;
-        TAnimator.AnimateFloat(FViewRoot.FLayBubble, 'Opacity', 1, 0.3);
+        // 如果图层完全不可见，设置动画时会出错
+        if (FViewRoot.FLayBubble.Background.ItemDefault.Color and $FF000000 <> 0) then begin
+          FViewRoot.FLayBubble.Opacity := 0.3;
+          TAnimator.AnimateFloat(FViewRoot.FLayBubble, 'Opacity', 1, 0.3);
+        end;
       end;
     end;
   except
@@ -1813,6 +1868,18 @@ begin
     FViewRoot.FButtonLayout.Visible := False;
   end;
 
+  if (Builder.Title = '') or (BtnCount = 0) then begin
+    FViewRoot.FMsgBody.Background.XRadius := StyleManager.FBackgroundRadius;
+    FViewRoot.FMsgBody.Background.YRadius := StyleManager.FBackgroundRadius;
+    if BtnCount = 0 then begin
+      if Builder.Title = '' then
+        FViewRoot.FMsgBody.Background.Corners := [TCorner.TopLeft, TCorner.TopRight, TCorner.BottomLeft, TCorner.BottomRight]
+      else
+        FViewRoot.FMsgBody.Background.Corners := [TCorner.BottomLeft, TCorner.BottomRight]
+    end else
+      FViewRoot.FMsgBody.Background.Corners := [TCorner.TopLeft, TCorner.TopRight];
+  end;
+
   // 设置 Body 最大高度
   if Assigned(FViewRoot.FMsgBody) then begin
     BodyMH := FViewRoot.FLayBubble.MaxHeight;
@@ -1844,10 +1911,12 @@ begin
   if Assigned(FViewRoot.FMsgMessage) then
     FViewRoot.FMsgMessage.Visible := False;
   with Builder.View do begin
+    Name := '';
     Parent := FViewRoot.FMsgBody;
     Index := FViewRoot.FButtonLayout.Index - 1;
     Align := TAlignLayout.Client;
   end;
+  FViewRoot.FMsgBody.Height := Builder.View.Height;
 end;
 
 procedure TCustomAlertDialog.InitList(const ListView: TListViewEx; IsMulti: Boolean);
@@ -2167,10 +2236,14 @@ begin
   FLayBubble.Parent := Self;
   FLayBubble.Margin := '16';
   FLayBubble.ClipChildren := True;
-  FLayBubble.Background.ItemDefault.Color := StyleMgr.BackgroundColor;
+  if FDialog.Builder.FUseRootBackColor then
+    FLayBubble.Background.ItemDefault.Color := FDialog.Builder.FRootBackColor
+  else begin
+    FLayBubble.Background.ItemDefault.Color := StyleMgr.BackgroundColor;
+    FLayBubble.Background.XRadius := StyleMgr.FBackgroundRadius;
+    FLayBubble.Background.YRadius := StyleMgr.FBackgroundRadius;
+  end;
   FLayBubble.Background.ItemDefault.Kind := TViewBrushKind.Solid;
-  FLayBubble.Background.XRadius := StyleMgr.FBackgroundRadius;
-  FLayBubble.Background.YRadius := StyleMgr.FBackgroundRadius;
   FLayBubble.Layout.CenterInParent := True;
   FLayBubble.Clickable := True;
   FLayBubble.WidthSize := TViewSize.FillParent;
@@ -2188,7 +2261,7 @@ begin
   FTitleView.ClipChildren := True;
   FTitleView.TextSettings.Font.Size := StyleMgr.TitleTextSize;
   FTitleView.TextSettings.Color.Default := StyleMgr.TitleTextColor;
-  FTitleView.Gravity := TLayoutGravity.CenterVertical;
+  FTitleView.Gravity := StyleMgr.TitleGravity;
   FTitleView.Padding.Rect := RectF(8, 4, 8, 4);
   FTitleView.MinHeight := StyleMgr.TitleHeight;
   FTitleView.WidthSize := TViewSize.FillParent;
@@ -2196,7 +2269,7 @@ begin
   FTitleView.Background.ItemDefault.Kind := TViewBrushKind.Solid;
   FTitleView.Background.XRadius := StyleMgr.FBackgroundRadius;
   FTitleView.Background.YRadius := StyleMgr.FBackgroundRadius;
-  FTitleView.Background.Corners := [TCorner.TopLeft];
+  FTitleView.Background.Corners := [TCorner.TopLeft, TCorner.TopRight];
   FTitleView.Background.Padding.Rect := RectF(1, 1, 1, 0);
   FTitleView.HeightSize := TViewSize.WrapContent;
   // 内容区
@@ -2211,7 +2284,10 @@ begin
   FMsgBody.WidthSize := TViewSize.FillParent;
   FMsgBody.HeightSize := TViewSize.WrapContent;
   FMsgBody.Orientation := TOrientation.Vertical;
-  FMsgBody.Background.ItemDefault.Color := StyleMgr.BodyBackGroundColor;
+  if FDialog.Builder.FUseRootBackColor then
+    FMsgBody.Background.ItemDefault.Color := FDialog.Builder.FRootBackColor
+  else
+    FMsgBody.Background.ItemDefault.Color := StyleMgr.BodyBackGroundColor;
   FMsgBody.Background.ItemDefault.Kind := TViewBrushKind.Solid;
   FMsgBody.Margins.Rect := RectF(0, 1, 0, 0);
 end;
@@ -2230,7 +2306,8 @@ begin
   Visible := True;
   BringToFront;
   Realign;
-  Width := Width + 0.1;
+  if (FListView <> nil) and (FListView.Visible) then
+    Width := Width + 0.1;
 end;
 
 { TDialogStyleManager }
@@ -2252,6 +2329,7 @@ begin
   FButtonTextSize := FONT_ButtonTextSize;
   FIconSize := SIZE_ICON;
   FTitleHeight := SIZE_TitleHeight;
+  FTitleGravity := Title_Gravity;
   FBackgroundRadius := SIZE_BackgroundRadius;
 
   FButtonColor := TViewColor.Create();

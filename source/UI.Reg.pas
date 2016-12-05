@@ -77,6 +77,7 @@ procedure Register;
 begin
   RegisterComponents(PageName, [TView, TLinearLayout, TRelativeLayout]);
 
+  RegisterComponents(PageName, [TProgressView]);
   RegisterComponents(PageName, [TTextView]);
   RegisterComponents(PageName, [TButtonView]);
   RegisterComponents(PageName, [TEditView]);

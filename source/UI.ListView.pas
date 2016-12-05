@@ -408,6 +408,7 @@ end;
 constructor TListViewEx.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
+  New(FContentBounds);
   CreateCoentsView();
   FAllowItemChildClick := True;
   FDivider := $afe3e4e5;
@@ -586,7 +587,7 @@ var
   ItemDefaultHeight: Single;
 begin
   SetLength(FItemsPoints, Count);
-  FContentBounds := TRectD.Empty;
+  FContentBounds^ := TRectD.Empty;
   if Length(FItemsPoints) = 0 then
     Exit;
   ItemDefaultHeight := FAdapter.ItemDefaultHeight;

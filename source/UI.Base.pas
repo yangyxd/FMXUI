@@ -111,8 +111,10 @@ type
   private
     FImageIndex: Integer;
     procedure SetImageIndex(const Value: Integer);
+  public
+    constructor Create(const ADefaultKind: TBrushKind; const ADefaultColor: TAlphaColor);
   published
-    property ImageIndex: Integer read FImageIndex write SetImageIndex;
+    property ImageIndex: Integer read FImageIndex write SetImageIndex default -1;
   end;
 
   /// <summary>
@@ -222,7 +224,7 @@ type
     procedure CreateBrush(var Value: TBrush); override;
   published
     property Padding: TBounds read FPadding write SetPadding;
-    property Paddings: string read GetPaddings write SetPaddings;
+    property Paddings: string read GetPaddings write SetPaddings stored False;
 
     property XRadius;
     property YRadius;
@@ -289,6 +291,7 @@ type
     function GetBorder: TViewBorder;
   protected
     function GetEmpty: Boolean; override;
+    procedure CreateBorder(); virtual;
     procedure DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState); override;
   public
     constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
@@ -390,6 +393,16 @@ type
     FEnabled: TAlphaColor;
     FActivated: TAlphaColor;
     FHintText: TAlphaColor;
+    FDefaultChange: Boolean;
+    function DefaultColorStored: Boolean;
+    procedure SetDefault(const Value: TAlphaColor);
+    procedure SetActivated(const Value: TAlphaColor);
+    procedure SetChecked(const Value: TAlphaColor);
+    procedure SetEnabled(const Value: TAlphaColor);
+    procedure SetFocused(const Value: TAlphaColor);
+    procedure SetHovered(const Value: TAlphaColor);
+    procedure SetPressed(const Value: TAlphaColor);
+    procedure SetSelected(const Value: TAlphaColor);
   protected
     procedure DoChange(Sender: TObject);
     function GetValue(const Index: Integer): TAlphaColor;
@@ -405,21 +418,26 @@ type
 
     function GetColor(State: TViewState): TAlphaColor;
     procedure SetColor(State: TViewState; const Value: TAlphaColor);
+
+    property DefaultChange: Boolean read FDefaultChange write FDefaultChange;
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
   published
-    property Default: TAlphaColor index 0 read GetValue write SetValue;
-    property Pressed: TAlphaColor index 1 read GetValue write SetValue;
-    property Focused: TAlphaColor index 2 read GetValue write SetValue;
-    property Hovered: TAlphaColor index 3 read GetValue write SetValue;
-    property Selected: TAlphaColor index 4 read GetValue write SetValue;
-    property Checked: TAlphaColor index 5 read GetValue write SetValue;
-    property Enabled: TAlphaColor index 6 read GetValue write SetValue;
-    property Activated: TAlphaColor index 7 read GetValue write SetValue;
+    property Default: TAlphaColor read FDefault write SetDefault stored DefaultColorStored;
+    property Pressed: TAlphaColor read FPressed write SetPressed default TAlphaColorRec.Null;
+    property Focused: TAlphaColor read FFocused write SetFocused default TAlphaColorRec.Null;
+    property Hovered: TAlphaColor read FHovered write SetHovered default TAlphaColorRec.Null;
+    property Selected: TAlphaColor read FSelected write SetSelected default TAlphaColorRec.Null;
+    property Checked: TAlphaColor read FChecked write SetChecked default TAlphaColorRec.Null;
+    property Enabled: TAlphaColor read FEnabled write SetEnabled default TAlphaColorRec.Null;
+    property Activated: TAlphaColor read FActivated write SetActivated default TAlphaColorRec.Null;
   end;
 
   TTextColor = class(TViewColor)
+  private
+    procedure SetHintText(const Value: TAlphaColor);
+    function GetHintText: TAlphaColor;
   published
-    property HintText: TAlphaColor index 8 read GetValue write SetValue;
+    property HintText: TAlphaColor read GetHintText write SetHintText default TAlphaColorRec.Gray;
   end;
 
   /// <summary>
@@ -491,13 +509,13 @@ type
     property AlignBottom: TControl read FAlignBottom write SetAlignBottom;
     property WidthSize: TViewSize read FWidth write SetWidth default TViewSize.CustomSize;
     property HeightSize: TViewSize read FHeight write SetHeight default TViewSize.CustomSize;
-    property AlignParentLeft: Boolean read FAlignParentLeft write SetAlignParentLeft;
-    property AlignParentTop: Boolean read FAlignParentTop write SetAlignParentTop;
-    property AlignParentRight: Boolean read FAlignParentRight write SetAlignParentRight;
-    property AlignParentBottom: Boolean read FAlignParentBottom write SetAlignParentBottom;
-    property CenterInParent: Boolean read FCenterInParent write SetCenterInParent;
-    property CenterHorizontal: Boolean read FCenterHorizontal write SetCenterHorizontal;
-    property CenterVertical: Boolean read FCenterVertical write SetCenterVertical;
+    property AlignParentLeft: Boolean read FAlignParentLeft write SetAlignParentLeft default False;
+    property AlignParentTop: Boolean read FAlignParentTop write SetAlignParentTop default False;
+    property AlignParentRight: Boolean read FAlignParentRight write SetAlignParentRight default False;
+    property AlignParentBottom: Boolean read FAlignParentBottom write SetAlignParentBottom default False;
+    property CenterInParent: Boolean read FCenterInParent write SetCenterInParent default False;
+    property CenterHorizontal: Boolean read FCenterHorizontal write SetCenterHorizontal default False;
+    property CenterVertical: Boolean read FCenterVertical write SetCenterVertical default False;
   end;
 
   /// <summary>
@@ -622,6 +640,7 @@ type
     procedure SetHorzVertValue(const H, V: TTextAlign);
     procedure SetHorzAlign(const Value: TTextAlign);
     procedure SetVertAlign(const Value: TTextAlign);
+    function GetTextLength: Integer;
   protected
     procedure DoChange; virtual;
     procedure DoTextChanged;
@@ -649,6 +668,7 @@ type
     property IsEffectsChange: Boolean read FIsEffectsChange;
 
     property Text: string read FText write SetText;
+    property TextLength: Integer read GetTextLength;
     property FillTextFlags: TFillTextFlags read GetFillTextFlags;
 
     property HorzAlign: TTextAlign read GetHorzAlign write SetHorzAlign;
@@ -657,13 +677,13 @@ type
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
     property OnTextChanged: TNotifyEvent read FOnTextChanged write FOnTextChanged;
   published
-    property AutoSize: Boolean read FAutoSize write SetAutoSize;
+    property AutoSize: Boolean read FAutoSize write SetAutoSize default False;
     property Color: TViewColor read FColor write SetColor;
     property Font: TFont read FFont write SetFont;
-    property PrefixStyle: TPrefixStyle read FPrefixStyle write SetPrefixStyle;
+    property PrefixStyle: TPrefixStyle read FPrefixStyle write SetPrefixStyle default TPrefixStyle.HidePrefix;
     property Trimming: TTextTrimming read FTrimming write SetTrimming default TTextTrimming.None;
     property WordWrap: Boolean read GetWordWrap write SetWordWrap default False;
-    property Gravity: TLayoutGravity read GetGravity write SetGravity;
+    property Gravity: TLayoutGravity read GetGravity write SetGravity default TLayoutGravity.None;
   end;
 
   /// <summary>
@@ -755,6 +775,8 @@ type
     procedure SetTempMaxHeight(const Value: Single);
     procedure SetTempMaxWidth(const Value: Single);
     function GetViewRectD: TRectD;
+    function GetIsChecked: Boolean;
+    procedure SetIsChecked(const Value: Boolean);
   protected
     function GetMaxHeight: Single; override;
     function GetMaxWidth: Single; override;
@@ -859,8 +881,7 @@ type
     function GetContentBounds: TRectD; virtual;
   protected
     {$IFDEF ANDROID}
-    FAudioManager: JAudioManager;
-    procedure InitAudioManager();
+    class procedure InitAudioManager();
     {$ENDIF}
   public
     /// <summary>
@@ -961,17 +982,21 @@ type
     /// </summary>
     property ClipChildren default True;
     /// <summary>
+    /// 是否选中
+    /// </summary>
+    property Checked: Boolean read GetIsChecked write SetIsChecked default False;
+    /// <summary>
     /// 相对布局属性。当容器是TRelativeLayout相对布局时有效。Layout是一个TViewLayout对象，详请参考TViewLayout属性说明。
     /// </summary>
     property Layout: TViewLayout read GetLayout write SetLayout;
     /// <summary>
     /// 组件内容四周留白大小。会自动设置Padding的四边会相同的值。
     /// </summary>
-    property Paddings: string read GetPaddings write SetPaddings;
+    property Paddings: string read GetPaddings write SetPaddings stored False;
     /// <summary>
     /// 布局时与其它组件四周的距离。此属性是一个字符串形式的浮点数，用于一次设置Margins的四边为相同的大小。
     /// </summary>
-    property Margin: string read GetMargin write SetMargin;
+    property Margin: string read GetMargin write SetMargin stored False;
     /// <summary>
     /// 组件是否可视。Visible 为 True 时有效，InVisible 为 True 时，只显位置不显示内容
     /// </summary>
@@ -1164,6 +1189,9 @@ var
   _PerfFreq: Int64;
   {$ELSE}
   _Watch: TStopWatch;
+  {$ENDIF}
+  {$IFDEF ANDROID}
+  FAudioManager: JAudioManager = nil;
   {$ENDIF}
 
 function GetTimestamp: Int64;
@@ -2010,7 +2038,6 @@ begin
   if Assigned(Value) then
     FreeAndNil(Value);
   Value := TViewImagesBrush.Create(TBrushKind(FDefaultKind), FDefaultColor);
-  TViewImagesBrush(Value).FImageIndex := -1;
   Value.OnChanged := DoChange;
 end;
 
@@ -2232,6 +2259,11 @@ begin
   FHintText := TAlphaColorRec.Gray;
 end;
 
+function TViewColor.DefaultColorStored: Boolean;
+begin
+  Result := FDefaultChange;
+end;
+
 destructor TViewColor.Destroy;
 begin
   inherited;
@@ -2278,6 +2310,22 @@ begin
   Result := GetColor(TViewState(Index));
 end;
 
+procedure TViewColor.SetActivated(const Value: TAlphaColor);
+begin
+  if FActivated <> Value then begin
+    FActivated := Value;
+    DoChange(Self);
+  end;
+end;
+
+procedure TViewColor.SetChecked(const Value: TAlphaColor);
+begin
+  if FChecked <> Value then begin
+    FChecked := Value;
+    DoChange(Self);
+  end;
+end;
+
 procedure TViewColor.SetColor(State: TViewState; const Value: TAlphaColor);
 begin
   case State of
@@ -2298,9 +2346,73 @@ begin
   DoChange(Self);
 end;
 
+procedure TViewColor.SetDefault(const Value: TAlphaColor);
+begin
+  if Value <> FDefault then begin
+    FDefaultChange := True;
+    FDefault := Value;
+    DoChange(Self);
+  end;
+end;
+
+procedure TViewColor.SetEnabled(const Value: TAlphaColor);
+begin
+  if FEnabled <> Value then begin  
+    FEnabled := Value;
+    DoChange(Self);
+  end;
+end;
+
+procedure TViewColor.SetFocused(const Value: TAlphaColor);
+begin
+  if Focused <> Value then begin  
+    FFocused := Value;
+    DoChange(Self);
+  end;
+end;
+
+procedure TViewColor.SetHovered(const Value: TAlphaColor);
+begin
+  if FHovered <> Value then begin  
+    FHovered := Value;
+    DoChange(Self);
+  end;
+end;
+
+procedure TViewColor.SetPressed(const Value: TAlphaColor);
+begin
+  if FPressed <> Value then begin  
+    FPressed := Value;
+    DoChange(Self);
+  end;
+end;
+
+procedure TViewColor.SetSelected(const Value: TAlphaColor);
+begin
+  if FSelected <> Value then begin  
+    FSelected := Value;
+    DoChange(Self);
+  end;
+end;
+
 procedure TViewColor.SetValue(const Index: Integer; const Value: TAlphaColor);
 begin
   SetColor(TViewState(Index), Value);
+end;  
+
+{ TTextColor }
+
+function TTextColor.GetHintText: TAlphaColor;
+begin
+  Result := FHintText;
+end;
+
+procedure TTextColor.SetHintText(const Value: TAlphaColor);
+begin
+  if FHintText <> Value then begin  
+    FHintText := Value;
+    DoChange(Self);
+  end;
 end;
 
 { TViewLayout }
@@ -2603,9 +2715,6 @@ begin
   FreeScrollbar();
   FreeAndNil(FBackground);
   FreeAndNil(FLayout);
-  {$IFDEF ANDROID}
-  FAudioManager := nil;
-  {$ENDIF}
   inherited Destroy;
 end;
 
@@ -2756,14 +2865,14 @@ begin
       Result := TViewState.Pressed
     else if TViewState.Focused in FViewState then
       Result := TViewState.Focused
-    else if TViewState.Hovered in FViewState then
-      Result := TViewState.Hovered
     else if TViewState.Selected in FViewState then
       Result := TViewState.Selected
     else if TViewState.Checked in FViewState then
       Result := TViewState.Checked
     else if TViewState.Activated in FViewState then
       Result := TViewState.Activated
+    else if TViewState.Hovered in FViewState then
+      Result := TViewState.Hovered
     else
       Result := TViewState.None
   end;
@@ -2789,6 +2898,11 @@ end;
 function TView.GetInVisible: Boolean;
 begin
   Result := FInVisible;
+end;
+
+function TView.GetIsChecked: Boolean;
+begin
+  Result := TViewState.Checked in FViewState;
 end;
 
 function TView.GetLayout: TViewLayout;
@@ -3022,8 +3136,11 @@ end;
 procedure TView.HandleSizeChanged;
 begin
   inherited HandleSizeChanged;
-  if Assigned(ParentView) and (Children = nil) then
+  if Assigned(ParentView) then begin
+    if (csLoading in ComponentState) and (Children <> nil) then
+      Exit;
     ParentControl.RecalcSize;
+  end;
 end;
 
 procedure TView.HitTestChanged;
@@ -3077,7 +3194,7 @@ begin
 end;
 
 {$IFDEF ANDROID}
-procedure TView.InitAudioManager();
+class procedure TView.InitAudioManager();
 var
   NativeService: JObject;
 begin
@@ -3265,11 +3382,8 @@ procedure TView.PlaySoundEffect(ASoundConstant: Integer);
 var
   RingerMode: Integer;
 begin
-  if not Assigned(FAudioManager) then begin
-    InitAudioManager();
-    if not Assigned(FAudioManager) then
-      Exit;
-  end;
+  if not Assigned(FAudioManager) then
+    Exit;
   RingerMode := FAudioManager.getRingerMode;
   // 静音或者震动时不发出声音
   if (ringerMode = TJAudioManager.JavaClass.RINGER_MODE_SILENT) or
@@ -3364,6 +3478,17 @@ begin
     DoInVisibleChange;
     if Visible then
       Repaint;
+  end;
+end;
+
+procedure TView.SetIsChecked(const Value: Boolean);
+begin
+  if Value <> GetIsChecked then begin
+    if Value then
+      IncViewState(TViewState.Checked)
+    else
+      DecViewState(TViewState.Checked);
+    Invalidate;
   end;
 end;
 
@@ -4931,6 +5056,11 @@ begin
   end;
 end;
 
+function TTextSettings.GetTextLength: Integer;
+begin
+  Result := Length(FText);
+end;
+
 function TTextSettings.GetVertAlign: TTextAlign;
 begin
   case FGravity of
@@ -5118,13 +5248,19 @@ constructor TDrawableBorder.Create(View: IView; const ADefaultKind: TViewBrushKi
   const ADefaultColor: TAlphaColor);
 begin
   inherited Create(View, ADefaultKind, ADefaultColor);
-  FBorder := TViewBorder.Create;
-  FBorder.OnChanged := DoChange;
+end;
+
+procedure TDrawableBorder.CreateBorder;
+begin
+  if FBorder = nil then begin
+    FBorder := TViewBorder.Create;
+    FBorder.OnChanged := DoChange;
+  end;
 end;
 
 destructor TDrawableBorder.Destroy;
 begin
-  FBorder.Free;
+  FreeAndNil(FBorder);
   inherited Destroy;
 end;
 
@@ -5163,6 +5299,8 @@ end;
 
 function TDrawableBorder.GetBorder: TViewBorder;
 begin
+  if FBorder = nil then
+    CreateBorder;
   Result := FBorder;
 end;
 
@@ -5203,7 +5341,7 @@ end;
 constructor TViewBorder.Create(ADefaultStyle: TViewBorderStyle);
 begin
   FBrush := TStrokeBrush.Create(TBrushKind.Solid, TAlphaColorRec.Null);
-  FColor := TViewColor.Create();
+  FColor := TViewColor.Create(TAlphaColorRec.Null);
   FStyle := ADefaultStyle;
   FDefaultStyle := ADefaultStyle;
 end;
@@ -5400,6 +5538,13 @@ end;
 
 { TViewImagesBrush }
 
+constructor TViewImagesBrush.Create(const ADefaultKind: TBrushKind;
+  const ADefaultColor: TAlphaColor);
+begin
+  inherited Create(ADefaultKind, ADefaultColor);
+  FImageIndex := -1;
+end;
+
 procedure TViewImagesBrush.SetImageIndex(const Value: Integer);
 begin
   if FImageIndex <> Value then begin
@@ -5480,6 +5625,14 @@ initialization
   {$ELSE}
     _Watch := TStopWatch.Create;
     _Watch.Start;
+  {$ENDIF}
+  {$IFDEF ANDROID}
+  TView.InitAudioManager();
+  {$ENDIF}
+
+finalization
+  {$IFDEF ANDROID}
+  FAudioManager := nil;
   {$ENDIF}
 
 end.

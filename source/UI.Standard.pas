@@ -28,8 +28,41 @@ type
     const R: TRectF; State: TViewState) of object;
 
 type
+  /// <summary>
+  /// 进度视图
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TProgressView = class(TView)
+  private
+    FMin: Int64;
+    FMax: Int64;
+    FValue: Int64;
+    FOnValueChange: TNotifyEvent;
+    FForeGround: TDrawable;
+    procedure SetForeGround(const Value: TDrawable);
+    procedure SetMaxValue(const Value: Int64);
+    procedure SetMinValue(const Value: Int64);
+    procedure SetProValue(const Value: Int64);
+  protected
+    procedure DoForegroundChanged(Sender: TObject); virtual;
+    procedure DoValueChanged(Sender: TObject); virtual;
+  protected
+    procedure PaintBackground; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  published
+    property Min: Int64 read FMin write SetMinValue default 0;
+    property Max: Int64 read FMax write SetMaxValue default 100;
+    property Value: Int64 read FValue write SetProValue default 50;
+    property ForeGround: TDrawable read FForeGround write SetForeGround;
+    property OnValueChange: TNotifyEvent read FOnValueChange write FOnValueChange;
+  end;
+
+type
   TScrollView = class;
   TOnCalcContentBoundsEvent = procedure (Sender: TObject; var ContentBounds: TRectF) of object;
+  PRectD = ^TRectD;
 
   /// <summary>
   /// 滚动视图
@@ -73,7 +106,7 @@ type
     procedure UpdateScrollStretchStrength(const NewValue: Single);
   protected
     FScroll: TScrollBar;
-    FContentBounds: TRectD;
+    FContentBounds: PRectD;
     FAniCalculations: TScrollCalculations;
     FLastViewportPosition: TPointD;
     FMouseEvents: Boolean;
@@ -162,6 +195,7 @@ type
     function GetDrawableWidth(): Integer;
     function GetDrawableHeight(): Integer;
     procedure SetTextHint(const Value: string);
+    function GetTextLength: Integer;
   protected
     procedure Loaded; override;
     procedure DblClick; override;
@@ -200,6 +234,7 @@ type
     procedure SetNewScene(AScene: IScene); override;
     procedure AfterConstruction; override;
     procedure Change;
+    property Length: Integer read GetTextLength;
   published
     property AutoSize: Boolean read GetAutoSize write SetAutoSize default True;
     property Text: string read GetText write SetText stored TextStored;
@@ -217,7 +252,6 @@ type
 type
   TStyleView = class(TTextView)
   protected
-    procedure PaintBackground; override;
     procedure DoDrawStyleControl(var R: TRectF); virtual;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
   public
@@ -322,6 +356,8 @@ begin
       Result := Assigned(Border) and (Border.Style <> TViewBorderStyle.None) and
         (Border.Width > 0) and (Border.Color.GetColor(State) <> TAlphaColorRec.Null);
     end;
+    if (not Result) and (FText.TextLength > 0) then
+      Result := (HitTest) or (TViewState.Pressed in FViewState);
   end;
 end;
 
@@ -346,11 +382,6 @@ end;
 function TTextView.CreateBackground: TDrawable;
 begin
   Result := TDrawableBorder.Create(Self);
-  with TDrawableBorder(Result).Border do begin
-    Width := 1;
-    Color.Default := $BFC0C0C0;
-    Color.Pressed := $FFC0C0C0;
-  end;
   Result.OnChanged := DoBackgroundChanged;
 end;
 
@@ -373,8 +404,10 @@ begin
   if FText.IsSizeChange or FText.IsTextChange then begin
     if IsAutoSize then
       DoAutoSize
-    else
+    else begin
       DoUpdateContentBounds;
+      Repaint;
+    end;
   end else
     Repaint;
   if FText.IsEffectsChange then
@@ -432,7 +465,7 @@ begin
         TViewScroll.None: SR := R;
         TViewScroll.Horizontal: 
           begin
-            SR := GetRectF(FContentBounds);
+            SR := GetRectF(FContentBounds^);
             SR.Top := R.Top;
             // windows平台显示滚动条，其它平台会自动隐藏
             SR.Bottom := R.Bottom{$IFDEF MSWINDOWS} - FScroll.Height{$ENDIF};
@@ -440,7 +473,7 @@ begin
           end;
         TViewScroll.Vertical: 
           begin
-            SR := GetRectF(FContentBounds);
+            SR := GetRectF(FContentBounds^);
             SR.Left := R.Left;
             SR.Right := R.Right{$IFDEF MSWINDOWS} - FScroll.Width{$ENDIF};
             OffsetRect(SR, 0, -(ScrollValue * (SR.Height - R.Height)));
@@ -521,7 +554,9 @@ begin
       if (FScrollbar = TViewScroll.Horizontal) and (FScroll <> nil) and (FScroll.Visible) then
         VH := VH + FScroll.Height;
 
-      FContentBounds := RectD(Padding.Left, Padding.Top, VW - Padding.Right, VH - Padding.Bottom);
+      if FContentBounds = nil then
+        New(FContentBounds);
+      FContentBounds^ := RectD(Padding.Left, Padding.Top, VW - Padding.Right, VH - Padding.Bottom);
       RealignContent;
     end;
 
@@ -609,6 +644,11 @@ end;
 function TTextView.GetText: string;
 begin
   Result := FText.Text;
+end;
+
+function TTextView.GetTextLength: Integer;
+begin
+  Result := FText.TextLength;
 end;
 
 procedure TTextView.ImagesChanged;
@@ -756,11 +796,6 @@ begin
     FOnDrawViewBackgroud(Self, Canvas, R, DrawState);
 end;
 
-procedure TStyleView.PaintBackground;
-begin
-  inherited PaintBackground;
-end;
-
 { TButtonView }
 
 procedure TButtonView.AfterDialogKey(var Key: Word; Shift: TShiftState);
@@ -816,6 +851,7 @@ begin
     DefaultStyle := TViewBorderStyle.RectBorder;
     Style := DefaultStyle;
     Color.Default := $AFCCCCCC;
+    Color.DefaultChange := False;
     Color.Pressed := $FFC0C0C0;
     Color.Focused := $EFCCCCCC;
     Color.Hovered := $EFCCCCCC;
@@ -854,7 +890,10 @@ end;
 
 procedure TScrollView.Adjust(var ContentLayoutRect: TRectD);
 begin
-  ContentLayoutRect := FContentBounds;
+  if FContentBounds <> nil then
+    ContentLayoutRect := FContentBounds^
+  else
+    ContentLayoutRect := TRectD.Empty;
 end;
 
 procedure TScrollView.AniCalcChange(Sender: TObject);
@@ -935,7 +974,7 @@ end;
 constructor TScrollView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FContentBounds := TRectD.Empty;
+  FContentBounds := nil;
   FShowScrollBars := True;
   FScrollingStretchGlowColor := GetColorFromStyle('glow', DefaultScrollingStretchGlowColor);
   SupportsPlatformService(IFMXSystemInformationService, FSystemInfoSrv);
@@ -958,6 +997,10 @@ destructor TScrollView.Destroy;
 begin
   FreeAndNil(FAniCalculations);
   inherited Destroy;
+  if FContentBounds <> nil then begin
+    Dispose(FContentBounds);
+    FContentBounds := nil;    
+  end;
 end;
 
 procedure TScrollView.DoInVisibleChange;
@@ -1049,7 +1092,7 @@ begin
   AutoCapture := False;
   if Assigned(FScroll) then begin
     RemoveComponent(FScroll);
-    FreeAndNil(FScroll);
+    FreeAndNil(FScroll);     
   end;
 end;
 
@@ -1072,7 +1115,10 @@ end;
 
 function TScrollView.GetContentBounds: TRectD;
 begin
-  Result := FContentBounds;
+  if FContentBounds = nil then
+    Result := TRectD.Empty
+  else
+    Result := FContentBounds^;
 end;
 
 function TScrollView.GetHScrollBar: TScrollBar;
@@ -1177,6 +1223,10 @@ procedure TScrollView.InitScrollbar;
 begin
   if (csDesigning in ComponentState) then
     Exit;
+  if (FContentBounds = nil) and (FScrollbar <> TViewScroll.None) then begin
+    New(FContentBounds);
+    FContentBounds^ := TRectD.Empty;
+  end;
   case FScrollbar of
     TViewScroll.Vertical:
       begin
@@ -1407,7 +1457,7 @@ end;
 procedure TScrollView.Resize;
 begin
   inherited Resize;
-  if FScroll <> nil then
+  if (FScroll <> nil) and (FContentBounds <> nil) then
     DoUpdateScrollingLimits;
 end;
 
@@ -1527,6 +1577,79 @@ begin
   FScrolling := False;
 end;
 
+
+{ TProgressView }
+
+constructor TProgressView.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FMax := 100;
+  FValue := 50;
+
+  FForeGround := TDrawableBorder.Create(Self);
+  FForeGround.ItemDefault.Color := TAlphaColorRec.Blue;
+  FForeGround.ItemDefault.DefaultColor := TAlphaColorRec.Blue;
+  FForeGround.ItemDefault.Kind := TViewBrushKind.Solid;
+  FForeGround.OnChanged := DoForegroundChanged;
+end;
+
+destructor TProgressView.Destroy;
+begin
+  FreeAndNil(FForeGround);
+  inherited Destroy;
+end;
+
+procedure TProgressView.DoForegroundChanged(Sender: TObject);
+begin
+  Repaint;
+end;
+
+procedure TProgressView.DoValueChanged(Sender: TObject);
+begin
+  if Assigned(FOnValueChange) then
+    FOnValueChange(Self);
+  Invalidate;
+end;
+
+procedure TProgressView.PaintBackground;
+var
+  R: TRectF;
+  W: Single;
+begin
+  inherited PaintBackground;
+  W := (FValue - FMin) / (FMax - FMin) * Width;
+  R := RectF(0, 0, W, Height);
+  FForeGround.DrawTo(Canvas, R);
+end;
+
+procedure TProgressView.SetForeGround(const Value: TDrawable);
+begin
+  FForeGround.SetDrawable(Value);
+end;
+
+procedure TProgressView.SetMaxValue(const Value: Int64);
+begin
+  if FMax <> Value then begin
+    FMax := Value;
+    DoValueChanged(Self);
+  end;
+end;
+
+procedure TProgressView.SetMinValue(const Value: Int64);
+begin
+  if FMin <> Value then begin
+    FMin := Value;
+    DoValueChanged(Self);
+  end;
+end;
+
+procedure TProgressView.SetProValue(const Value: Int64);
+begin
+  if FValue <> Value then begin
+    FValue := Value;
+    DoValueChanged(Self);
+  end;
+end;
 
 initialization
 

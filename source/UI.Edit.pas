@@ -13,6 +13,7 @@ interface
 uses
   UI.Base, UI.Standard,
   {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
+  FMX.KeyMapping,
   FMX.BehaviorManager, FMX.Forms, System.Messaging,
   FMX.Menus, FMX.Presentation.Messages, FMX.Controls.Presentation,
   FMX.Text, FMX.Edit, FMX.Edit.Style, FMX.Controls.Model, FMX.MagnifierGlass,
@@ -577,6 +578,7 @@ var
   SaveChange: TNotifyEvent;
 begin
   inherited Create(AOwner);
+
   FIsChanging := True;
   FText := UI.Base.TTextSettings.Create(Self);
 
@@ -1589,7 +1591,7 @@ begin
   finally
     Model.EnableNotify;
   end;
-  FTextService.Text := FTextService.CombinedText;
+  FTextService.Text := Model.Text; // FTextService.CombinedText;
   FTextService.CaretPosition := Point(GetOriginCaretPosition + FTextService.CombinedText.Length - FTextService.Text.Length, 0);
   RepaintEdit;
 end;
@@ -1933,6 +1935,9 @@ begin
   LinkObserversValueModified(Self.Observers);
   DoChangeTracking;
   DoTyping;
+  {$IFDEF ANDROID}
+  FModel.DoChange;
+  {$ENDIF}
 end;
 
 procedure TCustomEditView.InsertText(const AText: string);
@@ -3181,5 +3186,11 @@ destructor TEditView.Destroy;
 begin
   inherited Destroy;
 end;
+
+initialization
+  {$IFDEF ANDROID}
+  // 解决 Android 下键盘事件不响应的问题
+  //RegisterKeyMapping(23, 23, TKeyKind.Functional);
+  {$ENDIF}
 
 end.
