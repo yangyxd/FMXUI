@@ -189,6 +189,7 @@ type
   private
     FParams: TFrameParams;
     FPrivateState: TFrameState;
+    FBackColor: TAlphaColor;
     FOnShow: TNotifyEvent;
     FOnHide: TNotifyEvent;
     FOnFinish: TNotifyEvent;
@@ -207,11 +208,16 @@ type
     function GetParams: TFrameParams;
     function GetDataAsPointer: Pointer;
     function GetIsWaitDismiss: Boolean;
+    function GetStatusColor: TAlphaColor;
+    procedure SetStatusColor(const Value: TAlphaColor);
+    function GetParentForm: TCustomForm;
+    procedure SetBackColor(const Value: TAlphaColor);
   protected
     [Weak] FLastView: TFrameView;
     [Weak] FNextView: TFrameView;
     function MakeFrame(FrameClass: TFrameViewClass): TFrameView; overload;
 
+    procedure DoCreate(); virtual;
     procedure DoShow(); virtual;
     procedure DoHide(); virtual;
     procedure DoFinish(); virtual;
@@ -229,6 +235,7 @@ type
       AOnFinish: TNotifyEventA = nil; Ani: TFrameAniType = TFrameAniType.DefaultAni);
     procedure InternalHide();
   protected
+    procedure Paint; override;
     procedure AfterDialogKey(var Key: Word; Shift: TShiftState); override;
   protected
     /// <summary>
@@ -240,6 +247,16 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    /// <summary>
+    /// 设置 Frame 默认背景颜色
+    /// </summary>
+    class procedure SetDefaultBackColor(const Value: TAlphaColor);
+
+    /// <summary>
+    /// 设置 Frame 默认状态条颜色
+    /// </summary>
+    class procedure SetDefaultStatusColor(const Value: TAlphaColor);
 
     /// <summary>
     /// 流转化为 string
@@ -345,11 +362,25 @@ type
     property DataAsPointer: Pointer read GetDataAsPointer;
 
     /// <summary>
+    /// 当前 Frame 所绑定的 Form 对象
+    /// </summary>
+    property ParentForm: TCustomForm read GetParentForm;
+
+    /// <summary>
     /// 等待对话框是否被取消了
     /// </summary>
     property IsWaitDismiss: Boolean read GetIsWaitDismiss;
   published
     property Title: string read GetTitle write SetTitle;
+    /// <summary>
+    /// 背景颜色
+    /// </summary>
+    property BackColor: TAlphaColor read FBackColor write SetBackColor;
+    /// <summary>
+    /// APP 顶部状态条颜色
+    /// </summary>
+    property StatusColor: TAlphaColor read GetStatusColor write SetStatusColor;
+
     property OnShow: TNotifyEvent read FOnShow write FOnShow;
     property OnHide: TNotifyEvent read FOnHide write FOnHide;
     property OnFinish: TNotifyEvent read FOnFinish write FOnFinish;
@@ -368,6 +399,20 @@ var
 
 implementation
 
+{$IFDEF ANDROID}
+uses
+  Androidapi.Helpers,
+  Androidapi.Jni,
+  //Androidapi.JNI.Media,
+  //Androidapi.JNIBridge,
+  Androidapi.JNI.JavaTypes,
+  Androidapi.JNI.GraphicsContentViewText,
+  Androidapi.JNI.Util,
+  Androidapi.JNI.App,
+  Androidapi.JNI.Os,
+  FMX.Helpers.Android;
+{$ENDIF}
+
 const
   CS_Title = 'cs_p_title';
   CS_Data = 'cs_p_data';
@@ -377,6 +422,10 @@ var
   /// 公共状态数据
   /// </summary>
   FPublicState: TFrameState = nil;
+
+  FDefaultBackColor: TAlphaColor = 0;
+  FDefaultStatusColor: TAlphaColor = 0;
+
 
 { TFrameView }
 
@@ -501,6 +550,8 @@ begin
     Width := 200;
     Height := 400;
   end;
+  FBackColor := FDefaultBackColor;
+  DoCreate();
 end;
 
 class function TFrameView.CreateFrame(Parent: TFmxObject;
@@ -528,6 +579,20 @@ begin
   if CheckFree then Exit;
 end;
 
+procedure TFrameView.Paint;
+var
+  R: TRectF;
+begin
+  inherited Paint;
+  if (FBackColor and $FF000000 > 0) then
+  begin
+    R := LocalRect;
+    Canvas.Fill.Kind := TBrushKind.Solid;
+    Canvas.Fill.Color := FBackColor;
+    Canvas.FillRect(R, 0, 0, AllCorners, AbsoluteOpacity);
+  end;
+end;
+
 destructor TFrameView.Destroy;
 begin
   if Assigned(FNextView) then
@@ -537,6 +602,10 @@ begin
   FreeAndNil(FParams);
   FreeAndNil(FPrivateState);
   inherited;
+end;
+
+procedure TFrameView.DoCreate;
+begin
 end;
 
 procedure TFrameView.DoFinish;
@@ -559,6 +628,8 @@ end;
 
 procedure TFrameView.DoShow;
 begin
+  if FDefaultStatusColor <> 0 then
+    StatusColor := FDefaultStatusColor;
   if Assigned(FOnShow) then
     FOnShow(Self);
 end;
@@ -614,6 +685,21 @@ begin
   Result := FParams;
 end;
 
+function TFrameView.GetParentForm: TCustomForm;
+var
+  V: TFmxObject;
+begin
+  Result := nil;
+  V := Parent;
+  while Assigned(V) do begin
+    if V is TCustomForm then begin
+      Result := V as TCustomForm;
+      Break;
+    end;
+    V := V.Parent;
+  end;
+end;
+
 function TFrameView.GetPreferences: TFrameState;
 begin
   if not Assigned(FPrivateState) then begin
@@ -626,6 +712,50 @@ end;
 function TFrameView.GetSharedPreferences: TFrameState;
 begin
   Result := FPublicState;
+end;
+
+function TFrameView.GetStatusColor: TAlphaColor;
+
+  {$IFDEF IOS}
+  function ExecuteIOS(): TAlphaColor;
+  var
+    F: TCustomForm;
+  begin
+    F := ParentForm;
+    if not Assigned(F) then
+      Result := 0
+    else
+      Result := F.Fill.Color;
+  end;
+  {$ENDIF}
+  
+  {$IFDEF ANDROID}
+  function ExecuteAndroid(): TAlphaColor;
+  var
+    wnd: JWindow;
+  begin
+    if TJBuild_VERSION.JavaClass.SDK_INT < 21 then
+      Result := 0
+    else begin
+      wnd := TAndroidHelper.Activity.getWindow();
+      if Assigned(wnd) then 
+        Result := wnd.getStatusBarColor()
+      else
+        Result := 0;
+    end;
+  end;
+  {$ENDIF}
+
+begin
+  {$IFDEF IOS}
+  Result := ExecuteIOS();
+  Exit;
+  {$ENDIF}
+  {$IFDEF ANDROID}
+  Result := ExecuteAndroid();
+  Exit;
+  {$ENDIF}
+  Result := 0;
 end;
 
 function TFrameView.GetTitle: string;
@@ -726,6 +856,14 @@ begin
   Toast(Msg);
 end;
 
+procedure TFrameView.SetBackColor(const Value: TAlphaColor);
+begin
+  if FBackColor <> Value then begin
+    FBackColor := Value;
+    //Repaint;
+  end;
+end;
+
 procedure TFrameView.SetData(const Value: TValue);
 begin
   if Params.ContainsKey(CS_Data) then
@@ -734,11 +872,66 @@ begin
     Params.Add(CS_Data, Value);
 end;
 
+class procedure TFrameView.SetDefaultBackColor(const Value: TAlphaColor);
+begin
+  FDefaultBackColor := Value;
+end;
+
+class procedure TFrameView.SetDefaultStatusColor(const Value: TAlphaColor);
+begin
+  FDefaultStatusColor := Value;
+end;
+
 procedure TFrameView.SetParams(const Value: TFrameParams);
 begin
   if Assigned(FParams) then
     FParams.Free;
   FParams := Value;
+end;
+
+procedure TFrameView.SetStatusColor(const Value: TAlphaColor);
+  {$IFDEF IOS}
+  procedure ExecuteIOS();
+  var
+    F: TCustomForm;
+  begin
+    F := ParentForm;
+    if not Assigned(F) then
+      Exit;
+    F.Fill.Color := Value;
+  end;
+  {$ENDIF}
+  
+  {$IFDEF ANDROID}
+  procedure ExecuteAndroid();   
+  begin
+    if TJBuild_VERSION.JavaClass.SDK_INT < 21 then
+      Exit;
+    CallInUiThread(
+    procedure
+    var
+      wnd: JWindow;
+    begin
+      wnd := TAndroidHelper.Activity.getWindow;
+      if (not Assigned(wnd)) then Exit;      
+      // 取消设置透明状态栏,使 ContentView 内容不再覆盖状态栏  
+      wnd.clearFlags($04000000); // FLAG_TRANSLUCENT_STATUS
+      //wnd.getDecorView().setSystemUiVisibility($00000400 or $00000100);
+      // 需要设置这个 flag 才能调用 setStatusBarColor 来设置状态栏颜色  
+      wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS); // FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
+      // 设置颜色
+      wnd.setStatusBarColor(Value);
+    end);
+  end;
+  {$ENDIF}
+
+begin
+  {$IFDEF IOS}
+  ExecuteIOS();
+  {$ENDIF}
+  {$IFDEF ANDROID}
+  // ExecuteAndroid();  // 没有效果。。。
+  {$ENDIF}
 end;
 
 procedure TFrameView.SetTitle(const Value: string);
@@ -1538,8 +1731,7 @@ end;
 procedure TFrameAnimator.TAnimationDestroyer.DoAniFinished(Sender: TObject);
 begin
   DoAniFinishedEx(Sender, True);
-end;
-
+end;   
 
 procedure TFrameAnimator.TAnimationDestroyer.DoAniFinishedEx(Sender: TObject;
   FreeSender: Boolean);

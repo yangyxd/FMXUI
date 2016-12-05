@@ -169,7 +169,7 @@ type
   end;
 
 type
-  TCustomEditView = class(TEditViewBase, ITextInput, ICaret, ITextActions)
+  TCustomEditView = class(TEditViewBase, ITextInput, ICaret, ITextActions, IVirtualKeyboardControl, IReadOnly)
   private
     FCursorFill: TBrush;
     FSelectionFill: TBrush;
@@ -237,11 +237,9 @@ type
     procedure SetPassword(const Value: Boolean);
     procedure SetReadOnly(const Value: Boolean);
     procedure SetImeMode(const Value: TImeMode);
-    procedure SetKeyboardType(const Value: TVirtualkeyboardType);
     procedure SetKillFocusByReturn(const Value: Boolean);
     function GetFilterChar: string;
     function GetImeMode: TImeMode;
-    function GetKeyboardType: TVirtualKeyboardType;
     function GetKillFocusByReturn: Boolean;
     procedure SetFilterChar(const Value: string);
     function GetInputSupport: Boolean;
@@ -258,13 +256,11 @@ type
     function GetOnTyping: TNotifyEvent;
     function GetOnValidate: TValidateTextEvent;
     function GetOnValidating: TValidateTextEvent;
-    function GetReturnKeyType: TReturnKeyType;
     procedure SetOnChange(const Value: TNotifyEvent);
     procedure SetOnChangeTracking(const Value: TNotifyEvent);
     procedure SetOnTyping(const Value: TNotifyEvent);
     procedure SetOnValidate(const Value: TValidateTextEvent);
     procedure SetOnValidating(const Value: TValidateTextEvent);
-    procedure SetReturnKeyType(const Value: TReturnKeyType);
     function GetSelfCaret: TCaret;
     procedure SetSelectionFill(const Value: TBrush);
     function GetLength: Integer;
@@ -322,6 +318,13 @@ type
     procedure UpdateSpellPopupMenu(const APoint: TPointF);
     procedure SpellFixContextMenuHandler(Sender: TObject);
     procedure UpdateTextLayout;
+    { IVirtualKeyboardControl }
+    procedure SetKeyboardType(Value: TVirtualKeyboardType);
+    function GetKeyboardType: TVirtualKeyboardType;
+    procedure SetReturnKeyType(Value: TReturnKeyType);
+    function GetReturnKeyType: TReturnKeyType;
+    function IVirtualKeyboardControl.IsPassword = GetPassword;
+    property InputSupport: Boolean read GetInputSupport write SetInputSupport;
   protected
     FLastKey: Word;
     FLastChar: System.WideChar;
@@ -351,7 +354,6 @@ type
     procedure DoEnter; override;
     procedure DoExit; override;
     procedure DoInitStyle; virtual;
-    property InputSupport: Boolean read GetInputSupport write SetInputSupport;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -2717,7 +2719,7 @@ begin
   Model.InputSupport := Value;
 end;
 
-procedure TCustomEditView.SetKeyboardType(const Value: TVirtualkeyboardType);
+procedure TCustomEditView.SetKeyboardType(Value: TVirtualkeyboardType);
 begin
   Model.KeyboardType := Value;
 end;
@@ -2783,7 +2785,7 @@ begin
   Model.ReadOnly := Value;
 end;
 
-procedure TCustomEditView.SetReturnKeyType(const Value: TReturnKeyType);
+procedure TCustomEditView.SetReturnKeyType(Value: TReturnKeyType);
 begin
   Model.ReturnKeyType := Value;
 end;
