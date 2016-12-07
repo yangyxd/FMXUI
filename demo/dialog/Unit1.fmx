@@ -10,6 +10,11 @@ object Form1: TForm1
   FormFactor.Devices = [Desktop]
   OnShow = FormShow
   DesignerMasterStyle = 0
+  object Label1: TLabel
+    Position.X = 80.000000000000000000
+    Position.Y = 112.000000000000000000
+    Text = 'Label1'
+  end
   object ToastManager1: TToastManager
     Left = 144
     Top = 248

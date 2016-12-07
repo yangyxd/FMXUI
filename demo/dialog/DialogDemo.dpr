@@ -4,7 +4,8 @@ uses
   System.StartUpCopy,
   FMX.Forms,
   Unit1 in 'Unit1.pas' {Form1},
-  uFrameDialog in 'uFrameDialog.pas' {FrmaeDialog: TFrame};
+  uFrameDialog in 'uFrameDialog.pas' {FrmaeDialog: TFrame},
+  uFrameListViewTest in 'uFrameListViewTest.pas' {FrameListViewTest: TFrame};
 
 {$R *.res}
 

@@ -24,6 +24,10 @@ type
     ButtonView6: TButtonView;
     ButtonView7: TButtonView;
     ButtonView8: TButtonView;
+    ButtonView9: TButtonView;
+    TextView1: TTextView;
+    ButtonView10: TButtonView;
+    ButtonView11: TButtonView;
     procedure SpeedButton1Click(Sender: TObject);
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
@@ -33,6 +37,9 @@ type
     procedure ButtonView6Click(Sender: TObject);
     procedure ButtonView7Click(Sender: TObject);
     procedure ButtonView8Click(Sender: TObject);
+    procedure ButtonView9Click(Sender: TObject);
+    procedure ButtonView10Click(Sender: TObject);
+    procedure ButtonView11Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -47,9 +54,52 @@ implementation
 {$R *.fmx}
 
 uses
+  uFrameListViewTest,
   UI.Dialog, UI.Async;
 
 { TFrmaeDialog }
+
+procedure TFrmaeDialog.ButtonView10Click(Sender: TObject);
+begin
+  TextView1.HeightSize := TViewSize.WrapContent;
+end;
+
+procedure TFrmaeDialog.ButtonView11Click(Sender: TObject);
+begin
+  TDialogBuilder.Create(Self)
+    .SetTitle('我是标题文本')
+    .SetSingleChoiceItems(
+      [
+      '列表项 - 1',
+      '列表项 - 2',
+      '列表项 - 3',
+      '列表项 - 4',
+      '列表项 - 1',
+      '列表项 - 2',
+      '列表项 - 3',
+      '列表项 - 4',
+      '列表项 - 1',
+      '列表项 - 2',
+      '列表项 - 3',
+      '列表项 - 4',
+      '列表项 - 1',
+      '列表项 - 2',
+      '列表项 - 3',
+      '列表项 - 4',
+      '列表项 - 1',
+      '列表项 - 2',
+      '列表项 - 3',
+      '列表项 - 4',
+      '列表项 - 5'
+    ], 1)
+    .SetPositiveButton('取消')
+    .SetNegativeButton('确定',
+      procedure (Dialog: IDialog; Which: Integer) begin
+        Hint('选择了: ' + Dialog.Builder.ItemArray[Dialog.Builder.CheckedItem]);
+      end
+    )
+    .Show;
+end;
 
 procedure TFrmaeDialog.ButtonView1Click(Sender: TObject);
 begin
@@ -174,6 +224,11 @@ begin
       HideWaitDialog;
     end
   ).Start;
+end;
+
+procedure TFrmaeDialog.ButtonView9Click(Sender: TObject);
+begin
+  StartFrame(TFrameListViewTest);
 end;
 
 procedure TFrmaeDialog.DoShow;

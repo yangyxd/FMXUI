@@ -169,7 +169,8 @@ type
   end;
 
 type
-  TCustomEditView = class(TEditViewBase, ITextInput, ICaret, ITextActions, IVirtualKeyboardControl, IReadOnly)
+  TCustomEditView = class(TEditViewBase, ITextInput, ICaret, ITextActions, IVirtualKeyboardControl
+    {$IF CompilerVersion > 30.0}, IReadOnly{$ENDIF})
   private
     FCursorFill: TBrush;
     FSelectionFill: TBrush;

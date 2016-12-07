@@ -1845,7 +1845,7 @@ begin
     Inc(BtnCount);
     if BtnCount = 1 then
       FViewRoot.FButtonNegative.Background.Corners := [TCorner.BottomLeft];
-    FButtomRadius := FViewRoot.FButtonPositive;
+    FButtomRadius := FViewRoot.FButtonNegative;
   end;
   if Builder.NeutralButtonText = '' then begin
     FViewRoot.FButtonNeutral.Visible := False;
@@ -2305,9 +2305,9 @@ procedure TDialogView.Show;
 begin
   Visible := True;
   BringToFront;
-  Realign;
-  if (FListView <> nil) and (FListView.Visible) then
-    Width := Width + 0.1;
+  Resize;
+  if Assigned(FListView) then
+    Width := Width + 0.01;
 end;
 
 { TDialogStyleManager }

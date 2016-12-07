@@ -30,7 +30,7 @@ uses
   FMX.TextLayout, FMX.Objects, System.ImageList, System.RTLConsts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, System.Math,
   System.Classes, System.Types, System.UITypes, System.SysUtils, System.Math.Vectors,
-  FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls, FMX.InertialMovement;
+  FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls, FMX.InertialMovement, FMX.Ani;
 
 const
   AllCurrentPlatforms =
@@ -458,9 +458,6 @@ type
     FAlignRight: TControl;
     FAlignBottom: TControl;
 
-    FWidth: TViewSize;
-    FHeight: TViewSize;
-
     FAlignParentLeft: Boolean;
     FAlignParentTop: Boolean;
     FAlignParentRight: Boolean;
@@ -489,6 +486,8 @@ type
     procedure SetCenterHorizontal(const Value: Boolean);
     procedure SetCenterInParent(const Value: Boolean);
     procedure SetCenterVertical(const Value: Boolean);
+    function GetHeight: TViewSize;
+    function GetWidth: TViewSize;
   protected
     procedure DoChange(); virtual;
   public
@@ -507,8 +506,8 @@ type
     property AlignTop: TControl read FAlignTop write SetAlignTop;
     property AlignRight: TControl read FAlignRight write SetAlignRight;
     property AlignBottom: TControl read FAlignBottom write SetAlignBottom;
-    property WidthSize: TViewSize read FWidth write SetWidth default TViewSize.CustomSize;
-    property HeightSize: TViewSize read FHeight write SetHeight default TViewSize.CustomSize;
+    property WidthSize: TViewSize read GetWidth write SetWidth default TViewSize.CustomSize;
+    property HeightSize: TViewSize read GetHeight write SetHeight default TViewSize.CustomSize;
     property AlignParentLeft: Boolean read FAlignParentLeft write SetAlignParentLeft default False;
     property AlignParentTop: Boolean read FAlignParentTop write SetAlignParentTop default False;
     property AlignParentRight: Boolean read FAlignParentRight write SetAlignParentRight default False;
@@ -756,8 +755,6 @@ type
     procedure SetAdjustViewBounds(const Value: Boolean);
     function GetLayout: TViewLayout;
     procedure SetLayout(const Value: TViewLayout);
-    function GetHeightSize: TViewSize;
-    function GetWidthSize: TViewSize;
     procedure SetHeightSize(const Value: TViewSize);
     procedure SetWidthSize(const Value: TViewSize);
     function GetAdjustViewBounds: Boolean;
@@ -777,6 +774,8 @@ type
     function GetViewRectD: TRectD;
     function GetIsChecked: Boolean;
     procedure SetIsChecked(const Value: Boolean);
+    function GetHeightSize: TViewSize;
+    function GetWidthSize: TViewSize;
   protected
     function GetMaxHeight: Single; override;
     function GetMaxWidth: Single; override;
@@ -802,8 +801,11 @@ type
     FMinHeight: Single;
     FMaxWidth: Single;
     FMaxHeight: Single;
+    FWidthSize: TViewSize;
+    FHeightSize: TViewSize;
     FSaveMaxWidth: Single;
     FSaveMaxHeight: Single;
+    FDisibleClick: Boolean;
     FLayout: TViewLayout;
     function IsDrawing: Boolean;
     function IsDesignerControl(Control: TControl): Boolean;
@@ -908,6 +910,7 @@ type
     procedure PlayClickEffect(); virtual;
 
     procedure Invalidate;
+    procedure DoResize;
 
     procedure SetBackground(const Value: TDrawable); overload;
     procedure SetBackground(const Value: TAlphaColor); overload;
@@ -921,6 +924,10 @@ type
 
     function FindStyleResource<T: TFmxObject>(const AStyleLookup: string; var AResource: T): Boolean; overload;
     function FindAndCloneStyleResource<T: TFmxObject>(const AStyleLookup: string; var AResource: T): Boolean;
+
+    { ITriggerAnimation }
+    procedure StartTriggerAnimation(const AInstance: TFmxObject; const ATrigger: string); override;
+    procedure StartTriggerAnimationWait(const AInstance: TFmxObject; const ATrigger: string); override;
 
     { Rtti Function }
     class function GetRttiValue(Instance: TObject; const Name: string): TValue; overload;
@@ -1004,11 +1011,11 @@ type
     /// <summary>
     /// 组件宽度调节方式，CustomSize, 指定的固定大小; WrapContent 随内容决定； FillParent，填充容器。
     /// </summary>
-    property WidthSize: TViewSize read GetWidthSize write SetWidthSize default TViewSize.CustomSize;
+    property WidthSize: TViewSize read FWidthSize write SetWidthSize default TViewSize.CustomSize;
     /// <summary>
     /// 组件高度调节方式，CustomSize, 指定的固定大小; WrapContent 随内容决定； FillParent，填充容器。
     /// </summary>
-    property HeightSize: TViewSize read GetHeightSize write SetHeightSize default TViewSize.CustomSize;
+    property HeightSize: TViewSize read FHeightSize write SetHeightSize default TViewSize.CustomSize;
     /// <summary>
     /// 组件的最小宽度。当AdjustViewBounds为True时有效。
     /// </summary>
@@ -1104,6 +1111,7 @@ type
     procedure DoMaxSizeChange; override;
     procedure DoMinSizeChange; override;
     procedure Resize; override;
+    procedure Loaded; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -2435,8 +2443,6 @@ begin
     FAlignTop := Src.FAlignTop;
     FAlignRight := Src.FAlignRight;
     FAlignBottom := Src.FAlignBottom;
-    FWidth := Src.FWidth;
-    FHeight := Src.FHeight;
 
     FAlignParentLeft := Src.FAlignParentLeft;
     FAlignParentTop := Src.FAlignParentTop;
@@ -2467,6 +2473,16 @@ procedure TViewLayout.DoChange();
 begin
   if Assigned(FOnChanged) then
     FOnChanged(Self);
+end;
+
+function TViewLayout.GetHeight: TViewSize;
+begin
+  Result := FView.HeightSize;
+end;
+
+function TViewLayout.GetWidth: TViewSize;
+begin
+  Result := FView.WidthSize;
 end;
 
 function TViewLayout.IsEmpty: Boolean;
@@ -2549,10 +2565,7 @@ end;
 
 procedure TViewLayout.SetHeight(const Value: TViewSize);
 begin
-  if FHeight <> Value then begin
-    FHeight := Value;
-    DoChange;
-  end;
+  FView.HeightSize := Value;
 end;
 
 procedure TViewLayout.SetToLeftOf(const Value: TControl);
@@ -2600,10 +2613,7 @@ end;
 
 procedure TViewLayout.SetWidth(const Value: TViewSize);
 begin
-  if FWidth <> Value then begin
-    FWidth := Value;
-    DoChange;
-  end;
+  FView.WidthSize := Value;
 end;
 
 { TViewBase }
@@ -2664,6 +2674,10 @@ end;
 
 procedure TView.Click;
 begin
+  if FDisibleClick then begin
+    FDisibleClick := False;
+    Exit;
+  end;
   if Assigned(OnClick) then
     PlayClickEffect;
   inherited Click;
@@ -2885,9 +2899,7 @@ end;
 
 function TView.GetHeightSize: TViewSize;
 begin
-  if Assigned(FLayout) then
-    Result := FLayout.FHeight
-  else Result := TViewSize.CustomSize;
+  Result := FHeightSize;
 end;
 
 function TView.GetHScrollBar: TScrollBar;
@@ -2969,7 +2981,7 @@ begin
     Result := FMaxHeight
   else begin
     if Assigned(ParentView) then
-      Result := TView(Parent).GetParentMaxHeight
+      Result := TView(Parent).GetParentMaxHeight - Margins.Top - Margins.Bottom
     else begin
       if HeightSize = TViewSize.WrapContent then begin
         if Parent is TControl then
@@ -2988,7 +3000,7 @@ begin
     Result := FMaxWidth
   else begin
     if Assigned(ParentView) then
-      Result := TView(Parent).GetParentMaxWidth
+      Result := TView(Parent).GetParentMaxWidth - Margins.Left - Margins.Right
     else
       Result := 0;
   end;
@@ -3042,9 +3054,7 @@ end;
 
 function TView.GetWidthSize: TViewSize;
 begin
-  if Assigned(FLayout) then
-    Result := FLayout.FWidth
-  else Result := TViewSize.CustomSize;
+  Result := FWidthSize;
 end;
 
 class procedure TView.SetRttiValue(Instance: TObject; const Name: string; const Value: TValue);
@@ -3280,6 +3290,11 @@ procedure TView.DoRecalcSize(var AWidth, AHeight: Single);
 begin
 end;
 
+procedure TView.DoResize;
+begin
+  Resize;
+end;
+
 procedure TView.DoSetScrollBarValue(Scroll: TScrollBar; const Value, ViewportSize: Double);
 begin
   //Scroll.ValueRange.Min := Min(Value, ContentBounds.Top);
@@ -3463,12 +3478,10 @@ end;
 
 procedure TView.SetHeightSize(const Value: TViewSize);
 begin
-  if (not Assigned(FLayout)) and (Value <> TViewSize.CustomSize) then begin
-    FLayout := TViewLayout.Create(Self);
-    FLayout.OnChanged := DoLayoutChanged;
+  if Value <> FHeightSize then begin
+    FHeightSize := Value;
+    DoLayoutChanged(Self);
   end;
-  if Assigned(FLayout) then
-    FLayout.HeightSize := Value;
 end;
 
 procedure TView.SetInVisible(const Value: Boolean);
@@ -3614,18 +3627,38 @@ end;
 
 procedure TView.SetWidthSize(const Value: TViewSize);
 begin
-  if (not Assigned(FLayout)) and (Value <> TViewSize.CustomSize) then begin
-    FLayout := TViewLayout.Create(Self);
-    FLayout.OnChanged := DoLayoutChanged;
+  if Value <> FWidthSize then begin
+    FWidthSize := Value;
+    DoLayoutChanged(Self);
   end;
-  if Assigned(FLayout) then
-    FLayout.WidthSize := Value;
 end;
 
 procedure TView.StartScrolling;
 begin
   if Scene <> nil then
     Scene.ChangeScrollingState(Self, True);
+end;
+
+procedure TView.StartTriggerAnimation(const AInstance: TFmxObject;
+  const ATrigger: string);
+begin
+  DisableDisappear := True;
+  try
+    inherited;
+  finally
+    DisableDisappear := False;
+  end;
+end;
+
+procedure TView.StartTriggerAnimationWait(const AInstance: TFmxObject;
+  const ATrigger: string);
+begin
+  DisableDisappear := True;
+  try
+    inherited;
+  finally
+    DisableDisappear := False;
+  end;
 end;
 
 procedure TView.StopScrolling;
@@ -3754,6 +3787,13 @@ begin
       TAlignLayout.Client, TAlignLayout.Contents,
       TAlignLayout.VertCenter, TAlignLayout.Horizontal, TAlignLayout.Fit,
       TAlignLayout.FitLeft, TAlignLayout.FitRight];
+end;
+
+procedure TViewGroup.Loaded;
+begin
+  inherited Loaded;
+  if csDesigning in ComponentState then
+    DoRealign;
 end;
 
 function TViewGroup.RemoveView(View: TView): Integer;
@@ -4849,10 +4889,12 @@ begin
         (TCanvasManager.MeasureCanvas.ClassType)
         .Create(TCanvasManager.MeasureCanvas);
     end;
+
     if FPrefixStyle = TPrefixStyle.HidePrefix then
       LText := DelAmp(FText)
     else
       LText := FText;
+
     FLayout.BeginUpdate;
     FLayout.Font.Assign(FFont);
     if FWordWrap and (LMaxWidth > 1) then
@@ -4861,6 +4903,7 @@ begin
     FLayout.Trimming := FTrimming;
     FLayout.VerticalAlign := TTextAlign.Leading;
     FLayout.HorizontalAlign := TTextAlign.Leading;
+
     if LText.IsEmpty then
       FLayout.Text := FakeText
     else
@@ -4872,10 +4915,22 @@ begin
     end else begin
       Size.Width := RoundToScale(FLayout.Width + FLayout.TextRect.Left * 2 + FLayout.Font.Size * 0.334, SceneScale);
     end;
-    Size.Height := RoundToScale(FLayout.Height + FLayout.TextRect.Top * 2 + FLayout.Font.Size * 0.334, SceneScale);
+    {$IFDEF ANDROID}
+    Size.Height := RoundToScale(FLayout.Height + FLayout.Font.Size * 0.334, SceneScale);
+    if Size.Height > 50 then
+      Size.Height := Size.Height + FLayout.Font.Size * 0.6;
+    {$ELSE}
     {$IFNDEF MSWINDOWS}
-    Size.Height := Size.Height + FLayout.Font.Size * 0.6;
+    Size.Height := RoundToScale(FLayout.Height + FLayout.Font.Size * 0.2, SceneScale);
+    {$ELSE}
+    Size.Height := RoundToScale(FLayout.Height, SceneScale);
     {$ENDIF}
+    {$ENDIF}
+//    {$IFNDEF MSWINDOWS}
+// + FLayout.TextRect.Top * 2 + FLayout.Font.Size * 0.334
+//    Size.Height := Size.Height + FLayout.Font.Size * 0.6;
+//    {$ENDIF}
+
     if Margins <> nil then begin
       Size.Width := Size.Width + Margins.Left + Margins.Right;
       Size.Height := Size.Height + Margins.Top + Margins.Bottom;

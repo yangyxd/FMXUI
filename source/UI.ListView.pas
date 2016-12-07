@@ -111,6 +111,8 @@ type
     FViewBottom: Double;
     FDividerBrush: TBrush;
 
+    FLastW, FLastH, FLastOffset: Single;
+
     function GetVisibleRowCount: Integer;
     function GetControlFormCacle(const ItemType: Integer): TViewBase;
     procedure AddControlToCacle(const ItemType: Integer; const Value: TViewBase);
@@ -120,6 +122,7 @@ type
     procedure PaintBackground; override;
     procedure DrawDivider(Canvas: TCanvas);   // 画分隔线
     function ObjectAtPoint(AScreenPoint: TPointF): IControl; override;
+    procedure DoChangeSize(var ANewWidth, ANewHeight: Single); override;
   protected
     procedure DoItemClick(Sender: TObject);
     procedure DoItemChildClick(Sender: TObject);
@@ -157,7 +160,7 @@ type
     FContentViews: TListViewContent;
     FLocalDividerHeight: Single;
     FAllowItemChildClick: Boolean;
-    FLastHeight: Single;
+    FLastHeight, FLastWidth: Single;
     FResizeing: Boolean;
 
     FOnDrawViewBackgroud: TOnDrawViewBackgroud;
@@ -171,6 +174,7 @@ type
     function GetFirstRowIndex: Integer;
     function GetLastRowIndex: Integer;
     function GetVisibleRowCount: Integer;
+    function GetItemViews(Index: Integer): TControl;
   protected
     function CreateScroll: TScrollBar; override;
     function GetDrawState: TViewState; override;
@@ -183,7 +187,6 @@ type
     procedure DoRealign; override;
     procedure DoInVisibleChange; override;
     procedure DoScrollVisibleChange; override;
-    procedure DoRecalcSize(var AWidth, AHeight: Single); override;
     procedure DoChangeSize(var ANewWidth, ANewHeight: Single); override;
   protected
     procedure Resize; override;
@@ -212,6 +215,8 @@ type
     property Empty: Boolean read IsEmpty;
     property Adapter: IListAdapter read FAdapter write SetAdapter;
     property ItemPosition[Index: Integer]: TListItemPoint read GetItemPosition;
+    property ItemViews[Index: Integer]: TControl read GetItemViews;
+
     /// <summary>
     /// 当前显示的首行索引号
     /// </summary>
@@ -434,6 +439,8 @@ begin
   FContentViews.Locked := True;
   FContentViews.Parent := Self;
   FContentViews.ListView := Self;
+  FContentViews.WidthSize := TViewSize.FillParent;
+  FContentViews.HeightSize := TViewSize.FillParent;
   RealignContent;
 end;
 
@@ -477,40 +484,43 @@ end;
 
 procedure TListViewEx.DoRealign;
 var
+  LDisablePaint: Boolean;
   W: Single;
 begin
-  inherited;
   if FDisableAlign or IsUpdating then
     Exit;
   if (csDestroying in ComponentState) then
     Exit;
-  FDisableAlign := True;
-  {$IFDEF MSWINDOWS}
-  if Assigned(FScroll) and (FScroll.Visible) then
-    W := Width - Padding.Right - Padding.Left{$IFDEF MSWINDOWS} - FScroll.Width{$ENDIF}
-  else
-    W := Width - Padding.Right - Padding.Left;
-  {$ELSE}
-  W := Width - Padding.Right - Padding.Left;
-  {$ENDIF}
-  // 如果列表高度为自动大小时，计算一下父级视图的最大高度，在自动调整大小时会使用
-  if HeightSize = TViewSize.WrapContent then
-    FContentViews.FMaxParentHeight := GetParentMaxHeight
-  else  
-    FContentViews.FMaxParentHeight := 0;
-  FContentViews.SetBounds(Padding.Left, Padding.Top, W,
-    Height - Padding.Bottom - Padding.Top);
-  FDisableAlign := False;
-end;
+  LDisablePaint := FDisablePaint;
+  try
+    FDisablePaint := True;
 
-procedure TListViewEx.DoRecalcSize(var AWidth, AHeight: Single);
-begin
-  if HeightSize = TViewSize.WrapContent then
-    if FContentViews.FViewBottom < FContentBounds.Height then begin
-      AHeight := FContentViews.FViewBottom + Padding.Height
-    end else begin
-      AHeight := FContentBounds.Height + Padding.Height;
+    {$IFDEF MSWINDOWS}
+    if Assigned(FScroll) and (FScroll.Visible) then
+      W := Width - Padding.Right - Padding.Left{$IFDEF MSWINDOWS} - FScroll.Width{$ENDIF}
+    else
+      W := Width - Padding.Right - Padding.Left;
+    {$ELSE}
+    W := Width - Padding.Right - Padding.Left;
+    {$ENDIF}
+
+    FContentViews.SetBounds(Padding.Left, Padding.Top, W,
+      Height - Padding.Bottom - Padding.Top);
+
+    inherited DoRealign;
+
+    if (HeightSize = TViewSize.WrapContent) and (Height > FContentViews.Height) then begin
+      FDisableAlign := True;
+      BeginUpdate;
+      SetSize(Width, FContentViews.Height + Padding.Top + Padding.Bottom);
+      EndUpdate;
+      FDisableAlign := False;
     end;
+
+  finally
+    FDisablePaint := LDisablePaint;
+    FContentViews.Invalidate;
+  end;
 end;
 
 procedure TListViewEx.DoScrollVisibleChange;
@@ -548,6 +558,11 @@ begin
   Result := FItemsPoints[Index];
 end;
 
+function TListViewEx.GetItemViews(Index: Integer): TControl;
+begin
+  Result := FContentViews.FViews.Items[Index];
+end;
+
 function TListViewEx.GetLastRowIndex: Integer;
 begin
   Result := FContentViews.LastRowIndex;
@@ -569,7 +584,7 @@ function TListViewEx.InnerCalcDividerHeight: Single;
 var
   PPI: Single;
 begin
-  if FDividerHeight = -1 then begin
+  if (FDividerHeight = -1) and (Assigned(Canvas)) then begin
     PPI := Canvas.Scale;
     if PPI > TEpsilon.Scale then
       Result := 1 / PPI
@@ -628,6 +643,8 @@ begin
   try
     FContentViews.HideViews;
     FContentViews.FOffset := -1;
+    FContentViews.FLastOffset := -1;
+    FContentViews.FLastH := 0;
     if Length(FItemsPoints) > 0 then
       FillChar(FItemsPoints[0], SizeOf(TListItemPoint) * Length(FItemsPoints), 0);
     InvalidateContentSize;
@@ -644,23 +661,24 @@ begin
     FContentViews.Realign;
   end;
 
-  // 如果超出顶部区域, 则将滚动条置为最底部，重新排列列表项
-  Offset := FContentViews.FLastPosition - FScroll.Value;
-  if Offset > 0 then begin
-    FContentViews.FDisableAlign := True;
-    try
-      FContentViews.HideViews;
-      FContentViews.FOffset := -1;
-      FContentViews.FFirstRowIndex := -1;
-      FContentViews.FLastPosition := 0;
-      ViewportPosition := PointF(0, FContentBounds.Bottom - FScroll.ViewportSize);
-    finally
-      FContentViews.FDisableAlign := False;
-      FContentViews.Realign;
-    end;
-  end;
+//  // 如果超出顶部区域, 则将滚动条置为最底部，重新排列列表项
+//  Offset := FContentViews.FLastPosition - FScroll.Value;
+//  if Offset > 0 then begin
+//    FContentViews.FDisableAlign := True;
+//    try
+//      FContentViews.HideViews;
+//      FContentViews.FOffset := -1;
+//      FContentViews.FFirstRowIndex := -1;
+//      FContentViews.FLastPosition := 0;
+//      FContentViews.FLastH := 0;
+//      ViewportPosition := PointF(0, FContentBounds.Bottom - FScroll.ViewportSize);
+//    finally
+//      FContentViews.FDisableAlign := False;
+//      FContentViews.Realign;
+//    end;
+//  end;
 
-  RecalcSize;
+  Resize;
 end;
 
 procedure TListViewEx.PaintBackground;
@@ -683,16 +701,32 @@ begin
     (csDesigning in ComponentState) then
     Exit;
   FResizeing := True;
+
+  // 如果列表高度为自动大小时，计算一下父级视图的最大高度，在自动调整大小时会使用
+  if HeightSize = TViewSize.WrapContent then
+    FContentViews.FMaxParentHeight := GetParentMaxHeight
+  else
+    FContentViews.FMaxParentHeight := 0;
+
   inherited Resize;
+
   if Assigned(FAdapter) then begin
-    FContentViews.HideViews;
-    FContentViews.FOffset := FContentViews.FOffset + FLastHeight - Height;
-    FContentViews.FLastRowIndex := -1;
-    UpdateScrollBar;
-    FContentViews.Realign;
-    RecalcSize;
+    if (FLastHeight <> Height) and (FLastWidth <> Width) then begin
+      FContentViews.FDisableAlign := True;
+      FContentViews.FLastH := 0;
+      FContentViews.HideViews;
+      FContentViews.FOffset := FContentViews.FOffset + FLastHeight - Height;
+      FContentViews.FLastRowIndex := -1;
+      UpdateScrollBar;
+      FContentViews.FDisableAlign := False;
+    end else
+      UpdateScrollBar;
+    FContentViews.DoRealign;
+
+    FLastHeight := Height;
+    FLastWidth := Width;
   end;
-  FLastHeight := Height;
+
   FResizeing := False;
 end;
 
@@ -805,6 +839,11 @@ begin
   inherited;
 end;
 
+procedure TListViewContent.DoChangeSize(var ANewWidth, ANewHeight: Single);
+begin
+  inherited DoChangeSize(ANewWidth, ANewHeight);
+end;
+
 procedure TListViewContent.DoItemChildClick(Sender: TObject);
 begin
   if (FItemViews.ContainsKey(Sender)) then begin
@@ -896,13 +935,16 @@ var
   IsMoveDown, LCheckViews: Boolean;
   FOnItemMeasureHeight: TOnItemMeasureHeight;
   FNewOnClick: TNotifyEvent;
+  LDisablePaint: Boolean;
 begin
-  if FDisableAlign or (FAdapter = nil) or
+  if FDisableAlign or (FAdapter = nil) or (not Assigned(Canvas)) or
     (csLoading in ComponentState) or
     (csDestroying in ComponentState) then
     Exit;
 
+  LDisablePaint := FDisablePaint;
   FDisableAlign := True;
+  FDisablePaint := True;
 
   // 偏移位置 (滚动条位置)
   Offset := ListView.VScrollBarValue;
@@ -910,13 +952,19 @@ begin
   AdjustH := Offset - FOffset;
   FOffset := Offset;
 
-  // 如果滚动条不变，则不处理
-  {$IFDEF MSWINDOWS}
-  if (FViews.Count > 0) and (AdjustH = 0) then begin
+  AW := FSize.Width;
+  AH := FSize.Height;
+
+  // 宽度、高度、滚动条均无变化，不处理
+  if (FLastW = AW) and (FLastH = AH) and (FLastOffset = Offset) then begin
     FDisableAlign := False;
+    FDisablePaint := LDisablePaint;
     Exit;
+  end else begin
+    FLastW := AW;
+    FlastH := AH;
+    FLastOffset := Offset;
   end;
-  {$ENDIF}
 
   if (Abs(AdjustH) > Height * 2) then begin
     HideViews;
@@ -932,14 +980,13 @@ begin
   if (FMaxParentHeight > 0) and (Offset = 0) then
     Last := Offset + FMaxParentHeight // 使用父级视图的最大高度为列表项的底边
   else
-    Last := Offset + Height; // ListView.FContentBounds.Height;     
+    Last := Offset + Height; // ListView.FContentBounds.Height;
   // 分隔条高度
   DividerHeight := ListView.GetDividerHeight;
 
   // 变量初始化
   J := 0;
   K := FFirstRowIndex + FViews.Count;
-  AW := Width;
   IsMoveDown := AdjustH >= 0;  // 当前是否向下滚动
   FOnItemMeasureHeight := ListView.FOnItemMeasureHeight;
   AdjustH := 0;
@@ -1012,6 +1059,8 @@ begin
       if FFirstRowIndex = -1 then begin
         FFirstRowIndex := I;
         FLastPosition := V;
+        if I = 0 then
+          Last := Last + Height - V;
       end;
 
       // 可视组件计数器增加
@@ -1190,11 +1239,12 @@ begin
   finally
     // 显示的最后一个列表项索引号
     FLastRowIndex := FFirstRowIndex + J;
+    FDisablePaint := LDisablePaint;
     EndUpdate;
     if (FMaxParentHeight > 0) and (FFirstRowIndex = 0) then begin
       // 当需要自动调整大小，并且显示的首行为第一行时
       // 如果当前列表视图的底部位置小于父级大小，则使用当前视图底部为列表框高度
-      if FViewBottom < FMaxParentHeight then      
+      if FViewBottom < FMaxParentHeight then
         SetSize(Width, FViewBottom)
       else // 如果超出时，则使用父级最大高度为列表视图高度
         SetSize(Width, FMaxParentHeight)
@@ -1203,7 +1253,6 @@ begin
       // 高度变化了, 更新滚动条状态
       ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom + AdjustH;
       ListView.DoUpdateScrollingLimits(True);
-      Invalidate;
     end;
     FDisableAlign := False;
   end;
@@ -1514,6 +1563,7 @@ begin
     ViewItem.TextSettings.WordWrap := True;
     ViewItem.Gravity := TLayoutGravity.CenterVertical;
     ViewItem.Padding.Rect := RectF(8, 8, 8, 8);
+    ViewItem.CanFocus := False;
   end else
     ViewItem := ConvertView as TListTextItem;
   ViewItem.HeightSize := TViewSize.WrapContent;
@@ -1609,11 +1659,11 @@ var
 begin
   if (ConvertView = nil) or (not (TControl(ConvertView) is TListViewItemCheck)) then begin
     ViewItem := TListViewItemCheck.Create(Parent);
+    ViewItem.Parent := Parent;
+    ViewItem.BeginUpdate;
     ViewItem.WidthSize := TViewSize.FillParent;
-    ViewItem.HeightSize := TViewSize.WrapContent;
     ViewItem.MinHeight := TListTextItem.C_MinHeight;
     ViewItem.Gravity := TLayoutGravity.CenterVertical;
-    ViewItem.Parent := Parent;
     ViewItem.Width := Parent.Width;
 
     ViewItem.TextView1 := TTextView.Create(ViewItem);
@@ -1622,6 +1672,7 @@ begin
     ViewItem.TextView1.HeightSize := TViewSize.WrapContent;
     ViewItem.TextView1.TextSettings.Font.Size := TListTextItem.C_FontSize;
     ViewItem.TextView1.TextSettings.WordWrap := True;
+    //ViewItem.TextView1.TextSettings.Trimming := TTextTrimming.Character;
     ViewItem.TextView1.Gravity := TLayoutGravity.CenterVertical;
     ViewItem.TextView1.Margins.Rect := RectF(0, 0, 4, 0);
     ViewItem.TextView1.Padding.Rect := RectF(8, 8, 8, 8);
@@ -1634,16 +1685,18 @@ begin
     ViewItem.CheckBox1.Height := ViewItem.MinHeight;
     ViewItem.CheckBox1.Parent := ViewItem;
     ViewItem.CheckBox1.HitTest := False;
-    ViewItem.TextView1.Width := ViewItem.Width - ViewItem.CheckBox1.Width - 4;
+    ViewItem.CanFocus := False;
+    ViewItem.EndUpdate;
   end else
     ViewItem := TControl(ConvertView) as TListViewItemCheck;
 
   ViewItem.Tag := Index;   // 使用 Tag 记录索引号
   ViewItem.OnClick := DoCheckChange;
-  ViewItem.HeightSize := TViewSize.WrapContent;
   ViewItem.CheckBox1.IsChecked := ItemCheck[Index];
+  ViewItem.HeightSize := TViewSize.WrapContent;
+  ViewItem.DoRealign;
   ViewItem.TextView1.Text := Items[Index];
-  ViewItem.Height := ViewItem.TextView1.Height;
+  ViewItem.Height := ViewItem.TextView1.Size.Height;
   Result := TViewBase(ViewItem);
 end;
 
@@ -1691,11 +1744,11 @@ var
 begin
   if (ConvertView = nil) or (not (TControl(ConvertView) is TListViewItemSingle)) then begin
     ViewItem := TListViewItemSingle.Create(Parent);
+    ViewItem.Parent := Parent;
+    ViewItem.BeginUpdate;
     ViewItem.WidthSize := TViewSize.FillParent;
-    ViewItem.HeightSize := TViewSize.WrapContent;
     ViewItem.MinHeight := TListTextItem.C_MinHeight;
     ViewItem.Gravity := TLayoutGravity.CenterVertical;
-    ViewItem.Parent := Parent;
     ViewItem.Width := Parent.Width;
 
     ViewItem.TextView1 := TTextView.Create(ViewItem);
@@ -1717,13 +1770,16 @@ begin
     ViewItem.RadioButton.Text := '';
     ViewItem.RadioButton.HitTest := False;
     ViewItem.TextView1.Width := ViewItem.Width - ViewItem.RadioButton.Width - 4;
+    ViewItem.CanFocus := False;
+    ViewItem.EndUpdate;
   end else
     ViewItem := TControl(ConvertView) as TListViewItemSingle;
 
   ViewItem.Tag := Index; // 使用 Tag 记录索引号
   ViewItem.OnClick := DoItemIndexChange;
-  ViewItem.HeightSize := TViewSize.WrapContent;
   ViewItem.RadioButton.IsChecked := FItemIndex = Index;
+  ViewItem.HeightSize := TViewSize.WrapContent;
+  ViewItem.DoRealign;
   ViewItem.TextView1.Text := Items[Index];
   ViewItem.Height := ViewItem.TextView1.Height;
   Result := TViewBase(ViewItem);

@@ -15,9 +15,12 @@ uses
   System.NetEncoding,
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   System.Generics.Collections, System.Rtti, System.SyncObjs,
-  {$IFDEF ANDROID}FMX.Platform.Android, {$ENDIF}
+  {$IFDEF ANDROID}
+  FMX.Platform.Android,
+  FMX.VirtualKeyboard.Android,
+  {$ENDIF}
   {$IFDEF POSIX}Posix.Signal, {$ENDIF}
-  FMX.Ani,
+  FMX.Ani, FMX.VirtualKeyboard,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Platform, IOUtils;
 
 type
@@ -181,6 +184,11 @@ type
       AInterpolation: TInterpolationType = TInterpolationType.Linear); overload;
   end;
 
+  TCustomFormHelper = class Helper for TCustomForm
+  public
+    procedure SetFocus();
+  end;
+
   /// <summary>
   /// Frame 视图, Frame 切换处理
   /// </summary>
@@ -222,6 +230,7 @@ type
     procedure DoHide(); virtual;
     procedure DoFinish(); virtual;
     procedure DoReStart(); virtual;
+    procedure DoFree(); virtual;
 
     function GetData: TValue; override;
     procedure SetData(const Value: TValue); override;
@@ -426,6 +435,41 @@ var
   FDefaultBackColor: TAlphaColor = 0;
   FDefaultStatusColor: TAlphaColor = 0;
 
+{$IFDEF ANDROID}
+
+// 解决有时返回键失效问题
+var
+  FVKState: PByte = nil;
+
+procedure UpdateAndroidKeyboardServiceState;
+var
+  ASvc: IFMXVirtualKeyboardService;
+  AContext: TRttiContext;
+  AType: TRttiType;
+  AField: TRttiField;
+  AInst: TVirtualKeyboardAndroid;
+begin
+  Exit;
+  if not Assigned(FVKState) then begin
+    if (not Assigned(Screen.FocusControl)) and
+      TPlatformServices.Current.SupportsPlatformService
+      (IFMXVirtualKeyboardService, ASvc) then
+    begin
+      AInst := ASvc as TVirtualKeyboardAndroid;
+      AContext := TRttiContext.Create;
+      AType := AContext.GetType(TVirtualKeyboardAndroid);
+      AField := AType.GetField('FState');
+      if AField.GetValue(AInst).AsOrdinal <> 0 then
+      begin
+        FVKState := PByte(AInst);
+        Inc(FVKState, AField.Offset);
+      end;
+    end;
+  end;
+  if Assigned(FVKState) and (FVKState^ <> 0) then
+    FVKState^ := 0;
+end;
+{$ENDIF}
 
 { TFrameView }
 
@@ -501,6 +545,10 @@ begin
       end;
     end;
     Parent.RemoveObject(Self);
+    {$IFDEF ANDROID}
+    if (not Assigned(Screen.FocusControl)) and (Assigned(ParentForm)) then
+      ParentForm.SetFocus;
+    {$ENDIF}
   end;
 end;
 
@@ -595,6 +643,7 @@ end;
 
 destructor TFrameView.Destroy;
 begin
+  DoFree();
   if Assigned(FNextView) then
     FNextView.FLastView := nil;
   FLastView := nil;
@@ -612,6 +661,10 @@ procedure TFrameView.DoFinish;
 begin
   if Assigned(FOnFinish) then
     FOnFinish(Self);
+end;
+
+procedure TFrameView.DoFree;
+begin
 end;
 
 procedure TFrameView.DoHide;
@@ -835,6 +888,10 @@ begin
     DoShow()
   else
     DoReStart();
+  {$IFDEF ANDROID}
+  if (not Assigned(Screen.FocusControl)) and (Assigned(ParentForm)) then
+    ParentForm.SetFocus;
+  {$ENDIF}
   Opacity := 0;
   FHideing := True;
   Visible := True;
@@ -1755,6 +1812,32 @@ begin
     if Assigned(Item.OnFinishA) then
       Item.OnFinishA(Sender);
   except
+  end;
+end;
+
+{ TCustomFormHelper }
+
+procedure TCustomFormHelper.SetFocus;
+var
+  LControl: IControl;
+  Item: TFmxObject;
+  Ctrl: TControl;
+  I: Integer;
+begin
+  if Root <> nil then begin
+    for I := 0 to Self.ChildrenCount - 1 do begin
+      Item := Children.Items[I];
+      if (Item is TControl) then begin
+        Ctrl := Item as TControl;
+        if (Ctrl.Visible) and (Ctrl.CanFocus) then begin
+          LControl := Root.NewFocusedControl(Ctrl);
+          if LControl <> nil then begin
+            Root.SetFocused(LControl);
+            Break;
+          end;
+        end;
+      end;
+    end;
   end;
 end;
 

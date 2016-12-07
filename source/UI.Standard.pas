@@ -13,6 +13,9 @@ interface
 uses
   UI.Base,
   {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
+  {$IF CompilerVersion > 30.0}
+  FMX.AcceleratorKey,
+  {$ENDIF}
   FMX.BehaviorManager, FMX.Forms, System.Messaging, FMX.Styles,
   FMX.ActnList, FMX.Objects, System.Math, System.Actions, System.Rtti, FMX.Consts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, FMX.TextLayout,
@@ -175,7 +178,7 @@ type
 
 type
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
-  TTextView = class(TScrollView, ICaption)
+  TTextView = class(TScrollView, ICaption{$IF CompilerVersion > 30.0}, IAcceleratorKeyReceiver{$ENDIF})
   private
     FText: UI.Base.TTextSettings;
     FTextHint: string;
@@ -227,6 +230,11 @@ type
     {Scrollbar}
     function CreateBackground: TDrawable; override;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
+    { IAcceleratorKeyReceiver }
+    procedure TriggerAcceleratorKey; virtual;
+    function CanTriggerAcceleratorKey: Boolean; virtual;
+    function GetAcceleratorChar: Char;
+    function GetAcceleratorCharIndex: Integer;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -325,8 +333,13 @@ var
 begin
   if FInFitSize or (not FAdjustViewBounds) then
     Exit;
-  W := GetParentMaxWidth;
-  H := GetParentMaxHeight;
+  if TextSettings.WordWrap then begin // 只有需要自动换行时，才需要判断父级组件的宽度
+    W := GetParentMaxWidth;
+    H := GetParentMaxHeight;
+  end else begin
+    W := 0;
+    H := 0;
+  end;
   if (MaxHeight > 0) and (W > MaxWidth) then
     W := MaxWidth;
   if (MaxHeight > 0) and (H > MaxHeight) then
@@ -359,6 +372,11 @@ begin
     if (not Result) and (FText.TextLength > 0) then
       Result := (HitTest) or (TViewState.Pressed in FViewState);
   end;
+end;
+
+function TTextView.CanTriggerAcceleratorKey: Boolean;
+begin
+  Result := ParentedVisible;
 end;
 
 procedure TTextView.Change;
@@ -438,7 +456,10 @@ end;
 procedure TTextView.DoLayoutChanged(Sender: TObject);
 begin
   inherited DoLayoutChanged(Sender);
-  DoAutoSize;
+  if (HeightSize = TViewSize.WrapContent) or IsAutoSize then
+    DoAutoSize
+  else if FScrollbar <> TViewScroll.None then
+    DoUpdateContentBounds;
 end;
 
 procedure TTextView.DoPaintBackground(var R: TRectF);
@@ -583,6 +604,16 @@ begin
     if (W <> FSize.Width) or (H <> FSize.Height) then
       FSize.Size := TSizeF.Create(W, H);
   end;
+end;
+
+function TTextView.GetAcceleratorChar: Char;
+begin
+  Result := #0;
+end;
+
+function TTextView.GetAcceleratorCharIndex: Integer;
+begin
+  Result := -1;
 end;
 
 function TTextView.GetAutoSize: Boolean;
@@ -768,6 +799,11 @@ end;
 function TTextView.ToString: string;
 begin
   Result := Format('%s ''%s''', [inherited ToString, FText]);
+end;
+
+procedure TTextView.TriggerAcceleratorKey;
+begin
+  SetFocus;
 end;
 
 { TStyleView }
@@ -964,8 +1000,10 @@ begin
       if EventInfo.Flags = [] then
         AniMouseMove(True, LP.X, LP.Y)
       else
-      if AniCalculations.Down then
+      if AniCalculations.Down then begin
+        FDisibleClick := True;
         AniMouseUp(True, LP.X, LP.Y);
+      end;
   end
   else
     inherited CMGesture(EventInfo);
