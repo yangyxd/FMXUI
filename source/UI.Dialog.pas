@@ -382,7 +382,8 @@ type
     class function ShowView(const AOwner: TComponent; const Target: TControl;
       const ViewClass: TControlClass;
       XOffset: Single = 0; YOffset: Single = 0;
-      Position: TDialogViewPosition = TDialogViewPosition.Bottom): TDialog; overload;
+      Position: TDialogViewPosition = TDialogViewPosition.Bottom;
+      Cancelable: Boolean = True): TDialog; overload;
     /// <summary>
     /// 显示对话框
     /// <param name="Target">定位控件</param>
@@ -395,7 +396,8 @@ type
     class function ShowView(const AOwner: TComponent; const Target: TControl;
       const View: TControl; AViewAutoFree: Boolean = True;
       XOffset: Single = 0; YOffset: Single = 0;
-      Position: TDialogViewPosition = TDialogViewPosition.Bottom): TDialog; overload;
+      Position: TDialogViewPosition = TDialogViewPosition.Bottom;
+      Cancelable: Boolean = True): TDialog; overload;
 
     /// <summary>
     /// 在一个目标控件身上查找与其绑定在一起的对象框
@@ -1508,17 +1510,17 @@ end;
 
 class function TDialog.ShowView(const AOwner: TComponent; const Target: TControl;
   const ViewClass: TControlClass; XOffset: Single; YOffset: Single;
-  Position: TDialogViewPosition): TDialog;
+  Position: TDialogViewPosition; Cancelable: Boolean): TDialog;
 var
   AView: TControl;
 begin
   AView := ViewClass.Create(AOwner);
-  Result := ShowView(AOwner, Target, AView, True, XOffset, YOffset, Position);
+  Result := ShowView(AOwner, Target, AView, True, XOffset, YOffset, Position, Cancelable);
 end;
 
 class function TDialog.ShowView(const AOwner: TComponent; const Target, View: TControl;
   AViewAutoFree: Boolean; XOffset: Single; YOffset: Single;
-  Position: TDialogViewPosition): TDialog;
+  Position: TDialogViewPosition; Cancelable: Boolean): TDialog;
 var
   Dialog: TDialog;
   X, Y, PW, PH: Single;
@@ -1614,6 +1616,7 @@ begin
   end;
   View.Position.Point := TPointF.Create(X, Y);
 
+  Dialog.Cancelable := Cancelable;
   Dialog.SetBackColor(GetDefaultStyleMgr.FDialogMaskColor);
   Dialog.InitOK;
   Result := Dialog;

@@ -244,7 +244,7 @@ type
     procedure Change;
     property Length: Integer read GetTextLength;
   published
-    property AutoSize: Boolean read GetAutoSize write SetAutoSize default True;
+    property AutoSize: Boolean read GetAutoSize write SetAutoSize default False;
     property Text: string read GetText write SetText stored TextStored;
     property TextHint: string read FTextHint write SetTextHint;
     property TextSettings: UI.Base.TTextSettings read FText write SetTextSettings;
@@ -262,9 +262,6 @@ type
   protected
     procedure DoDrawStyleControl(var R: TRectF); virtual;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
-  public
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
   end;
 
 type
@@ -368,9 +365,9 @@ begin
       Border := TDrawableBorder(FBackground).Border;
       Result := Assigned(Border) and (Border.Style <> TViewBorderStyle.None) and
         (Border.Width > 0) and (Border.Color.GetColor(State) <> TAlphaColorRec.Null);
+      if (not Result) and (FText.TextLength > 0) then
+        Result := (HitTest) or (TViewState.Pressed in FViewState);
     end;
-    if (not Result) and (FText.TextLength > 0) then
-      Result := (HitTest) or (TViewState.Pressed in FViewState);
   end;
 end;
 
@@ -420,9 +417,10 @@ procedure TTextView.DoChanged(Sender: TObject);
 begin
   FGravity := FText.Gravity;
   if FText.IsSizeChange or FText.IsTextChange then begin
-    if IsAutoSize then
-      DoAutoSize
-    else begin
+    if IsAutoSize then begin
+      DoAutoSize;
+      Invalidate;
+    end else begin
       DoUpdateContentBounds;
       Repaint;
     end;
@@ -710,6 +708,8 @@ procedure TTextView.PaintBackground;
 var
   R: TRectF;
 begin
+  if AbsoluteInVisible then
+    Exit;
   R := RectF(0, 0, Width, Height);
   if Assigned(FOnDrawViewBackgroud) then
     DoDrawBackground(R)
@@ -816,16 +816,6 @@ begin
     Result := inherited CanRePaintBk(View, State);
 end;
 
-constructor TStyleView.Create(AOwner: TComponent);
-begin
-  inherited Create(AOwner);
-end;
-
-destructor TStyleView.Destroy;
-begin
-  inherited Destroy;
-end;
-
 procedure TStyleView.DoDrawStyleControl(var R: TRectF);
 begin
   if Assigned(FOnDrawViewBackgroud) then
@@ -879,9 +869,6 @@ begin
   Result.ItemPressed.Color := $FFE0E0E0;
   Result.ItemPressed.DefaultColor := Result.ItemPressed.Color;
   Result.ItemPressed.Kind := TViewBrushKind.Solid;
-  Result.ItemEnabled.Color := $FFD1D2D3;
-  Result.ItemEnabled.DefaultColor := Result.ItemEnabled.Color;
-  Result.ItemEnabled.Kind := TViewBrushKind.Solid;
   with TDrawableBorder(Result).Border do begin
     Width := 1;
     DefaultStyle := TViewBorderStyle.RectBorder;
@@ -889,10 +876,6 @@ begin
     Color.Default := $AFCCCCCC;
     Color.DefaultChange := False;
     Color.Pressed := $FFC0C0C0;
-    Color.Focused := $EFCCCCCC;
-    Color.Hovered := $EFCCCCCC;
-    Color.Checked := $EFCCCCCC;
-    Color.Activated := $EFCCCCCC;
   end;
   Result.OnChanged := DoBackgroundChanged;
   Result.OnChanged := DoBackgroundChanged;
@@ -1654,7 +1637,11 @@ var
   R: TRectF;
   W: Single;
 begin
+  if AbsoluteInVisible then
+    Exit;
   inherited PaintBackground;
+  if ((FMax - FMin) <= 0) then
+    Exit;
   W := (FValue - FMin) / (FMax - FMin) * Width;
   R := RectF(0, 0, W, Height);
   FForeGround.DrawTo(Canvas, R);

@@ -713,6 +713,8 @@ procedure TEditViewBase.PaintBackground;
 var
   R: TRectF;
 begin
+  if AbsoluteInVisible then
+    Exit;
   R := RectF(0, 0, Width, Height);
   if Assigned(FOnDrawViewBackgroud) then
     FOnDrawViewBackgroud(Self, Canvas, R, DrawState)

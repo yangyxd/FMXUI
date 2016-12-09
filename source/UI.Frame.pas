@@ -127,6 +127,15 @@ type
 
   TNotifyEventA = reference to procedure (Sender: TObject);
 
+  TDelayExecute = class(TAnimation)
+  protected
+    procedure ProcessAnimation; override;
+    procedure FirstFrame; override;
+  public
+    procedure Start; override;
+    procedure Stop; override;
+  end;
+
   TFrameAnimator = class
   private type
     TFrameAnimatorEvent = record
@@ -150,6 +159,11 @@ type
     class procedure CreateDestroyer;
     class procedure Uninitialize;
   public
+    /// <summary>
+    /// 延时执行任务
+    /// </summary>
+    class procedure DelayExecute(const Owner: TFmxObject; AOnFinish: TNotifyEventA; Delay: Single = 1.0);
+
     class procedure AnimateFloat(const Target: TFmxObject;
       const APropertyName: string; const NewValue: Single;
       AOnFinish: TNotifyEvent = nil; Duration: Single = 0.2;
@@ -324,6 +338,11 @@ type
     procedure Hint(const Msg: Double); overload;
     procedure Hint(const Msg: Int64); overload;
     procedure Hint(const AFormat: string; const Args: array of const); overload;
+
+    /// <summary>
+    /// 延时执行任务
+    /// </summary>
+    procedure DelayExecute(ADelay: Single; AExecute: TNotifyEventA);
 
     /// <summary>
     /// 显示 Frame
@@ -641,6 +660,13 @@ begin
   end;
 end;
 
+procedure TFrameView.DelayExecute(ADelay: Single; AExecute: TNotifyEventA);
+begin
+  if not Assigned(AExecute) then
+    Exit;
+  TFrameAnimator.DelayExecute(Self, AExecute, ADelay);
+end;
+
 destructor TFrameView.Destroy;
 begin
   DoFree();
@@ -845,7 +871,7 @@ end;
 
 procedure TFrameView.HideWaitDialog;
 begin
-  if Assigned(FWaitDialog) then begin
+  if Assigned(Self) and Assigned(FWaitDialog) then begin
     FWaitDialog.Dismiss;
     FWaitDialog := nil;
   end;
@@ -1743,6 +1769,27 @@ begin
     FDestroyer := TAnimationDestroyer.Create;
 end;
 
+class procedure TFrameAnimator.DelayExecute(const Owner: TFmxObject; AOnFinish: TNotifyEventA;
+  Delay: Single);
+var
+  Animation: TDelayExecute;
+begin
+  CreateDestroyer;
+
+  Animation := TDelayExecute.Create(nil);
+  FDestroyer.Add(Animation, AOnFinish);
+  Animation.Parent := Owner;
+  Animation.AnimationType := TAnimationType.In;
+  Animation.Interpolation := TInterpolationType.Linear;
+  Animation.OnFinish := FDestroyer.DoAniFinished;
+  Animation.Duration := Delay;
+  Animation.Delay := 0;
+  Animation.Start;
+
+  if not Animation.Enabled then
+    FDestroyer.DoAniFinishedEx(Animation, False);
+end;
+
 class procedure TFrameAnimator.Uninitialize;
 begin
   FreeAndNil(FDestroyer);
@@ -1839,6 +1886,26 @@ begin
       end;
     end;
   end;
+end;
+
+{ TDelayExecute }
+
+procedure TDelayExecute.FirstFrame;
+begin
+end;
+
+procedure TDelayExecute.ProcessAnimation;
+begin
+end;
+
+procedure TDelayExecute.Start;
+begin
+  inherited Start;
+end;
+
+procedure TDelayExecute.Stop;
+begin
+  inherited Stop;
 end;
 
 initialization
