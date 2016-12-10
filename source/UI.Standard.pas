@@ -419,13 +419,11 @@ begin
   if FText.IsSizeChange or FText.IsTextChange then begin
     if IsAutoSize then begin
       DoAutoSize;
-      Invalidate;
     end else begin
       DoUpdateContentBounds;
-      Repaint;
     end;
-  end else
-    Repaint;
+  end;
+  Repaint;
   if FText.IsEffectsChange then
     UpdateEffects;
 end;
@@ -1028,6 +1026,7 @@ procedure TScrollView.DoInVisibleChange;
 var
   V: Boolean;
 begin
+  inherited DoInVisibleChange;
   if Assigned(FScroll) then begin
     if FInVisible then
       V := False

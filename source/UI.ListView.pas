@@ -177,7 +177,7 @@ type
     function GetItemViews(Index: Integer): TControl;
   protected
     function CreateScroll: TScrollBar; override;
-    function GetDrawState: TViewState; override;
+    function GetRealDrawState: TViewState; override;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
     function IsStoredDividerHeight: Boolean; virtual;
   protected
@@ -543,7 +543,7 @@ begin
   Result := FLocalDividerHeight;
 end;
 
-function TListViewEx.GetDrawState: TViewState;
+function TListViewEx.GetRealDrawState: TViewState;
 begin
   Result := TViewState.None;
 end;

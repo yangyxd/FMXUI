@@ -610,6 +610,7 @@ type
     [Weak] FOwner: TControl;
     FOnChanged: TNotifyEvent;
     FOnTextChanged: TNotifyEvent;
+    FOnLastFontChanged: TNotifyEvent;
     FLayout: TTextLayout;
     FColor: TViewColor;
     FPrefixStyle: TPrefixStyle;
@@ -801,6 +802,7 @@ type
     FBackground: TDrawable;
     FDrawing: Boolean;
     FViewState: TViewStates;
+    FDrawState: TViewState;
     FMinWidth: Single;
     FMinHeight: Single;
     FMaxWidth: Single;
@@ -866,7 +868,8 @@ type
     function CreateBackground: TDrawable; virtual;
     function GetParentMaxWidth: Single;
     function GetParentMaxHeight: Single;
-    function GetDrawState: TViewState; virtual;
+    function GetRealDrawState: TViewState; virtual;
+    function GetDrawState: TViewState;
     function GetAbsoluteInVisible: Boolean; virtual;
     procedure RecalcInVisible; virtual;
   protected
@@ -955,7 +958,7 @@ type
     /// <summary>
     /// 组件当前的绘制状态
     /// </summary>
-    property DrawState: TViewState read GetDrawState;
+    property DrawState: TViewState read FDrawState;
     /// <summary>
     /// 组件内容有效区域（返回减去Padding后的值）
     /// </summary>
@@ -2711,6 +2714,7 @@ begin
   FAdjustViewBounds := True;
   FRecalcInVisible := True;
   FViewState := [];
+  FDrawState := TViewState.None;
   if csDesigning in ComponentState then begin
     FBackground := CreateBackground();
     FLayout := TViewLayout.Create(Self);
@@ -2741,6 +2745,7 @@ end;
 procedure TView.DecViewState(const State: TViewState);
 begin
   Exclude(FViewState, State);
+  FDrawState := GetRealDrawState;
   DecChildState(State);
 end;
 
@@ -2858,17 +2863,18 @@ end;
 procedure TView.DoMouseLeave;
 begin
   inherited DoMouseLeave;
-  if (csDesigning in ComponentState) or FInVisible then Exit;
   DecViewState(TViewState.Hovered);
+  if (csDesigning in ComponentState) or FInVisible then Exit;
   if CanRePaintBk(Self, TViewState.Hovered) then Repaint;
 end;
 
 procedure TView.DoMouseUp(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
-  if (csDesigning in ComponentState) or FInVisible then Exit;
   if (TMouseButton.mbLeft = Button) and (Clickable or (not (Self is TViewGroup))) then begin
     DecViewState(TViewState.Pressed);
+    if (csDesigning in ComponentState) or FInVisible then
+      Exit;
     if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
   end;
 end;
@@ -2895,26 +2901,7 @@ end;
 
 function TView.GetDrawState: TViewState;
 begin
-  if FViewState = [] then
-    Result := TViewState.None
-  else begin
-    if TViewState.Enabled in FViewState then
-      Result := TViewState.Enabled
-    else if TViewState.Pressed in FViewState then
-      Result := TViewState.Pressed
-    else if TViewState.Focused in FViewState then
-      Result := TViewState.Focused
-    else if TViewState.Selected in FViewState then
-      Result := TViewState.Selected
-    else if TViewState.Checked in FViewState then
-      Result := TViewState.Checked
-    else if TViewState.Activated in FViewState then
-      Result := TViewState.Activated
-    else if TViewState.Hovered in FViewState then
-      Result := TViewState.Hovered
-    else
-      Result := TViewState.None
-  end;
+  Result := FDrawState;
 end;
 
 function TView.GetGravity: TLayoutGravity;
@@ -3164,6 +3151,30 @@ begin
   end;
 end;
 
+function TView.GetRealDrawState: TViewState;
+begin
+  if FViewState = [] then
+    Result := TViewState.None
+  else begin
+    if TViewState.Enabled in FViewState then
+      Result := TViewState.Enabled
+    else if TViewState.Pressed in FViewState then
+      Result := TViewState.Pressed
+    else if TViewState.Focused in FViewState then
+      Result := TViewState.Focused
+    else if TViewState.Selected in FViewState then
+      Result := TViewState.Selected
+    else if TViewState.Checked in FViewState then
+      Result := TViewState.Checked
+    else if TViewState.Activated in FViewState then
+      Result := TViewState.Activated
+    else if TViewState.Hovered in FViewState then
+      Result := TViewState.Hovered
+    else
+      Result := TViewState.None
+  end;
+end;
+
 class function TView.GetRttiObject(Instance: TObject; const Name: string): TObject;
 var
   V: TValue;
@@ -3215,6 +3226,7 @@ end;
 procedure TView.IncViewState(const State: TViewState);
 begin
   Include(FViewState, State);
+  FDrawState := GetRealDrawState;
   IncChildState(State);
 end;
 
@@ -3413,10 +3425,14 @@ procedure TView.Paint;
 begin
   //inherited Paint;
   if not FDrawing then begin
-    if FIsFocused then
-      Include(FViewState, TViewState.Focused)
-    else
+    if FIsFocused then begin
+      Include(FViewState, TViewState.Focused);
+      FDrawState := GetRealDrawState;
+    end else begin
       Exclude(FViewState, TViewState.Focused);
+      if FDrawState = TViewState.Focused then
+        FDrawState := GetRealDrawState;
+    end;
     FDrawing := True;
     try
       PaintBackground();
@@ -5020,6 +5036,7 @@ begin
   else FOwner := nil;
 
   FLayout := TTextLayoutManager.DefaultTextLayout.Create;
+  FOnLastFontChanged := FLayout.Font.OnChanged;
   FLayout.Font.OnChanged := DoFontChanged;
 
   FPrefixStyle := TPrefixStyle.NoPrefix;
@@ -5060,6 +5077,8 @@ end;
 
 procedure TTextSettings.DoFontChanged(Sender: TObject);
 begin
+  if Assigned(FOnLastFontChanged) then
+    FOnLastFontChanged(Sender);
   FIsSizeChange := True;
   DoChange;
 end;

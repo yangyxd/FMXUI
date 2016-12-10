@@ -1424,9 +1424,11 @@ end;
 
 function TDialog.GetView: TControl;
 begin
-  if FViewRoot <> nil then
-    Result := FViewRoot.FLayBubble
-  else
+  if FViewRoot <> nil then begin
+    Result := FViewRoot.FLayBubble;
+    if Result = nil then
+      Result := FViewRoot;
+  end else
     Result := nil;
 end;
 

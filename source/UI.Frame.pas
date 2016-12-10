@@ -30,7 +30,7 @@ type
   /// <summary>
   /// Frame 参数
   /// </summary>
-  TFrameParams = TDictionary<string, TValue>;
+  TFrameParams = class(TDictionary<string, TValue>);
 
   TFrameDataType = (fdt_Integer, fdt_Long, fdt_Int64, fdt_Float, fdt_String,
     fdt_DateTime, fdt_Number, fdt_Boolean);
@@ -65,6 +65,27 @@ type
     procedure Put(const Key: string; const Value: NativeUInt); overload; inline;
     procedure Put(const Key: string; const Value: Boolean); overload; inline;
     procedure PutDateTime(const Key: string; const Value: TDateTime); inline;
+  end;
+
+  TFrameParamsHelper = class helper for TFrameParams
+    function GetString(const Key: string): string;
+    function GetInt(const Key: string; const DefaultValue: Integer = 0): Integer;
+    function GetLong(const Key: string; const DefaultValue: Cardinal = 0): Cardinal;
+    function GetInt64(const Key: string; const DefaultValue: Int64 = 0): Int64;
+    function GetFloat(const Key: string; const DefaultValue: Double = 0): Double;
+    function GetDateTime(const Key: string; const DefaultValue: TDateTime = 0): TDateTime;
+    function GetNumber(const Key: string; const DefaultValue: NativeUInt = 0): NativeUInt;
+    function GetPointer(const Key: string): Pointer;
+    function GetBoolean(const Key: string; const DefaultValue: Boolean = False): Boolean;
+
+    procedure Put(const Key: string; const Value: string); overload;
+    procedure Put(const Key: string; const Value: Integer); overload;
+    procedure Put(const Key: string; const Value: Cardinal); overload;
+    procedure Put(const Key: string; const Value: Int64); overload;
+    procedure Put(const Key: string; const Value: Double); overload;
+    procedure Put(const Key: string; const Value: NativeUInt); overload;
+    procedure Put(const Key: string; const Value: Boolean); overload;
+    procedure PutDateTime(const Key: string; const Value: TDateTime);
   end;
 
   /// <summary>
@@ -545,28 +566,49 @@ begin
 end;
 
 function TFrameView.CheckFree: Boolean;
+
+  function CheckChildern(): Boolean;
+  var
+    I: Integer;
+  begin
+    Result := True;
+    for I := 0 to Parent.ChildrenCount - 1 do begin
+      if Parent.Children[I] is FMX.Forms.TFrame then begin
+        Result := False;
+        Exit;
+      end;
+    end;
+  end;
+
 begin
   Result := False;
   if Assigned(Parent) then begin
     if not Assigned(Parent.Parent) then begin
-      if (Parent is TForm) and (Parent.ChildrenCount <= MainFormMinChildren + 1) then begin
-        {$IFDEF POSIX}
-          {$IFDEF DEBUG}
-          (Parent as TForm).Close;
+      if (Parent is TForm) then begin
+        if (Parent.ChildrenCount <= MainFormMinChildren + 1) or (CheckChildern()) then begin
+          {$IFDEF POSIX}
+            {$IFDEF DEBUG}
+            (Parent as TForm).Close;
+            {$ELSE}
+            Kill(0, SIGKILL);
+            {$ENDIF}
           {$ELSE}
-          Kill(0, SIGKILL);
+          (Parent as TForm).Close;
           {$ENDIF}
-        {$ELSE}
-        (Parent as TForm).Close;
-        {$ENDIF}
-        Result := True;
-        Exit;
+          Result := True;
+          Exit;
+        end;
       end;
     end;
     Parent.RemoveObject(Self);
     {$IFDEF ANDROID}
     if (not Assigned(Screen.FocusControl)) and (Assigned(ParentForm)) then
       ParentForm.SetFocus;
+    {$ENDIF}
+    {$IFDEF MSWINDOWS}
+    Self.Free;
+    {$ELSE}
+    Self.DisposeOf;
     {$ENDIF}
   end;
 end;
@@ -590,10 +632,29 @@ end;
 
 class function TFrameView.CreateFrame(Parent: TFmxObject;
   Params: TFrameParams): TFrameView;
+var
+  Dlg: IDialog;
 begin
   Result := nil;
   if (Assigned(Parent)) then begin
     try
+      // 检测是否是存在Dialog
+      if Parent is TControl then begin
+        Dlg := TDialog.GetDialog(Parent as TControl);
+        if Assigned(Dlg) then begin
+          Parent := Dlg.View;
+          while Parent <> nil do begin
+            if (Parent is TFrameView) or (Parent is TCustomForm) then begin
+              ShowFrame(Parent, Params);
+              Break;
+            end;
+            Parent := Parent.Parent;
+          end;
+          Dlg.Dismiss;
+          Exit;
+        end;
+      end;
+
       Result := Create(Parent);
       Result.Name := '';
       Result.Parent := Parent;
@@ -668,8 +729,13 @@ begin
 end;
 
 destructor TFrameView.Destroy;
+var
+  Obj: TObject;
 begin
   DoFree();
+  Obj := TagObject;
+  if Assigned(Obj) then
+    FreeAndNil(Obj);
   if Assigned(FNextView) then
     FNextView.FLastView := nil;
   FLastView := nil;
@@ -759,8 +825,13 @@ end;
 
 function TFrameView.GetParams: TFrameParams;
 begin
-  if FParams = nil then
-    FParams := TFrameParams.Create(9);
+  if FParams = nil then begin
+    if (TagObject <> nil) and (TagObject is TFrameParams) then begin
+      FParams := TagObject as TFrameParams;
+      TagObject := nil;
+    end else
+      FParams := TFrameParams.Create(9);
+  end;
   Result := FParams;
 end;
 
@@ -1596,6 +1667,128 @@ procedure TFrameStateDataHelper.PutDateTime(const Key: string;
   const Value: TDateTime);
 begin
   AddOrSetValue(Key, GetDataValue(fdt_DateTime, Value));
+end;
+
+{ TFrameParamsHelper }
+
+function TFrameParamsHelper.GetBoolean(const Key: string;
+  const DefaultValue: Boolean): Boolean;
+begin
+  if ContainsKey(Key) then begin
+    Result := Items[Key].AsBoolean
+  end else
+    Result := DefaultValue;
+end;
+
+function TFrameParamsHelper.GetDateTime(const Key: string;
+  const DefaultValue: TDateTime): TDateTime;
+begin
+  if ContainsKey(Key) then begin
+    Result := Items[Key].AsExtended
+  end else
+    Result := DefaultValue;
+end;
+
+function TFrameParamsHelper.GetFloat(const Key: string;
+  const DefaultValue: Double): Double;
+begin
+  if ContainsKey(Key) then begin
+    Result := Items[Key].AsExtended
+  end else
+    Result := DefaultValue;
+end;
+
+function TFrameParamsHelper.GetInt(const Key: string;
+  const DefaultValue: Integer): Integer;
+begin
+  if ContainsKey(Key) then begin
+    Result := Items[Key].AsInteger
+  end else
+    Result := DefaultValue;
+end;
+
+function TFrameParamsHelper.GetInt64(const Key: string;
+  const DefaultValue: Int64): Int64;
+begin
+  if ContainsKey(Key) then begin
+    Result := Items[Key].AsInt64
+  end else
+    Result := DefaultValue;
+end;
+
+function TFrameParamsHelper.GetLong(const Key: string;
+  const DefaultValue: Cardinal): Cardinal;
+begin
+  if ContainsKey(Key) then begin
+    Result := Items[Key].AsInteger
+  end else
+    Result := DefaultValue;
+end;
+
+function TFrameParamsHelper.GetNumber(const Key: string;
+  const DefaultValue: NativeUInt): NativeUInt;
+begin
+  if ContainsKey(Key) then begin
+    Result := Items[Key].AsOrdinal
+  end else
+    Result := DefaultValue;
+end;
+
+function TFrameParamsHelper.GetPointer(const Key: string): Pointer;
+begin
+  if ContainsKey(Key) then begin
+    Result := Items[Key].AsVarRec.VPointer
+  end else
+    Result := nil;
+end;
+
+function TFrameParamsHelper.GetString(const Key: string): string;
+begin
+  if ContainsKey(Key) then begin
+    Result := Items[Key].ToString
+  end else
+    Result := '';
+end;
+
+procedure TFrameParamsHelper.Put(const Key: string; const Value: Integer);
+begin
+  AddOrSetValue(Key, Value);
+end;
+
+procedure TFrameParamsHelper.Put(const Key, Value: string);
+begin
+  AddOrSetValue(Key, Value);
+end;
+
+procedure TFrameParamsHelper.Put(const Key: string; const Value: Cardinal);
+begin
+  AddOrSetValue(Key, Value);
+end;
+
+procedure TFrameParamsHelper.Put(const Key: string; const Value: NativeUInt);
+begin
+  AddOrSetValue(Key, Value);
+end;
+
+procedure TFrameParamsHelper.Put(const Key: string; const Value: Boolean);
+begin
+  AddOrSetValue(Key, Value);
+end;
+
+procedure TFrameParamsHelper.Put(const Key: string; const Value: Int64);
+begin
+  AddOrSetValue(Key, Value);
+end;
+
+procedure TFrameParamsHelper.Put(const Key: string; const Value: Double);
+begin
+  AddOrSetValue(Key, Value);
+end;
+
+procedure TFrameParamsHelper.PutDateTime(const Key: string;
+  const Value: TDateTime);
+begin
+  AddOrSetValue(Key, Value);
 end;
 
 { TFrameAnimator }
