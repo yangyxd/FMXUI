@@ -3915,7 +3915,7 @@ begin
     Exit;
   if (csLoading in ComponentState) or (csDestroying in ComponentState) then
     Exit;
-  LogD(Self.ClassName + '.DoRealign.');
+  //LogD(Self.ClassName + '.DoRealign.');
 
   FDisableAlign := True;
 
@@ -4223,7 +4223,7 @@ begin
   end else
     inherited DoRealign;
   FDisableAlign := False;
-  LogD(Self.ClassName + '.DoRealign OK.');
+  //LogD(Self.ClassName + '.DoRealign OK.');
 end;
 
 procedure TLinearLayout.DoRecalcSize(var AWidth, AHeight: Single);

@@ -637,7 +637,7 @@ procedure TListViewEx.NotifyDataChanged;
 var
   Offset: Double;
 begin
-  if (csLoading in ComponentState) or FContentViews.FDisableAlign then
+  if (csLoading in ComponentState) or (csDestroying in ComponentState) or FContentViews.FDisableAlign then
     Exit;
   FContentViews.FDisableAlign := True;
   try
@@ -940,6 +940,8 @@ begin
   if FDisableAlign or (FAdapter = nil) or (not Assigned(Canvas)) or
     (csLoading in ComponentState) or
     (csDestroying in ComponentState) then
+    Exit;
+  if FAdapter.Count = 0 then
     Exit;
 
   LDisablePaint := FDisablePaint;
@@ -1323,7 +1325,7 @@ begin
     Exit;
   inherited PaintBackground;
   // »­·Ö¸ôÏß
-  if (FirstRowIndex < FLastRowIndex) and (FViewBottom > FLastPosition) then
+  if (FAdapter.Count > 0) and (FirstRowIndex < FLastRowIndex) and (FViewBottom > FLastPosition) then
     DrawDivider(Canvas);
 end;
 

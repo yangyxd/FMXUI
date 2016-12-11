@@ -12,4 +12,6 @@
   {$DEFINE OutputDebug}       //是否在消息框中输出调试信息
 {$ENDIF}
 
-{.$DEFINE UseUDP}  // 是否使用远程输出日志
+{$IFDEF MSWINDOWS}
+{$DEFINE UseUDP}  // 是否使用远程输出日志
+{$ENDIF}
