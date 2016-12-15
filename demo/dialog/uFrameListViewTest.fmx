@@ -1,0 +1,96 @@
+object FrameListViewTest: TFrameListViewTest
+  Size.Width = 320.000000000000000000
+  Size.Height = 449.000000000000000000
+  Size.PlatformDefault = False
+  object ListViewEx1: TListViewEx
+    Align = Client
+    Background.ItemPressed.Color = xFFD9D9D9
+    Background.ItemPressed.Kind = Solid
+    Gravity = None
+    Margins.Left = 8.000000000000000000
+    Margins.Top = 8.000000000000000000
+    Margins.Right = 8.000000000000000000
+    Margins.Bottom = 8.000000000000000000
+    Size.Width = 304.000000000000000000
+    Size.Height = 320.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Divider = xAFE3E4E5
+    OnScrollChange = ListViewEx1ScrollChange
+    OnItemClick = ListViewEx1ItemClick
+  end
+  object TextView1: TTextView
+    Align = Top
+    Background.ItemDefault.Color = claWheat
+    Background.ItemDefault.Kind = Solid
+    Background.Border.Color.Default = xBFC0C0C0
+    Background.Border.Color.Pressed = claSilver
+    Clickable = True
+    Gravity = None
+    Padding.Left = 8.000000000000000000
+    Padding.Top = 8.000000000000000000
+    Padding.Right = 8.000000000000000000
+    Padding.Bottom = 8.000000000000000000
+    HitTest = True
+    Size.Width = 320.000000000000000000
+    Size.Height = 63.000000000000000000
+    Size.PlatformDefault = False
+    Position.Y = 50.000000000000000000
+    TabOrder = 2
+    AutoSize = False
+    Text = 
+      'procedure TFrmaeDialog.ButtonView8Click(Sender: TObject);'#13#10'begin' +
+      #13#10'  ShowWaitDialog('#39#27491#22312#25191#34892#20219#21153'...'#39','#13#10'    procedure (Dialog: IDialog)' +
+      ' begin'#13#10'      Hint('#39#20219#21153#34987#21462#28040#39');'#13#10'    end'#13#10'  );'#13#10'  TAsync.Create()'#13#10 +
+      '  .SetExecute('#13#10'    procedure (Async: TAsync) begin'#13#10'      Sleep' +
+      '(5000);'#13#10'    end'#13#10'  )'#13#10'  .SetExecuteComplete('#13#10'    procedure (As' +
+      'ync: TAsync) begin'#13#10'      if not IsWaitDismiss then // '#22914#26524#20219#21153#27809#26377#34987#20013#26029 +
+      #13#10'        Hint('#39#20219#21153#25191#34892#23436#25104'.'#39');'#13#10'      HideWaitDialog;'#13#10'    end'#13#10'  ).' +
+      'Start;'#13#10'end;'#13#10#13#10'procedure TFrmaeDialog.DoShow;'#13#10'begin'#13#10'  inherit' +
+      'ed;'#13#10'  tvTitle.Text := Title;'#13#10'end;'#13#10#13#10'procedure TFrmaeDialog.Sp' +
+      'eedButton1Click(Sender: TObject);'#13#10'begin'#13#10'  Finish;'#13#10'end;'#13#10#13#10#22797#21046#20195 +
+      #30721
+    ScrollBars = Vertical
+  end
+  object LinearLayout1: TLinearLayout
+    Align = Top
+    Background.ItemDefault.Color = claPurple
+    Background.ItemDefault.Kind = Solid
+    Gravity = None
+    Size.Width = 320.000000000000000000
+    Size.Height = 50.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Orientation = Horizontal
+    object SpeedButton1: TSpeedButton
+      Align = Left
+      StyledSettings = [Family, Size, Style]
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = 'priortoolbuttonbordered'
+      TextSettings.FontColor = claAzure
+      OnClick = SpeedButton1Click
+    end
+    object tvTitle: TTextView
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Clickable = True
+      Gravity = Center
+      Weight = 1.000000000000000000
+      Margins.Right = 50.000000000000000000
+      HitTest = True
+      Size.Width = 220.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 50.000000000000000000
+      TabOrder = 1
+      OnClick = tvTitleClick
+      AutoSize = False
+      Text = 'tvTitle'
+      TextSettings.Color.Default = claWhite
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.Gravity = Center
+    end
+  end
+end

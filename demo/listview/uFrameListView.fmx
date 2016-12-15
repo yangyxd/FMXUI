@@ -1,0 +1,213 @@
+object FrameListView: TFrameListView
+  Size.Width = 301.000000000000000000
+  Size.Height = 483.000000000000000000
+  Size.PlatformDefault = False
+  object ListViewEx1: TListViewEx
+    Align = Client
+    Background.ItemDefault.Color = claWhite
+    Background.ItemDefault.Kind = Solid
+    Background.ItemPressed.Color = xFFD9D9D9
+    Background.ItemPressed.Kind = Solid
+    Gravity = None
+    Size.Width = 301.000000000000000000
+    Size.Height = 433.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Divider = xAFE3E4E5
+    EnablePullRefresh = True
+    EnablePullLoad = True
+    OnPullRefresh = ListViewEx1PullRefresh
+    OnPullLoad = ListViewEx1PullLoad
+  end
+  object LinearLayout1: TLinearLayout
+    Align = Top
+    Background.ItemDefault.Color = claPurple
+    Background.ItemDefault.Kind = Solid
+    Gravity = None
+    Size.Width = 301.000000000000000000
+    Size.Height = 50.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Orientation = Horizontal
+    object TextView1: TTextView
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Clickable = True
+      HeightSize = FillParent
+      Gravity = None
+      HitTest = True
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 4
+      OnClick = TextView1Click
+      TextSettings.PrefixStyle = HidePrefix
+      Drawable.Position = Center
+      Drawable.Images = ImageList1
+      Drawable.ItemDefault.ImageIndex = 0
+      Drawable.ItemPressed.ImageIndex = 1
+    end
+    object tvTitle: TTextView
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Clickable = True
+      Gravity = Center
+      Weight = 1.000000000000000000
+      HitTest = True
+      Size.Width = 201.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 50.000000000000000000
+      TabOrder = 1
+      Text = 'ListView Demo'
+      TextSettings.Color.Default = claWhite
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
+    end
+    object TextView2: TTextView
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Clickable = True
+      HeightSize = FillParent
+      Gravity = None
+      HitTest = True
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 251.000000000000000000
+      TabOrder = 3
+      OnClick = TextView2Click
+      TextSettings.PrefixStyle = HidePrefix
+      Drawable.Position = Center
+      Drawable.Images = ImageList1
+      Drawable.ItemDefault.Bitmap.WrapMode = TileStretch
+      Drawable.ItemDefault.Kind = Bitmap
+      Drawable.ItemDefault.ImageIndex = 2
+    end
+  end
+  object ImageList1: TImageList
+    Source = <
+      item
+        MultiResBitmap.Height = 37
+        MultiResBitmap.Width = 37
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 37
+            Height = 37
+            PNG = {
+              89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
+              03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              017A494441545847D5984D4EC33010855347390751ABAA825295CB941E077193
+              72079620B149D80137286CE10251FECC9B682612E0AC409EE193ACA92796FCF4
+              EA4C6C277F81F73E473B50E4942E7DDF6FEBBA7E85204F91FAFC4807E898B76D
+              FB4C8284AEEBEEF8717CE0C8461C128AA2E890DFF390B860E2251C7A622D0355
+              557D680AFAE11081FC250F890B265E5973686DCDA1D38043EFAA829AA639B296
+              11E4F708331E160F4C7C66CDA155680D811D9A8A43E7218710763C242E10B49C
+              7ACB10541CDA585B430B2B6B68980C82B66887344D2F862C832FFEA373EE96BB
+              D198C1851C75E821CBB213CEA9E3E0D0B5254104FE1D7705A7DEB83F5296A5E7
+              9FD131B9A646202AF8F621AF539F0408A03AF565CFCD754A67BF2440C05445D7
+              D91508EC989DCA2E4040709740C210541D5B4F38A6BEC66CED3C051266758DD9
+              3ACD081040E7BEEF758CCE7DEAC26C9D900508A0BB84FFE198EAAD8B00010B38
+              F6C29A06B0B3B8E7C77A4098AD9B3C017A723874439153BF20493E01B9804B17
+              E9A2B8DD0000000049454E44AE426082}
+            FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_back.png'
+          end>
+        Name = 'btn_back'
+      end
+      item
+        MultiResBitmap.Height = 37
+        MultiResBitmap.Width = 37
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 37
+            Height = 37
+            PNG = {
+              89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
+              03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              0274494441545847CD98BB6E1431184677969E2E04714FF21840CF335023015D
+              C245912225415C0505209A8402CABC402AEA244D9E800A216E8A942AE97787F3
+              8D7F479ECC2E3BEB1DCF7224CBBF9D628E3E7B3CDE749AA0DFEFCFD216D5DBD4
+              74C9F3FC5AAFD7FB4CDB56AFB1FD299AAEF55120709E74962867DC4C6786F11D
+              ABA38996522208BCA09C7733057996655FAC8EE68CF56381CC05A41E515E7233
+              05C7087DE876BB3B368E26B3BE36085D45689DD22F590132AF91DAB5E1448CB5
+              7C085D4428DC434209BD694A48D49642E60AED19E5829B7190D046134B16526B
+              F948E832420F2943A12364369B4CC8333229137A42594A08998F747B6ED42CFF
+              4C4A4B86D403CA5612F20C4D4A9B9A3628A10DBA2409790626858C5E7BBD65A5
+              8424444A498544450A211D8CCF292BE710DD1E62B99B4947490A197D3A9450F8
+              E948BE874E73B2A710D2C7759532145242AD0A89222964E6905AA42C09C157A4
+              F6AD6E8D0CA159845E5197F6D034D1F2DDA6FD374242525BB4C3625426F95B36
+              8C704FE9AD9BD338603A7BCA7AFFF6BDA44C764FAACBC991C0830F10784AF9CD
+              CD3810BD47BB69C356A87DA2235D5CE468C9F75AE5834C5A7F062586E85DBAEB
+              6E94964A521E12D3D55737CDD6BF8195A43C3CFC374D5797CA1E43F6860D9330
+              34290F12FEE679CECD3852EEB1A1497948EB270FAE2496728F8D4CCA8384AEC6
+              924B7E8E8D4CCAC3837FD0D6284FEFB1FB4DEFB1DA5282547E21F69632FC569E
+              456CB949B1DACB1782840ED865CAF0FEA55FCA9B884FFCC374ACA43C3C5807EC
+              3BCA5262883E6E22B12829412ADF115BA10CF7982E8DB7AC8E265A4A2076407B
+              4FE9133B64FCC9EAE9423AFA9FE7927A9B9A804EE72F31832EB3F594A9FA0000
+              000049454E44AE426082}
+            FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_back_pre.png'
+          end>
+        Name = 'btn_back_pre'
+      end
+      item
+        MultiResBitmap.Height = 37
+        MultiResBitmap.Width = 37
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 37
+            Height = 37
+            PNG = {
+              89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
+              03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              01B9494441545847ED98CD4AC34010C79B14143C481154042D3E8B82BE8567EB
+              C18BFA265AF5EADDBBA0BE841EC48FE462D2433DE4D2AA341FFA1FFBAF104995
+              DD346B0EF9C1B0B333033B4C77B793ADE521499225C87E1886771F4046998B9D
+              2166C1C20B711C5F4A323F113BFC8B0C350716DD630E99C07FC05073E0A772B8
+              7E26F03F3254199BA3329EE735A966D2EBF596A99A238AA25B162513F86F18AA
+              8C76A56CDB6E773A9D90D3146287FF8453736023CFE2949DB33029C42E7E862A
+              6371D402EBCF4076206B9039CBB202C835A40D79659832B9921A81AA4C639842
+              2221E47D68ADA8280FB9363A36F83C862D9CBC0DE84DDC4D1E36FA056C67D05F
+              BE824C82441AD20D388E9340FF46E6EC1E1A0C35072AB38B04A2612A69C42E7E
+              869A035DC00373C804FE7B862AA3FDDFD7ED7657A966D2EFF757A89AA39495AA
+              D7EB87AEEBC69CA6103BFC479C9A03C528ECF44DEA9EDAE43DF5FCAFF75445C5
+              184AD9794EA2476F41D621A31EFD0A720CD1EED1B541750AFB9AD1068B6EFBBE
+              3F601E29C40E7F8BA1E628F20B599B71551A1104C11B43CD812EE0AF57972786
+              2A93A74BF8F5AD00FE53AAE6C0462EDF4B9E80850B78F3ACD53E0167FBB89005
+              AB70090000000049454E44AE426082}
+            FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_top_more.png'
+          end>
+        Name = 'btn_top_more'
+      end>
+    Destination = <
+      item
+        Layers = <
+          item
+            Name = 'btn_back'
+            SourceRect.Right = 37.000000000000000000
+            SourceRect.Bottom = 37.000000000000000000
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'btn_back_pre'
+            SourceRect.Right = 37.000000000000000000
+            SourceRect.Bottom = 37.000000000000000000
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'btn_top_more'
+            SourceRect.Right = 37.000000000000000000
+            SourceRect.Bottom = 37.000000000000000000
+          end>
+      end>
+    Left = 192
+    Top = 176
+  end
+end

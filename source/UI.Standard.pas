@@ -975,14 +975,12 @@ begin
       Exit;
     FMouseEvents := False;
     LP := AbsoluteToLocal(EventInfo.Location);
-    if TInteractiveGestureFlag.gfBegin in EventInfo.Flags then
+    if TInteractiveGestureFlag.gfBegin in EventInfo.Flags then begin
       AniMouseDown(True, LP.X, LP.Y)
-    else
-      if EventInfo.Flags = [] then
-        AniMouseMove(True, LP.X, LP.Y)
-      else
-      if AniCalculations.Down then begin
-        FDisibleClick := True;
+    end else
+      if EventInfo.Flags = [] then begin
+        AniMouseMove(True, LP.X, LP.Y);
+      end else if AniCalculations.Down then begin
         AniMouseUp(True, LP.X, LP.Y);
       end;
   end

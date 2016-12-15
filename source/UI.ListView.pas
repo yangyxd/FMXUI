@@ -56,6 +56,35 @@ type
     property Items[const Index: Integer]: Pointer read GetItem; default;
   end;
 
+  /// <summary>
+  /// 列表视图状态
+  /// </summary>
+  TListViewState = (None {无},
+    PullDownStart {下拉开始}, PullDownOK {下拉到位}, PullDownFinish {下拉松开}, PullDownComplete {下拉完成},
+    PullUpStart {上拉开始}, PullUpOK {下拉到位}, PullUpFinish {上拉松开}, PullUpComplete {上拉完成}
+  );
+
+  /// <summary>
+  /// 列表 Header 或 Footer 接口
+  /// </summary>
+  IListViewHeader = interface
+    ['{44F6F649-D173-4BEC-A38D-F03436ED55BC}']
+    /// <summary>
+    /// 更新状态
+    /// </summary>
+    procedure DoUpdateState(const State: TListViewState;
+      const ScrollValue: Double);
+    /// <summary>
+    /// 设置各种状态要显示的消息
+    /// </summary>
+    procedure SetStateHint(const State: TListViewState; const Msg: string);
+  end;
+
+  /// <summary>
+  /// 加载 Header 或 Footer 事件
+  /// </summary>
+  TOnInitHeader = procedure (Sender: TObject; var NewFooter: IListViewHeader) of object;
+
   PListItemPoint = ^TListItemPoint;
   TListItemPoint = record
     H: Single;
@@ -96,6 +125,9 @@ type
   private
     [Weak] ListView: TListViewEx;
     [Weak] FAdapter: IListAdapter;
+    FIsDesigning: Boolean;
+
+    FTimer: TTimer;
     FViews: TDictionary<Integer, TViewBase>;  // 当前显示的控件列表
     FCacleViews: TDictionary<Integer, TListViewList>; // 缓存的控件
 
@@ -104,6 +136,7 @@ type
     
     FFirstRowIndex: Integer;
     FLastRowIndex: Integer;
+    FCount: Integer;
 
     FOffset: Double;
     FLastPosition: Double;
@@ -116,7 +149,7 @@ type
     function GetVisibleRowCount: Integer;
     function GetControlFormCacle(const ItemType: Integer): TViewBase;
     procedure AddControlToCacle(const ItemType: Integer; const Value: TViewBase);
-  protected
+  protected 
     procedure DoRealign; override;
     procedure AfterPaint; override;
     procedure PaintBackground; override;
@@ -126,10 +159,27 @@ type
   protected
     procedure DoItemClick(Sender: TObject);
     procedure DoItemChildClick(Sender: TObject);
+    procedure DoFooterClick(Sender: TObject);
     procedure DoPaintFrame(Sender: TObject; Canvas: TCanvas; const ARect: TRectF);
     procedure DoMouseDownFrame(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Single);
     procedure ClearViews;
     procedure HideViews;
+
+  protected
+    // 下拉刷新，上拉加载更多
+    FState: TListViewState;
+    FHeader: IListViewHeader;
+    FFooter: IListViewHeader;
+    FPullOffset: Single;
+    FCompleteTime: Int64;
+
+    procedure InitFooter(); virtual;
+    procedure InitHeader(); virtual;
+    procedure FreeHeader(); virtual;
+    procedure FreeFooter(); virtual;
+    procedure DoPullLoadComplete; virtual;
+    procedure DoPullRefreshComplete; virtual;
+    procedure DoTimer(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -163,10 +213,20 @@ type
     FLastHeight, FLastWidth: Single;
     FResizeing: Boolean;
 
+    FEnablePullRefresh: Boolean;
+    FEnablePullLoad: Boolean;
+    FCount: Integer;
+
     FOnDrawViewBackgroud: TOnDrawViewBackgroud;
     FOnItemMeasureHeight: TOnItemMeasureHeight;
     FOnItemClick: TOnItemClick;
     FOnItemClickEx: TOnItemClickEx;
+
+    FOnInitFooter: TOnInitHeader;
+    FOnInitHeader: TOnInitHeader;
+    FOnPullRefresh: TNotifyEvent;
+    FOnPullLoad: TNotifyEvent;
+
     procedure SetAdapter(const Value: IListAdapter);
     procedure SetDivider(const Value: TAlphaColor);
     procedure SetDividerHeight(const Value: Single);
@@ -175,6 +235,10 @@ type
     function GetLastRowIndex: Integer;
     function GetVisibleRowCount: Integer;
     function GetItemViews(Index: Integer): TControl;
+    procedure SetEnablePullLoad(const Value: Boolean);
+    procedure SetEnablePullRefresh(const Value: Boolean);
+    function GetFooter: IListViewHeader;
+    function GetHeader: IListViewHeader;
   protected
     function CreateScroll: TScrollBar; override;
     function GetRealDrawState: TViewState; override;
@@ -188,6 +252,11 @@ type
     procedure DoInVisibleChange; override;
     procedure DoScrollVisibleChange; override;
     procedure DoChangeSize(var ANewWidth, ANewHeight: Single); override;
+
+    procedure DoPullLoad(Sender: TObject);
+
+    procedure CMGesture(var EventInfo: TGestureEventInfo); override;
+    procedure AniMouseUp(const Touch: Boolean; const X, Y: Single); override;
   protected
     procedure Resize; override;
     procedure Loaded; override;
@@ -209,6 +278,11 @@ type
     // 通知数据发生改变
     procedure NotifyDataChanged; virtual;
 
+    // 刷新完成
+    procedure PullRefreshComplete();
+    // 加载更多完成
+    procedure PullLoadComplete();
+
     function IsEnabled(const Index: Integer): Boolean;
 
     property Count: Integer read GetCount;
@@ -229,6 +303,9 @@ type
     /// 当前显示了几行
     /// </summary>
     property VisibleRowCount: Integer read GetVisibleRowCount;
+
+    property Header: IListViewHeader read GetHeader;
+    property Footer: IListViewHeader read GetFooter;
   published
     /// <summary>
     /// 是否允许触发列表项中的子控件事件
@@ -264,7 +341,34 @@ type
 
     property HitTest default True;
     property Clickable default True;
+
+    /// <summary>
+    /// 是否启用下拉刷新
+    /// </summary>
+    property EnablePullRefresh: Boolean read FEnablePullRefresh write SetEnablePullRefresh;
+    /// <summary>
+    /// 是否启用上拉加载更多
+    /// </summary>
+    property EnablePullLoad: Boolean read FEnablePullLoad write SetEnablePullLoad;
+
+    /// <summary>
+    /// 加载 Footer 事件, 如果不设置，将在需要时加载默认的 Footer
+    /// </summary>
+    property OnInitFooter: TOnInitHeader read FOnInitFooter write FOnInitFooter;
+    /// <summary>
+    /// 加载 Header 事件, 如果不设置，将在需要时加载默认的 Header
+    /// </summary>
+    property OnInitHeader: TOnInitHeader read FOnInitHeader write FOnInitHeader;
+    /// <summary>
+    /// 下拉刷新事件
+    /// </summary>
+    property OnPullRefresh: TNotifyEvent read FOnPullRefresh write FOnPullRefresh;
+    /// <summary>
+    /// 上拉加载更多事件
+    /// </summary>
+    property OnPullLoad: TNotifyEvent read FOnPullLoad write FOnPullLoad;
   end;
+
 
   /// <summary>
   /// ListView 数据适配器基类
@@ -394,7 +498,32 @@ type
 
 implementation
 
+uses
+  UI.ListView.Header, UI.ListView.Footer;
+
 { TListViewEx }
+
+procedure TListViewEx.AniMouseUp(const Touch: Boolean; const X, Y: Single);
+begin
+  inherited AniMouseUp(Touch, X, Y);
+
+  // 下拉刷新处理
+  if FEnablePullRefresh then begin
+    if Assigned(FContentViews) and (FContentViews.FState = TListViewState.PullDownOK) then begin
+      FContentViews.FHeader.DoUpdateState(TListViewState.PullDownFinish, 0);
+      FContentViews.FState := TListViewState.PullDownFinish;
+      if Assigned(FOnPullRefresh) then
+        FOnPullRefresh(Self); 
+      Exit;
+    end; 
+  end;
+  
+  // 上拉加载更多
+  if FEnablePullLoad then begin
+    if Assigned(FContentViews) and (FContentViews.FState = TListViewState.PullUpOK) then
+      DoPullLoad(Self);
+  end;
+end;
 
 function TListViewEx.CanRePaintBk(const View: IView;
   State: TViewState): Boolean;
@@ -407,7 +536,17 @@ begin
   if Assigned(FAdapter) then begin
     FAdapter.Clear;
     NotifyDataChanged;
+    FCount := 0;
   end;
+end;
+
+procedure TListViewEx.CMGesture(var EventInfo: TGestureEventInfo);
+begin
+  if Assigned(FContentViews) then begin
+    if FContentViews.FState in [TListViewState.PullDownFinish] then
+      Exit;  
+  end;
+  inherited CMGesture(EventInfo);
 end;
 
 constructor TListViewEx.Create(AOwner: TComponent);
@@ -441,7 +580,10 @@ begin
   FContentViews.ListView := Self;
   FContentViews.WidthSize := TViewSize.FillParent;
   FContentViews.HeightSize := TViewSize.FillParent;
-  RealignContent;
+  if csDesigning in ComponentState then begin
+    FContentViews.Align := TAlignLayout.Client;
+  end else
+    RealignContent;
 end;
 
 function TListViewEx.CreateScroll: TScrollBar;
@@ -482,6 +624,14 @@ begin
     R.Right - Padding.Right, R.Bottom - Padding.Bottom);
 end;
 
+procedure TListViewEx.DoPullLoad(Sender: TObject);
+begin
+  FContentViews.FFooter.DoUpdateState(TListViewState.PullUpFinish, 0);
+  FContentViews.FState := TListViewState.PullUpFinish;
+  if Assigned(FOnPullLoad) then
+    FOnPullLoad(Self);
+end;
+
 procedure TListViewEx.DoRealign;
 var
   LDisablePaint: Boolean;
@@ -494,6 +644,11 @@ begin
   LDisablePaint := FDisablePaint;
   try
     FDisablePaint := True;
+
+    if csDesigning in ComponentState then begin
+      inherited DoRealign;
+      Exit;
+    end;
 
     {$IFDEF MSWINDOWS}
     if Assigned(FScroll) and (FScroll.Visible) then
@@ -530,10 +685,7 @@ end;
 
 function TListViewEx.GetCount: Integer;
 begin
-  if Assigned(FAdapter) then
-    Result := FAdapter.GetCount
-  else
-    Result := 0;
+  Result := FCount;
 end;
 
 function TListViewEx.GetDividerHeight: Single;
@@ -551,6 +703,16 @@ end;
 function TListViewEx.GetFirstRowIndex: Integer;
 begin
   Result := FContentViews.FirstRowIndex;
+end;
+
+function TListViewEx.GetFooter: IListViewHeader;
+begin
+  Result := FContentViews.FFooter;
+end;
+
+function TListViewEx.GetHeader: IListViewHeader;
+begin
+  Result := FContentViews.FHeader;
 end;
 
 function TListViewEx.GetItemPosition(Index: Integer): TListItemPoint;
@@ -608,6 +770,16 @@ begin
   ItemDefaultHeight := FAdapter.ItemDefaultHeight;
   FContentBounds.Right := FContentViews.Width;
   FContentBounds.Bottom := (ItemDefaultHeight + GetDividerHeight) * Length(FItemsPoints);
+
+  // 加上头部高度
+  if (FEnablePullRefresh) and Assigned(FContentViews) and 
+    (FContentViews.FState = TListViewState.PullDownFinish) then 
+    FContentBounds.Bottom := FContentBounds.Bottom + (FContentViews.FHeader as TControl).Height;
+  // 加上底部高度
+  if (FEnablePullLoad) and Assigned(FContentViews.FFooter)
+    // and (FContentViews.FState <> TListViewState.PullUpComplete)
+  then
+    FContentBounds.Bottom := FContentBounds.Bottom + (FContentViews.FFooter as TControl).Height;
 end;
 
 function TListViewEx.IsEmpty: Boolean;
@@ -641,6 +813,10 @@ begin
     Exit;
   FContentViews.FDisableAlign := True;
   try
+    if Assigned(FAdapter) then
+      FCount := FAdapter.Count
+    else
+      FCount := 0;
     FContentViews.HideViews;
     FContentViews.FOffset := -1;
     FContentViews.FLastOffset := -1;
@@ -657,6 +833,7 @@ begin
     end;
     DoUpdateScrollingLimits(True);
   finally
+    FContentViews.FCount := FCount;
     FContentViews.FDisableAlign := False;
     FContentViews.Realign;
   end;
@@ -691,6 +868,18 @@ begin
   else
     inherited PaintBackground;
   DoPaintBackground(R);
+end;
+
+procedure TListViewEx.PullLoadComplete;
+begin
+  if Assigned(FContentViews) and (FContentViews.FState = TListViewState.PullUpFinish) then
+    FContentViews.DoPullLoadComplete;
+end;
+
+procedure TListViewEx.PullRefreshComplete;
+begin
+  if Assigned(FContentViews) and (FContentViews.FState = TListViewState.PullDownFinish) then
+    FContentViews.DoPullRefreshComplete;
 end;
 
 procedure TListViewEx.Resize;
@@ -762,6 +951,45 @@ begin
   end;
 end;
 
+procedure TListViewEx.SetEnablePullLoad(const Value: Boolean);
+begin
+  if FEnablePullLoad <> Value then begin
+    FEnablePullLoad := Value;
+    if Assigned(FContentViews) then begin
+      if (not Value) then begin
+        if csDesigning in ComponentState then
+          FContentViews.FreeFooter
+        else
+          FContentViews.DoPullLoadComplete;
+      end else begin
+        FContentViews.InitFooter;
+        if Assigned(FContentViews.FFooter) then begin
+          FContentBounds.Bottom := FContentBounds.Bottom + (FContentViews.FFooter as TControl).Height;
+          DoUpdateScrollingLimits(True);
+        end;
+        FContentViews.FLastOffset := -1;
+        DoRealign;
+      end;
+    end;
+  end;
+end;
+
+procedure TListViewEx.SetEnablePullRefresh(const Value: Boolean);
+begin
+  if FEnablePullRefresh <> Value then begin
+    FEnablePullRefresh := Value;
+    if Assigned(FContentViews) then begin
+      if (not Value) then begin
+        if csDesigning in ComponentState then
+          FContentViews.FreeHeader
+        else
+          FContentViews.DoPullRefreshComplete;
+      end else
+        FContentViews.InitHeader;
+    end;
+  end;
+end;
+
 procedure TListViewEx.VScrollChange(Sender: TObject);
 begin
   if FScrolling then Exit;  
@@ -808,6 +1036,7 @@ begin
     Item.Value.DisposeOf;
   end;
   FCacleViews.Clear;
+  FItemViews.Clear;
   for ItemView in FViews do
     RemoveObject(ItemView.Value);
   FViews.Clear;
@@ -816,6 +1045,7 @@ end;
 constructor TListViewContent.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
+  FIsDesigning := csDesigning in ComponentState;
   FViews := TDictionary<Integer, TViewBase>.Create(256);
   FCacleViews := TDictionary<Integer, TListViewList>.Create(17);
   FItemViews := TDictionary<Pointer, Integer>.Create(256);
@@ -826,6 +1056,11 @@ begin
   FLastPosition := 0;
 
   FDividerBrush := TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Null);
+
+  FTimer := TTimer.Create(Self);
+  FTimer.Enabled := False;
+  FTimer.Interval := 10;
+  FTimer.OnTimer := DoTimer;
 end;
 
 destructor TListViewContent.Destroy;
@@ -836,12 +1071,26 @@ begin
   FreeAndNil(FDividerBrush);
   FreeAndNil(FItemViews);
   FreeAndNil(FItemClick);
+  FreeHeader;
+  FreeFooter;
+  if Assigned(FTimer) then begin
+    RemoveObject(FTimer);
+    FTimer := nil;
+  end;
   inherited;
 end;
 
 procedure TListViewContent.DoChangeSize(var ANewWidth, ANewHeight: Single);
 begin
   inherited DoChangeSize(ANewWidth, ANewHeight);
+end;
+
+procedure TListViewContent.DoFooterClick(Sender: TObject);
+begin
+  if ListView.FEnablePullLoad then begin
+    if FState in [TListViewState.None, TListViewState.PullUpStart, TListViewState.PullUpOK] then
+      ListView.DoPullLoad(Self);
+  end;
 end;
 
 procedure TListViewContent.DoItemChildClick(Sender: TObject);
@@ -879,6 +1128,42 @@ begin
   end;
 end;
 
+procedure TListViewContent.DoPullLoadComplete;
+begin
+  if Assigned(FFooter) then begin
+    FFooter.DoUpdateState(TListViewState.PullUpComplete, 0);
+    if FIsDesigning then begin
+      RemoveObject(FFooter as TControl);
+      FFooter := nil;
+      FState := TListViewState.None;
+      Exit;
+    end;
+    FCompleteTime := GetTimestamp;
+    if Assigned(FTimer) then begin
+      FState := TListViewState.PullUpComplete;
+      FTimer.Enabled := True;
+    end;
+  end;
+end;
+
+procedure TListViewContent.DoPullRefreshComplete;
+begin
+  if Assigned(FHeader) then begin
+    FHeader.DoUpdateState(TListViewState.PullDownComplete, 0);
+    if FIsDesigning then begin
+      RemoveObject(FFooter as TControl);
+      FHeader := nil;
+      FState := TListViewState.None;
+      Exit;
+    end;
+    FCompleteTime := GetTimestamp;
+    if Assigned(FTimer) then begin
+      FState := TListViewState.PullDownComplete;
+      FTimer.Enabled := True;
+    end;
+  end;  
+end;
+
 procedure TListViewContent.DoRealign;
 
   // 递归设置组件及其子项的点击事件
@@ -893,8 +1178,26 @@ procedure TListViewContent.DoRealign;
         Continue;
       if Control.HitTest then begin
         Control.OnClick := DoItemChildClick;
-        FItemViews.Add(Control, Index);
+        FItemViews.AddOrSetValue(Control, Index);
       end;
+      if Control.ChildrenCount > 0 then
+        SetChildClickEvent(Control, Index);
+    end;
+  end;
+
+
+  // 递归设置组件及其子项的点击事件所对应的索引号
+  procedure UpdateChildEventIndex(const Parent: TControl; const Index: Integer);
+  var
+    I: Integer;
+    Control: TControl;
+  begin
+    for I := 0 to Parent.ChildrenCount - 1 do begin
+      Control := Parent.Controls[I];
+      if not Control.Visible then
+        Continue;
+      if Control.HitTest then
+        FItemViews.AddOrSetValue(Control, Index);
       if Control.ChildrenCount > 0 then
         SetChildClickEvent(Control, Index);
     end;
@@ -936,14 +1239,21 @@ var
   FOnItemMeasureHeight: TOnItemMeasureHeight;
   FNewOnClick: TNotifyEvent;
   LDisablePaint: Boolean;
+  Ctrl: TControl;
 begin
-  if FDisableAlign or (FAdapter = nil) or (not Assigned(Canvas)) or
+  if FIsDesigning then begin
+    inherited DoRealign;
+    Exit;
+  end;
+  if FDisableAlign or (FAdapter = nil) or (not Assigned(Canvas))or
     (csLoading in ComponentState) or
     (csDestroying in ComponentState) then
     Exit;
-  if FAdapter.Count = 0 then
+  if (FCount = 0) then begin
+    if Assigned(FFooter) then
+      (FFooter as TControl).Visible := False;
     Exit;
-
+  end;
   LDisablePaint := FDisablePaint;
   FDisableAlign := True;
   FDisablePaint := True;
@@ -982,7 +1292,7 @@ begin
   if (FMaxParentHeight > 0) and (Offset = 0) then
     Last := Offset + FMaxParentHeight // 使用父级视图的最大高度为列表项的底边
   else
-    Last := Offset + Height; // ListView.FContentBounds.Height;
+    Last := Offset + AH; // ListView.FContentBounds.Height;
   // 分隔条高度
   DividerHeight := ListView.GetDividerHeight;
 
@@ -1025,6 +1335,50 @@ begin
 
     FFirstRowIndex := -1;
     FLastRowIndex := -1;
+    V := V - FPullOffset;
+    FPullOffset := 0;
+
+    // 更新 Header 位置和状态
+    if ListView.FEnablePullRefresh and Assigned(FHeader) then begin
+      Ctrl := FHeader as TControl;
+      H := Ctrl.Height;
+      LV := -H - Offset;
+
+      if FState = TListViewState.PullDownFinish then begin    
+        Ctrl.SetBounds(0, V - Offset, AW, H);
+        V := V + H;
+        FPullOffset := H;
+      end else begin
+        Ctrl.SetBounds(0, -H - Offset, AW, H);
+     
+        if Offset < 0 then begin
+          case FState of
+            TListViewState.None: 
+              begin
+                FHeader.DoUpdateState(TListViewState.PullDownStart, Offset);
+                FState := TListViewState.PullDownStart;
+              end;
+            TListViewState.PullDownStart: 
+              begin
+                if (Offset < 0) and (LV >= 0) then begin
+                  FHeader.DoUpdateState(TListViewState.PullDownOK, Offset);
+                  FState := TListViewState.PullDownOK;
+                end;
+              end;
+            TListViewState.PullDownOK: 
+              begin
+                if (LV < 0) then begin
+                  FHeader.DoUpdateState(TListViewState.PullDownStart, Offset);  
+                  FState := TListViewState.PullDownStart;
+                end;
+              end;
+          end;
+        end else begin
+          if FState = TListViewState.PullDownStart then
+            FState := TListViewState.None;
+        end;    
+      end;
+    end;
 
     // 从指定位置开始，生成并调整列表项
     for I := S to High(ListView.FItemsPoints) do begin
@@ -1158,6 +1512,9 @@ begin
             if ListView.FAllowItemChildClick then
               SetChildClickEvent(ItemView, I);
           end;
+        end else begin
+          if ListView.FAllowItemChildClick then
+            UpdateChildEventIndex(ItemView, I);
         end;
 
         // 记录列表项与索引号的对应关系和事件与视图对应关系到字典中
@@ -1238,6 +1595,49 @@ begin
       // 记录底部位置
       FViewBottom := V;
     end;
+
+    // 更新 Footer 位置和状态
+    if ListView.FEnablePullLoad and Assigned(FFooter) and (FCount > 0) then begin
+      Ctrl := FFooter as TControl;
+      AH := FSize.Height;
+
+      // 如果显示到了最后一行，说明已经滚动到最底下
+      if FFirstRowIndex + J >= FCount then begin 
+        H := Ctrl.Height;
+        Ctrl.SetBounds(0, FViewBottom - Offset, AW, H);
+        Ctrl.Visible := True;
+        Ctrl.HitTest := True;
+        Ctrl.OnClick := DoFooterClick;
+
+        case FState of
+          TListViewState.None: 
+            begin
+              FFooter.DoUpdateState(TListViewState.PullUpStart, Offset);
+              FState := TListViewState.PullUpStart;
+            end;  
+          TListViewState.PullUpStart: 
+            begin
+              if (FViewBottom - Offset + H + 8 <= AH) then begin
+                FFooter.DoUpdateState(TListViewState.PullUpOK, Offset);
+                FState := TListViewState.PullUpOK;
+              end;
+            end;
+          TListViewState.PullUpOK:
+            begin
+              if (FViewBottom - Offset + H > AH) then begin
+                FFooter.DoUpdateState(TListViewState.PullUpStart, Offset);
+                FState := TListViewState.PullUpStart;
+              end;
+            end;
+        end;        
+      end else begin
+        Ctrl.Visible := False;
+        if FState = TListViewState.PullUpStart then
+          FState := TListViewState.None; 
+      end;
+    end else if Assigned(FFooter) then
+      (FFooter as TControl).Visible := False;
+    
   finally
     // 显示的最后一个列表项索引号
     FLastRowIndex := FFirstRowIndex + J;
@@ -1260,6 +1660,34 @@ begin
   end;
 end;
 
+procedure TListViewContent.DoTimer(Sender: TObject);
+begin
+  if (not Assigned(Self)) or (csDestroying in ComponentState) then
+    Exit;
+  if Assigned(ListView) then begin
+    if GetTimestamp - FCompleteTime < 300 then 
+      Exit;
+    FTimer.Enabled := False;
+    if (FState = TListViewState.PullDownComplete) then begin
+      if Assigned(FHeader) then begin  
+        FHeader.DoUpdateState(TListViewState.None, 0);  
+        ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - (FHeader as TControl).Height;
+        ListView.DoUpdateScrollingLimits(True);
+      end;
+    end;
+    if (FState = TListViewState.PullUpComplete) then begin
+      if Assigned(FFooter) then begin   
+        FFooter.DoUpdateState(TListViewState.None, 0);
+        ListView.DoUpdateScrollingLimits(True);
+      end;
+    end;
+    FState := TListViewState.None;
+    FLastOffset := -1;
+    DoRealign;
+  end else
+    FTimer.Enabled := False;
+end;
+
 procedure TListViewContent.DrawDivider(Canvas: TCanvas);
 var
   I: Integer;
@@ -1275,6 +1703,22 @@ begin
         0, 0, [], ListView.Opacity, FDividerBrush);
       Y := Y + DividerHeight;
     end;
+  end;
+end;
+
+procedure TListViewContent.FreeFooter;
+begin
+  if Assigned(FFooter) then begin
+    RemoveObject(FFooter as TControl);
+    FFooter := nil;
+  end;
+end;
+
+procedure TListViewContent.FreeHeader;
+begin
+  if Assigned(FHeader) then begin
+    RemoveObject(FHeader as TControl);
+    FHeader := nil;
   end;
 end;
 
@@ -1307,6 +1751,41 @@ begin
   for ItemView in FViews do
     AddControlToCacle(FAdapter.GetItemViewType(ItemView.Key), ItemView.Value);
   FViews.Clear;
+  if Assigned(FFooter) then
+    (FFooter as TControl).Visible := False;
+end;
+
+procedure TListViewContent.InitFooter;
+begin
+  if not Assigned(FFooter) then begin
+    if Assigned(ListView.FOnInitFooter) then
+      ListView.FOnInitFooter(ListView, FFooter);
+    if not Assigned(FFooter) then
+      FFooter := TListViewDefaultFooter.Create(Self);
+    (FFooter as TControl).Parent := Self;
+    (FFooter as TControl).Stored := False;
+    if FIsDesigning then begin
+      (FFooter as TControl).Align := TAlignLayout.Bottom;
+      FFooter.DoUpdateState(TListViewState.None, 0);
+    end;
+  end;
+end;
+
+procedure TListViewContent.InitHeader;
+begin
+  if not Assigned(FHeader) then begin
+    if Assigned(ListView.FOnInitHeader) then
+      ListView.FOnInitHeader(ListView, FHeader);
+    if not Assigned(FHeader) then
+      FHeader := TListViewDefaultHeader.Create(Self);
+    (FHeader as TControl).Parent := Self;
+    (FHeader as TControl).Stored := False;
+    (FHeader as TControl).Index := 0;
+    if FIsDesigning then begin
+      FHeader.DoUpdateState(TListViewState.None, 0);
+      (FHeader as TControl).Align := TAlignLayout.Top;
+    end;
+  end;
 end;
 
 function TListViewContent.ObjectAtPoint(AScreenPoint: TPointF): IControl;
@@ -1325,7 +1804,7 @@ begin
     Exit;
   inherited PaintBackground;
   // 画分隔线
-  if (FAdapter.Count > 0) and (FirstRowIndex < FLastRowIndex) and (FViewBottom > FLastPosition) then
+  if (FCount > 0) and (FirstRowIndex < FLastRowIndex) and (FViewBottom > FLastPosition) then
     DrawDivider(Canvas);
 end;
 

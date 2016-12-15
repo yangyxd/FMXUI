@@ -49,7 +49,10 @@ contains
   UI.Toast in 'UI.Toast.pas',
   UI.Design.Bounds in 'UI.Design.Bounds.pas' {BoundsDesigner},
   UI.ListView in 'UI.ListView.pas',
-  UI.Utils.ArrayEx in 'UI.Utils.ArrayEx.pas';
+  UI.Utils.ArrayEx in 'UI.Utils.ArrayEx.pas',
+  UI.ListView.Header in 'UI.ListView.Header.pas' {ListViewDefaultHeader: TFrame},
+  UI.ListView.Footer in 'UI.ListView.Footer.pas' {ListViewDefaultFooter: TFrame},
+  UI.MsgEngine in 'UI.MsgEngine.pas';
 
 end.
 

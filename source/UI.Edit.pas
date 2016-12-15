@@ -199,11 +199,13 @@ type
     FSpellUnderlineBrush: TStrokeBrush;
     FEditPopupMenu: TPopupMenu;
     FSelectionMode: TSelectionMode;
+    FOnModelChange: TNotifyEvent;
     function GetCaretPosition: Integer;
     procedure SetCaretPosition(const Value: Integer);
     procedure SetSelectionMode(const Value: TSelectionMode);
     procedure UpdateSpelling;
     procedure InsertText(const AText: string);
+    procedure DoTextChange(Sender: TObject);
     { Selections }
     procedure BeginSelection;
     procedure EndSelection;
@@ -1094,6 +1096,7 @@ begin
   EnableExecuteAction := False;
   FModel := TEditDataModel.Create(Self);
   FModel.FTextSettingsInfo := FText;
+  FModel.OnChange := DoTextChange;
   FContentRect.Left := 0;
   FContentRect.Top := 0;
   FContentRect.Right := 0;
@@ -1582,6 +1585,16 @@ begin
   EndSelection;
 end;
 
+procedure TCustomEditView.DoTextChange(Sender: TObject);
+begin
+  {$IFDEF ANDROID}
+  if (MaxLength > 0) and (System.Length(Text) > MaxLength) then
+    Text := Text.SubString(0, MaxLength);
+  {$ENDIF}
+  if Assigned(FOnModelChange) then
+    FOnModelChange(Sender);
+end;
+
 procedure TCustomEditView.DoTyping;
 begin
   if Assigned(Model.OnTyping) then
@@ -1589,10 +1602,21 @@ begin
 end;
 
 procedure TCustomEditView.EndIMEInput;
+{$IFDEF ANDROID}
+var
+  LText: string;
+{$ENDIF}
 begin
   Model.DisableNotify;
   try
+    {$IFDEF ANDROID}
+    LText := FTextService.CombinedText;
+    if (Model.MaxLength > 0) and (System.Length(LText) > Model.MaxLength) then
+      LText := LText.Substring(0, Model.MaxLength);
+    Model.Text := LText;
+    {$ELSE}
     Model.Text := FTextService.CombinedText;
+    {$ENDIF}
   finally
     Model.EnableNotify;
   end;
@@ -1757,7 +1781,7 @@ end;
 
 function TCustomEditView.GetOnChange: TNotifyEvent;
 begin
-  Result := Model.OnChange;
+  Result := FOnModelChange;
 end;
 
 function TCustomEditView.GetOnChangeTracking: TNotifyEvent;
@@ -2755,7 +2779,7 @@ end;
 
 procedure TCustomEditView.SetOnChange(const Value: TNotifyEvent);
 begin
-  Model.OnChange := Value;
+  FOnModelChange := Value;
 end;
 
 procedure TCustomEditView.SetOnChangeTracking(const Value: TNotifyEvent);

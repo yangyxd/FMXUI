@@ -1,9 +1,20 @@
 FMXUI  (YangYxd)
 
 【当前版本】
-  2016.12.11.001
+  2016.12.15.001
 
 【主要更改】
+ - -----------------------------------
+ - 2016.12.15
+ - -----------------------------------
+ * ListViewEx 增加下拉刷新和上拉加载更多的支持
+ + UI.Frame 增加 DelayExecute 延时执行任务方法
+ * UI.Frame ShowFrame 时，解决与 UI.Dialog 冲突的问题
+ + 增加Demo ListView
+ * 支持沉侵式状态栏。使用 UI.Frame 中 SetDefaultBackColor 设置默认背景色，SetDefaultStatusColor 设置状态条颜色
+ * 优化 TextView 自动大小算法
+ * EditView 解决 Android平台 MaxLength 无效问题
+ * 其它已知BUG修复
  - -----------------------------------
  - 2016.12.11
  - -----------------------------------

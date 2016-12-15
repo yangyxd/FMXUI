@@ -811,7 +811,6 @@ type
     FHeightSize: TViewSize;
     FSaveMaxWidth: Single;
     FSaveMaxHeight: Single;
-    FDisibleClick: Boolean;
     FLayout: TViewLayout;
     function IsDrawing: Boolean;
     function IsDesignerControl(Control: TControl): Boolean;
@@ -1175,6 +1174,7 @@ type
 
 function GetTimestamp: Int64;
 function LerpColor(const A, B: TAlphaColor; T: Single): TAlphaColor;
+function LerpFolat(const A, B: Double; T: Single): Double;
 function GetPPI(Context: TFmxObject): Single;
 function RectD(const Left, Top, Right, Bottom: Double): TRectD; overload;
 function RectD(const R: TRectF): TRectD; overload;
@@ -1249,6 +1249,17 @@ begin
     CR.G := CA.G + Round((CB.G - CA.G) * T);
     CR.B := CA.B + Round((CB.B - CA.B) * T);
     CR.R := CA.R + Round((CB.R - CA.R) * T);
+  end;
+end;
+
+function LerpFolat(const A, B: Double; T: Single): Double;
+begin
+  if T <= 0 then
+    Result := A
+  else if T >= 1 then
+    Result := B
+  else begin
+    Result := A + (B - A) * T;
   end;
 end;
 
@@ -2696,10 +2707,6 @@ end;
 
 procedure TView.Click;
 begin
-  if FDisibleClick then begin
-    FDisibleClick := False;
-    Exit;
-  end;
   if Assigned(OnClick) then
     PlayClickEffect;
   inherited Click;

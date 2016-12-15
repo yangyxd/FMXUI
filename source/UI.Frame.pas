@@ -255,6 +255,7 @@ type
     procedure SetStatusColor(const Value: TAlphaColor);
     function GetParentForm: TCustomForm;
     procedure SetBackColor(const Value: TAlphaColor);
+    function GetIsDestroy: Boolean;
   protected
     [Weak] FLastView: TFrameView;
     [Weak] FNextView: TFrameView;
@@ -419,6 +420,10 @@ type
     /// 等待对话框是否被取消了
     /// </summary>
     property IsWaitDismiss: Boolean read GetIsWaitDismiss;
+    /// <summary>
+    /// 是否已经释放
+    /// </summary>
+    property IsDestroy: Boolean read GetIsDestroy;
   published
     property Title: string read GetTitle write SetTitle;
     /// <summary>
@@ -816,6 +821,11 @@ begin
     Result := nil
   else
     Result := V.AsVarRec.VPointer;
+end;
+
+function TFrameView.GetIsDestroy: Boolean;
+begin
+  Result := (not Assigned(Self)) or (csDestroying in ComponentState);
 end;
 
 function TFrameView.GetIsWaitDismiss: Boolean;
