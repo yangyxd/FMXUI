@@ -1068,24 +1068,20 @@ procedure TFrameView.SetStatusColor(const Value: TAlphaColor);
   
   {$IFDEF ANDROID}
   procedure ExecuteAndroid();   
+  var
+    wnd: JWindow;
   begin
     if TJBuild_VERSION.JavaClass.SDK_INT < 21 then
       Exit;
-    CallInUiThread(
-    procedure
-    var
-      wnd: JWindow;
-    begin
-      wnd := TAndroidHelper.Activity.getWindow;
-      if (not Assigned(wnd)) then Exit;      
-      // 取消设置透明状态栏,使 ContentView 内容不再覆盖状态栏  
-      wnd.clearFlags($04000000); // FLAG_TRANSLUCENT_STATUS
-      //wnd.getDecorView().setSystemUiVisibility($00000400 or $00000100);
-      // 需要设置这个 flag 才能调用 setStatusBarColor 来设置状态栏颜色  
-      wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS); // FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
-      // 设置颜色
-      wnd.setStatusBarColor(Value);
-    end);
+    wnd := TAndroidHelper.Activity.getWindow;
+    if (not Assigned(wnd)) then Exit;
+    // 取消设置透明状态栏,使 ContentView 内容不再覆盖状态栏
+    // wnd.clearFlags($04000000); // FLAG_TRANSLUCENT_STATUS
+    wnd.getDecorView().setSystemUiVisibility($00000400 or $00000100);
+    // 需要设置这个 flag 才能调用 setStatusBarColor 来设置状态栏颜色
+    wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS); // FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
+    // 设置颜色
+    wnd.setStatusBarColor(Value);
   end;
   {$ENDIF}
 

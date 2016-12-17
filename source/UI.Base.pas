@@ -811,6 +811,9 @@ type
     FHeightSize: TViewSize;
     FSaveMaxWidth: Single;
     FSaveMaxHeight: Single;
+    {$IFNDEF MSWINDOWS}
+    FDownUpOffset: Single;
+    {$ENDIF}
     FLayout: TViewLayout;
     function IsDrawing: Boolean;
     function IsDesignerControl(Control: TControl): Boolean;
@@ -829,6 +832,7 @@ type
     procedure VisibleChanged; override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
+    procedure MouseClick(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     function DoSetSize(const ASize: TControlSize; const NewPlatformDefault: Boolean; ANewWidth, ANewHeight: Single;
       var ALastWidth, ALastHeight: Single): Boolean; override;
   protected
@@ -1198,7 +1202,7 @@ resourcestring
 type
   TGetTickCount64 = function: Int64;
   TGetSystemTimes = function(var lpIdleTime, lpKernelTime, lpUserTime: TFileTime): BOOL; stdcall;
-{$ENDIF MSWINDOWS}
+{$ENDIF}
 var
   {$IFDEF MSWINDOWS}
   GetTickCount64: TGetTickCount64;
@@ -2707,8 +2711,12 @@ end;
 
 procedure TView.Click;
 begin
+  {$IFNDEF MSWINDOWS}
+  if Abs(FDownUpOffset) > 10 then // 防止滚动时触发点击事件
+    Exit;
   if Assigned(OnClick) then
     PlayClickEffect;
+  {$ENDIF}
   inherited Click;
 end;
 
@@ -3337,9 +3345,21 @@ begin
   inherited Loaded;
 end;
 
+procedure TView.MouseClick(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+begin
+  {$IFNDEF MSWINDOWS}
+  FDownUpOffset := Y - FDownUpOffset;
+  {$ENDIF}
+  inherited;
+end;
+
 procedure TView.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
+  {$IFNDEF MSWINDOWS}
+  FDownUpOffset := Y;
+  {$ENDIF}
   inherited MouseDown(Button, Shift, X, Y);
   DoMouseDown(Button, Shift, X, Y);
 end;
@@ -3904,12 +3924,12 @@ procedure TLinearLayout.DoRealign;
 var
   CtrlCount: Integer;
   I: Integer;
-  WeightSum: Single;
+  WeightSum: Double;
   LIsAdjustSize: Boolean;
-  CurPos: TPointF;
+  CurPos: TPointD;
   W, H, Fix: Single;
-  VL, VT, VW, VH: Single;
-  MaxW, MaxH: Single;
+  VL, VT, VW, VH: Double;
+  MaxW, MaxH: Double;
   Control: TControl;
   ReSizeView: TView;
   View: IView;
@@ -3931,12 +3951,12 @@ begin
   MaxH := GetParentMaxHeight;
 
   // 得到子组件的开始坐标
-  CurPos := PointF(Padding.Left, Padding.Top);
+  CurPos := TPointD.Create(Padding.Left, Padding.Top);
   W := Width - CurPos.X - Padding.Right;
   H := Height - CurPos.Y - Padding.Bottom;
   CtrlCount := ControlsCount;
 
-  // 如果长宽 > 0 时才处理布局
+  // 如果长宽 > 0 和子控件 > 0 时才处理布局
   if ((W > 0) and (H > 0)) or (CtrlCount > 0) then begin
     // 获取所有子组件的重力大小之和
     WeightSum := GetWeightSum(Fix);
@@ -3968,18 +3988,15 @@ begin
     for I := 0 to CtrlCount - 1 do begin
       Control := Controls[I];
       {$IFDEF MSWINDOWS}
-      if (csDesigning in ComponentState)
-        and Supports(Control, IDesignerControl) then Continue;
-      {$ENDIF}
-      if not Control.Visible then Continue;
-
       // 如果在设计状态，组件是 DesignerControl 时忽略
       if (csDesigning in ComponentState) then begin
-        {$IFDEF MSWINDOWS}
+        if Supports(Control, IDesignerControl) then
+          Continue;
         if IsDesignerControl(Control) then
           Continue;
-        {$ENDIF}
       end;
+      {$ENDIF}
+      if not Control.Visible then Continue;
 
       // 得到组件IView接口，及是否启用最大最小大小限制
       View := nil;
@@ -4384,10 +4401,10 @@ begin
 
   for I := ControlsCount - 1 downto 0 do begin
     Control := Controls[I];
+    if not Control.Visible then Continue;
     {$IFDEF MSWINDOWS}
     if IsDesignerControl(Control) then Continue;
     {$ENDIF}
-    if not Control.Visible then Continue;
     // 如果还没有找到需要自动大小的组件，则进行检测
     if (AControl = nil) then begin
       View := nil;
@@ -4441,10 +4458,10 @@ begin
   FixSize := 0;
   for I := 0 to ControlsCount - 1 do begin
     Control := Controls[I];
+    if (not Control.Visible) then Continue;
     {$IFDEF MSWINDOWS}
     if IsDesignerControl(Control) then Continue;
     {$ENDIF}
-    if (not Control.Visible) then Continue;
     if (Supports(Control, IView, View)) and (View.GetWeight > 0) then
       Result := Result + View.GetWeight
     else begin
@@ -4536,11 +4553,11 @@ var
     List.Clear;
     for I := 0 to ControlsCount - 1 do begin
       Control := Controls[I];
+      if not Control.Visible then Continue;
       {$IFDEF MSWINDOWS}
       if (csDesigning in ComponentState)
         and Supports(Control, IDesignerControl) then Continue;
       {$ENDIF}
-      if not Control.Visible then Continue;
 
       if (Supports(Control, IView, View)) then begin
         if (Assigned(View.GetLayout)) then begin
@@ -4667,10 +4684,10 @@ begin
 
     for I := 0 to ChildrenCount - 1 do begin
       Control := Controls[I];
+      if not Control.Visible then Continue;
       {$IFDEF MSWINDOWS}
       if IsDesignerControl(Control) then Continue;
       {$ENDIF}
-      if not Control.Visible then Continue;
       if IsAW then begin
         V := Control.Width + Control.Position.X + Control.Margins.Right + Padding.Right;
         if V > AWidth then

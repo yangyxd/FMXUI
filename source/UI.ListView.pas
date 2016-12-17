@@ -24,8 +24,7 @@ uses
 
 const
   ListViewType_Default = 0;
-  ListViewType_Header = -1;
-  ListViewType_Footer = -2;
+  ListViewType_Remove = -1;
 
 type
   TListViewEx = class;
@@ -924,6 +923,9 @@ begin
   if FAdapter <> Value then begin
     FAdapter := Value;
     FContentViews.FAdapter := Value;
+    FContentViews.FFirstRowIndex := -1;
+    FContentViews.FLastRowIndex := -1;
+    FContentViews.FLastPosition := 0;
     if FAdapter is TListAdapterBase then
       (FAdapter as TListAdapterBase).FListView := Self;
     NotifyDataChanged;
@@ -1131,6 +1133,8 @@ end;
 procedure TListViewContent.DoPullLoadComplete;
 begin
   if Assigned(FFooter) then begin
+    if FState = TListViewState.PullUpComplete then
+      Exit;
     FFooter.DoUpdateState(TListViewState.PullUpComplete, 0);
     if FIsDesigning then begin
       RemoveObject(FFooter as TControl);
@@ -1149,6 +1153,8 @@ end;
 procedure TListViewContent.DoPullRefreshComplete;
 begin
   if Assigned(FHeader) then begin
+    if FState = TListViewState.PullDownComplete then
+      Exit;
     FHeader.DoUpdateState(TListViewState.PullDownComplete, 0);
     if FIsDesigning then begin
       RemoveObject(FFooter as TControl);
@@ -1308,7 +1314,7 @@ begin
     // 根据记录的状态，计算出首行显示位置, 避免每次都从头开始算位置
     if IsMoveDown then begin
       // 向下滚动时，直接从记录的开始位置开始算
-      if FFirstRowIndex < 0 then begin
+      if FFirstRowIndex <= 0 then begin
         S := 0;
         V := 0;
       end else begin
@@ -1330,6 +1336,10 @@ begin
           V := V - ItemDefaultHeight - DividerHeight
         else
           V := V - H - DividerHeight;
+      end;
+      if S <= 0 then begin
+        S := 0;
+        V := 0;
       end;
     end;
 
@@ -1382,6 +1392,8 @@ begin
 
     // 从指定位置开始，生成并调整列表项
     for I := S to High(ListView.FItemsPoints) do begin
+      if I < 0 then
+        Continue;
       Item := @ListView.FItemsPoints[I];
 
       // 获取列表项高度
@@ -1486,10 +1498,15 @@ begin
 
         // 如果当前项与缓存项不同，说明是新生成的, 初始化一些数据
         if Control <> ItemView then begin
-          {$IFDEF Debug} {$IFDEF MSWINDOWS}
+          {$IFDEF Debug}
+          {$IFDEF MSWINDOWS}
           OutputDebugString(PChar(Format('增加列表视图 Index: %d (ViewCount: %d)',
             [I, FViews.Count])));
-          {$ENDIF}{$ENDIF}
+          {$ENDIF}
+          {$IFDEF ANDROID}
+          //LogD(Format('增加列表视图 Index: %d (ViewCount: %d)', [I, FViews.Count]));
+          {$ENDIF}
+          {$ENDIF}
 
           ItemView.Name := '';
           ItemView.Parent := Self;
@@ -1678,6 +1695,8 @@ begin
     if (FState = TListViewState.PullUpComplete) then begin
       if Assigned(FFooter) then begin   
         FFooter.DoUpdateState(TListViewState.None, 0);
+        if not ListView.FEnablePullLoad then
+          ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - (FFooter as TControl).Height;
         ListView.DoUpdateScrollingLimits(True);
       end;
     end;
@@ -1747,9 +1766,20 @@ end;
 procedure TListViewContent.HideViews;
 var
   ItemView: TPair<Integer, TViewBase>;
+  ItemViewType: Integer;
 begin
-  for ItemView in FViews do
-    AddControlToCacle(FAdapter.GetItemViewType(ItemView.Key), ItemView.Value);
+  FCount := FAdapter.Count;
+  for ItemView in FViews do begin
+    if ItemView.Key >= FCount then
+      RemoveObject(ItemView.Value)
+    else begin
+      ItemViewType := FAdapter.GetItemViewType(ItemView.Key);
+      if ItemViewType = ListViewType_Remove then // 如果返回状态是删除，则清掉
+        RemoveObject(ItemView.Value)
+      else
+        AddControlToCacle(ItemViewType, ItemView.Value);
+    end;
+  end;
   FViews.Clear;
   if Assigned(FFooter) then
     (FFooter as TControl).Visible := False;
