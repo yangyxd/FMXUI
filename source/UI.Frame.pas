@@ -107,6 +107,7 @@ type
     procedure DoValueNotify(Sender: TObject; const Item: TFrameDataValue;
       Action: TCollectionNotification);
     function GetUniqueName: string;
+    function GetFileName(const FileName: string): string;
     procedure Load();
   public
     constructor Create(AOwner: TComponent; IsPublic: Boolean);
@@ -135,6 +136,15 @@ type
     procedure Put(const Key: string; const Value: NativeUInt); overload;
     procedure Put(const Key: string; const Value: Boolean); overload;
     procedure PutDateTime(const Key: string; const Value: TDateTime);
+
+    /// <summary>
+    /// 保存文件流
+    /// </summary>
+    function SaveFile(const FileName: string; const Data: TStream): Boolean;
+    /// <summary>
+    /// 读取指定的文件流
+    /// </summary>
+    function ReadFile(const FileName: string; var OutData: TStream): Boolean;
 
     property Data: TFrameStateData read FData;
     property Count: Integer read GetCount;
@@ -261,11 +271,29 @@ type
     [Weak] FNextView: TFrameView;
     function MakeFrame(FrameClass: TFrameViewClass): TFrameView; overload;
 
+    /// <summary>
+    /// Frame 初始化时触发
+    /// </summary>
     procedure DoCreate(); virtual;
+    /// <summary>
+    /// Frame 正在显示之前触发
+    /// </summary>
     procedure DoShow(); virtual;
+    /// <summary>
+    /// Frame 隐藏显示时触发 (尽量使用 DoFinish )
+    /// </summary>
     procedure DoHide(); virtual;
+    /// <summary>
+    /// Frame 需要关闭时，在关闭之前触发
+    /// </summary>
     procedure DoFinish(); virtual;
+    /// <summary>
+    /// Frame 在重新显示之前触发
+    /// </summary>
     procedure DoReStart(); virtual;
+    /// <summary>
+    /// Frame 在释放时触发
+    /// </summary>
     procedure DoFree(); virtual;
 
     function GetData: TValue; override;
@@ -444,6 +472,10 @@ type
 type
   TFrame = class(TFrameView);
 
+const
+  CS_Title = 'cs_p_title';
+  CS_Data = 'cs_p_data';
+
 var
   MainFormMinChildren: Integer = 1;
   /// <summary>
@@ -466,10 +498,6 @@ uses
   Androidapi.JNI.Os,
   FMX.Helpers.Android;
 {$ENDIF}
-
-const
-  CS_Title = 'cs_p_title';
-  CS_Data = 'cs_p_data';
 
 var
   /// <summary>
@@ -1287,6 +1315,11 @@ begin
   FLocker.Leave;
 end;
 
+function TFrameState.GetFileName(const FileName: string): string;
+begin
+  Result := 'AF_' + FileName;
+end;
+
 function TFrameState.GetFloat(const Key: string;
   const DefaultValue: Double): Double;
 begin
@@ -1492,6 +1525,21 @@ begin
   FLocker.Leave;
 end;
 
+function TFrameState.ReadFile(const FileName: string;
+  var OutData: TStream): Boolean;
+var
+  SaveStateService: IFMXSaveStateService;
+  LastPosition: Int64;
+begin
+  Result := False;
+  if not Assigned(OutData) then Exit;
+  if TPlatformServices.Current.SupportsPlatformService(IFMXSaveStateService, SaveStateService) then begin
+    LastPosition := OutData.Position;
+    Result := SaveStateService.GetBlock(GetFileName(ExtractFileName(FileName)), OutData);
+    OutData.Position := LastPosition;
+  end;
+end;
+
 procedure TFrameState.Save;
 var
   SaveStateService: IFMXSaveStateService;
@@ -1535,6 +1583,23 @@ begin
     FreeAndNil(Writer);
     FIsChange := False;
     FLocker.Leave;
+  end;
+end;
+
+function TFrameState.SaveFile(const FileName: string;
+  const Data: TStream): Boolean;
+var
+  SaveStateService: IFMXSaveStateService;
+  LastPosition: Int64;
+begin
+  Result := False;
+  if not Assigned(Data) then Exit;
+  if TPlatformServices.Current.SupportsPlatformService(IFMXSaveStateService, SaveStateService) then begin
+    LastPosition := Data.Position;
+    Data.Position := 0;
+    SaveStateService.SetBlock(GetFileName(ExtractFileName(FileName)), Data);
+    Data.Position := LastPosition;
+    Result := True;
   end;
 end;
 
