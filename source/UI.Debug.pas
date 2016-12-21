@@ -23,7 +23,7 @@ uses
 
 {$IFDEF UseUDP}
 const
-  UdpSvrAddr = '192.168.1.8';
+  UdpSvrAddr = '127.0.0.1';
   UdpSvrPort = 6699;
 {$ENDIF}
 

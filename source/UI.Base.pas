@@ -13,7 +13,7 @@ interface
 {$SCOPEDENUMS ON}
 
 uses
-  UI.Debug,
+  UI.Debug, UI.Utils,
   {$IFDEF MSWINDOWS}Windows, {$ENDIF}
   {$IFDEF ANDROID}
   Androidapi.Helpers,
@@ -137,6 +137,7 @@ type
     FIsEmpty: Boolean;
 
     FCorners: TCorners;
+    FCornerType: TCornerType;
 
     procedure GetStateBrush(const State: TViewState; var V: TBrush); overload;
     procedure SetStateBrush(const State: TViewState; const V: TBrush);
@@ -144,6 +145,7 @@ type
     procedure SetYRadius(const Value: Single);
     procedure SetCorners(const Value: TCorners);
     function IsStoredCorners: Boolean;
+    procedure SetCornerType(const Value: TCornerType);
   protected
     FDefault: TBrush;
     FPressed: TBrush;
@@ -165,6 +167,9 @@ type
       const AOpacity: Single; const ABrush: TViewBrush; const ACornerType: TCornerType = TCornerType.Round);
     procedure FillRect(Canvas: TCanvas; const ARect: TRectF; const XRadius, YRadius: Single; const ACorners: TCorners;
       const AOpacity: Single; const ABrush: TBrush; const ACornerType: TCornerType = TCornerType.Round); inline;
+    procedure FillArc(Canvas: TCanvas; const Center, Radius: TPointF;
+      const StartAngle, SweepAngle, AOpacity: Single; const ABrush: TBrush); inline;
+
     procedure DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState); virtual;
   public
     constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
@@ -200,6 +205,7 @@ type
     property XRadius: Single read FXRadius write SetXRadius;
     property YRadius: Single read FYRadius write SetYRadius;
     property Corners: TCorners read FCorners write SetCorners stored IsStoredCorners;
+    property CornerType: TCornerType read FCornerType write SetCornerType default TCornerType.Round;
   end;
 
   /// <summary>
@@ -228,6 +234,7 @@ type
     property XRadius;
     property YRadius;
     property Corners;
+    property CornerType;
     property ItemDefault: TViewBrush index 0 read GetValue write SetValue;
     property ItemPressed: TViewBrush index 1 read GetValue write SetValue;
     property ItemFocused: TViewBrush index 2 read GetValue write SetValue;
@@ -241,7 +248,10 @@ type
   /// <summary>
   /// 边框样式
   /// </summary>
-  TViewBorderStyle = (None, RectBorder, LineBottom, LineSimple);
+  TViewBorderStyle = (None {无边框},
+    RectBorder {四周矩形边框},
+    LineBottom {底部边框（带两端凸出},
+    LineSimple {底部边框}, LineCorners);
 
   TViewBorder = class(TPersistent)
   private
@@ -297,6 +307,7 @@ type
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
+    property _Border: TViewBorder read FBorder;
   published
     property Border: TViewBorder read GetBorder write SetBorder;
   end;
@@ -367,6 +378,7 @@ type
     property XRadius;
     property YRadius;
     property Corners;
+    property CornerType;
     property ItemDefault: TBrush index 0 read GetValue write SetValue;
     property ItemPressed: TBrush index 1 read GetValue write SetValue;
     property ItemFocused: TBrush index 2 read GetValue write SetValue;
@@ -1176,19 +1188,7 @@ type
     destructor Destroy; override;
   end;
 
-function GetTimestamp: Int64;
-function LerpColor(const A, B: TAlphaColor; T: Single): TAlphaColor;
-function LerpFolat(const A, B: Double; T: Single): Double;
-function GetPPI(Context: TFmxObject): Single;
-function RectD(const Left, Top, Right, Bottom: Double): TRectD; overload;
-function RectD(const R: TRectF): TRectD; overload;
-function OffsetRectD(var R: TRectD; const DX, DY: Double): Boolean;
-function GetRectF(const R: TRectD): TRectF;
-
 implementation
-
-uses
-  {$IFNDEF MSWINDOWS}System.Diagnostics, {$ENDIF}SyncObjs;
 
 resourcestring
   SInvViewValue = '无效的视图状态值: %d';
@@ -1198,114 +1198,10 @@ resourcestring
   SRefOutLimitMax = '组件引用层级超过上限值: 256';
   SUnsupportPropertyType = '不支持的属性类型.';
 
-{$IFDEF MSWINDOWS}
-type
-  TGetTickCount64 = function: Int64;
-  TGetSystemTimes = function(var lpIdleTime, lpKernelTime, lpUserTime: TFileTime): BOOL; stdcall;
-{$ENDIF}
+{$IFDEF ANDROID}
 var
-  {$IFDEF MSWINDOWS}
-  GetTickCount64: TGetTickCount64;
-  //WinGetSystemTimes: TGetSystemTimes;
-  _StartCounter: Int64;
-  _PerfFreq: Int64;
-  {$ELSE}
-  _Watch: TStopWatch;
-  {$ENDIF}
-  {$IFDEF ANDROID}
   FAudioManager: JAudioManager = nil;
-  {$ENDIF}
-
-function GetTimestamp: Int64;
-begin
-  {$IFDEF MSWINDOWS}
-  if _PerfFreq > 0 then begin
-    QueryPerformanceCounter(Result);
-    Result := Trunc((Result - _StartCounter) / _PerfFreq * 1000);
-  end else if Assigned(GetTickCount64) then
-    Result := (GetTickCount64 - _StartCounter)
-  else
-    Result := (GetTickCount - _StartCounter)
-  {$ELSE}
-  Result := _Watch.Elapsed.Ticks div 10000;
-  {$ENDIF}
-end;
-
-type
-  TRGBA = record
-    R, G, B, A: Byte;
-  end;
-  PRGBA = ^TRGBA;
-
-function LerpColor(const A, B: TAlphaColor; T: Single): TAlphaColor;
-var
-  CA, CB, CR: PRGBA;
-begin
-  if T <= 0 then
-    Result := A
-  else if T >= 1 then
-    Result := B
-  else begin
-    CA := @A;
-    CB := @B;
-    CR := @Result;
-    CR.A := CA.A + Round((CB.A - CA.A) * T);
-    CR.G := CA.G + Round((CB.G - CA.G) * T);
-    CR.B := CA.B + Round((CB.B - CA.B) * T);
-    CR.R := CA.R + Round((CB.R - CA.R) * T);
-  end;
-end;
-
-function LerpFolat(const A, B: Double; T: Single): Double;
-begin
-  if T <= 0 then
-    Result := A
-  else if T >= 1 then
-    Result := B
-  else begin
-    Result := A + (B - A) * T;
-  end;
-end;
-
-function RectD(const Left, Top, Right, Bottom: Double): TRectD;
-begin
-  Result.Left := Left;
-  Result.Top := Top;
-  Result.Bottom := Bottom;
-  Result.Right := Right;
-end;
-
-function RectD(const R: TRectF): TRectD; overload;
-begin
-  Result.Left := R.Left;
-  Result.Top := R.Top;
-  Result.Bottom := R.Bottom;
-  Result.Right := R.Right;
-end;
-
-function OffsetRectD(var R: TRectD; const DX, DY: Double): Boolean;
-begin
-{$EXCESSPRECISION OFF}
-  if @R <> nil then // Test to increase compatiblity with Windows
-  begin
-    R.Left := R.Left + DX;
-    R.Right := R.Right + DX;
-    R.Top := R.Top + DY;
-    R.Bottom := R.Bottom + DY;
-    Result := True;
-  end
-  else
-    Result := False;
-{$EXCESSPRECISION ON}
-end;
-
-function GetRectF(const R: TRectD): TRectF;
-begin
-  Result.Left := R.Left;
-  Result.Top := R.Top;
-  Result.Right := R.Right;
-  Result.Bottom := R.Bottom;
-end;
+{$ENDIF}
 
 function ComponentStateToString(const State: TComponentState): string;
 
@@ -1434,16 +1330,6 @@ begin
   end;
 end;
 
-function GetPPI(Context: TFmxObject): Single;
-var
-  DeviceBehavior: IDeviceBehavior;
-begin
-  if TBehaviorServices.Current.SupportsBehaviorService(IDeviceBehavior, DeviceBehavior, Context) then
-    Result := DeviceBehavior.GetDisplayMetrics(Context).PixelsPerInch
-  else
-    Result := 160;
-end;
-
 { TDrawableBase }
 
 procedure TDrawableBase.Assign(Source: TPersistent);
@@ -1468,6 +1354,8 @@ begin
     SaveChange := FOnChanged;
     FOnChanged := nil;
     Src := TDrawable(Source);
+    FCornerType := Src.FCornerType;
+    FCorners := Src.Corners;
     AssignItem(TViewState.None, Src);
     AssignItem(TViewState.Pressed, Src);
     AssignItem(TViewState.Focused, Src);
@@ -1495,6 +1383,7 @@ begin
   FDefaultColor := ADefaultColor;
   FDefaultKind := ADefaultKind;
   FCorners := AllCorners;
+  FCornerType := TCornerType.Round;
 
   if Assigned(FView) and (csDesigning in FView.GetComponentState) then begin
     CreateBrush(FDefault, True);
@@ -1678,7 +1567,7 @@ begin
   R := GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight);
   V := GetStateItem(AState);
   if V <> nil then
-    FillRect(Canvas, R, FXRadius, FYRadius, FCorners, FView.GetOpacity, V);
+    FillRect(Canvas, R, FXRadius, FYRadius, FCorners, FView.GetOpacity, V, FCornerType);
   DoDrawed(Canvas, R, AState);
 end;
 
@@ -1694,8 +1583,14 @@ begin
   V := GetStateItem(AState);
   VR := GetDrawRect(R.Left, R.Top, R.Right, R.Bottom);
   if V <> nil then
-    FillRect(Canvas, VR, FXRadius, FYRadius, FCorners, FView.GetOpacity, V);
+    FillRect(Canvas, VR, FXRadius, FYRadius, FCorners, FView.GetOpacity, V, FCornerType);
   DoDrawed(Canvas, VR, AState);
+end;
+
+procedure TDrawableBase.FillArc(Canvas: TCanvas; const Center, Radius: TPointF;
+  const StartAngle, SweepAngle, AOpacity: Single; const ABrush: TBrush);
+begin
+  Canvas.FillArc(Center, Radius, StartAngle, SweepAngle, AOpacity, ABrush);
 end;
 
 procedure TDrawableBase.FillRect(Canvas: TCanvas; const ARect: TRectF;
@@ -1827,6 +1722,14 @@ procedure TDrawableBase.SetCorners(const Value: TCorners);
 begin
   if FCorners <> Value then begin
     FCorners := Value;
+    DoChange(Self);
+  end;
+end;
+
+procedure TDrawableBase.SetCornerType(const Value: TCornerType);
+begin
+  if FCornerType <> Value then begin
+    FCornerType := Value;
     DoChange(Self);
   end;
 end;
@@ -5765,20 +5668,6 @@ begin
 end;
 
 initialization
-  {$IFDEF MSWINDOWS}
-  GetTickCount64 := GetProcAddress(GetModuleHandle(kernel32), 'GetTickCount64');
-  if not QueryPerformanceFrequency(_PerfFreq) then begin
-    _PerfFreq := -1;
-    if Assigned(GetTickCount64) then
-      _StartCounter := GetTickCount64
-    else
-      _StartCounter := GetTickCount;
-  end else
-    QueryPerformanceCounter(_StartCounter);
-  {$ELSE}
-    _Watch := TStopWatch.Create;
-    _Watch.Start;
-  {$ENDIF}
   {$IFDEF ANDROID}
   TView.InitAudioManager();
   {$ENDIF}

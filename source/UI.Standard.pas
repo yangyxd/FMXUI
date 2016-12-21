@@ -11,7 +11,7 @@ unit UI.Standard;
 interface
 
 uses
-  UI.Base,
+  UI.Base, UI.Utils,
   {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
   {$IF CompilerVersion > 30.0}
   FMX.AcceleratorKey,
@@ -32,6 +32,11 @@ type
 
 type
   /// <summary>
+  /// 进度视图类型
+  /// </summary>
+  TProgressKind = (Horizontal {水平}, Vertical {垂直}, CircleRing {圆环});
+type
+  /// <summary>
   /// 进度视图
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
@@ -40,12 +45,17 @@ type
     FMin: Int64;
     FMax: Int64;
     FValue: Int64;
+    FStartAngle: Single;
+    FKind: TProgressKind;
     FOnValueChange: TNotifyEvent;
     FForeGround: TDrawable;
+    FShapePath: TPathData;
     procedure SetForeGround(const Value: TDrawable);
     procedure SetMaxValue(const Value: Int64);
     procedure SetMinValue(const Value: Int64);
     procedure SetProValue(const Value: Int64);
+    procedure SetKind(const Value: TProgressKind);
+    procedure SetStartAngle(const Value: Single);
   protected
     procedure DoForegroundChanged(Sender: TObject); virtual;
     procedure DoValueChanged(Sender: TObject); virtual;
@@ -59,6 +69,8 @@ type
     property Max: Int64 read FMax write SetMaxValue default 100;
     property Value: Int64 read FValue write SetProValue default 50;
     property ForeGround: TDrawable read FForeGround write SetForeGround;
+    property StartAngle: Single read FStartAngle write SetStartAngle;
+    property Kind: TProgressKind read FKind write SetKind default TProgressKind.Horizontal;
     property OnValueChange: TNotifyEvent read FOnValueChange write FOnValueChange;
   end;
 
@@ -1603,17 +1615,21 @@ begin
   inherited Create(AOwner);
   FMax := 100;
   FValue := 50;
+  FKind := TProgressKind.Horizontal;
+  FStartAngle := 0;
 
   FForeGround := TDrawableBorder.Create(Self);
   FForeGround.ItemDefault.Color := TAlphaColorRec.Blue;
   FForeGround.ItemDefault.DefaultColor := TAlphaColorRec.Blue;
   FForeGround.ItemDefault.Kind := TViewBrushKind.Solid;
+  FForeGround.ItemDefault.DefaultKind := TBrushKind.Solid;
   FForeGround.OnChanged := DoForegroundChanged;
 end;
 
 destructor TProgressView.Destroy;
 begin
   FreeAndNil(FForeGround);
+  FreeAndNil(FShapePath);
   inherited Destroy;
 end;
 
@@ -1630,23 +1646,145 @@ begin
 end;
 
 procedure TProgressView.PaintBackground;
-var
-  R: TRectF;
-  W: Single;
+
+  procedure DoDrawHorizontal;
+  var
+    R: TRectF;
+    W: Single;
+  begin
+    inherited PaintBackground;
+    if ((FMax - FMin) <= 0) then
+      Exit;
+    W := (FValue - FMin) / (FMax - FMin) * Width;
+    R := RectF(0, 0, W, Height);
+    FForeGround.DrawTo(Canvas, R);
+  end;
+
+  procedure DoDrawVertical;
+  var
+    R: TRectF;
+    H, V: Single;
+  begin
+    inherited PaintBackground;
+    if ((FMax - FMin) <= 0) then
+      Exit;
+    V := Height;
+    H := V - (FValue - FMin) / (FMax - FMin) * V;
+    R := RectF(0, V, Width, H);
+    FForeGround.DrawTo(Canvas, R);
+  end;
+
+  procedure DoDrawCircleRing();
+  var
+    W, H, SA, EA: Single;
+    R: TRectF;
+    LCenter, LRadius: TPointF;
+    V: TBrush;
+    LOpacity: Single;
+    LBorder: TViewBorder;
+  begin
+    W := Width;
+    H := Height;
+    LOpacity := GetAbsoluteOpacity;
+
+    // 画背景
+    if Assigned(FBackground) then begin
+      R := RectF(FBackground.Padding.Left, FBackground.Padding.Top,
+        W - FBackground.Padding.Right, H - FBackground.Padding.Bottom);
+      LCenter := PointF(R.Width / 2 + R.Left, R.Height / 2 + R.Top);
+      if R.Width > R.Height then
+        LRadius := PointF(R.Height / 2, R.Height / 2)
+      else
+        LRadius := PointF(R.Width / 2, R.Width / 2);
+      V := FBackground.GetStateItem(DrawState);
+      if V <> nil then
+        Canvas.FillArc(LCenter, LRadius, 0, 360, LOpacity, V);
+
+      LBorder := TDrawableBorder(FBackground)._Border;
+      if Assigned(LBorder) and (LBorder.Style = TViewBorderStyle.RectBorder) and (LBorder.Width > 0) then begin
+        LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState);
+        if LBorder.Width > 0.1 then begin
+          LRadius.X := LRadius.X - LBorder.Width * 0.5;
+          LRadius.Y := LRadius.X;
+        end;
+        Canvas.DrawArc(LCenter, LRadius, 0, 360, LOpacity, LBorder.Brush);
+      end;
+    end;
+
+    // 画前景
+    if Assigned(FForeGround) then begin
+      SA := FStartAngle;
+      EA := SA + (FValue - FMin) / (FMax - FMin) * 360;
+
+      R := RectF(FForeGround.Padding.Left, FForeGround.Padding.Top,
+        W - FForeGround.Padding.Right, H - FForeGround.Padding.Bottom);
+
+      LCenter := PointF(R.Width / 2 + R.Left, R.Height / 2 + R.Top);
+      if R.Width > R.Height then
+        LRadius := PointF(R.Height / 2, R.Height / 2)
+      else
+        LRadius := PointF(R.Width / 2, R.Width / 2);
+
+      if not Assigned(FShapePath) then
+        FShapePath := TPathData.Create
+      else
+        FShapePath.Clear;
+      FShapePath.MoveTo(LCenter);
+      FShapePath.AddArc(LCenter, LRadius, SA, EA - SA);
+      FShapePath.MoveTo(LCenter);
+
+      V := FForeGround.GetStateItem(DrawState);
+      if V <> nil then
+        Canvas.FillPath(FShapePath, LOpacity, V);
+
+      LBorder := TDrawableBorder(FForeGround)._Border;
+      if Assigned(LBorder) and (LBorder.Style = TViewBorderStyle.RectBorder) and (LBorder.Width > 0) then begin
+        LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState);
+
+        if LBorder.Width > 0.1 then begin
+          LRadius.X := LRadius.X - LBorder.Width * 0.5;
+          LRadius.Y := LRadius.X;
+        end;
+
+        FShapePath.Clear;
+        FShapePath.AddArc(LCenter, LRadius, SA, EA - SA);
+        Canvas.DrawPath(FShapePath, LOpacity, LBorder.Brush);
+      end;
+    end;
+  end;
+
 begin
   if AbsoluteInVisible then
     Exit;
-  inherited PaintBackground;
-  if ((FMax - FMin) <= 0) then
-    Exit;
-  W := (FValue - FMin) / (FMax - FMin) * Width;
-  R := RectF(0, 0, W, Height);
-  FForeGround.DrawTo(Canvas, R);
+
+  case FKind of
+    Horizontal: // 水平
+      begin
+        DoDrawHorizontal();
+      end;
+    Vertical: // 垂直
+      begin
+        DoDrawVertical();
+      end;
+    CircleRing: // 圆环
+      begin
+        DoDrawCircleRing();
+      end;
+  end;
 end;
 
 procedure TProgressView.SetForeGround(const Value: TDrawable);
 begin
   FForeGround.SetDrawable(Value);
+end;
+
+procedure TProgressView.SetKind(const Value: TProgressKind);
+begin
+  if FKind <> Value then begin
+    FKind := Value;
+    FreeAndNil(FShapePath);
+    Repaint;
+  end;
 end;
 
 procedure TProgressView.SetMaxValue(const Value: Int64);
@@ -1669,6 +1807,14 @@ procedure TProgressView.SetProValue(const Value: Int64);
 begin
   if FValue <> Value then begin
     FValue := Value;
+    DoValueChanged(Self);
+  end;
+end;
+
+procedure TProgressView.SetStartAngle(const Value: Single);
+begin
+  if FStartAngle <> Value then begin
+    FStartAngle := Value;
     DoValueChanged(Self);
   end;
 end;

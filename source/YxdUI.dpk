@@ -52,7 +52,8 @@ contains
   UI.Utils.ArrayEx in 'UI.Utils.ArrayEx.pas',
   UI.ListView.Header in 'UI.ListView.Header.pas' {ListViewDefaultHeader: TFrame},
   UI.ListView.Footer in 'UI.ListView.Footer.pas' {ListViewDefaultFooter: TFrame},
-  UI.MsgEngine in 'UI.MsgEngine.pas';
+  UI.MsgEngine in 'UI.MsgEngine.pas',
+  UI.Utils in 'UI.Utils.pas';
 
 end.
 

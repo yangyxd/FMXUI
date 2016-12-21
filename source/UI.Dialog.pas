@@ -44,7 +44,7 @@ unit UI.Dialog;
 interface
 
 uses
-  UI.Base, UI.Standard, UI.ListView, {$IFDEF WINDOWS}UI.Debug, {$ENDIF}
+  UI.Base, UI.Utils, UI.Standard, UI.ListView, {$IFDEF WINDOWS}UI.Debug, {$ENDIF}
   System.TypInfo, System.SysUtils, System.Character, System.RTLConsts,
   FMX.Graphics, System.Generics.Collections, FMX.TextLayout, FMX.Ani,
   System.Classes, System.Types, System.UITypes, System.Math.Vectors, System.Rtti,
@@ -717,7 +717,7 @@ type
     property ItemSingleLine: Boolean read FItemSingleLine;
     property MaskVisible: Boolean read FMaskVisible write FMaskVisible;
     property RootBackColor: TAlphaColor read FRootBackColor write FRootBackColor;
-    property ClickButtonDismiss: Boolean read FClickButtonDismiss;
+    property ClickButtonDismiss: Boolean read FClickButtonDismiss write FClickButtonDismiss;
     property CheckedItem: Integer read FCheckedItem; 
     property CheckedItems: TArray<Boolean> read FCheckedItems;
     property CheckedCount: Integer read GetCheckedCount;

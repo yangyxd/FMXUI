@@ -5,6 +5,7 @@ interface
 {$IFNDEF ANDROID}
 uses
   UI.Base,
+  UI.Utils,
   UI.Standard,
   System.SysUtils,
   System.Classes,

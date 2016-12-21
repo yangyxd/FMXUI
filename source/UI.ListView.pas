@@ -13,7 +13,7 @@ interface
 {$SCOPEDENUMS ON}
 
 uses
-  UI.Debug, UI.Base, UI.Standard, UI.Utils.ArrayEx,
+  UI.Debug, UI.Utils, UI.Base, UI.Standard, UI.Utils.ArrayEx,
   {$IFDEF MSWINDOWS}Windows, {$ENDIF}
   FMX.Utils, FMX.ImgList, FMX.MultiResBitmap, FMX.ActnList, System.Rtti, FMX.Consts,
   FMX.TextLayout, FMX.Objects, System.ImageList, System.RTLConsts,

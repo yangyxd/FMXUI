@@ -1,3 +1,7 @@
+{$IF RTLVersion>=24}
+{$LEGACYIFEND ON}
+{$IFEND}
+
 {.$DEFINE USE_DEBUGMODE}   // 是否使用调试模式
 
 {$IFDEF USE_DEBUGMODE}
