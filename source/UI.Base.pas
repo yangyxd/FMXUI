@@ -249,14 +249,16 @@ type
   /// 边框样式
   /// </summary>
   TViewBorderStyle = (None {无边框},
-    RectBorder {四周矩形边框},
+    RectBorder {四周矩形边框,会使用圆角设置},
     LineBottom {底部边框（带两端凸出},
-    LineSimple {底部边框}, LineCorners);
+    LineSimple {底部边框}, LineCorners {按照Corners来画边框});
+
+  TViewStrokeBrush = class(TStrokeBrush);
 
   TViewBorder = class(TPersistent)
   private
     FOnChanged: TNotifyEvent;
-    FBrush: TStrokeBrush;
+    FBrush: TViewStrokeBrush;
     FColor: TViewColor;
     FStyle: TViewBorderStyle;
     FDefaultStyle: TViewBorderStyle;
@@ -273,8 +275,17 @@ type
     procedure SetJoin(const Value: TStrokeJoin);
     function WidthStored: Boolean;
     function StyleStored: Boolean;
+    function GetGradient: TGradient;
+    procedure SetGradient(const Value: TGradient);
+    function GetBitmap: TBrushBitmap;
+    function GetKind: TBrushKind;
+    function IsBitmapStored: Boolean;
+    function IsGradientStored: Boolean;
+    procedure SetBitmap(const Value: TBrushBitmap);
+    procedure SetKind(const Value: TBrushKind);
   protected
     procedure DoChanged();
+    procedure DoGradientChanged(Sender: TObject);
   public
     constructor Create(ADefaultStyle: TViewBorderStyle = TViewBorderStyle.None);
     destructor Destroy; override;
@@ -282,7 +293,7 @@ type
     procedure Assign(Source: TPersistent); override;
 
     property OnChanged: TNotifyEvent read FOnChanged write SetOnChanged;
-    property Brush: TStrokeBrush read FBrush;
+    property Brush: TViewStrokeBrush read FBrush;
     property DefaultStyle: TViewBorderStyle read FDefaultStyle write FDefaultStyle;
   published
     property Color: TViewColor read FColor write SetColor;
@@ -291,6 +302,9 @@ type
     property Dash: TStrokeDash read GetDash write SetDash default TStrokeDash.Solid;
     property Cap: TStrokeCap read GetCap write SetCap default TStrokeCap.Flat;
     property Join: TStrokeJoin read GetJoin write SetJoin default TStrokeJoin.Miter;
+    property Gradient: TGradient read GetGradient write SetGradient stored IsGradientStored;
+    property Bitmap: TBrushBitmap read GetBitmap write SetBitmap stored IsBitmapStored;
+    property Kind: TBrushKind read GetKind write SetKind default TBrushKind.Solid;
   end;
 
   TDrawableBorder = class(TDrawable)
@@ -5334,7 +5348,8 @@ var
   LRect: TRectF;
 begin
   if Assigned(FBorder) and (FBorder.FStyle <> TViewBorderStyle.None) and (FBorder.Width > 0) then begin
-    FBorder.Brush.Color :=  FBorder.Color.GetStateColor(AState);
+    if FBorder.Kind = TBrushKind.Solid then
+      FBorder.Brush.Color :=  FBorder.Color.GetStateColor(AState);
     case FBorder.FStyle of
       TViewBorderStyle.RectBorder:
         begin
@@ -5393,7 +5408,9 @@ begin
     FColor.OnChanged := nil;
     FColor.Assign(TViewBorder(Source).FColor);
     FStyle := TViewBorder(Source).FStyle;
+    FBrush.OnGradientChanged := nil;
     FBrush.Assign(TViewBorder(Source).FBrush);
+    FBrush.OnGradientChanged := DoGradientChanged;
     FOnChanged := SaveChange;
     FColor.OnChanged := SaveChange;
     if Assigned(FOnChanged) then
@@ -5404,7 +5421,8 @@ end;
 
 constructor TViewBorder.Create(ADefaultStyle: TViewBorderStyle);
 begin
-  FBrush := TStrokeBrush.Create(TBrushKind.Solid, TAlphaColorRec.Null);
+  FBrush := TViewStrokeBrush.Create(TBrushKind.Solid, TAlphaColorRec.Null);
+  FBrush.OnGradientChanged := DoGradientChanged;
   FColor := TViewColor.Create(TAlphaColorRec.Null);
   FStyle := ADefaultStyle;
   FDefaultStyle := ADefaultStyle;
@@ -5423,6 +5441,17 @@ begin
     FOnChanged(Self);
 end;
 
+procedure TViewBorder.DoGradientChanged(Sender: TObject);
+begin
+  if Assigned(FOnChanged) then
+    FOnChanged(Self);
+end;
+
+function TViewBorder.GetBitmap: TBrushBitmap;
+begin
+  Result := FBrush.Bitmap;
+end;
+
 function TViewBorder.GetCap: TStrokeCap;
 begin
   Result := FBrush.Cap;
@@ -5433,14 +5462,42 @@ begin
   Result := FBrush.Dash;
 end;
 
+function TViewBorder.GetGradient: TGradient;
+begin
+  Result := FBrush.Gradient;
+end;
+
 function TViewBorder.GetJoin: TStrokeJoin;
 begin
   Result := FBrush.Join;
 end;
 
+function TViewBorder.GetKind: TBrushKind;
+begin
+  Result := FBrush.Kind;
+end;
+
 function TViewBorder.GetWidth: Single;
 begin
   Result := FBrush.Thickness;
+end;
+
+function TViewBorder.IsBitmapStored: Boolean;
+begin
+  Result := (FBrush.Kind = TBrushKind.Bitmap);
+end;
+
+function TViewBorder.IsGradientStored: Boolean;
+begin
+  Result := (FBrush.Kind = TBrushKind.Gradient);
+end;
+
+procedure TViewBorder.SetBitmap(const Value: TBrushBitmap);
+begin
+  if FBrush.Bitmap <> Value then begin
+    FBrush.Bitmap := Value;
+    DoChanged;
+  end;
 end;
 
 procedure TViewBorder.SetCap(const Value: TStrokeCap);
@@ -5464,10 +5521,24 @@ begin
   end;
 end;
 
+procedure TViewBorder.SetGradient(const Value: TGradient);
+begin
+  if FBrush.Gradient <> Value then
+    FBrush.Gradient := Value;
+end;
+
 procedure TViewBorder.SetJoin(const Value: TStrokeJoin);
 begin
   if FBrush.Join <> Value then begin
     FBrush.Join := Value;
+    DoChanged;
+  end;
+end;
+
+procedure TViewBorder.SetKind(const Value: TBrushKind);
+begin
+  if FBrush.Kind <> Value then begin
+    FBrush.Kind := Value;
     DoChanged;
   end;
 end;

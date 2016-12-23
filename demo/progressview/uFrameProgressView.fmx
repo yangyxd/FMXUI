@@ -1,0 +1,388 @@
+object FrameProgressView: TFrameProgressView
+  Size.Width = 401.000000000000000000
+  Size.Height = 628.000000000000000000
+  Size.PlatformDefault = False
+  object LinearLayout1: TLinearLayout
+    Align = Top
+    Background.ItemDefault.Color = claPurple
+    Background.ItemDefault.Kind = Solid
+    Gravity = None
+    Size.Width = 401.000000000000000000
+    Size.Height = 50.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Orientation = Horizontal
+    object TextView1: TTextView
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Clickable = True
+      HeightSize = FillParent
+      Gravity = None
+      HitTest = True
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 4
+      OnClick = TextView1Click
+      TextSettings.PrefixStyle = HidePrefix
+      Drawable.Position = Center
+      Drawable.Images = ImageList1
+      Drawable.ItemDefault.ImageIndex = 0
+      Drawable.ItemPressed.ImageIndex = 1
+    end
+    object tvTitle: TTextView
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Clickable = True
+      Gravity = Center
+      Weight = 1.000000000000000000
+      HitTest = True
+      Size.Width = 301.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 50.000000000000000000
+      TabOrder = 1
+      Text = 'ProgressView Demo'
+      TextSettings.Color.Default = claWhite
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
+    end
+    object TextView2: TTextView
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Clickable = True
+      HeightSize = FillParent
+      Gravity = None
+      HitTest = True
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 351.000000000000000000
+      TabOrder = 3
+      TextSettings.PrefixStyle = HidePrefix
+      Drawable.Position = Center
+      Drawable.ItemDefault.ImageIndex = 2
+    end
+  end
+  object ProgressView1: TProgressView
+    Background.Padding.Left = 8.000000000000000000
+    Background.Padding.Top = 8.000000000000000000
+    Background.Padding.Right = 8.000000000000000000
+    Background.Padding.Bottom = 8.000000000000000000
+    Background.XRadius = 5.000000000000000000
+    Background.YRadius = 5.000000000000000000
+    Background.ItemDefault.Kind = Gradient
+    Background.ItemDefault.Gradient.Points = <
+      item
+        Color = claBlack
+        Offset = 0.000000000000000000
+      end
+      item
+        Color = xFF03C44C
+        Offset = 1.000000000000000000
+      end>
+    Background.ItemDefault.Gradient.StartPosition.X = 0.500000000000000000
+    Background.ItemDefault.Gradient.StartPosition.Y = 1.000000000000000000
+    Background.ItemDefault.Gradient.StopPosition.X = 0.499999970197677600
+    Background.ItemDefault.Gradient.StopPosition.Y = 0.000000000000000000
+    Background.Border.Color.Default = claSienna
+    Background.Border.Color.Pressed = claTomato
+    Background.Border.Color.Selected = claViolet
+    Background.Border.Color.Activated = claPeru
+    Background.Border.Width = 20.000000000000000000
+    Background.Border.Cap = Round
+    Background.Border.Join = Round
+    Clickable = True
+    Gravity = None
+    HitTest = True
+    Size.Width = 177.000000000000000000
+    Size.Height = 161.000000000000000000
+    Size.PlatformDefault = False
+    Position.X = 8.000000000000000000
+    Position.Y = 64.000000000000000000
+    TabOrder = 5
+    OnClick = ProgressView1Click
+    Value = 60
+    ForeGround.Padding.Left = 20.000000000000000000
+    ForeGround.Padding.Top = 20.000000000000000000
+    ForeGround.Padding.Right = 20.000000000000000000
+    ForeGround.Padding.Bottom = 20.000000000000000000
+    ForeGround.XRadius = 5.000000000000000000
+    ForeGround.YRadius = 5.000000000000000000
+    ForeGround.ItemDefault.Color = claWhite
+    ForeGround.Border.Color.Default = claLightskyblue
+    ForeGround.Border.Width = 12.000000000000000000
+    ForeGround.Border.Style = RectBorder
+    ForeGround.Border.Dash = Custom
+    ForeGround.Border.Cap = Round
+    ForeGround.Border.Join = Round
+    StartAngle = -90.000000000000000000
+    Kind = CircleRing
+    SolidForeGround = True
+    PaddingBorder = True
+  end
+  object Timer1: TTimer
+    Interval = 50
+    OnTimer = Timer1Timer
+    Left = 136
+    Top = 480
+  end
+  object ProgressView2: TProgressView
+    Background.Padding.Left = 30.000000000000000000
+    Background.Padding.Top = 30.000000000000000000
+    Background.Padding.Right = 30.000000000000000000
+    Background.Padding.Bottom = 30.000000000000000000
+    Background.XRadius = 5.000000000000000000
+    Background.YRadius = 5.000000000000000000
+    Background.Border.Color.Default = claSienna
+    Background.Border.Color.Pressed = claTomato
+    Background.Border.Color.Selected = claViolet
+    Background.Border.Color.Activated = claPeru
+    Background.Border.Width = 20.000000000000000000
+    Background.Border.Cap = Round
+    Background.Border.Join = Round
+    Clickable = True
+    Gravity = None
+    HitTest = True
+    Size.Width = 177.000000000000000000
+    Size.Height = 161.000000000000000000
+    Size.PlatformDefault = False
+    Position.X = 184.000000000000000000
+    Position.Y = 64.000000000000000000
+    TabOrder = 4
+    OnClick = ProgressView1Click
+    Value = 1
+    ForeGround.Padding.Left = 9.000000000000000000
+    ForeGround.Padding.Top = 9.000000000000000000
+    ForeGround.Padding.Right = 9.000000000000000000
+    ForeGround.Padding.Bottom = 9.000000000000000000
+    ForeGround.XRadius = 5.000000000000000000
+    ForeGround.YRadius = 5.000000000000000000
+    ForeGround.ItemDefault.Kind = None
+    ForeGround.Border.Color.Default = claLightskyblue
+    ForeGround.Border.Width = 12.000000000000000000
+    ForeGround.Border.Style = RectBorder
+    ForeGround.Border.Cap = Round
+    ForeGround.Border.Join = Round
+    ForeGround.Border.Gradient.Points = <
+      item
+        Color = xFFAB4F05
+        Offset = 0.000000000000000000
+      end
+      item
+        Color = xFF94FA16
+        Offset = 1.000000000000000000
+      end>
+    ForeGround.Border.Gradient.Style = Radial
+    ForeGround.Border.Kind = Gradient
+    StartAngle = -90.000000000000000000
+    Kind = CircleRing
+    PaddingBorder = True
+  end
+  object ProgressView3: TProgressView
+    Background.Padding.Left = 8.000000000000000000
+    Background.Padding.Top = 8.000000000000000000
+    Background.Padding.Right = 8.000000000000000000
+    Background.Padding.Bottom = 8.000000000000000000
+    Background.XRadius = 5.000000000000000000
+    Background.YRadius = 5.000000000000000000
+    Background.ItemDefault.Color = claTan
+    Background.ItemDefault.Kind = Solid
+    Background.Border.Color.Default = claSienna
+    Background.Border.Color.Pressed = claTomato
+    Background.Border.Color.Selected = claViolet
+    Background.Border.Color.Activated = claPeru
+    Background.Border.Style = RectBorder
+    Background.Border.Cap = Round
+    Background.Border.Join = Round
+    Clickable = True
+    Gravity = None
+    HitTest = True
+    Size.Width = 361.000000000000000000
+    Size.Height = 33.000000000000000000
+    Size.PlatformDefault = False
+    Position.X = 8.000000000000000000
+    Position.Y = 232.000000000000000000
+    TabOrder = 3
+    OnClick = ProgressView1Click
+    Value = 100
+    ForeGround.Padding.Left = 8.000000000000000000
+    ForeGround.Padding.Top = 8.000000000000000000
+    ForeGround.Padding.Right = 8.000000000000000000
+    ForeGround.Padding.Bottom = 8.000000000000000000
+    ForeGround.XRadius = 5.000000000000000000
+    ForeGround.YRadius = 5.000000000000000000
+    ForeGround.ItemDefault.Color = x7F0000FF
+    ForeGround.Border.Color.Default = claLightskyblue
+    ForeGround.Border.Cap = Round
+    ForeGround.Border.Join = Round
+    StartAngle = -90.000000000000000000
+    PaddingBorder = True
+  end
+  object ProgressView4: TProgressView
+    Background.Padding.Left = 8.000000000000000000
+    Background.Padding.Top = 8.000000000000000000
+    Background.Padding.Right = 8.000000000000000000
+    Background.Padding.Bottom = 8.000000000000000000
+    Background.XRadius = 5.000000000000000000
+    Background.YRadius = 5.000000000000000000
+    Background.ItemDefault.Color = claTan
+    Background.ItemDefault.Kind = Solid
+    Background.Border.Color.Default = claSienna
+    Background.Border.Color.Pressed = claTomato
+    Background.Border.Color.Selected = claViolet
+    Background.Border.Color.Activated = claPeru
+    Background.Border.Style = RectBorder
+    Background.Border.Cap = Round
+    Background.Border.Join = Round
+    Clickable = True
+    Gravity = None
+    HitTest = True
+    Size.Width = 89.000000000000000000
+    Size.Height = 297.000000000000000000
+    Size.PlatformDefault = False
+    Position.X = 8.000000000000000000
+    Position.Y = 280.000000000000000000
+    TabOrder = 2
+    OnClick = ProgressView1Click
+    Value = 99
+    ForeGround.Padding.Left = 8.000000000000000000
+    ForeGround.Padding.Top = 8.000000000000000000
+    ForeGround.Padding.Right = 8.000000000000000000
+    ForeGround.Padding.Bottom = 8.000000000000000000
+    ForeGround.XRadius = 5.000000000000000000
+    ForeGround.YRadius = 5.000000000000000000
+    ForeGround.ItemDefault.Color = x7F0000FF
+    ForeGround.Border.Color.Default = claLightskyblue
+    ForeGround.Border.Cap = Round
+    ForeGround.Border.Join = Round
+    StartAngle = -90.000000000000000000
+    Kind = Vertical
+    PaddingBorder = True
+  end
+  object ImageList1: TImageList
+    Source = <
+      item
+        MultiResBitmap.Height = 37
+        MultiResBitmap.Width = 37
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 37
+            Height = 37
+            PNG = {
+              89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
+              03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              0179494441545847D5984D4EC33010855347390711555541A9CA654A8F83B849
+              730796A0B06357B801ED162E10E5CFBC89662201CE0AE4193EC99A7A62C94FAF
+              CEC476F21778EF73B43D454EE9D2F7FDA6AEEB2304798AD4E7473A40C779DBB6
+              2F2448E8BAEE811FC7078EACC521A12CCB0EF91D0F890B265EC0A1036B19A8AA
+              EA4353D00F8708E46F78485C30F1D29A432B6B0E5D041C7A5715D434CD1B6B19
+              417E8730E361F1C0C497D61C5A86D610D8A2A9387415720861CB43E202418BA9
+              B70C41C5A1B5B53534B7B28686C9206883B64FD3F47AC832F8E23F3BE7EEB91B
+              8D195CC851879EB22C3BE39C3A0E0EDD591244E0DF71B770EAC4FD91A2283CFF
+              8C8EC935350251C1B70F799DFA244000D5A92F7B6EAE533AFB250102A62ABACE
+              AE4060C7EC5476010282BB041286A0EAD86AC231F535666BE7299030AB6BCCD6
+              694680003AF77DAF6374EE531766EB842C4000DD25FC0FC7546F5D040898C3B1
+              57D634809DC5233FD603C26CDDE409D093C3A18222A77E41927C02B6624A84C1
+              BAB4E60000000049454E44AE426082}
+            FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_back.png'
+          end>
+        Name = 'btn_back'
+      end
+      item
+        MultiResBitmap.Height = 37
+        MultiResBitmap.Width = 37
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 37
+            Height = 37
+            PNG = {
+              89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
+              03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              0274494441545847CD98BB6E1431184677969E2E04714FF21840CF335023015D
+              C245912225415C0505209A8402CABC402AEA244D9E800A216E8A942AE97787F3
+              8D7F479ECC2E3BEB1DCF7224CBBF9D628E3E7B3CDE749AA0DFEFCFD216D5DBD4
+              74C9F3FC5AAFD7FB4CDB56AFB1FD299AAEF55120709E74962867DC4C6786F11D
+              ABA38996522208BCA09C7733057996655FAC8EE68CF56381CC05A41E515E7233
+              05C7087DE876BB3B368E26B3BE36085D45689DD22F590132AF91DAB5E1448CB5
+              7C085D4428DC434209BD694A48D49642E60AED19E5829B7190D046134B16526B
+              F948E832420F2943A12364369B4CC8333229137A42594A08998F747B6ED42CFF
+              4C4A4B86D403CA5612F20C4D4A9B9A3628A10DBA2409790626858C5E7BBD65A5
+              8424444A498544450A211D8CCF292BE710DD1E62B99B4947490A197D3A9450F8
+              E948BE874E73B2A710D2C7759532145242AD0A89222964E6905AA42C09C157A4
+              F6AD6E8D0CA159845E5197F6D034D1F2DDA6FD374242525BB4C3625426F95B36
+              8C704FE9AD9BD338603A7BCA7AFFF6BDA44C764FAACBC991C0830F10784AF9CD
+              CD3810BD47BB69C356A87DA2235D5CE468C9F75AE5834C5A7F062586E85DBAEB
+              6E94964A521E12D3D55737CDD6BF8195A43C3CFC374D5797CA1E43F6860D9330
+              34290F12FEE679CECD3852EEB1A1497948EB270FAE2496728F8D4CCA8384AEC6
+              924B7E8E8D4CCAC3837FD0D6284FEFB1FB4DEFB1DA5282547E21F69632FC569E
+              456CB949B1DACB1782840ED865CAF0FEA55FCA9B884FFCC374ACA43C3C5807EC
+              3BCA5262883E6E22B12829412ADF115BA10CF7982E8DB7AC8E265A4A2076407B
+              4FE9133B64FCC9EAE9423AFA9FE7927A9B9A804EE72F31832EB3F594A9FA0000
+              000049454E44AE426082}
+            FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_back_pre.png'
+          end>
+        Name = 'btn_back_pre'
+      end
+      item
+        MultiResBitmap.Height = 37
+        MultiResBitmap.Width = 37
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 37
+            Height = 37
+            PNG = {
+              89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
+              03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              01B9494441545847ED98CD4AC34010C79B04143C481154042D3E8B82BE8567EB
+              C18BFA265AF5EADD7B407D096D11BF4EA63DD4432EAD16F3A1FFB1FF0A9154D9
+              4DB3E6901F0C3B3B33B0C374773BD94A16E2385E82EC074170FB016494B9D819
+              62162CBC1045D18524F313B1C3BFC8507360D13DE6900AFC070C35077EAA27AE
+              9F0AFC0F0C55C6E6A88CE77935AAA9F47ABD65AAE608C3F086454905FE6B862A
+              A35D29DBB61B9D4E27E03481D8E13FE1D41CD8C8B33865E72C4C02B18B9FA1CA
+              581CB5C0FA33901DC81A64CEB22C1F720569405E19A64CA6A446A02AD318A690
+              4800190CAD2525C521D346C7069FC7B08593B701BD86BBC9C34677613B83FEF2
+              1564122452956EC075DD18FA373267F75065A8395099DD66B3190E53492276F1
+              33D41CE802EE99432AF0DF315419EDFFBE6EB7BB4A35957EBFBF42D51C85AC94
+              E33887AD562BE23481D8E13FE2D41C28466EA76F52F7D426EFA9E77FBDA74A4A
+              C650C8CE73123D7A1DB20E19F5E897906388768FAE0DAA93DBD78C365874BBDD
+              6EBF338F046287BFCE5073E4F985ACCDB82A8DF07DFF8DA1E64017F0D7ABCB23
+              4395C9D225FCFA5600FF295573602317EF254FC0C239BC79562A9F2DDAB66878
+              B486FD0000000049454E44AE426082}
+            FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_top_more.png'
+          end>
+        Name = 'btn_top_more'
+      end>
+    Destination = <
+      item
+        Layers = <
+          item
+            Name = 'btn_back'
+            SourceRect.Right = 37.000000000000000000
+            SourceRect.Bottom = 37.000000000000000000
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'btn_back_pre'
+            SourceRect.Right = 37.000000000000000000
+            SourceRect.Bottom = 37.000000000000000000
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'btn_top_more'
+            SourceRect.Right = 37.000000000000000000
+            SourceRect.Bottom = 37.000000000000000000
+          end>
+      end>
+    Left = 192
+    Top = 464
+  end
+end

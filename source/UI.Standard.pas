@@ -50,12 +50,16 @@ type
     FOnValueChange: TNotifyEvent;
     FForeGround: TDrawable;
     FShapePath: TPathData;
+    FSolidForeGround: Boolean;
+    FPaddingBorder: Boolean;
     procedure SetForeGround(const Value: TDrawable);
     procedure SetMaxValue(const Value: Int64);
     procedure SetMinValue(const Value: Int64);
     procedure SetProValue(const Value: Int64);
     procedure SetKind(const Value: TProgressKind);
     procedure SetStartAngle(const Value: Single);
+    procedure SetSolidForeGround(const Value: Boolean);
+    procedure SetPaddingBorder(const Value: Boolean);
   protected
     procedure DoForegroundChanged(Sender: TObject); virtual;
     procedure DoValueChanged(Sender: TObject); virtual;
@@ -71,6 +75,8 @@ type
     property ForeGround: TDrawable read FForeGround write SetForeGround;
     property StartAngle: Single read FStartAngle write SetStartAngle;
     property Kind: TProgressKind read FKind write SetKind default TProgressKind.Horizontal;
+    property SolidForeGround: Boolean read FSolidForeGround write SetSolidForeGround default False;
+    property PaddingBorder: Boolean read FPaddingBorder write SetPaddingBorder default False;
     property OnValueChange: TNotifyEvent read FOnValueChange write FOnValueChange;
   end;
 
@@ -1650,12 +1656,13 @@ procedure TProgressView.PaintBackground;
   procedure DoDrawHorizontal;
   var
     R: TRectF;
-    W: Single;
+    W, PW: Single;
   begin
     inherited PaintBackground;
     if ((FMax - FMin) <= 0) then
       Exit;
-    W := (FValue - FMin) / (FMax - FMin) * Width;
+    PW := FForeGround.Padding.Left + FForeGround.Padding.Right;
+    W := (FValue - FMin) / (FMax - FMin) * (Width - PW) + PW;
     R := RectF(0, 0, W, Height);
     FForeGround.DrawTo(Canvas, R);
   end;
@@ -1663,14 +1670,15 @@ procedure TProgressView.PaintBackground;
   procedure DoDrawVertical;
   var
     R: TRectF;
-    H, V: Single;
+    H, V, PH: Single;
   begin
     inherited PaintBackground;
     if ((FMax - FMin) <= 0) then
       Exit;
-    V := Height;
+    PH := FForeGround.Padding.Top + FForeGround.Padding.Bottom;
+    V := Height - PH;
     H := V - (FValue - FMin) / (FMax - FMin) * V;
-    R := RectF(0, V, Width, H);
+    R := RectF(0, H, Width, Height);
     FForeGround.DrawTo(Canvas, R);
   end;
 
@@ -1702,7 +1710,8 @@ procedure TProgressView.PaintBackground;
 
       LBorder := TDrawableBorder(FBackground)._Border;
       if Assigned(LBorder) and (LBorder.Style = TViewBorderStyle.RectBorder) and (LBorder.Width > 0) then begin
-        LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState);
+        if LBorder.Kind = TBrushKind.Solid then
+          LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState);
         if LBorder.Width > 0.1 then begin
           LRadius.X := LRadius.X - LBorder.Width * 0.5;
           LRadius.Y := LRadius.X;
@@ -1715,31 +1724,44 @@ procedure TProgressView.PaintBackground;
     if Assigned(FForeGround) then begin
       SA := FStartAngle;
       EA := SA + (FValue - FMin) / (FMax - FMin) * 360;
+      LBorder := TDrawableBorder(FForeGround)._Border;
 
       R := RectF(FForeGround.Padding.Left, FForeGround.Padding.Top,
         W - FForeGround.Padding.Right, H - FForeGround.Padding.Bottom);
 
-      LCenter := PointF(R.Width / 2 + R.Left, R.Height / 2 + R.Top);
+      LCenter := PointF(R.Width * 0.5 + R.Left, R.Height * 0.5 + R.Top);
       if R.Width > R.Height then
-        LRadius := PointF(R.Height / 2, R.Height / 2)
+        LRadius := PointF(R.Height * 0.5, R.Height * 0.5)
       else
-        LRadius := PointF(R.Width / 2, R.Width / 2);
+        LRadius := PointF(R.Width * 0.5, R.Width * 0.5);
+
+      if FPaddingBorder and Assigned(LBorder) then begin
+        LRadius.X := LRadius.X - LBorder.Width;
+        LRadius.Y := LRadius.Y - LBorder.Width;
+      end;
 
       if not Assigned(FShapePath) then
         FShapePath := TPathData.Create
       else
         FShapePath.Clear;
       FShapePath.MoveTo(LCenter);
-      FShapePath.AddArc(LCenter, LRadius, SA, EA - SA);
+      if FSolidForeGround then
+        FShapePath.AddArc(LCenter, LRadius, 0, 360)
+      else
+        FShapePath.AddArc(LCenter, LRadius, SA, EA - SA);
       FShapePath.MoveTo(LCenter);
 
       V := FForeGround.GetStateItem(DrawState);
       if V <> nil then
         Canvas.FillPath(FShapePath, LOpacity, V);
 
-      LBorder := TDrawableBorder(FForeGround)._Border;
       if Assigned(LBorder) and (LBorder.Style = TViewBorderStyle.RectBorder) and (LBorder.Width > 0) then begin
-        LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState);
+        if LBorder.Kind = TBrushKind.Solid then
+          LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState);
+        if FPaddingBorder then begin
+          LRadius.X := LRadius.X + LBorder.Width;
+          LRadius.Y := LRadius.Y + LBorder.Width;
+        end;
 
         if LBorder.Width > 0.1 then begin
           LRadius.X := LRadius.X - LBorder.Width * 0.5;
@@ -1803,6 +1825,14 @@ begin
   end;
 end;
 
+procedure TProgressView.SetPaddingBorder(const Value: Boolean);
+begin
+  if FPaddingBorder <> Value then begin
+    FPaddingBorder := Value;
+    Repaint;
+  end;
+end;
+
 procedure TProgressView.SetProValue(const Value: Int64);
 begin
   if FValue <> Value then begin
@@ -1811,11 +1841,19 @@ begin
   end;
 end;
 
+procedure TProgressView.SetSolidForeGround(const Value: Boolean);
+begin
+  if FSolidForeGround <> Value then begin
+    FSolidForeGround := Value;
+    Repaint;
+  end;
+end;
+
 procedure TProgressView.SetStartAngle(const Value: Single);
 begin
   if FStartAngle <> Value then begin
     FStartAngle := Value;
-    DoValueChanged(Self);
+    Repaint;
   end;
 end;
 
