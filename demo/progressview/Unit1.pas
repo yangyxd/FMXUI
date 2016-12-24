@@ -26,10 +26,12 @@ implementation
 {$R *.fmx}
 
 uses
+  //FMX.Context.GLES.Android,
   uFrameProgressView;
 
 procedure TForm1.FormShow(Sender: TObject);
 begin
+  //TCustomAndroidContext.RecreateSharedContext;
   TFrameProgressView.ShowFrame(Self);
 end;
 

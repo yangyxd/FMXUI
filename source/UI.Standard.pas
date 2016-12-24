@@ -1716,7 +1716,10 @@ procedure TProgressView.PaintBackground;
           LRadius.X := LRadius.X - LBorder.Width * 0.5;
           LRadius.Y := LRadius.X;
         end;
-        Canvas.DrawArc(LCenter, LRadius, 0, 360, LOpacity, LBorder.Brush);
+        R := RectF(LCenter.X - LRadius.X, LCenter.Y - LRadius.Y,
+          LCenter.X + LRadius.X, LCenter.Y + LRadius.Y);
+        Canvas.DrawEllipse(R, LOpacity, LBorder.Brush);
+//        Canvas.DrawArc(LCenter, LRadius, 0, 360, LOpacity, LBorder.Brush);
       end;
     end;
 
@@ -1769,7 +1772,9 @@ procedure TProgressView.PaintBackground;
         end;
 
         FShapePath.Clear;
+        //FShapePath.MoveTo(LCenter);
         FShapePath.AddArc(LCenter, LRadius, SA, EA - SA);
+        //FShapePath.MoveTo(LCenter);
         Canvas.DrawPath(FShapePath, LOpacity, LBorder.Brush);
       end;
     end;
@@ -1862,3 +1867,4 @@ initialization
 finalization
 
 end.
+
