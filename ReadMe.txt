@@ -13,6 +13,7 @@ FMXUI  (YangYxd)
   TTextView 文本视图
   TButtonView 按钮视图
   TEditView 编辑框视图
+  TProgressView 进度条视图
   TFrameView Frame视图扩展类
   TListExView ListView扩展类
   
@@ -38,10 +39,11 @@ FMXUI  (YangYxd)
 
 【联系我们】
 
-  URL: http://www.cnblogs.com/yangyxd
   SVN: https://github.com/yangyxd/FMXUI
+  URL: http://www.cnblogs.com/yangyxd
   
   YangYxd QQ: 2514718952 
+  官方QQ交流群: 325337654
   QDAC 官方群: 250530692
   
 【版权声明】
