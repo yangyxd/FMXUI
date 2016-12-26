@@ -75,7 +75,7 @@ end;
 
 procedure Register;
 begin
-  RegisterComponents(PageName, [TView, TLinearLayout, TRelativeLayout]);
+  RegisterComponents(PageName, [TView, TLinearLayout, TRelativeLayout, TGridsLayout]);
 
   RegisterComponents(PageName, [TProgressView]);
   RegisterComponents(PageName, [TTextView]);
@@ -110,6 +110,10 @@ begin
     ['None', 'Solid', 'Gradient', 'Bitmap', 'Resource', 'Patch9Bitmap']);
   AddEnumElementAliases(TypeInfo(TViewScroll),
     ['None', 'Horizontal', 'Vertical']);
+  AddEnumElementAliases(TypeInfo(TViewStretchMode),
+    ['None', 'SpacingWidth', 'ColumnWidth', 'SpacingWidthUniform']);
+  AddEnumElementAliases(TypeInfo(TProgressKind),
+    ['Horizontal', 'Vertical', 'CircleRing']);
 end;
 
 procedure UnregisterAliases;
@@ -120,6 +124,8 @@ begin
   RemoveEnumElementAliases(TypeInfo(TViewBorderStyle));
   RemoveEnumElementAliases(TypeInfo(TViewBrushKind));
   RemoveEnumElementAliases(TypeInfo(TViewScroll));
+  RemoveEnumElementAliases(TypeInfo(TViewStretchMode));
+  RemoveEnumElementAliases(TypeInfo(TProgressKind));
 end;
 
 { TViewControlEditor }

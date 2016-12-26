@@ -262,6 +262,7 @@ type
     procedure Change;
     property Length: Integer read GetTextLength;
   published
+    property Gravity stored False;
     property AutoSize: Boolean read GetAutoSize write SetAutoSize default False;
     property Text: string read GetText write SetText stored TextStored;
     property TextHint: string read FTextHint write SetTextHint;
@@ -1686,10 +1687,11 @@ procedure TProgressView.PaintBackground;
   var
     W, H, SA, EA: Single;
     R: TRectF;
-    LCenter, LRadius: TPointF;
+    LCenter, LRadius, LSrcRadius: TPointF;
     V: TBrush;
     LOpacity: Single;
     LBorder: TViewBorder;
+    LDrawBorder: Boolean;
   begin
     W := Width;
     H := Height;
@@ -1747,6 +1749,28 @@ procedure TProgressView.PaintBackground;
         FShapePath := TPathData.Create
       else
         FShapePath.Clear;
+
+      LDrawBorder := Assigned(LBorder) and (LBorder.Style = TViewBorderStyle.RectBorder) and
+        (LBorder.Width > 0);
+      V := FForeGround.GetStateItem(DrawState);
+
+      if FSolidForeGround and LDrawBorder and (V <> nil) then begin
+        LSrcRadius := LRadius;
+        if LBorder.Kind = TBrushKind.Solid then
+          LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState);
+        if FPaddingBorder then begin
+          LSrcRadius.X := LRadius.X + LBorder.Width;
+          LSrcRadius.Y := LRadius.Y + LBorder.Width;
+        end else
+          LSrcRadius := LRadius;
+
+        FShapePath.MoveTo(LCenter);
+        FShapePath.AddArc(LCenter, LSrcRadius, SA, EA - SA);
+        FShapePath.MoveTo(LCenter);
+        Canvas.FillPath(FShapePath, LOpacity, LBorder.Brush);
+        FShapePath.Clear;
+      end;
+
       FShapePath.MoveTo(LCenter);
       if FSolidForeGround then
         FShapePath.AddArc(LCenter, LRadius, 0, 360)
@@ -1754,11 +1778,10 @@ procedure TProgressView.PaintBackground;
         FShapePath.AddArc(LCenter, LRadius, SA, EA - SA);
       FShapePath.MoveTo(LCenter);
 
-      V := FForeGround.GetStateItem(DrawState);
       if V <> nil then
         Canvas.FillPath(FShapePath, LOpacity, V);
 
-      if Assigned(LBorder) and (LBorder.Style = TViewBorderStyle.RectBorder) and (LBorder.Width > 0) then begin
+      if LDrawBorder and ((not FSolidForeGround) or (V = nil)) then begin
         if LBorder.Kind = TBrushKind.Solid then
           LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState);
         if FPaddingBorder then begin
@@ -1772,9 +1795,7 @@ procedure TProgressView.PaintBackground;
         end;
 
         FShapePath.Clear;
-        //FShapePath.MoveTo(LCenter);
         FShapePath.AddArc(LCenter, LRadius, SA, EA - SA);
-        //FShapePath.MoveTo(LCenter);
         Canvas.DrawPath(FShapePath, LOpacity, LBorder.Brush);
       end;
     end;

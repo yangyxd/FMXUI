@@ -9,6 +9,7 @@ FMXUI  (YangYxd)
   TViewGroup 视图组
   TLinearLayout 线性布局
   TRelativeLayout 相对布局
+  TGridsLayout 格子布局
   
   TTextView 文本视图
   TButtonView 按钮视图
