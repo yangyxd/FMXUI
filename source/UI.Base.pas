@@ -1206,29 +1206,30 @@ type
   TViewStretchMode = (None {无},
     SpacingWidth {自动调整间距，使充满布局},
     ColumnWidth {自动调整宽度，使充满布局},
-    SpacingWidthUniform {自动调整间距与宽度，使充满布局});
+    SpacingWidthUniform {自动调整间距(平均间隔)，使充满布局});
 
   /// <summary>
   /// 格子布局
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TGridsLayout = class(TViewGroup)
-  const
+  private const
     CDefaultColumnWidth = 50;
     CDefaultColumnHeight = 50;
+    CDefaultDividerColor = $FFF2E9E6;
   private
     FNumColumns: Integer;
-    FStretchMode: TViewStretchMode;
     FColumnWidth: Single;
     FColumnHeight: Single;
     FVerticalSpacing: Single;
     FHorizontalSpacing: Single;
-    FAbsoluteColumnsNum: Integer;
+    FStretchMode: TViewStretchMode;
+    FForceColumnSize: Boolean;
 
-    FLastRH, FLastCW: Single;
+    FLastRH, FLastCW, FLastPW: Single;
     FLastColumns, FLastRows: Integer;
+    FLastStretchMode: TViewStretchMode;
 
-    FDivider: TAlphaColor;
     FDividerBrush: TBrush;
 
     procedure SetNumColumns(const Value: Integer);
@@ -1239,14 +1240,13 @@ type
     procedure SetStretchMode(const Value: TViewStretchMode);
     function IsStoredColumnHeight: Boolean;
     procedure SetColumnHeight(const Value: Single);
-    function GetCount: Integer;
-    function GetAbsoluteColumnsNum: Integer;
     procedure SetDivider(const Value: TAlphaColor);
+    function GetAbsoluteColumnsNum: Integer;
+    function GetCount: Integer;
+    function GetDivider: TAlphaColor;
+    procedure SetForceColumnSize(const Value: Boolean);
   protected
     procedure DoRealign; override;
-    procedure Resize; override;
-    procedure HandleSizeChanged; override;
-    procedure Loaded; override;
     procedure PaintBackground; override;
     procedure DrawDivider(Canvas: TCanvas);   // 画分隔线
   public
@@ -1274,22 +1274,25 @@ type
     /// </summary>
     property ColumnHeight: Single read FColumnHeight write SetColumnHeight stored IsStoredColumnHeight;
     /// <summary>
-    /// 两行之间的间距
+    /// 分隔线颜色
     /// </summary>
-    property VerticalSpacing: Single read FVerticalSpacing write SetVerticalSpacing;
+    property Divider: TAlphaColor read GetDivider write SetDivider default CDefaultDividerColor;
     /// <summary>
     /// 两列之间的间隔
     /// </summary>
     property HorizontalSpacing: Single read FHorizontalSpacing write SetHorizontalSpacing;
     /// <summary>
+    /// 两行之间的间距
+    /// </summary>
+    property VerticalSpacing: Single read FVerticalSpacing write SetVerticalSpacing;
+    /// <summary>
     /// 缩放与列宽大小调整方式
     /// </summary>
     property StretchMode: TViewStretchMode read FStretchMode write SetStretchMode default TViewStretchMode.None;
-
     /// <summary>
-    /// 分隔线颜色
+    /// 强制使用列大小。此时不再检测每个格子的宽度高度是否需要自动大小
     /// </summary>
-    property Divider: TAlphaColor read FDivider write SetDivider;
+    property ForceColumnSize: Boolean read FForceColumnSize write SetForceColumnSize default False;
   end;
 
 implementation
@@ -5832,18 +5835,18 @@ end;
 
 constructor TGridsLayout.Create(AOwner: TComponent);
 begin
-  inherited;
+  inherited Create(AOwner);
   FNumColumns := 0;
   FColumnWidth := CDefaultColumnWidth;
   FColumnHeight := CDefaultColumnHeight;
   FStretchMode := TViewStretchMode.None;
   FVerticalSpacing := 0;
   FHorizontalSpacing := 0;
-  FAbsoluteColumnsNum := -1;
   FLastRows := 0;
   FLastColumns := 0;
-  FDivider := $ffe3e4e5;
   FDividerBrush := TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Null);
+  FDividerBrush.Color := CDefaultDividerColor;
+  FForceColumnSize := False;
 end;
 
 destructor TGridsLayout.Destroy;
@@ -5854,14 +5857,11 @@ end;
 
 procedure TGridsLayout.DoRealign;
 var
-  CtrlCount: Integer;
-  I: Integer;
+  I, CtrlCount: Integer;
   LColumns: Integer;
-  LItemWidth, LItemHeight: Single;
+  LItemWidth, LItemHeight, AW: Single;
   CurPos: TPointD;
-  W, H, AW: Single;
   VL, VT, VW, VH, PW: Double;
-  MaxH: Double;
   Control: TControl;
   View: IView;
   SaveAdjustViewBounds, LAutoSize: Boolean;
@@ -5877,8 +5877,8 @@ begin
 
   // 得到子组件的开始坐标
   CurPos := TPointD.Create(Padding.Left + FHorizontalSpacing, Padding.Top + FVerticalSpacing);
-  W := Width - CurPos.X - Padding.Right - FHorizontalSpacing;
-  H := Height - CurPos.Y - Padding.Bottom - FVerticalSpacing;
+  VW := Width - CurPos.X - Padding.Right - FHorizontalSpacing;
+  VH := Height - CurPos.Y - Padding.Bottom - FVerticalSpacing;
   CtrlCount := ControlsCount;
   LColumns := AbsoluteColumnsNum;
   if FColumnWidth < 0 then
@@ -5887,19 +5887,17 @@ begin
     LItemWidth := FColumnWidth;
 
   if (FNumColumns > 0) and (FWidthSize = TViewSize.WrapContent) then begin
-    LColumns := FNumColumns;
-    W := LColumns * (LItemWidth + FHorizontalSpacing) - FHorizontalSpacing;
+    VW := LColumns * (LItemWidth + FHorizontalSpacing) - FHorizontalSpacing;
     if FStretchMode = FStretchMode then
-      W := W + FHorizontalSpacing * 2;
+      VW := VW + FHorizontalSpacing * 2;
   end;
 
   PW := 0;
-  VW := 0;
   VL := 0;
 
   // 如果长宽 > 0 和子控件 > 0 时才处理布局
-  if ((W > 0) and (H > 0)) or (CtrlCount > 0) then begin
-    AW := W + CurPos.X;
+  if ((VW > 0) and (VH > 0)) or (CtrlCount > 0) then begin
+    AW := VW + CurPos.X;
 
     // 根据拉伸模式，计算出每列的宽度、空白大小和实际使用的拉伸模式
     LStretchMode := FStretchMode;
@@ -5912,9 +5910,15 @@ begin
         begin
           if LColumns > 1 then begin
             LStretchMode := TViewStretchMode.SpacingWidth;
-            if LColumns > CtrlCount then
-              LColumns := CtrlCount;
-            PW := (W - LItemWidth) / (LColumns - 1) - LItemWidth;
+            if csDesigning in ComponentState then begin
+              I := GetCount;
+              if LColumns > I then
+                LColumns := I;
+            end else begin
+              if LColumns > CtrlCount then
+                LColumns := CtrlCount;
+            end;
+            PW := (VW - LItemWidth) / (LColumns - 1) - LItemWidth;
             if PW < 0 then PW := 0;
             AW := AW - FHorizontalSpacing;
           end else begin
@@ -5924,10 +5928,16 @@ begin
       TViewStretchMode.ColumnWidth:
         begin
           if LColumns > 0 then begin
-            if LColumns > CtrlCount then
-              LColumns := CtrlCount;
+            if csDesigning in ComponentState then begin
+              I := GetCount;
+              if LColumns > I then
+                LColumns := I;
+            end else begin
+              if LColumns > CtrlCount then
+                LColumns := CtrlCount;
+            end;
             LStretchMode := TViewStretchMode.ColumnWidth;
-            LItemWidth := W / LColumns - FHorizontalSpacing;
+            LItemWidth := (VW + FHorizontalSpacing) / LColumns - FHorizontalSpacing;
             AW := AW - FHorizontalSpacing;
           end else begin
             LStretchMode := TViewStretchMode.None;
@@ -5936,12 +5946,19 @@ begin
       TViewStretchMode.SpacingWidthUniform:
         begin
           if LColumns > 0 then begin
-            if LColumns > CtrlCount then
-              LColumns := CtrlCount;
+            if csDesigning in ComponentState then begin
+              I := GetCount;
+              if LColumns > I then
+                LColumns := I;
+            end else begin
+              if LColumns > CtrlCount then
+                LColumns := CtrlCount;
+            end;
             LStretchMode := TViewStretchMode.SpacingWidthUniform;
-            PW := (W - LItemWidth * LColumns) / (LColumns + 1);
+            PW := (VW - LItemWidth * LColumns + FHorizontalSpacing * 2) / (LColumns + 1);
             if PW < 0 then PW := 0;
-            AW := AW - FHorizontalSpacing - PW;
+            CurPos.X := Padding.Left;
+            AW := AW - PW;
           end else begin
             LStretchMode := TViewStretchMode.None;
           end;
@@ -5960,6 +5977,9 @@ begin
     FLastRows := 1;
     FLastRH := LItemHeight;
     FLastCW := LItemWidth;
+    FLastPW := PW;
+    FLastStretchMode := LStretchMode;
+    VW := 0;
 
     for I := 0 to CtrlCount - 1 do begin
       Control := Controls[I];
@@ -5971,7 +5991,10 @@ begin
       {$ENDIF}
 
       if CurPos.X >= AW then begin
-        CurPos.X := Padding.Left + FHorizontalSpacing;
+        if LStretchMode = TViewStretchMode.SpacingWidthUniform then
+          CurPos.X := Padding.Left
+        else
+          CurPos.X := Padding.Left + FHorizontalSpacing;
         CurPos.Y := CurPos.Y + LItemHeight + FVerticalSpacing;
         Inc(FLastRows);
       end;
@@ -5986,14 +6009,18 @@ begin
       case LStretchMode of
         TViewStretchMode.None: // 不自动调整大小
           begin
-            if Assigned(View) then
-              LAutoSize := View.GetWidthSize = TViewSize.FillParent
+            if FForceColumnSize then
+              LAutoSize := True
             else begin
-              LAutoSize := Control.Align in [TAlignLayout.Top, TAlignLayout.Bottom,
-                TAlignLayout.MostTop, TAlignLayout.MostBottom,
-                TAlignLayout.Client, TAlignLayout.Contents,
-                TAlignLayout.VertCenter, TAlignLayout.Horizontal, TAlignLayout.Fit,
-                TAlignLayout.FitLeft, TAlignLayout.FitRight];
+              if Assigned(View) then
+                LAutoSize := View.GetWidthSize = TViewSize.FillParent
+              else begin
+                LAutoSize := Control.Align in [TAlignLayout.Top, TAlignLayout.Bottom,
+                  TAlignLayout.MostTop, TAlignLayout.MostBottom,
+                  TAlignLayout.Client, TAlignLayout.Contents,
+                  TAlignLayout.VertCenter, TAlignLayout.Horizontal, TAlignLayout.Fit,
+                  TAlignLayout.FitLeft, TAlignLayout.FitRight];
+              end;
             end;
             if LAutoSize then begin
               // 自动宽度
@@ -6052,14 +6079,18 @@ begin
       end;
 
       // 判断组件在垂直方向是否自动大小
-      if Assigned(View) then
-        LAutoSize := View.GetHeightSize = TViewSize.FillParent
+      if FForceColumnSize then
+        LAutoSize := True
       else begin
-        LAutoSize := Control.Align in [TAlignLayout.Left, TAlignLayout.Right,
-          TAlignLayout.MostLeft, TAlignLayout.MostRight,
-          TAlignLayout.Client, TAlignLayout.Contents,
-          TAlignLayout.HorzCenter, TAlignLayout.Vertical, TAlignLayout.Fit,
-          TAlignLayout.FitLeft, TAlignLayout.FitRight]
+        if Assigned(View) then
+          LAutoSize := View.GetHeightSize = TViewSize.FillParent
+        else begin
+          LAutoSize := Control.Align in [TAlignLayout.Left, TAlignLayout.Right,
+            TAlignLayout.MostLeft, TAlignLayout.MostRight,
+            TAlignLayout.Client, TAlignLayout.Contents,
+            TAlignLayout.HorzCenter, TAlignLayout.Vertical, TAlignLayout.Fit,
+            TAlignLayout.FitLeft, TAlignLayout.FitRight]
+        end;
       end;
 
       // 检测宽度大小限制
@@ -6123,17 +6154,17 @@ begin
       if LColumns > CtrlCount then
         LColumns := CtrlCount;
       VW := LColumns * (LItemWidth + FHorizontalSpacing) + FHorizontalSpacing + Padding.Left + Padding.Right; 
-      MaxH := GetParentMaxWidth;
-      if (VW > MaxH) and (MaxH > 0) then 
-        VW := MaxH;
+      PW := GetParentMaxWidth;
+      if (VW > PW) and (PW > 0) then
+        VW := PW;
     end else
       VW := Width;
     
     if (HeightSize = TViewSize.WrapContent) then begin
       VH := CurPos.Y + LItemHeight + FVerticalSpacing + Padding.Bottom;
-      MaxH := GetParentMaxHeight;
-      if (VH > MaxH) and (MaxH > 0) then 
-        VH := MaxH;
+      PW := GetParentMaxHeight;
+      if (VH > PW) and (PW > 0) then
+        VH := PW;
     end else 
       VH := Height;
 
@@ -6152,74 +6183,87 @@ end;
 
 procedure TGridsLayout.DrawDivider(Canvas: TCanvas);
 var
-  I: Integer;
+  I, J: Integer;
   X, Y, W, H: Single;
 begin
-  FDividerBrush.Color := FDivider;
-  if FHorizontalSpacing > 0 then begin
+  if FVerticalSpacing > 0 then begin
     Y := Padding.Top;
     X := Padding.Left + FHorizontalSpacing;
     W := Width - Padding.Right - FHorizontalSpacing;
     for I := 0 to FLastRows do begin
       Canvas.FillRect(RectF(X, Y, W, Y + FVerticalSpacing), 0, 0, [], Opacity, FDividerBrush);
-      Y := Y + FHorizontalSpacing + FLastRH;
+      Y := Y + FVerticalSpacing + FLastRH;
     end;
   end;
-  if FVerticalSpacing > 0 then begin
+  if FHorizontalSpacing > 0 then begin
+    J := FLastColumns;
     Y := Padding.Top;
     X := Padding.Left;
     H := Height - Padding.Bottom;
-    for I := 0 to FLastColumns do begin
-      Canvas.FillRect(RectF(X, Y, X + FVerticalSpacing, H), 0, 0, [], Opacity, FDividerBrush);
-      X := X + FVerticalSpacing + FLastCW;
+    for I := 0 to J do begin
+      Canvas.FillRect(RectF(X, Y, X + FHorizontalSpacing, H), 0, 0, [], Opacity, FDividerBrush);
+      case FLastStretchMode of
+        TViewStretchMode.None,
+        TViewStretchMode.ColumnWidth:
+          begin
+            if J = 1 then
+              X := Width - Padding.Right - FHorizontalSpacing
+            else
+              X := X + FHorizontalSpacing + FLastCW;
+          end;
+        TViewStretchMode.SpacingWidth:
+          begin
+            if (I = 0) or (I = (J - 1)) then
+              X := X + FLastCW + (FLastPW + FHorizontalSpacing) * 0.5
+            else
+              X := X + FLastCW + (FLastPW);
+          end;
+        TViewStretchMode.SpacingWidthUniform:
+          begin
+            if J = 1 then begin
+              X := Width - Padding.Right - FHorizontalSpacing
+            end else begin
+              if (I = 0) or (I = (J - 1)) then
+                X := X + FLastCW + (FLastPW) * 1.5 - FHorizontalSpacing * 0.5
+              else
+                X := X + FLastCW + (FLastPW);
+            end;
+          end;
+      end;
     end;
   end;
 end;
 
 function TGridsLayout.GetAbsoluteColumnsNum: Integer;
-var
-  IV: Single;
 begin
-  if FAbsoluteColumnsNum < 0 then begin
-    if FNumColumns > 0 then
-      FAbsoluteColumnsNum := FNumColumns
-    else begin
-      if FColumnWidth > 0 then
-        IV := FColumnWidth + FHorizontalSpacing
-      else
-        IV := 50 + FHorizontalSpacing;
-      FAbsoluteColumnsNum := Trunc(
-        (Width - Padding.Left - Padding.Right - FHorizontalSpacing) / IV);
-    end;
+  if FNumColumns > 0 then
+    Result := FNumColumns
+  else begin
+    if FColumnWidth > 0 then
+      Result := Trunc((Width - Padding.Left - Padding.Right - FHorizontalSpacing) / (FColumnWidth + FHorizontalSpacing))
+    else
+      Result := Trunc((Width - Padding.Left - Padding.Right - FHorizontalSpacing) / (CDefaultColumnWidth + FHorizontalSpacing));
   end;
-  Result := FAbsoluteColumnsNum;
 end;
 
 function TGridsLayout.GetCount: Integer;
 var
   I: Integer;
-  Control: TControl;
 begin
   Result := 0;
   for I := 0 to ControlsCount - 1 do begin
-    Control := Controls[I];
+    if not Controls[I].Visible then Continue;
     {$IFDEF MSWINDOWS}
-    if (csDesigning in ComponentState) then begin
-      if Supports(Control, IDesignerControl) then
-        Continue;
-      if IsDesignerControl(Control) then
-        Continue;
-    end;
+    if IsDesignerControl(Controls[I]) then
+      Continue;
     {$ENDIF}
-    if not Control.Visible then
-      Inc(Result);
+    Inc(Result);
   end;
 end;
 
-procedure TGridsLayout.HandleSizeChanged;
+function TGridsLayout.GetDivider: TAlphaColor;
 begin
-  FAbsoluteColumnsNum := -1;
-  inherited HandleSizeChanged;
+  Result := FDividerBrush.Color;
 end;
 
 function TGridsLayout.IsStoredColumnHeight: Boolean;
@@ -6232,23 +6276,11 @@ begin
   Result := FColumnWidth <> CDefaultColumnWidth;
 end;
 
-procedure TGridsLayout.Loaded;
-begin
-  inherited Loaded;
-end;
-
 procedure TGridsLayout.PaintBackground;
 begin
   inherited PaintBackground;
-  if (FLastColumns > 0) and (FLastRows > 0)and (FDivider and $FF000000 <> 0) then
+  if (FLastColumns > 0) and (FLastRows > 0) and (FDividerBrush.Color and $FF000000 <> 0) then
     DrawDivider(Canvas);
-end;
-
-procedure TGridsLayout.Resize;
-begin
-  if not FDisableAlign then
-    FAbsoluteColumnsNum := -1;
-  inherited Resize;
 end;
 
 procedure TGridsLayout.SetColumnHeight(const Value: Single);
@@ -6262,7 +6294,6 @@ end;
 procedure TGridsLayout.SetColumnWidth(const Value: Single);
 begin
   if FColumnWidth <> Value then begin
-    FAbsoluteColumnsNum := -1;
     FColumnWidth := Value;
     DoRealign;
   end;
@@ -6270,9 +6301,17 @@ end;
 
 procedure TGridsLayout.SetDivider(const Value: TAlphaColor);
 begin
-  if FDivider <> Value then begin
-    FDivider := Value;
+  if FDividerBrush.Color <> Value then begin
+    FDividerBrush.Color := Value;
     Repaint;
+  end;
+end;
+
+procedure TGridsLayout.SetForceColumnSize(const Value: Boolean);
+begin
+  if FForceColumnSize <> Value then begin
+    FForceColumnSize := Value;
+    DoRealign;
   end;
 end;
 
@@ -6280,7 +6319,6 @@ procedure TGridsLayout.SetHorizontalSpacing(const Value: Single);
 begin
   if FHorizontalSpacing <> Value then begin
     FHorizontalSpacing := Value;
-    FAbsoluteColumnsNum := -1;
     DoRealign;
   end;
 end;
@@ -6288,7 +6326,6 @@ end;
 procedure TGridsLayout.SetNumColumns(const Value: Integer);
 begin
   if FNumColumns <> Value then begin
-    FAbsoluteColumnsNum := -1;
     FNumColumns := Value;
     DoRealign;
   end;
@@ -6297,7 +6334,6 @@ end;
 procedure TGridsLayout.SetStretchMode(const Value: TViewStretchMode);
 begin
   if FStretchMode <> Value then begin
-    FAbsoluteColumnsNum := -1;
     FStretchMode := Value;
     DoRealign;
   end;
