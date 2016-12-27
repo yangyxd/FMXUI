@@ -37,6 +37,9 @@ FMXUI  (YangYxd)
   
   FMXUI UI.Dialog 对话框示例
   http://www.cnblogs.com/yangyxd/articles/5877638.html
+  
+  FMXUI ListView 用法简介
+  http://www.cnblogs.com/yangyxd/articles/6225893.html
 
 【联系我们】
 

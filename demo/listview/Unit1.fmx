@@ -12,7 +12,7 @@ object Form1: TForm1
   OnShow = FormShow
   DesignerMasterStyle = 0
   object ToastManager1: TToastManager
-    Left = 88
-    Top = 392
+    Left = 80
+    Top = 336
   end
 end
