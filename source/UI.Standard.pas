@@ -264,6 +264,7 @@ type
   published
     property Gravity stored False;
     property AutoSize: Boolean read GetAutoSize write SetAutoSize default False;
+    property EnableExecuteAction default True;
     property Text: string read GetText write SetText stored TextStored;
     property TextHint: string read FTextHint write SetTextHint;
     property TextSettings: UI.Base.TTextSettings read FText write SetTextSettings;
@@ -403,6 +404,7 @@ end;
 constructor TTextView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
+  EnableExecuteAction := True;
   FText := UI.Base.TTextSettings.Create(Self);
   if csDesigning in ComponentState then begin
     FDrawable := TDrawableIcon.Create(Self);

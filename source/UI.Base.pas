@@ -1030,6 +1030,10 @@ type
     /// </summary>
     property Checked: Boolean read GetIsChecked write SetIsChecked default False;
     /// <summary>
+    /// 是否执行动作操作
+    /// </summary>
+    property EnableExecuteAction default False;
+    /// <summary>
     /// 相对布局属性。当容器是TRelativeLayout相对布局时有效。Layout是一个TViewLayout对象，详请参考TViewLayout属性说明。
     /// </summary>
     property Layout: TViewLayout read GetLayout write SetLayout;
@@ -6268,7 +6272,7 @@ end;
 
 function TGridsLayout.IsStoredColumnHeight: Boolean;
 begin
-  Result := FColumnWidth <> CDefaultColumnHeight;
+  Result := FColumnHeight <> CDefaultColumnHeight;
 end;
 
 function TGridsLayout.IsStoredColumnWidth: Boolean;
