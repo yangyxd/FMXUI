@@ -154,7 +154,8 @@ type
   /// <summary>
   /// 动画类型
   /// </summary>
-  TFrameAniType = (None, DefaultAni {默认}, FadeInOut {淡入淡出});
+  TFrameAniType = (None, DefaultAni {默认}, FadeInOut {淡入淡出},
+    MoveInOut {移进移出});
 
   TNotifyEventA = reference to procedure (Sender: TObject);
 
@@ -313,8 +314,12 @@ type
   protected
     /// <summary>
     /// 播放动画
+    /// <param name="Ani">动画类型</param>
+    /// <param name="IsIn">是否是正要显示</param>
+    /// <param name="IsClose">是否正要关闭</param>
+    /// <param name="AEvent">动画播放完成事件</param>
     /// </summary>
-    procedure AnimatePlay(Ani: TFrameAniType; IsIn: Boolean; AEvent: TNotifyEventA);
+    procedure AnimatePlay(Ani: TFrameAniType; IsIn, IsClose: Boolean; AEvent: TNotifyEventA);
 
     procedure OnFinishOrClose(Sender: TObject);
   public
@@ -350,11 +355,11 @@ type
     /// <summary>
     /// 显示 Frame
     /// </summary>
-    class function ShowFrame(Parent: TFmxObject; Params: TFrameParams): TFrameView; overload;
+    class function ShowFrame(Parent: TFmxObject; Params: TFrameParams; Ani: TFrameAniType = TFrameAniType.None): TFrameView; overload;
     /// <summary>
     /// 显示 Frame
     /// </summary>
-    class function ShowFrame(Parent: TFmxObject; const Title: string = ''): TFrameView; overload;
+    class function ShowFrame(Parent: TFmxObject; const Title: string = ''; Ani: TFrameAniType = TFrameAniType.None): TFrameView; overload;
     /// <summary>
     /// 显示 Frame
     /// </summary>
@@ -481,7 +486,7 @@ var
   /// <summary>
   /// 默认过场动画
   /// </summary>
-  DefaultAnimate: TFrameAniType = TFrameAniType.FadeInOut;
+  DefaultAnimate: TFrameAniType = TFrameAniType.MoveInOut;
 
 implementation
 
@@ -556,10 +561,11 @@ begin
     inherited AfterDialogKey(Key, Shift);
 end;
 
-procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn: Boolean;
+procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, IsClose: Boolean;
   AEvent: TNotifyEventA);
 
-  procedure FadeIntOut();
+  // 淡入淡出
+  procedure DoFadeInOut();
   var
     NewValue: Single;
   begin
@@ -577,6 +583,34 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn: Boolean;
     TFrameAnimator.AnimateFloat(Self, 'Opacity', NewValue, AEvent);
   end;
 
+  // 移入移出
+  procedure DoMoveInOut();
+  var
+    NewValue: Single;
+  begin
+    if IsIn then begin
+      Self.Opacity := 1;
+      if not IsClose then begin
+        Self.Position.X := Self.Width - 1;  //目标frame新显示
+        NewValue := 0;
+      end else begin
+        Self.Position.X := -Self.Width + 1;  //目标frame返回显示
+        NewValue := 0;
+      end;
+    end else begin
+      if not IsClose then
+        NewValue := -Self.Width + 1 //旧的frame向右返回
+      else
+        NewValue := Self.Width - 1; //旧的frame向左隐藏
+      if FinishIsFreeApp then begin
+        if Assigned(AEvent) then
+          AEvent(Self);
+        Exit;
+      end;
+    end;
+    TFrameAnimator.AnimateFloat(Self, 'Position.X', NewValue, AEvent);
+  end;
+
 begin
   case Ani of
     None:
@@ -590,11 +624,13 @@ begin
       end;
     DefaultAni:
       if not (DefaultAnimate in [TFrameAniType.None, TFrameAniType.DefaultAni]) then
-        AnimatePlay(DefaultAnimate, IsIn, AEvent)
+        AnimatePlay(DefaultAnimate, IsIn, IsClose, AEvent)
       else if Assigned(AEvent) then
         AEvent(Self);
     FadeInOut:
-      FadeIntOut;
+      DoFadeInOut;
+    MoveInOut:
+      DoMoveInOut;
   end;
 end;
 
@@ -658,7 +694,7 @@ begin
     FNeedFree := True
   else begin
     FAnimateing := True;
-    AnimatePlay(Ani, False, OnFinishOrClose);
+    AnimatePlay(Ani, False, True, OnFinishOrClose);
     FAnimateing := False;
   end;
 end;
@@ -820,7 +856,7 @@ begin
     FLastView := nil;
     FNextView := nil;
   end else if Assigned(FLastView) then begin
-    FLastView.InternalShow(False);
+    FLastView.InternalShow(False, nil, Ani);
     FLastView.FNextView := nil;
     FLastView := nil;
   end;
@@ -967,7 +1003,7 @@ begin
     FNeedHide := True
   else begin
     FAnimateing := True;
-    AnimatePlay(Ani, False,
+    AnimatePlay(Ani, False, False,
       procedure (Sender: TObject) begin
         InternalHide;
         if FNeedFree then
@@ -1031,7 +1067,7 @@ begin
   FHideing := True;
   Visible := True;
   FHideing := False;
-  AnimatePlay(Ani, True, AOnFinish);
+  AnimatePlay(Ani, True, not TriggerOnShow, AOnFinish);
   FShowing := False;
   FNeedFree := False;
   FNeedHide := False;
@@ -1143,11 +1179,11 @@ begin
 end;
 
 class function TFrameView.ShowFrame(Parent: TFmxObject;
-  const Title: string): TFrameView;
+  const Title: string; Ani: TFrameAniType): TFrameView;
 begin
   Result := CreateFrame(Parent, Title);
   if Result <> nil then
-    Result.Show(TFrameAniType.None, nil);
+    Result.Show(Ani, nil);
 end;
 
 procedure TFrameView.ShowWaitDialog(const AMsg: string;
@@ -1232,11 +1268,11 @@ begin
 end;
 
 class function TFrameView.ShowFrame(Parent: TFmxObject;
-  Params: TFrameParams): TFrameView;
+  Params: TFrameParams; Ani: TFrameAniType): TFrameView;
 begin
   Result := CreateFrame(Parent, Params);
   if Result <> nil then
-    Result.Show(TFrameAniType.None, nil);
+    Result.Show(Ani, nil);
 end;
 
 { TFrameState }

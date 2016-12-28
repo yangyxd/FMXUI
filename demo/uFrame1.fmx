@@ -1,0 +1,304 @@
+object Frame1: TFrame1
+  Size.Width = 320.000000000000000000
+  Size.Height = 521.000000000000000000
+  Size.PlatformDefault = False
+  object LinearLayout1: TLinearLayout
+    Align = Top
+    Background.ItemDefault.Color = claPurple
+    Background.ItemDefault.Kind = Solid
+    Gravity = None
+    Size.Width = 320.000000000000000000
+    Size.Height = 50.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Orientation = Horizontal
+    object TextView17: TTextView
+      Background.ItemPressed.Color = x7F000000
+      Background.ItemPressed.Kind = Solid
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Clickable = True
+      HeightSize = FillParent
+      HitTest = True
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 4
+      OnClick = TextView17Click
+      TextSettings.Color.Default = claWhite
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
+      Drawable.Position = Center
+      Drawable.ItemDefault.Bitmap.Bitmap.PNG = {
+        89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
+        03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+        028E494441545847CD984D52DB401085CD3D48021C20ACC9A1F129C2FF2E902A
+        A70C5940C1020E1016B6F2BED693AB3C968C64FDF1AA54F3D7FDBAF5341A8D66
+        9265D9DE72B9FCBE582C4E553F9A8C00E2125F791C93CF848A3AEE752D75FD52
+        E7816D0701F188EBF8F7E43351654A87060BDC68E0D03EBD8238C4CBC3669913
+        9B16D2A150C0037772F866DF5E003F7188E7D0C4BE55914F21550E74DD2406D7
+        7D29062FFC0E1542A840B1F5A963C3BBB01230D435EB5A312B34732201D57F57
+        0AA07126DD75E270A1A293C90F8FF902C4219EAADBF965C01C9B859760C7795B
+        C5ACD01C3E53C3FD4745BD654886714709C1CE8AE167FF00BCBA2E556DC6C733
+        96E33CA759113DA8FAD526B5803D7EF80791A03AEBD16E2F91254F153BABFB28
+        ED7F66D7007C75FD2B211EA447A115D47E54B15531C66DB782DA7F5574F2D254
+        DD318A7DB1C91AE82FB13F6FAD500A2796DEF94B9A98137AB14940EDA7CE132A
+        207E1E49AAC04F05DC679C92B687026A9FAB68F47234869578CE43E650FB55FD
+        2794EE0AA8BDA1646F7062A922FF5C0D303E5842059CD89A3205D4FF36784205
+        14F8478942EFF4DB6458283093BA4A29E6D8288F2E9D53EFAE06181F2C312794
+        BE7DCC211E65FAF63DF79E98132A5BA722B0C75305B1EF679D52C0362BFA23FE
+        36E906E22D5BC9F996953E1A2796DAD7DE5D7C08F195ED129E54ECB24B80A7DD
+        2E410410A7FBA9DA5F7BEC64BF520C1EF876564C8EA53BCFA6844E2CDD79B2E7
+        6FB6F33451DF7BF4FA7C5668E36F46D55673017F78E00B62C171B6FFCD58A1AB
+        C49139D0C99FB26F3855ACFABFCF0E63FD217376B17EE3EAFF5C670936D83875
+        51B5D51CFA08F013C709059CC7D1E73C9FD2002779B18EE81AFB248F75F0984E
+        CE3C496CAAFA98679E53F2C8B26CEF3F51C2BA31910521CF0000000049454E44
+        AE426082}
+      Drawable.ItemDefault.Bitmap.WrapMode = TileStretch
+      Drawable.ItemDefault.Kind = Bitmap
+      Drawable.ItemPressed.ImageIndex = 1
+    end
+    object tvTitle: TTextView
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Clickable = True
+      Weight = 1.000000000000000000
+      HitTest = True
+      Size.Width = 220.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 50.000000000000000000
+      TabOrder = 1
+      Text = 'FMXUI Demo'
+      TextSettings.Color.Default = claWhite
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
+    end
+    object TextView1: TTextView
+      Background.ItemPressed.Color = x7F000000
+      Background.ItemPressed.Kind = Solid
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Clickable = True
+      HeightSize = FillParent
+      HitTest = True
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 270.000000000000000000
+      TabOrder = 3
+      OnClick = TextView1Click
+      TextSettings.Color.Default = claWhite
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
+      Drawable.Position = Center
+      Drawable.ItemDefault.Bitmap.Bitmap.PNG = {
+        89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
+        03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+        01AA494441545847ED98BF4A034110877329142C24082A82069F4541DFC2DA58
+        D8A86FA2515B7B7B417D092DFC8720442B0B3B15BD3BFDC6FC229CDC297B9BAC
+        29EE836176670666D8CCED4DAEE6439AA633C8661CC7171F60DAF66657485848
+        3C9524C9B115F313B3E39F56683848BAA11A72C1BFA5D070F053DD2A7F2EF86F
+        14EA4C5DBA0C4DE92266A59DF129EA52BA88F02755AFD7DB34F4BBB619CC8E7F
+        4FDB70D0C8E3243F540B6530BBF915EA4C245D0AF28F216BC802321145D11372
+        8AB491678539E355540F4E6514354221EFC86BD75A51313C78353A0D3E895AE1
+        C95B429A34F93D7284ED807BEAF12B282414D1B06980775CCAFA1BDB9B9D6543
+        A1E1E094D62920EE9692C5ECE6576838C87BAD1A72C17FA550677C5EC8F3D245
+        CC493BE353D49D74111D69677CA6846D1A3AD13683D9F1EF681B0EDA66604F5F
+        BFEEA965C4EEA9CEBFDE531515050CE5E4D98F19BD852C22BD19FD04D9454ACF
+        E8A5E17406F66FA634245DE5A27C531D19CC8EBFA5D07090F85C35E482FF4CA1
+        E1283AA51EF85F14EA8CCF94F0D714F020ED8CCF94F0EBB702FCFB5A8683461E
+        BE2F79068907F0CDB356FB04986F4CBA9EE2E6760000000049454E44AE426082}
+      Drawable.ItemDefault.Bitmap.WrapMode = TileStretch
+      Drawable.ItemDefault.Kind = Bitmap
+      Drawable.ItemPressed.ImageIndex = 1
+    end
+  end
+  object VertScrollBox1: TVertScrollBox
+    Align = Client
+    Size.Width = 320.000000000000000000
+    Size.Height = 471.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Viewport.Width = 320.000000000000000000
+    Viewport.Height = 471.000000000000000000
+    object LinearLayout2: TLinearLayout
+      Align = Client
+      HeightSize = WrapContent
+      Gravity = None
+      Padding.Left = 8.000000000000000000
+      Padding.Top = 8.000000000000000000
+      Padding.Right = 8.000000000000000000
+      Padding.Bottom = 8.000000000000000000
+      Size.Width = 320.000000000000000000
+      Size.Height = 308.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      Orientation = Vertical
+      object ButtonView1: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claChocolate
+        Background.ItemPressed.Color = claCrimson
+        Background.ItemPressed.Kind = Solid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Size.Width = 304.000000000000000000
+        Size.Height = 42.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 8.000000000000000000
+        TabOrder = 5
+        OnClick = ButtonView1Click
+        Text = 'GridsLayout Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+      end
+      object ButtonView2: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.ItemPressed.Kind = Solid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 304.000000000000000000
+        Size.Height = 42.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 58.000000000000000000
+        TabOrder = 2
+        OnClick = ButtonView2Click
+        Text = #20061#23467#26684#32972#26223#22270
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+      end
+      object ButtonView3: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claChocolate
+        Background.ItemPressed.Color = claCrimson
+        Background.ItemPressed.Kind = Solid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 304.000000000000000000
+        Size.Height = 42.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 108.000000000000000000
+        TabOrder = 4
+        OnClick = ButtonView3Click
+        Text = 'Dialog Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+      end
+      object ButtonView4: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claHotpink
+        Background.ItemPressed.Color = claDarkcyan
+        Background.ItemPressed.Kind = Solid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 304.000000000000000000
+        Size.Height = 42.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 158.000000000000000000
+        TabOrder = 3
+        OnClick = ButtonView4Click
+        Text = #33258#23450#20041' ListView Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+      end
+      object ButtonView5: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.ItemPressed.Kind = Solid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 304.000000000000000000
+        Size.Height = 42.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 208.000000000000000000
+        TabOrder = 1
+        OnClick = ButtonView5Click
+        Text = #24377#20986#24335#23545#35805#26694
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+      end
+      object ButtonView6: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.ItemPressed.Kind = Solid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 304.000000000000000000
+        Size.Height = 42.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 258.000000000000000000
+        TabOrder = 0
+        OnClick = ButtonView6Click
+        Text = 'ProgressView Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+      end
+    end
+  end
+end

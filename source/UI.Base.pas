@@ -3923,6 +3923,8 @@ end;
 
 procedure TViewGroup.Resize;
 begin
+  if csReading in ComponentState then
+    Exit;
   inherited Resize;
   Realign;
 end;

@@ -2179,7 +2179,6 @@ begin
 
     ViewItem.TextView1 := TTextView.Create(ViewItem);
     ViewItem.TextView1.WidthSize := TViewSize.FillParent;
-    ViewItem.TextView1.Weight := 1;
     ViewItem.TextView1.HeightSize := TViewSize.WrapContent;
     ViewItem.TextView1.TextSettings.Font.Size := TListTextItem.C_FontSize;
     ViewItem.TextView1.TextSettings.WordWrap := True;
@@ -2201,6 +2200,7 @@ begin
   end else
     ViewItem := TControl(ConvertView) as TListViewItemCheck;
 
+  ViewItem.BeginUpdate;
   ViewItem.Tag := Index;   // 使用 Tag 记录索引号
   ViewItem.OnClick := DoCheckChange;
   ViewItem.CheckBox1.IsChecked := ItemCheck[Index];
@@ -2208,6 +2208,7 @@ begin
   ViewItem.DoRealign;
   ViewItem.TextView1.Text := Items[Index];
   ViewItem.Height := ViewItem.TextView1.Size.Height;
+  ViewItem.EndUpdate;
   Result := TViewBase(ViewItem);
 end;
 
@@ -2264,7 +2265,6 @@ begin
 
     ViewItem.TextView1 := TTextView.Create(ViewItem);
     ViewItem.TextView1.WidthSize := TViewSize.FillParent;
-    ViewItem.TextView1.Weight := 1;
     ViewItem.TextView1.HeightSize := TViewSize.WrapContent;
     ViewItem.TextView1.TextSettings.Font.Size := TListTextItem.C_FontSize;
     ViewItem.TextView1.TextSettings.WordWrap := True;
@@ -2288,11 +2288,13 @@ begin
 
   ViewItem.Tag := Index; // 使用 Tag 记录索引号
   ViewItem.OnClick := DoItemIndexChange;
+  ViewItem.BeginUpdate;
   ViewItem.RadioButton.IsChecked := FItemIndex = Index;
   ViewItem.HeightSize := TViewSize.WrapContent;
   ViewItem.DoRealign;
   ViewItem.TextView1.Text := Items[Index];
   ViewItem.Height := ViewItem.TextView1.Height;
+  ViewItem.EndUpdate;
   Result := TViewBase(ViewItem);
 end;
 

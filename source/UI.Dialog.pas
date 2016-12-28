@@ -2352,7 +2352,6 @@ begin
   with FButtonBorder do begin
     Color.Default := $AFCCCCCC;
     Color.Pressed := $FFb0b0b0;
-    Color.Hovered := $EFc0c0c0;
   end;
 
   FButtonTextColor := TTextColor.Create(COLOR_ButtonTextColor);
