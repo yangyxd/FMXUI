@@ -14,29 +14,4 @@ object Form1: TForm1
     Left = 72
     Top = 400
   end
-  object DialogStyleManager1: TDialogStyleManager
-    DialogMaskColor = x9F000000
-    BackgroundColor = claWhite
-    TitleBackGroundColor = xFFF2F3F4
-    TitleTextColor = xFF404040
-    BodyBackgroundColor = claWhite
-    MessageTextColor = xFF101010
-    MessageTextBackground = claNull
-    ProcessBackgroundColor = x7FBABABA
-    ProcessTextColor = xFFF7F7F7
-    TitleGravity = Center
-    TitleHeight = 50
-    BackgroundRadius = 12.000000000000000000
-    ButtonColor.Default = claWhite
-    ButtonColor.Pressed = xFFD9D9D9
-    ButtonTextColor.Default = xFF404040
-    ButtonTextColor.Pressed = claBlack
-    ButtonTextColor.HintText = claNull
-    ButtonBorder.Color.Default = xFFF0F0F0
-    ButtonBorder.Color.Pressed = xFFF0F0F0
-    ButtonBorder.Width = 0.500000000000000000
-    ButtonBorder.Style = RectBorder
-    Left = 72
-    Top = 344
-  end
 end

@@ -6,10 +6,6 @@
 {                                                       }
 {*******************************************************}
 
-{
- // 修改：解决Android, iOS平台画圆弧时成了一段段直线的问题
-}
-
 unit FMX.StrokeBuilder;
 
 interface
@@ -235,8 +231,7 @@ var
 begin
   if FBrush.Cap = TStrokeCap.Round then
   begin
-    // RoundShift := DashDirVec * FHalfThickness;
-    RoundShift := DashDirVec;
+    RoundShift := DashDirVec * FHalfThickness;
 
     SrcPos := SrcPos + RoundShift;
     DestPos := DestPos - RoundShift;
@@ -1064,7 +1059,7 @@ var
   SrcPosValid, DestPosValid, PrevVerticesPlaced: Boolean;
   CurIndex, LPoints: Integer;
 begin
-  LPoints := Length(Points);
+  LPoints := Length(Points); // by YangYxd
   if LPoints < 2 then
   begin
     InitArrays(0, 0);
@@ -1163,6 +1158,36 @@ begin
       SrcPosValid := True;
       DestPosValid := True;
       Continue;
+    end;
+    
+    if ((CurIndex < Length(Points) - 2) and (Points[CurIndex + 1].X < $FFFF) and (Points[CurIndex + 1].Y < $FFFF) and
+      (Points[CurIndex + 2].X < $FFFF) and (Points[CurIndex + 2].Y < $FFFF) and
+      (Points[CurIndex + 1].Distance(Points[CurIndex + 2]) > StepSize)) then
+    begin
+      PieceDirVec := (DestPos - SrcPos).Normalize;
+      ThickPerp := TPointF.Create(-PieceDirVec.Y, PieceDirVec.X) * FHalfThickness;
+
+      InsertVertex(DestPos - ThickPerp, FStrokeColor);
+      InsertVertex(DestPos + ThickPerp, FStrokeColor);
+
+      if PrevVerticesPlaced then
+      begin
+        InsertIndex(FCurrentVertex - 3);
+        InsertIndex(FCurrentVertex - 1);
+        InsertIndex(FCurrentVertex - 2);
+
+        InsertIndex(FCurrentVertex - 2);
+        InsertIndex(FCurrentVertex - 4);
+        InsertIndex(FCurrentVertex - 3);
+      end;
+
+      if CurIndex < Length(Points) - 1 then
+      begin
+        Inc(CurIndex);
+        Continue;
+      end
+      else
+        Break;
     end;
 
     if (CurIndex = LPoints - 1) or (Points[CurIndex + 1].X >= $FFFF) or (Points[CurIndex + 1].Y >= $FFFF) then

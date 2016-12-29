@@ -44,7 +44,8 @@ unit UI.Dialog;
 interface
 
 uses
-  UI.Base, UI.Utils, UI.Standard, UI.ListView, {$IFDEF WINDOWS}UI.Debug, {$ENDIF}
+  UI.Base, UI.Ani, UI.Utils, UI.Standard, UI.ListView,
+  {$IFDEF WINDOWS}UI.Debug, {$ENDIF}
   System.TypInfo, System.SysUtils, System.Character, System.RTLConsts,
   FMX.Graphics, System.Generics.Collections, FMX.TextLayout, FMX.Ani,
   System.Classes, System.Types, System.UITypes, System.Math.Vectors, System.Rtti,
@@ -63,32 +64,16 @@ const
 
 const
   // 颜色、字体等默认设置项
-  {$IFDEF IOS}
-  COLOR_BackgroundColor = $fff7f7f7;
-  COLOR_TitleTextColor = $ff077dfe;
-  COLOR_MessageTextColor = $ff000000;
-  COLOR_TitleBackGroundColor = $00000000;
+  COLOR_BodyBackgroundColor = $ffffffff;
+  COLOR_BackgroundColor = $ffffffff;
   COLOR_DialogMaskColor = $9f000000;
-  COLOR_BodyBackgroundColor = $00ffffff;
   COLOR_MessageTextBackground = $00f00000;
+  COLOR_MessageTextColor = $ff101010;
+  COLOR_TitleBackGroundColor = $00000000;
+  {$IFDEF IOS}
+  COLOR_TitleTextColor = $ff077dfe;
   {$ELSE}
-  {$IFDEF MSWINDOWS}
-    COLOR_BackgroundColor = $fff0f0f0;
-    COLOR_TitleTextColor = $ff000000;
-    COLOR_MessageTextColor = $ff101010;
-    COLOR_TitleBackGroundColor = $ffffffff;
-    COLOR_DialogMaskColor = $9f000000;
-    COLOR_BodyBackgroundColor = $ffffffff;
-    COLOR_MessageTextBackground = $00f00000;
-  {$ELSE}
-    COLOR_BackgroundColor = $fff0f0f0;
-    COLOR_TitleTextColor = $ff000000;
-    COLOR_MessageTextColor = $ff101010;
-    COLOR_TitleBackGroundColor = $ffffffff;
-    COLOR_DialogMaskColor = $9f000000;
-    COLOR_BodyBackgroundColor = $ffffffff;
-    COLOR_MessageTextBackground = $00f00000;
-  {$ENDIF}
+  COLOR_TitleTextColor = $ff7D7D7D;
   {$ENDIF}
 
   {$IFDEF MSWINDOWS}
@@ -102,44 +87,50 @@ const
   {$ENDIF}
   COLOR_ProcessTextColor = $fff7f7f7;
 
+  COLOR_ButtonColor = $ffffffff;
+  COLOR_ButtonPressColor = $ffd9d9d9;
+  COLOR_ButtonBorderColor = $ffe0e0e0;
   {$IFDEF IOS}
-  COLOR_ButtonColor = $fff7f7f7;
-  COLOR_ButtonPressColor = $ffd8d8d8;
   COLOR_ButtonTextColor = $FF077dfe;
   COLOR_ButtonTextPressColor = $FF0049f5;
   {$ELSE}
-  COLOR_ButtonColor = $fff8f8f8;
-  COLOR_ButtonPressColor = $ffd9d9d9;
-  COLOR_ButtonTextColor = $FF101010;
-  COLOR_ButtonTextPressColor = $FF000000;
+  COLOR_ButtonTextColor = $FF404040;
+  COLOR_ButtonTextPressColor = $FF101010;
   {$ENDIF}
 
+  COLOR_TitleSpaceColor = $ffe7e7e7;
+  SIZE_TitleSpaceHeight = 1;
 
   FONT_TitleTextSize = 18;
   FONT_MessageTextSize = 15;
-  FONT_ButtonTextSize = 16;
+  FONT_ButtonTextSize = 15;
 
-  Title_Gravity = TLayoutGravity.CenterVertical;
+  Title_Gravity = TLayoutGravity.Center;
 
   {$IFDEF IOS}
   SIZE_BackgroundRadius = 15;
-  SIZE_TitleHeight = 38;
+  SIZE_TitleHeight = 42;
   {$ELSE}
-    {$IFDEF MSWINDOWS}
-    SIZE_BackgroundRadius = 2;
-    SIZE_TitleHeight = 48;
-    {$ELSE}
-    SIZE_BackgroundRadius = 2;
-    SIZE_TitleHeight = 48;
-    {$ENDIF}
+  SIZE_BackgroundRadius = 13;
+  SIZE_TitleHeight = 50;
   {$ENDIF}
   SIZE_ICON = 32;
-  SIZE_ButtonBorder = 1;
+  SIZE_ButtonBorder = 0.6;
+
+type
+  TButtonViewColor = class(TViewColor)
+  public
+    constructor Create(const ADefaultColor: TAlphaColor = COLOR_ButtonColor);
+  published
+    property Default default COLOR_ButtonColor;
+    property Pressed default COLOR_ButtonPressColor;
+  end;
 
 type
   /// <summary>
   /// 对话框样式管理器
   /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TDialogStyleManager = class(TComponent)
   private
     FDialogMaskColor: TAlphaColor;
@@ -151,7 +142,7 @@ type
     FProcessTextColor: TAlphaColor;
     FMessageTextColor: TAlphaColor;
     FMessageTextBackground: TAlphaColor;
-    FButtonColor: TViewColor;
+    FButtonColor: TButtonViewColor;
     FButtonTextColor: TTextColor;
     FButtonBorder: TViewBorder;
     FMessageTextSize: Integer;
@@ -161,7 +152,9 @@ type
     FIconSize: Integer;
     FBackgroundRadius: Single;
     FTitleGravity: TLayoutGravity;
-    procedure SetButtonColor(const Value: TViewColor);
+    FTitleSpaceHeight: Single;
+    FTitleSpaceColor: TAlphaColor;
+    procedure SetButtonColor(const Value: TButtonViewColor);
     procedure SetButtonBorder(const Value: TViewBorder);
     procedure SetButtonTextColor(const Value: TTextColor);
   public
@@ -202,9 +195,14 @@ type
     property IconSize: Integer read FIconSize write FIconSize default SIZE_ICON;
 
     property BackgroundRadius: Single read FBackgroundRadius write FBackgroundRadius;
-    property ButtonColor: TViewColor read FButtonColor write SetButtonColor;
+    property ButtonColor: TButtonViewColor read FButtonColor write SetButtonColor;
     property ButtonTextColor: TTextColor read FButtonTextColor write SetButtonTextColor;
     property ButtonBorder: TViewBorder read FButtonBorder write SetButtonBorder;
+
+    // 标题与内容区分隔线颜色
+    property TitleSpaceColor: TAlphaColor read FTitleSpaceColor write FTitleSpaceColor default COLOR_TitleSpaceColor;
+    // 标题与内容区分隔线高度
+    property TitleSpaceHeight: Single read FTitleSpaceHeight write FTitleSpaceHeight;
   end;
 
 type
@@ -279,6 +277,7 @@ type
   protected
     FLayBubble: TLinearLayout;
     FTitleView: TTextView;
+    FTitleSpace: TView;
     FMsgBody: TLinearLayout;
     FMsgMessage: TTextView;
     FButtonLayout: TLinearLayout;
@@ -319,6 +318,7 @@ type
 
   TDialog = class(TComponent, IDialog)
   private
+    FAnimate: TFrameAniType;
     FOnCancelListener: TOnDialogListener;
     FOnCancelListenerA: TOnDialogListenerA;
     FOnShowListener: TOnDialogListener;
@@ -332,9 +332,6 @@ type
     function GetIsDismiss: Boolean;
   protected
     FViewRoot: TDialogView;
-    FTimer: TTimer;
-    FTimerStart: Int64;
-    FDestBgColor: TAlphaColor;
 
     FCancelable: Boolean;
     FCanceled: Boolean;
@@ -359,9 +356,16 @@ type
     function GetFirstParent(): TFmxObject;
   protected
     procedure DoRootClick(Sender: TObject); virtual;
-    procedure DoUpdateBackTimer(Sender: TObject);
-    procedure DoAsyncDismissTimer(Sender: TObject);
     procedure DoAsyncDismiss();
+
+    /// <summary>
+    /// 播放动画
+    /// <param name="Ani">动画类型</param>
+    /// <param name="IsIn">是否是正要显示</param>
+    /// <param name="AEvent">动画播放完成事件</param>
+    /// </summary>
+    procedure AnimatePlay(Ani: TFrameAniType; IsIn: Boolean; AEvent: TNotifyEventA);
+
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -383,7 +387,7 @@ type
       const ViewClass: TControlClass;
       XOffset: Single = 0; YOffset: Single = 0;
       Position: TDialogViewPosition = TDialogViewPosition.Bottom;
-      Cancelable: Boolean = True): TDialog; overload;
+      Cancelable: Boolean = True; Ani: TFrameAniType = TFrameAniType.None): TDialog; overload;
     /// <summary>
     /// 显示对话框
     /// <param name="Target">定位控件</param>
@@ -397,7 +401,7 @@ type
       const View: TControl; AViewAutoFree: Boolean = True;
       XOffset: Single = 0; YOffset: Single = 0;
       Position: TDialogViewPosition = TDialogViewPosition.Bottom;
-      Cancelable: Boolean = True): TDialog; overload;
+      Cancelable: Boolean = True; Ani: TFrameAniType = TFrameAniType.None): TDialog; overload;
 
     /// <summary>
     /// 在一个目标控件身上查找与其绑定在一起的对象框
@@ -450,6 +454,7 @@ type
     property Message: string read GetMessage write SetMessage;
     property Canceled: Boolean read FCanceled;
     property IsDismiss: Boolean read GetIsDismiss;
+    property Animate: TFrameAniType read FAnimate write FAnimate default TFrameAniType.FadeInOut;
 
     property OnCancelListener: TOnDialogListener read FOnCancelListener write SetOnCancelListener;
     property OnCancelListenerA: TOnDialogListenerA read FOnCancelListenerA write SetOnCancelListenerA;
@@ -1201,6 +1206,69 @@ end;
 
 { TDialog }
 
+procedure TDialog.AnimatePlay(Ani: TFrameAniType; IsIn: Boolean;
+  AEvent: TNotifyEventA);
+
+  // 背景淡入淡出
+  procedure DoFadeInOutBackgroyund();
+  var
+    NewValue: TAlphaColor;
+  begin
+    if not Assigned(FViewRoot) then Exit;
+    if IsIn then begin
+      if (FViewRoot.Background.ItemDefault.Color and $FF000000 = 0) then
+        Exit;
+      NewValue := FViewRoot.Background.ItemDefault.Color;
+      FViewRoot.Background.ItemDefault.Color := 0;
+    end else
+      NewValue := 0;
+    TFrameAnimator.AnimateColor(FViewRoot, 'Background.ItemDefault.Color', NewValue, nil, 0.3);
+  end;
+
+  // 淡入淡出
+  procedure DoFadeInOut();
+  var
+    NewValue: Single;
+  begin
+    // 背景处理
+    if Assigned(FViewRoot) and Assigned(FViewRoot.FLayBubble) then begin
+      if IsIn then begin
+        FViewRoot.FLayBubble.Opacity := 0;
+        NewValue := 1;
+      end else begin
+        NewValue := 0;
+      end;
+      TFrameAnimator.AnimateFloat(FViewRoot.FLayBubble, 'Opacity', NewValue, AEvent, 0.1);
+    end;
+  end;
+
+begin
+  if not Assigned(FViewRoot) then Exit;  
+  // 淡入淡出背景
+  DoFadeInOutBackgroyund();
+  // 如果图层完全不可见，设置动画时会出错
+  if (not Assigned(FViewRoot.FLayBubble)) or
+    (FViewRoot.FLayBubble.Background.ItemDefault.Color and $FF000000 = 0) then begin
+    if Assigned(AEvent) then
+      AEvent(Self);
+    Exit;
+  end;
+  // 处理动画
+  case Ani of
+    TFrameAniType.None:
+      begin
+        if Assigned(AEvent) then
+          AEvent(Self);
+        if IsIn then
+          FViewRoot.FLayBubble.Opacity := 1
+        else
+          FViewRoot.FLayBubble.Opacity := 0;
+      end;
+    TFrameAniType.FadeInOut:
+      DoFadeInOut;
+  end;
+end;
+
 procedure TDialog.AsyncDismiss;
 begin
   DoAsyncDismiss();
@@ -1237,6 +1305,7 @@ begin
   inherited Create(AOwner);
   FCancelable := True;
   FCanceled := False;
+  FAnimate := TFrameAniType.FadeInOut;
 end;
 
 destructor TDialog.Destroy;
@@ -1245,15 +1314,9 @@ begin
   if Assigned(Self) then begin
     FIsDismiss := True;
     if (FViewRoot <> nil) then begin
-      if Assigned(FTimer) then
-        FTimer.OnTimer := nil;
       FEventing := False;
       Dismiss;
       FViewRoot := nil;
-    end;
-    if Assigned(FTimer) then begin
-      FTimer.Enabled := False;
-      FTimer := nil;
     end;
   end;
   FViewRoot := nil;
@@ -1308,35 +1371,18 @@ begin
       FAllowDismiss := True;
       Exit;
     end;
-    FreeAndNil(FTimer);
     if (FViewRoot <> nil) then begin
       if (FViewRoot.FLayBubble <> nil) then
         FViewRoot.FLayBubble.Visible := False
       else if FViewRoot.ControlsCount = 1 then // ShowView 时会是这种情况
         FViewRoot.Controls[0].Visible := False;
     end;
-    FDestBgColor := $00000000;
-    FTimer := TTimer.Create(Owner);
-    FTimer.OnTimer := DoAsyncDismissTimer;
-    FTimer.Interval := 15;
-    FTimer.Enabled := True;
-    FTimerStart := GetTimestamp;
-  end;
-end;
-
-procedure TDialog.DoAsyncDismissTimer(Sender: TObject);
-var
-  T: Single;
-begin
-  if Assigned(Self) then begin
-    T := (GetTimestamp - FTimerStart) / 200;
-    if FViewRoot <> nil then
-      FViewRoot.Background.ItemDefault.Color := LerpColor(FViewRoot.Background.ItemDefault.Color, FDestBgColor, T);
-    if T > 1 then begin
-      if Assigned(FTimer) then
-        FTimer.Enabled := False;
-      Dismiss;
-    end;
+    AnimatePlay(FAnimate, False,
+      procedure (Sendet: TObject)
+      begin
+        Dismiss;
+      end
+    );
   end;
 end;
 
@@ -1348,24 +1394,6 @@ procedure TDialog.DoRootClick(Sender: TObject);
 begin
   if FCancelable then
     Cancel;
-end;
-
-procedure TDialog.DoUpdateBackTimer(Sender: TObject);
-var
-  T: Single;
-begin
-  if Assigned(Self) and (Assigned(FTimer)) then begin
-    if csDestroying in ComponentState then
-      Exit;
-    T := (GetTimestamp - FTimerStart) / 1000;
-    if FViewRoot <> nil then begin
-      FViewRoot.Background.ItemDefault.Color := LerpColor(FViewRoot.Background.ItemDefault.Color, FDestBgColor, T);
-      if (T > 0.5) and (FViewRoot.FLayBubble <> nil) then
-        FViewRoot.FLayBubble.Visible := True;
-    end;
-    if T > 1 then
-      FreeAndNil(FTimer);
-  end;
 end;
 
 function TDialog.GetBuilder: TDialogBuilder;
@@ -1452,16 +1480,8 @@ end;
 
 procedure TDialog.SetBackColor(const Value: TAlphaColor);
 begin
-  FreeAndNil(FTimer);
-  if FDestBgColor <> Value then begin
-    FViewRoot.Background.ItemDefault.Color := FDestBgColor;
-    FDestBgColor := Value;
-    FTimer := TTimer.Create(Owner);
-    FTimer.OnTimer := DoUpdateBackTimer;
-    FTimer.Interval := 20;
-    FTimer.Enabled := True;
-    FTimerStart := GetTimestamp;
-  end;
+  if FViewRoot.Background.ItemDefault.Color <> Value then
+    FViewRoot.Background.ItemDefault.Color := Value;
 end;
 
 procedure TDialog.SetCancelable(const Value: Boolean);
@@ -1495,14 +1515,7 @@ begin
         FOnCancelListener(Self);
 
       FViewRoot.Show;
-
-      if Assigned(FViewRoot.FLayBubble) then begin
-        // 如果图层完全不可见，设置动画时会出错
-        if (FViewRoot.FLayBubble.Background.ItemDefault.Color and $FF000000 <> 0) then begin
-          FViewRoot.FLayBubble.Opacity := 0.3;
-          TAnimator.AnimateFloat(FViewRoot.FLayBubble, 'Opacity', 1, 0.3);
-        end;
-      end;
+      AnimatePlay(FAnimate, True, nil);
     end;
   except
     {$IFDEF WINDOWS}LogE(Self, 'Show', Exception(ExceptObject)); {$ENDIF}
@@ -1512,17 +1525,17 @@ end;
 
 class function TDialog.ShowView(const AOwner: TComponent; const Target: TControl;
   const ViewClass: TControlClass; XOffset: Single; YOffset: Single;
-  Position: TDialogViewPosition; Cancelable: Boolean): TDialog;
+  Position: TDialogViewPosition; Cancelable: Boolean; Ani: TFrameAniType): TDialog;
 var
   AView: TControl;
 begin
   AView := ViewClass.Create(AOwner);
-  Result := ShowView(AOwner, Target, AView, True, XOffset, YOffset, Position, Cancelable);
+  Result := ShowView(AOwner, Target, AView, True, XOffset, YOffset, Position, Cancelable, Ani);
 end;
 
 class function TDialog.ShowView(const AOwner: TComponent; const Target, View: TControl;
   AViewAutoFree: Boolean; XOffset: Single; YOffset: Single;
-  Position: TDialogViewPosition; Cancelable: Boolean): TDialog;
+  Position: TDialogViewPosition; Cancelable: Boolean; Ani: TFrameAniType): TDialog;
 var
   Dialog: TDialog;
   X, Y, PW, PH: Single;
@@ -1618,9 +1631,11 @@ begin
   end;
   View.Position.Point := TPointF.Create(X, Y);
 
+  Dialog.FAnimate := Ani;
   Dialog.Cancelable := Cancelable;
   Dialog.SetBackColor(GetDefaultStyleMgr.FDialogMaskColor);
   Dialog.InitOK;
+  Dialog.AnimatePlay(Dialog.FAnimate, True, nil);
   Result := Dialog;
 end;
 
@@ -1905,6 +1920,15 @@ begin
     end;
   end;
 
+  if Assigned(FViewRoot.FTitleSpace) then begin
+    if FViewRoot.FTitleView.Visible = False then
+      FViewRoot.FTitleSpace.Visible := False
+    else if (BtnCount = 0) and
+      (FViewRoot.FMsgBody.Visible = False) and
+      ((not Assigned(FViewRoot.FListView)) or (FViewRoot.FListView.Visible = False)) then
+      FViewRoot.FTitleSpace.Visible := False;
+  end;
+
   if Builder.FMaskVisible then
     SetBackColor(StyleManager.FDialogMaskColor);
 end;
@@ -2056,6 +2080,7 @@ begin
   FButtonNeutral := nil;
   FListView := nil;
   FAnilndictor := nil;
+  FTitleSpace := nil;
   inherited Destroy;
 end;
 
@@ -2117,7 +2142,6 @@ begin
   FButtonLayout.Parent := FLayBubble;
   FButtonLayout.WidthSize := TViewSize.FillParent;
   FButtonLayout.Orientation := TOrientation.Horizontal;
-  FButtonLayout.Margins.Top := 1;
   FButtonLayout.HeightSize := TViewSize.WrapContent;
   // 按钮
   FButtonPositive := CreateButton();
@@ -2277,6 +2301,19 @@ begin
   FTitleView.Background.Corners := [TCorner.TopLeft, TCorner.TopRight];
   FTitleView.Background.Padding.Rect := RectF(1, 1, 1, 0);
   FTitleView.HeightSize := TViewSize.WrapContent;
+  // 标题与内容区的分隔线
+  if StyleMgr.FTitleSpaceHeight > 0 then begin
+    FTitleSpace := TView.Create(Owner);
+    {$IFDEF MSWINDOWS}
+    FTitleSpace.Name := 'TitleSpace' + IntToStr(DialogRef);
+    {$ENDIF}
+    FTitleSpace.Parent := FLayBubble;
+    FTitleSpace.ClipChildren := True;
+    FTitleSpace.Height := StyleMgr.FTitleSpaceHeight;
+    FTitleSpace.Background.ItemDefault.Color := StyleMgr.FTitleSpaceColor;
+    FTitleSpace.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+    FTitleSpace.WidthSize := TViewSize.FillParent;
+  end;
   // 内容区
   FMsgBody := TLinearLayout.Create(Owner);
   {$IFDEF MSWINDOWS}
@@ -2294,15 +2331,17 @@ begin
   else
     FMsgBody.Background.ItemDefault.Color := StyleMgr.BodyBackGroundColor;
   FMsgBody.Background.ItemDefault.Kind := TViewBrushKind.Solid;
-  FMsgBody.Margins.Rect := RectF(0, 1, 0, 0);
 end;
 
 procedure TDialogView.SetTitle(const AText: string);
 begin
   if FTitleView <> nil then begin
     FTitleView.Text := AText;
-    if AText = '' then
+    if AText = '' then begin
       FTitleView.Visible := False;
+      if Assigned(FTitleSpace) then
+        FTitleSpace.Visible := False;
+    end;
   end;
 end;
 
@@ -2337,25 +2376,21 @@ begin
   FTitleGravity := Title_Gravity;
   FBackgroundRadius := SIZE_BackgroundRadius;
 
-  FButtonColor := TViewColor.Create();
-  {$IFDEF IOS}
+  FButtonColor := TButtonViewColor.Create();
   FButtonColor.Default := COLOR_ButtonColor;
   FButtonColor.Pressed := COLOR_ButtonPressColor;
-  {$ELSE}
-  FButtonColor.Default := COLOR_ButtonColor;
-  FButtonColor.Pressed := COLOR_ButtonPressColor;
-  {$ENDIF}
 
   FButtonBorder := TViewBorder.Create;
   FButtonBorder.Width := SIZE_ButtonBorder;
   FButtonBorder.Style := TViewBorderStyle.RectBorder;
-  with FButtonBorder do begin
-    Color.Default := $AFCCCCCC;
-    Color.Pressed := $FFb0b0b0;
-  end;
+  FButtonBorder.Color.Default := COLOR_ButtonBorderColor;
+  FButtonBorder.Color.DefaultChange := False;
 
   FButtonTextColor := TTextColor.Create(COLOR_ButtonTextColor);
   FButtonTextColor.Pressed := COLOR_ButtonTextPressColor;
+
+  FTitleSpaceHeight := SIZE_TitleSpaceHeight;
+  FTitleSpaceColor := COLOR_TitleSpaceColor;
 
   if Assigned(Owner) and (not (csDesigning in ComponentState)) then begin
     if DefaultStyleManager <> nil then begin
@@ -2381,7 +2416,7 @@ begin
   FButtonBorder.Assign(Value);
 end;
 
-procedure TDialogStyleManager.SetButtonColor(const Value: TViewColor);
+procedure TDialogStyleManager.SetButtonColor(const Value: TButtonViewColor);
 begin
   FButtonColor.Assign(Value);
 end;
@@ -2466,6 +2501,14 @@ begin
   Result.Cancelable := ACancelable;
   Result.InitView(AMsg);
   TDialog(Result).Show();
+end;
+
+{ TButtonViewColor }
+
+constructor TButtonViewColor.Create(const ADefaultColor: TAlphaColor);
+begin
+  inherited Create(ADefaultColor);
+
 end;
 
 initialization

@@ -11,7 +11,6 @@ uses
 type
   TForm1 = class(TForm)
     ToastManager1: TToastManager;
-    DialogStyleManager1: TDialogStyleManager;
     procedure FormShow(Sender: TObject);
   private
     { Private declarations }

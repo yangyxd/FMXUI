@@ -26,6 +26,7 @@ type
     ButtonView8: TButtonView;
     ButtonView9: TButtonView;
     ButtonView11: TButtonView;
+    ButtonView10: TButtonView;
     procedure SpeedButton1Click(Sender: TObject);
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
@@ -37,6 +38,7 @@ type
     procedure ButtonView8Click(Sender: TObject);
     procedure ButtonView9Click(Sender: TObject);
     procedure ButtonView11Click(Sender: TObject);
+    procedure ButtonView10Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -55,6 +57,13 @@ uses
   UI.Dialog, UI.Async;
 
 { TFrmaeDialog }
+
+procedure TFrmaeDialog.ButtonView10Click(Sender: TObject);
+begin
+  TDialogBuilder.Create(Self)
+    .SetTitle('我是标题文本')
+    .Show;
+end;
 
 procedure TFrmaeDialog.ButtonView11Click(Sender: TObject);
 begin
