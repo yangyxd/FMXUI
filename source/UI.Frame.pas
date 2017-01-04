@@ -178,6 +178,7 @@ type
     FAnimateing: Boolean; // 动画执行中
     FNeedFree: Boolean;   // 需要释放
     FNeedHide: Boolean;   // 需要隐藏
+    FNeedFinish: Boolean; // 需要关闭
     procedure SetParams(const Value: TFrameParams);
     function GetTitle: string;
     procedure SetTitle(const Value: string);
@@ -228,6 +229,8 @@ type
 
     // 检查是否需要释放，如果需要，就释放掉
     function CheckFree(): Boolean;
+    // 检查所属窗体是否还存在 Frame
+    function CheckChildern(): Boolean;
     // 内部 Show 实现
     procedure InternalShow(TriggerOnShow: Boolean;
       AOnFinish: TNotifyEventA = nil; Ani: TFrameAniType = TFrameAniType.DefaultAni);
@@ -406,7 +409,6 @@ const
   CS_Data = 'cs_p_data';
 
 var
-  MainFormMinChildren: Integer = 1;
   /// <summary>
   /// 默认过场动画
   /// </summary>
@@ -504,7 +506,7 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, IsClose: Boolean;
         Exit;
       end;
     end;
-    TFrameAnimator.AnimateFloat(Self, 'Opacity', NewValue, AEvent);
+    TFrameAnimator.AnimateFloat(Self, 'Opacity', NewValue, AEvent, 0.2, 0.01);
   end;
 
   // 移入移出
@@ -558,27 +560,31 @@ begin
   end;
 end;
 
-function TFrameView.CheckFree: Boolean;
-
-  function CheckChildern(): Boolean;
-  var
-    I: Integer;
-  begin
+function TFrameView.CheckChildern: Boolean;
+var
+  I: Integer;
+begin
+  if (Parent is TForm) then begin  
     Result := True;
-    for I := 0 to Parent.ChildrenCount - 1 do begin
-      if Parent.Children[I] is FMX.Forms.TFrame then begin
-        Result := False;
-        Exit;
+    if Parent.ChildrenCount >= 2 then begin    
+      for I := 0 to Parent.ChildrenCount - 1 do begin
+        if (Parent.Children[I] <> Self) and (Parent.Children[I] is FMX.Forms.TFrame) then begin
+          Result := False;
+          Exit;
+        end;
       end;
-    end;
-  end;
+    end;  
+  end else
+    Result := False;
+end;
 
+function TFrameView.CheckFree: Boolean;
 begin
   Result := False;
   if Assigned(Parent) then begin
     if not Assigned(Parent.Parent) then begin
       if (Parent is TForm) then begin
-        if (Parent.ChildrenCount <= MainFormMinChildren + 1) or (CheckChildern()) then begin
+        if (CheckChildern()) then begin
           {$IFDEF POSIX}
             {$IFDEF DEBUG}
             (Parent as TForm).Close;
@@ -613,6 +619,11 @@ end;
 
 procedure TFrameView.Close(Ani: TFrameAniType);
 begin
+  // 如果正在显示中，设置需要Finish标识
+  if FShowing then begin
+    FNeedFinish := True;
+    Exit;
+  end;
   // 动画执行中， 设置需要关闭的标识
   if FAnimateing then
     FNeedFree := True
@@ -685,16 +696,21 @@ end;
 
 function TFrameView.MakeFrame(FrameClass: TFrameViewClass): TFrameView;
 begin
-  Result := FrameClass.Create(Parent);
-  Result.Name := '';
-  Result.Parent := Parent;
-  Result.Align := TAlignLayout.Client;
-  Result.FLastView := Self;
-  FNextView := Result;
+  if FAnimateing then
+    Result := nil
+  else begin
+    Result := FrameClass.Create(Parent);
+    Result.Name := '';
+    Result.Parent := Parent;
+    Result.Align := TAlignLayout.Client;
+    Result.FLastView := Self;
+    FNextView := Result;
+  end;
 end;
 
 procedure TFrameView.OnFinishOrClose(Sender: TObject);
 begin
+  FNeedFinish := False;
   if FNeedHide then
     InternalHide;
   if CheckFree then Exit;
@@ -774,6 +790,10 @@ end;
 
 procedure TFrameView.Finish(Ani: TFrameAniType);
 begin
+  if FShowing then begin
+    FNeedFinish := True;
+    Exit;
+  end;
   DoFinish();
   if Assigned(FNextView) then begin
     FNextView.FLastView := FLastView;
@@ -929,9 +949,11 @@ begin
     FAnimateing := True;
     AnimatePlay(Ani, False, False,
       procedure (Sender: TObject) begin
-        InternalHide;
-        if FNeedFree then
-          OnFinishOrClose(Sender);
+        if not FShowing then begin
+          InternalHide;
+          if FNeedFree then
+            OnFinishOrClose(Sender);
+        end;
         FAnimateing := False;
       end
     );
@@ -978,7 +1000,7 @@ begin
     Application.Title := Title;
     if Assigned(Parent) and (Parent is TCustomForm) then
       TCustomForm(Parent).Caption := Title;
-  end;
+  end;    
   if TriggerOnShow then
     DoShow()
   else
@@ -990,17 +1012,27 @@ begin
   Opacity := 0;
   FHideing := True;
   Visible := True;
+  AnimatePlay(Ani, True, not TriggerOnShow, 
+    procedure (Sender: TObject) begin
+      FShowing := False;
+      if Assigned(AOnFinish) then
+        AOnFinish(Sender);
+    end
+  );
   FHideing := False;
-  AnimatePlay(Ani, True, not TriggerOnShow, AOnFinish);
-  FShowing := False;
   FNeedFree := False;
   FNeedHide := False;
+  if FNeedFinish then begin
+    FShowing := False;
+    FNeedFinish := False;
+    Finish;
+  end;
 end;
 
 function TFrameView.FinishIsFreeApp: Boolean;
 begin
   Result := Assigned(Parent) and (not Assigned(Parent.Parent)) and
-    (Parent is TForm) and (Parent.ChildrenCount <= MainFormMinChildren + 1);
+    (Parent is TForm) and CheckChildern();
 end;
 
 procedure TFrameView.Hint(const Msg: string);
@@ -1144,19 +1176,23 @@ function TFrameView.StartFrame(FrameClass: TFrameViewClass;
   const Title: string; Ani: TFrameAniType): TFrameView;
 begin
   Result := MakeFrame(FrameClass);
-  Result.Title := Title;
-  Hide(Ani);
-  Result.Show(Ani, nil);
+  if Assigned(Result) then begin  
+    Result.Title := Title;
+    Hide(Ani);
+    Result.Show(Ani, nil);
+  end;
 end;
 
 function TFrameView.StartFrame(FrameClass: TFrameViewClass; const Title: string;
   const Data: Pointer; Ani: TFrameAniType): TFrameView;
 begin
   Result := MakeFrame(FrameClass);
-  Result.Title := Title;
-  Result.Data := Data;
-  Hide(Ani);
-  Result.Show(Ani, nil);
+  if Assigned(Result) then begin  
+    Result.Title := Title;
+    Result.Data := Data;
+    Hide(Ani);
+    Result.Show(Ani, nil);
+  end;
 end;
 
 function TFrameView.StreamToString(SrcStream: TStream; const CharSet: string): string;
@@ -1179,16 +1215,20 @@ function TFrameView.StartFrame(FrameClass: TFrameViewClass;
   Params: TFrameParams; Ani: TFrameAniType): TFrameView;
 begin
   Result := MakeFrame(FrameClass);
-  Result.Params := Params;
-  Hide(Ani);
-  Result.Show(Ani, nil);
+  if Assigned(Result) then begin  
+    Result.Params := Params;
+    Hide(Ani);
+    Result.Show(Ani, nil);
+  end;
 end;
 
 function TFrameView.StartFrame(FrameClass: TFrameViewClass; Ani: TFrameAniType): TFrameView;
 begin
   Result := MakeFrame(FrameClass);
-  Hide(Ani);
-  Result.Show(Ani, nil);
+  if Assigned(Result) then begin  
+    Hide(Ani);
+    Result.Show(Ani, nil);
+  end;
 end;
 
 class function TFrameView.ShowFrame(Parent: TFmxObject;

@@ -854,11 +854,11 @@ type
     procedure EnabledChanged; override;
     procedure HitTestChanged; override;
     procedure VisibleChanged; override;
+    function DoSetSize(const ASize: TControlSize; const NewPlatformDefault: Boolean; ANewWidth, ANewHeight: Single;
+      var ALastWidth, ALastHeight: Single): Boolean; override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseClick(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
-    function DoSetSize(const ASize: TControlSize; const NewPlatformDefault: Boolean; ANewWidth, ANewHeight: Single;
-      var ALastWidth, ALastHeight: Single): Boolean; override;
   protected
     FAdjustViewBounds: Boolean;
     procedure Paint; override;
@@ -1301,6 +1301,9 @@ type
 
 implementation
 
+uses
+  UI.Ani;
+
 resourcestring
   SInvViewValue = '无效的视图状态值: %d';
   SNotAllowSelf = '不允许设定为自己';
@@ -1313,6 +1316,7 @@ resourcestring
 var
   FAudioManager: JAudioManager = nil;
 {$ENDIF}
+
 
 function ComponentStateToString(const State: TComponentState): string;
 
@@ -3362,7 +3366,7 @@ end;
 procedure TView.MouseClick(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
-  {$IFNDEF MSWINDOWS}
+  {$IFDEF POSIX}
   FDownUpOffset := Y - FDownUpOffset;
   {$ENDIF}
   inherited;
@@ -3371,7 +3375,7 @@ end;
 procedure TView.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
-  {$IFNDEF MSWINDOWS}
+  {$IFDEF POSIX}
   FDownUpOffset := Y;
   {$ENDIF}
   inherited MouseDown(Button, Shift, X, Y);

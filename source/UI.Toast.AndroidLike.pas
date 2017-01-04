@@ -59,6 +59,7 @@ uses FMX.Forms;
 
 const
   FViewTime = 1500;
+  FMinViewTime = 500;
 
 procedure TToast.AdjustTextPosition;
 begin
@@ -111,14 +112,17 @@ begin
 end;
 
 procedure TToast.DoToastTimer(Sender: TObject);
+var
+  LTime: Int64;
 begin
   if (csDestroying in ComponentState) then
     Exit;
-  if (GetTimestamp - FStartTime >= FViewTime) then begin
+  LTime := GetTimestamp - FStartTime;
+  if (LTime >= FMinViewTime) then begin
     if FQueue.Count > 0 then begin
       DoSetText(FQueue.Dequeue);
       FStartTime := GetTimestamp;
-    end else begin
+    end else if (LTime > FViewTime) then begin
       FStartTime := 0;
       FTimer.Enabled := False;
       if Assigned(FText) then begin
