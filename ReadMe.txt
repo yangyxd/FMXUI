@@ -14,9 +14,11 @@ FMXUI  (YangYxd)
   TTextView 文本视图
   TButtonView 按钮视图
   TEditView 编辑框视图
+  TImageView 图像视图
   TProgressView 进度条视图
   TFrameView Frame视图扩展类
-  TListExView ListView扩展类
+  TListViewEx 列表框视图
+  TListExView ListView扩展类(Delphi官方列表框)
   
   TAsync 异步任务处理类
   TToastManager Toast管理器
