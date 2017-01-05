@@ -32,6 +32,10 @@ uses
   System.Generics.Collections,
   FMX.Ani, FMX.Types, FMX.Styles, FMX.Controls, FMX.StdCtrls, FMX.Edit;
 
+resourcestring
+  sFMXUICategoryName = 'FMXUI';
+  sTouchCategoryName = 'Touch';
+
 type
   TViewControlEditor = class(TDefaultEditor)
   private
@@ -94,6 +98,123 @@ begin
   //RegisterComponentEditor(TCustomButton, TViewControlEditor);
   //RegisterComponentEditor(TCustomEdit, TViewControlEditor);
   //RegisterPropertyEditor(TypeInfo(TImageIndex), TView, '', TImageIndexProperty);
+
+  RegisterPropertiesInCategory(sFMXUICategoryName, [
+      { TView }
+      'AdjustViewBounds',
+      'Background',
+      'Clickable',
+      'Checked',
+      'Enabled',
+      'Layout',
+      'Padding',
+      'Paddings',
+      'Margin',
+      'Margins',
+      'InVisible',
+      'WidthSize',
+      'HeightSize',
+      'MinWidth',
+      'MinHeight',
+      'MaxWidth',
+      'MaxHeight',
+      'Gravity',
+      'Weight',
+      'Orientation',
+      'OnClick',
+      'OnPaint',
+      'OnResize',
+      { TGridsLayout }
+      'ColumnCount',
+      'ColumnWidth',
+      'ColumnHeight',
+      'Divider',
+      'SpacingHorizontal',
+      'SpacingVertical',
+      'SpacingBorder',
+      'StretchMode',
+      'ForceColumnSize',
+      { TImageView }
+      'Image',
+      'ScaleType',
+      { TListViewEx}
+      'AllowItemClickEx',
+      'DividerHeight',
+      'ScrollStretchGlowColor',
+      'EnablePullRefresh',
+      'EnablePullLoad',
+      'OnPullRefresh',
+      'OnPullLoad',
+      'OnInitFooter',
+      'OnInitHeader',
+      'OnItemClick',
+      'OnItemClickEx',
+      'OnScrollChange',
+      'OnItemMeasureHeight',
+      { TEditView}
+      'KeyboardType',
+      'ReturnKeyType',
+      'Password',
+      'ReadOnly',
+      'MaxLength',
+      'FilterChar',
+      'ImeMode',
+      'Caret',
+      'KillFocusByReturn',
+      'CheckSpelling',
+      'SelectionFill',
+      'OnValidating',
+      'OnTyping',
+      { TTextView }
+      'Drawable',
+      'OnDrawBackgroud',
+      { TProgressView }
+      'Min',
+      'Max',
+      'Value',
+      'ForeGround',
+      'StartAngle',
+      'Kind',
+      'SolidForeGround',
+      'PaddingBorder',
+      'OnValueChange',
+      { Text }
+      'Text',
+      'TextHint',
+      'TextSettings',
+      'OnDrawText',
+      'OnTextChange'
+    ]);
+
+  RegisterPropertiesInCategory(sTouchCategoryName, [
+      'Touch', 'TouchTargetExpansion', 'OnGesture'
+    ]);
+
+  RegisterPropertiesInCategory(sLayoutCategoryName, [
+      'Layout',
+      'Padding',
+      'Paddings',
+      'Margin',
+      'Margins',
+      'WidthSize',
+      'HeightSize',
+      'MinWidth',
+      'MinHeight',
+      'MaxWidth',
+      'MaxHeight',
+      'Gravity',
+      'Weight',
+      'Orientation',
+      'ColumnCount',
+      'ColumnWidth',
+      'ColumnHeight',
+      'Divider',
+      'SpacingHorizontal',
+      'SpacingVertical',
+      'SpacingBorder',
+      'StretchMode',
+      'ForceColumnSize'
+    ]);
 end;
 
 procedure RegisterAliases;
