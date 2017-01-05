@@ -78,6 +78,7 @@ begin
   RegisterComponents(PageName, [TView, TLinearLayout, TRelativeLayout, TGridsLayout]);
 
   RegisterComponents(PageName, [TProgressView]);
+  RegisterComponents(PageName, [TImageView]);
   RegisterComponents(PageName, [TTextView]);
   RegisterComponents(PageName, [TButtonView]);
   RegisterComponents(PageName, [TEditView]);
@@ -114,6 +115,8 @@ begin
     ['None', 'SpacingWidth', 'ColumnWidth', 'SpacingWidthUniform']);
   AddEnumElementAliases(TypeInfo(TProgressKind),
     ['Horizontal', 'Vertical', 'CircleRing']);
+  AddEnumElementAliases(TypeInfo(TImageScaleType),
+    ['None', 'Matrix', 'Center', 'CenterCrop', 'CenterInside', 'FitCenter', 'FitStart', 'FitEnd']);
 end;
 
 procedure UnregisterAliases;
@@ -126,6 +129,7 @@ begin
   RemoveEnumElementAliases(TypeInfo(TViewScroll));
   RemoveEnumElementAliases(TypeInfo(TViewStretchMode));
   RemoveEnumElementAliases(TypeInfo(TProgressKind));
+  RemoveEnumElementAliases(TypeInfo(TImageScaleType));
 end;
 
 { TViewControlEditor }

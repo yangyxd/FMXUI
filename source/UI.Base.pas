@@ -188,6 +188,7 @@ type
 
     procedure Draw(Canvas: TCanvas); virtual;
     procedure DrawTo(Canvas: TCanvas; const R: TRectF); virtual;
+    procedure DrawBrushTo(Canvas: TCanvas; ABrush: TBrush; const R: TRectF);
 
     procedure SetRadius(const X, Y: Single);
     procedure SetDrawable(const Value: TDrawableBase); overload;
@@ -318,6 +319,7 @@ type
     constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
     destructor Destroy; override;
+    procedure DrawBorder(Canvas: TCanvas; var R: TRectF; AState: TViewState);
     procedure Assign(Source: TPersistent); override;
     property _Border: TViewBorder read FBorder;
   published
@@ -1225,8 +1227,11 @@ type
     FNumColumns: Integer;
     FColumnWidth: Single;
     FColumnHeight: Single;
+
+    FSpacingBorder: Boolean;
     FVerticalSpacing: Single;
     FHorizontalSpacing: Single;
+
     FStretchMode: TViewStretchMode;
     FForceColumnSize: Boolean;
 
@@ -1249,6 +1254,7 @@ type
     function GetCount: Integer;
     function GetDivider: TAlphaColor;
     procedure SetForceColumnSize(const Value: Boolean);
+    procedure SetSpacingBorder(const Value: Boolean);
   protected
     procedure DoRealign; override;
     procedure PaintBackground; override;
@@ -1282,13 +1288,17 @@ type
     /// </summary>
     property Divider: TAlphaColor read GetDivider write SetDivider default CDefaultDividerColor;
     /// <summary>
-    /// 两列之间的间隔
+    /// 两列之间的间距
     /// </summary>
-    property HorizontalSpacing: Single read FHorizontalSpacing write SetHorizontalSpacing;
+    property SpacingHorizontal: Single read FHorizontalSpacing write SetHorizontalSpacing;
     /// <summary>
     /// 两行之间的间距
     /// </summary>
-    property VerticalSpacing: Single read FVerticalSpacing write SetVerticalSpacing;
+    property SpacingVertical: Single read FVerticalSpacing write SetVerticalSpacing;
+    /// <summary>
+    /// 间距从边框开始算 (为 False 时，左右上下四边的间距为0)
+    /// </summary>
+    property SpacingBorder: Boolean read FSpacingBorder write SetSpacingBorder default True;
     /// <summary>
     /// 缩放与列宽大小调整方式
     /// </summary>
@@ -1686,6 +1696,13 @@ begin
   DoDrawed(Canvas, R, AState);
 end;
 
+procedure TDrawableBase.DrawBrushTo(Canvas: TCanvas; ABrush: TBrush;
+  const R: TRectF);
+begin
+  if ABrush <> nil then
+    FillRect(Canvas, R, FXRadius, FYRadius, FCorners, FView.GetOpacity, ABrush, FCornerType);
+end;
+
 procedure TDrawableBase.DrawTo(Canvas: TCanvas; const R: TRectF);
 var
   V: TBrush;
@@ -1755,7 +1772,7 @@ begin
     if AO = 0 then
       Canvas.FillRect(ARect, XRadius, YRadius, ACorners, AOpacity, ABrush, ACornerType)
     else
-      Canvas.DrawBitmap(Bmp.Bitmap, RectF(AO, AO, Bmp.Bitmap.Width - 1, Bmp.Bitmap.Height - 1),
+      Canvas.DrawBitmap(Bmp.Bitmap, RectF(AO, AO, Bmp.Bitmap.Width - AO, Bmp.Bitmap.Height - AO),
         ARect, AOpacity);
   end else begin
     // 九宫格绘图
@@ -5479,6 +5496,12 @@ begin
   end;
 end;
 
+procedure TDrawableBorder.DrawBorder(Canvas: TCanvas; var R: TRectF;
+  AState: TViewState);
+begin
+  DoDrawed(Canvas, R, AState);
+end;
+
 function TDrawableBorder.GetBorder: TViewBorder;
 begin
   if FBorder = nil then
@@ -5850,6 +5873,7 @@ begin
   FColumnWidth := CDefaultColumnWidth;
   FColumnHeight := CDefaultColumnHeight;
   FStretchMode := TViewStretchMode.None;
+  FSpacingBorder := True;
   FVerticalSpacing := 0;
   FHorizontalSpacing := 0;
   FLastRows := 0;
@@ -5886,9 +5910,15 @@ begin
   FDisableAlign := True;
 
   // 得到子组件的开始坐标
-  CurPos := TPointD.Create(Padding.Left + FHorizontalSpacing, Padding.Top + FVerticalSpacing);
-  VW := Width - CurPos.X - Padding.Right - FHorizontalSpacing;
-  VH := Height - CurPos.Y - Padding.Bottom - FVerticalSpacing;
+  if FSpacingBorder then begin
+    CurPos := TPointD.Create(Padding.Left + FHorizontalSpacing, Padding.Top + FVerticalSpacing);
+    VW := Width - CurPos.X - Padding.Right - FHorizontalSpacing;
+    VH := Height - CurPos.Y - Padding.Bottom - FVerticalSpacing;
+  end else begin
+    CurPos := TPointD.Create(Padding.Left, Padding.Top);
+    VW := Width - CurPos.X - Padding.Right;
+    VH := Height - CurPos.Y - Padding.Bottom;
+  end;
   CtrlCount := ControlsCount;
   LColumns := AbsoluteColumnsNum;
   if FColumnWidth < 0 then
@@ -5930,7 +5960,8 @@ begin
             end;
             PW := (VW - LItemWidth) / (LColumns - 1) - LItemWidth;
             if PW < 0 then PW := 0;
-            AW := AW - FHorizontalSpacing;
+            if FSpacingBorder then
+              AW := AW - FHorizontalSpacing;
           end else begin
             LStretchMode := TViewStretchMode.None;
           end;
@@ -5948,7 +5979,8 @@ begin
             end;
             LStretchMode := TViewStretchMode.ColumnWidth;
             LItemWidth := (VW + FHorizontalSpacing) / LColumns - FHorizontalSpacing;
-            AW := AW - FHorizontalSpacing;
+            if FSpacingBorder then
+              AW := AW - FHorizontalSpacing;
           end else begin
             LStretchMode := TViewStretchMode.None;
           end;
@@ -5965,18 +5997,26 @@ begin
                 LColumns := CtrlCount;
             end;
             LStretchMode := TViewStretchMode.SpacingWidthUniform;
-            PW := (VW - LItemWidth * LColumns + FHorizontalSpacing * 2) / (LColumns + 1);
+            if FSpacingBorder then
+              PW := (VW - LItemWidth * LColumns + FHorizontalSpacing * 2) / (LColumns + 1)
+            else
+              PW := (VW - LItemWidth * LColumns) / (LColumns + 1);
             if PW < 0 then PW := 0;
             CurPos.X := Padding.Left;
             AW := AW - PW;
+            if not FSpacingBorder then
+              AW := AW - FHorizontalSpacing;
           end else begin
             LStretchMode := TViewStretchMode.None;
           end;
         end;
     end;
 
-    if LStretchMode = TViewStretchMode.None then
-      AW := AW - LItemWidth - FHorizontalSpacing;
+    if LStretchMode = TViewStretchMode.None then begin
+      AW := AW - LItemWidth;
+      //if FSpacingBorder then
+      //  AW := AW - FHorizontalSpacing;
+    end;
 
     if FColumnHeight < 0 then
       LItemHeight := CDefaultColumnHeight
@@ -6000,12 +6040,16 @@ begin
         Continue;
       {$ENDIF}
 
-      if CurPos.X >= AW then begin
-        if LStretchMode = TViewStretchMode.SpacingWidthUniform then
+      if CurPos.X > AW then begin
+        if (LStretchMode = TViewStretchMode.SpacingWidthUniform) or (not FSpacingBorder) then
           CurPos.X := Padding.Left
         else
           CurPos.X := Padding.Left + FHorizontalSpacing;
         CurPos.Y := CurPos.Y + LItemHeight + FVerticalSpacing;
+        if FLastRows = 1 then begin
+          if I > FLastColumns then
+            FLastColumns := I;
+        end;
         Inc(FLastRows);
       end;
 
@@ -6159,6 +6203,9 @@ begin
 
     end;
 
+    if FLastRows = 1 then
+      FLastColumns := CtrlCount;
+
     // 判断是否组件大小为随内容。如果是，根据内容大小调整大小
     if (WidthSize = TViewSize.WrapContent) then begin
       if LColumns > CtrlCount then
@@ -6171,7 +6218,9 @@ begin
       VW := Width;
     
     if (HeightSize = TViewSize.WrapContent) then begin
-      VH := CurPos.Y + LItemHeight + FVerticalSpacing + Padding.Bottom;
+      VH := CurPos.Y + LItemHeight + Padding.Bottom;
+      if FSpacingBorder then
+        VH := VH + FVerticalSpacing;
       PW := GetParentMaxHeight;
       if (VH > PW) and (PW > 0) then
         VH := PW;
@@ -6193,49 +6242,85 @@ end;
 
 procedure TGridsLayout.DrawDivider(Canvas: TCanvas);
 var
-  I, J: Integer;
+  I, J, S: Integer;
   X, Y, W, H: Single;
 begin
+  if FSpacingBorder then
+    S := 0
+  else
+    S := 1;
+  // 垂直方向
   if FVerticalSpacing > 0 then begin
-    Y := Padding.Top;
-    X := Padding.Left + FHorizontalSpacing;
-    W := Width - Padding.Right - FHorizontalSpacing;
-    for I := 0 to FLastRows do begin
+    J := FLastRows;
+    if FSpacingBorder then begin
+      Y := Padding.Top;
+      X := Padding.Left;
+      W := Width - Padding.Right;
+    end else begin
+      Y := Padding.Top + FLastRH;
+      X := Padding.Left;
+      W := Width - Padding.Right;
+      Dec(J);
+    end;
+    for I := S to J do begin
       Canvas.FillRect(RectF(X, Y, W, Y + FVerticalSpacing), 0, 0, [], Opacity, FDividerBrush);
       Y := Y + FVerticalSpacing + FLastRH;
     end;
   end;
+
+  // 水平方向
   if FHorizontalSpacing > 0 then begin
     J := FLastColumns;
-    Y := Padding.Top;
+    if not FSpacingBorder then
+      Dec(J);
     X := Padding.Left;
+    Y := Padding.Top;
     H := Height - Padding.Bottom;
     for I := 0 to J do begin
-      Canvas.FillRect(RectF(X, Y, X + FHorizontalSpacing, H), 0, 0, [], Opacity, FDividerBrush);
+      if FSpacingBorder then begin
+        Canvas.FillRect(RectF(X, Y, X + FHorizontalSpacing, H), 0, 0, [], Opacity, FDividerBrush);
+      end else begin
+        if (I > 0) then
+          Canvas.FillRect(RectF(X - FHorizontalSpacing, Y, X, H), 0, 0, [], Opacity, FDividerBrush);
+      end;
       case FLastStretchMode of
         TViewStretchMode.None,
         TViewStretchMode.ColumnWidth:
           begin
-            if J = 1 then
+            if (J = 1) and (FSpacingBorder) then
               X := Width - Padding.Right - FHorizontalSpacing
             else
               X := X + FHorizontalSpacing + FLastCW;
           end;
         TViewStretchMode.SpacingWidth:
           begin
-            if (I = 0) or (I = (J - 1)) then
-              X := X + FLastCW + (FLastPW + FHorizontalSpacing) * 0.5
-            else
+            if (I = 0) or (I = (J - 1)) then begin
+              if FSpacingBorder then
+                X := X + FLastCW + (FLastPW + FHorizontalSpacing) * 0.5
+              else begin
+                if I = 0 then
+                  X := X + FLastCW + (FLastPW + FHorizontalSpacing) * 0.5
+                else
+                  X := X + FLastCW + (FLastPW);
+              end;
+            end else
               X := X + FLastCW + (FLastPW);
           end;
         TViewStretchMode.SpacingWidthUniform:
           begin
-            if J = 1 then begin
+            if J = S + 1 then begin
               X := Width - Padding.Right - FHorizontalSpacing
             end else begin
-              if (I = 0) or (I = (J - 1)) then
-                X := X + FLastCW + (FLastPW) * 1.5 - FHorizontalSpacing * 0.5
-              else
+              if (I = 0) or (I = (J - 1)) then begin
+                if FSpacingBorder then
+                  X := X + FLastCW + (FLastPW) * 1.5 - FHorizontalSpacing * 0.5
+                else begin
+                  if I = 0 then
+                    X := X + FLastCW + (FLastPW) * 1.5 + FHorizontalSpacing * 0.5
+                  else
+                    X := X + FLastCW + (FLastPW)
+                end;
+              end else
                 X := X + FLastCW + (FLastPW);
             end;
           end;
@@ -6249,10 +6334,17 @@ begin
   if FNumColumns > 0 then
     Result := FNumColumns
   else begin
-    if FColumnWidth > 0 then
-      Result := Trunc((Width - Padding.Left - Padding.Right - FHorizontalSpacing) / (FColumnWidth + FHorizontalSpacing))
-    else
-      Result := Trunc((Width - Padding.Left - Padding.Right - FHorizontalSpacing) / (CDefaultColumnWidth + FHorizontalSpacing));
+    if FSpacingBorder then begin
+      if FColumnWidth > 0 then
+        Result := Trunc((Width - Padding.Left - Padding.Right - FHorizontalSpacing) / (FColumnWidth + FHorizontalSpacing))
+      else
+        Result := Trunc((Width - Padding.Left - Padding.Right - FHorizontalSpacing) / (CDefaultColumnWidth + FHorizontalSpacing));
+    end else begin
+      if FColumnWidth > 0 then
+        Result := Trunc((Width - Padding.Left - Padding.Right + FHorizontalSpacing) / (FColumnWidth + FHorizontalSpacing))
+      else
+        Result := Trunc((Width - Padding.Left - Padding.Right + FHorizontalSpacing) / (CDefaultColumnWidth + FHorizontalSpacing));
+    end;
   end;
 end;
 
@@ -6338,6 +6430,16 @@ begin
   if FNumColumns <> Value then begin
     FNumColumns := Value;
     DoRealign;
+    Repaint;
+  end;
+end;
+
+procedure TGridsLayout.SetSpacingBorder(const Value: Boolean);
+begin
+  if FSpacingBorder <> Value then begin
+    FSpacingBorder := Value;
+    DoRealign;
+    Repaint;
   end;
 end;
 
@@ -6346,6 +6448,7 @@ begin
   if FStretchMode <> Value then begin
     FStretchMode := Value;
     DoRealign;
+    Repaint;
   end;
 end;
 

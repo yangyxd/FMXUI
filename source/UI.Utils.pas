@@ -75,6 +75,7 @@ procedure Share(const AControl: TControl; const Title, Msg: string);
 
 function RectD(const Left, Top, Right, Bottom: Double): TRectD; overload;
 function RectD(const R: TRectF): TRectD; overload;
+function RectSF(const Left, Top, Width, Height: Single): TRectF;
 function OffsetRectD(var R: TRectD; const DX, DY: Double): Boolean;
 function GetRectF(const R: TRectD): TRectF;
 
@@ -170,6 +171,14 @@ begin
   else begin
     Result := A + (B - A) * T;
   end;
+end;
+
+function RectSF(const Left, Top, Width, Height: Single): TRectF;
+begin
+  Result.Left := Left;
+  Result.Top := Top;
+  Result.Right := Left + Width;
+  Result.Bottom := Top + Height;
 end;
 
 function RectD(const Left, Top, Right, Bottom: Double): TRectD;

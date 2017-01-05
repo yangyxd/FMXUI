@@ -81,6 +81,46 @@ type
   end;
 
 type
+  TImageScaleType = (
+    None, {无}
+    Matrix, {矩阵}
+    Center, {在视图中心显示图片，并且不缩放图片}
+    CenterCrop, {按比例缩放图片，使得图片长 (宽)的大于等于视图的相应维度}
+    CenterInside, {按比例缩放图片，使得图片长 (宽)的小于等于视图的相应维度}
+    FitCenter, {按比例缩放图片到视图的最小边，居中显示}
+    FitStart, { 把图片按比例扩大/缩小到视图的最小边，显示在视图的上部分位置}
+    FitEnd  {按比例缩放图片到视图的最小边，显示在视图的下部分位置}
+  );
+
+type
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TImageView = class(TView)
+  private
+    FScaleType: TImageScaleType;
+    FImage: TDrawable;
+    procedure SetScaleType(const Value: TImageScaleType);
+    function GetImage: TDrawable;
+    procedure SetImage(const Value: TDrawable);
+  protected
+    procedure PaintBackground; override;
+    procedure DoDrawImage(); virtual;
+    procedure CreateImage; virtual;
+    procedure DoImageChange(Sender: TObject); virtual;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  published     
+    /// <summary>
+    /// 可绘制图像
+    /// </summary>
+    property Image: TDrawable read GetImage write SetImage;
+    /// <summary>
+    /// 缩放类型
+    /// </summary>
+    property ScaleType: TImageScaleType read FScaleType write SetScaleType default TImageScaleType.None;
+  end;
+
+type
   TScrollView = class;
   TOnCalcContentBoundsEvent = procedure (Sender: TObject; var ContentBounds: TRectF) of object;
   PRectD = ^TRectD;
@@ -1881,6 +1921,211 @@ procedure TProgressView.SetStartAngle(const Value: Single);
 begin
   if FStartAngle <> Value then begin
     FStartAngle := Value;
+    Repaint;
+  end;
+end;
+
+{ TImageView }
+
+constructor TImageView.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FImage := nil;
+end;
+
+procedure TImageView.CreateImage;
+begin
+  FImage := TDrawable.Create(Self);
+  FImage.OnChanged := DoImageChange;
+end;
+
+destructor TImageView.Destroy;
+begin
+  FreeAndNil(FImage);
+  inherited;
+end;
+
+procedure TImageView.DoDrawImage;
+var
+  Img: TBrush;
+  IW, IH, W, H, SW, SH: Single;
+  R, VR: TRectF;
+  LWrapMode: TWrapMode;
+  LBitmapChange: TNotifyEvent;
+begin
+  Img := FImage.GetStateItem(FDrawState);
+  if Img = nil then Exit;
+  R := RectF(
+    Padding.Left + FImage.Padding.Left, 
+    Padding.Top + FImage.Padding.Top, 
+    Width - Padding.Right - FImage.Padding.Right, 
+    Height - Padding.Bottom - FImage.Padding.Bottom);
+
+  // 如果不是图像，直接缓制，不管 ScaleType 
+  if (Img.Kind <> TBrushKind.Bitmap) or (FScaleType = TImageScaleType.None) then begin
+    FImage.DrawBrushTo(Canvas, Img, R);
+    Exit;
+  end;
+
+  if not Assigned(Img.Bitmap) then
+    Exit;
+  if not Assigned(Img.Bitmap.Image) then
+    Exit;
+  IW := Img.Bitmap.Image.Width;
+  IH := Img.Bitmap.Image.Height;
+  if (IW = 0) or (IH = 0) then
+    Exit;
+    
+  LWrapMode := Img.Bitmap.WrapMode;
+  LBitmapChange := Img.Bitmap.OnChanged;
+  Img.Bitmap.OnChanged := nil;
+  W := R.Width;
+  H := R.Height;
+  
+  case FScaleType of
+    TImageScaleType.Matrix:
+      begin
+        Img.Bitmap.WrapMode := TWrapMode.TileOriginal;
+        if IW < W then SW := IW else SW := W;
+        if IH < H then SH := IH else SH := H;                  
+        VR := RectSF(R.Left, R.Top, SW, SH);
+        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, SW, SH), VR, AbsoluteOpacity);  
+      end;
+      
+    TImageScaleType.Center: 
+      begin
+        Img.Bitmap.WrapMode := TWrapMode.Tile;
+        VR := RectSF(R.Left + (W - IW) * 0.5, R.Top + (H - IH) * 0.5, IW, IH);
+        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);
+      end;
+      
+    TImageScaleType.CenterCrop: 
+      begin
+        Img.Bitmap.WrapMode := TWrapMode.TileStretch;
+        SW := W / IW;
+        SH := H / IH;
+        if SW > SH then begin
+          SH := IH * SW;
+          SW := W;
+        end else begin
+          SW := IW * SH;
+          SH := H;
+        end; 
+        VR := RectSF(R.Left + (W - SW) * 0.5, R.Top + (H - SH) * 0.5, SW, SH);
+        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);   
+      end;
+      
+    TImageScaleType.CenterInside: 
+      begin
+        if (W >= IW) and (H >= IH) then begin
+          Img.Bitmap.WrapMode := TWrapMode.Tile;
+          VR := RectSF(R.Left + (W - IW) * 0.5, R.Top + (H - IH) * 0.5, IW, IH);
+        end else begin
+          Img.Bitmap.WrapMode := TWrapMode.TileStretch;
+          SW := W / IW;
+          SH := H / IH;
+          if SW < SH then begin
+            SH := IH * SW;
+            SW := W;
+          end else begin
+            SW := IW * SH;
+            SH := H;
+          end; 
+          VR := RectSF(R.Left + (W - SW) * 0.5, R.Top + (H - SH) * 0.5, SW, SH);
+        end;
+        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);
+      end;
+      
+    TImageScaleType.FitCenter: 
+      begin
+        Img.Bitmap.WrapMode := TWrapMode.TileStretch;
+        SW := W / IW;
+        SH := H / IH;
+        if SW < SH then begin
+          SH := IH * SW;
+          SW := W;
+        end else begin
+          SW := IW * SH;
+          SH := H;
+        end; 
+        VR := RectSF(R.Left + (W - SW) * 0.5, R.Top + (H - SH) * 0.5, SW, SH);
+        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);      
+      end;
+      
+    TImageScaleType.FitStart: 
+      begin 
+        Img.Bitmap.WrapMode := TWrapMode.TileStretch;
+        SW := W / IW;
+        SH := H / IH;
+        if SW < SH then begin
+          SH := IH * SW;
+          SW := W;
+        end else begin
+          SW := IW * SH;
+          SH := H;
+        end; 
+        VR := RectSF(R.Left, R.Top, SW, SH);
+        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);      
+      end;
+      
+    TImageScaleType.FitEnd:
+      begin
+        Img.Bitmap.WrapMode := TWrapMode.TileStretch;
+        SW := W / IW;
+        SH := H / IH;
+        if SW < SH then begin
+          SH := IH * SW;
+          SW := W;
+        end else begin
+          SW := IW * SH;
+          SH := H;
+        end; 
+        VR := RectSF(R.Right - SW, R.Bottom - SH, SW, SH);
+        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);      
+      end;
+  end;
+
+  Img.Bitmap.WrapMode := LWrapMode;
+  Img.Bitmap.OnChanged := LBitmapChange;
+
+  if FImage is TDrawableBorder then
+    TDrawableBorder(FImage).DrawBorder(Canvas, R, DrawState); 
+end;
+
+procedure TImageView.DoImageChange(Sender: TObject);
+begin
+  Repaint;
+end;
+
+function TImageView.GetImage: TDrawable;
+begin
+  if not Assigned(FImage) then
+    CreateImage;
+  Result := FImage;
+end;
+
+procedure TImageView.PaintBackground;
+begin
+  inherited PaintBackground;
+  if Assigned(FImage) and (AbsoluteInVisible = False) then
+    DoDrawImage;
+end;
+
+procedure TImageView.SetImage(const Value: TDrawable);
+begin
+  if Value = nil then begin
+    FreeAndNil(FImage);
+    Exit;
+  end;
+  if (FImage = nil) then
+    CreateImage;
+  FImage.Assign(Value);
+end;
+
+procedure TImageView.SetScaleType(const Value: TImageScaleType);
+begin
+  if FScaleType <> Value then begin
+    FScaleType := Value;
     Repaint;
   end;
 end;
