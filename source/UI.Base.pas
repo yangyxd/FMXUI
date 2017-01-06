@@ -418,8 +418,7 @@ type
     FEnabled: TAlphaColor;
     FActivated: TAlphaColor;
     FHintText: TAlphaColor;
-    FDefaultChange: Boolean;
-    function DefaultColorStored: Boolean;
+    FColorStoreState: Cardinal;
     procedure SetDefault(const Value: TAlphaColor);
     procedure SetActivated(const Value: TAlphaColor);
     procedure SetChecked(const Value: TAlphaColor);
@@ -428,6 +427,17 @@ type
     procedure SetHovered(const Value: TAlphaColor);
     procedure SetPressed(const Value: TAlphaColor);
     procedure SetSelected(const Value: TAlphaColor);
+    function GetColorStoreState(const Index: Integer): Boolean;
+    procedure SetColorStoreState(const Index: Integer; const Value: Boolean);
+  private
+    function ColorDefaultStored: Boolean;
+    function ColorActivatedStored: Boolean;
+    function ColorCheckedStored: Boolean;
+    function ColorEnabledStored: Boolean;
+    function ColorFocusedStored: Boolean;
+    function ColorHoveredStored: Boolean;
+    function ColorPressedStored: Boolean;
+    function ColorSelectedStored: Boolean;
   protected
     procedure DoChange(Sender: TObject);
     function GetValue(const Index: Integer): TAlphaColor;
@@ -444,17 +454,25 @@ type
     function GetColor(State: TViewState): TAlphaColor;
     procedure SetColor(State: TViewState; const Value: TAlphaColor);
 
-    property DefaultChange: Boolean read FDefaultChange write FDefaultChange;
+    property DefaultChange: Boolean index 1 read GetColorStoreState write SetColorStoreState;
+    property PressedChange: Boolean index 2 read GetColorStoreState write SetColorStoreState;
+    property FocusedChange: Boolean index 3 read GetColorStoreState write SetColorStoreState;
+    property HoveredChange: Boolean index 4 read GetColorStoreState write SetColorStoreState;
+    property SelectedChange: Boolean index 5 read GetColorStoreState write SetColorStoreState;
+    property CheckedChange: Boolean index 6 read GetColorStoreState write SetColorStoreState;
+    property EnabledChange: Boolean index 7 read GetColorStoreState write SetColorStoreState;
+    property ActivatedChange: Boolean index 8 read GetColorStoreState write SetColorStoreState;
+
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
   published
-    property Default: TAlphaColor read FDefault write SetDefault stored DefaultColorStored;
-    property Pressed: TAlphaColor read FPressed write SetPressed default TAlphaColorRec.Null;
-    property Focused: TAlphaColor read FFocused write SetFocused default TAlphaColorRec.Null;
-    property Hovered: TAlphaColor read FHovered write SetHovered default TAlphaColorRec.Null;
-    property Selected: TAlphaColor read FSelected write SetSelected default TAlphaColorRec.Null;
-    property Checked: TAlphaColor read FChecked write SetChecked default TAlphaColorRec.Null;
-    property Enabled: TAlphaColor read FEnabled write SetEnabled default TAlphaColorRec.Null;
-    property Activated: TAlphaColor read FActivated write SetActivated default TAlphaColorRec.Null;
+    property Default: TAlphaColor read FDefault write SetDefault stored ColorDefaultStored;
+    property Pressed: TAlphaColor read FPressed write SetPressed stored ColorPressedStored;
+    property Focused: TAlphaColor read FFocused write SetFocused stored ColorFocusedStored;
+    property Hovered: TAlphaColor read FHovered write SetHovered stored ColorHoveredStored;
+    property Selected: TAlphaColor read FSelected write SetSelected stored ColorSelectedStored;
+    property Checked: TAlphaColor read FChecked write SetChecked stored ColorCheckedStored;
+    property Enabled: TAlphaColor read FEnabled write SetEnabled stored ColorEnabledStored;
+    property Activated: TAlphaColor read FActivated write SetActivated stored ColorActivatedStored;
   end;
 
   TTextColor = class(TViewColor)
@@ -580,9 +598,12 @@ type
 
     function IsAutoSize: Boolean;
 
+    function LocalToAbsolute(const Point: TPointF): TPointF;
+
     procedure IncViewState(const State: TViewState);
     procedure DecViewState(const State: TViewState);
 
+    procedure SetBadgeView(const Value: TControl);
     procedure SetLayout(const Value: TViewLayout);
     procedure SetBackground(const Value: TDrawable);
     procedure SetWeight(const Value: Single);
@@ -627,18 +648,14 @@ type
     function RemoveView(View: TView): Integer;
     function GetAbsoluteInVisible: Boolean;
   end;
-
-  /// <summary>
-  /// 字体设置
-  /// </summary>
-  TTextSettings = class(TPersistent)
+  
+  TTextSettingsBase = class(TPersistent)
   private
     [Weak] FOwner: TControl;
     FOnChanged: TNotifyEvent;
     FOnTextChanged: TNotifyEvent;
     FOnLastFontChanged: TNotifyEvent;
     FLayout: TTextLayout;
-    FColor: TViewColor;
     FPrefixStyle: TPrefixStyle;
     FGravity: TLayoutGravity;
     FTrimming: TTextTrimming;
@@ -650,7 +667,6 @@ type
     FIsColorChange: Boolean;
     function GetGravity: TLayoutGravity;
     function GetWordWrap: Boolean;
-    procedure SetColor(const Value: TViewColor);
     procedure SetFont(const Value: TFont);
     procedure SetGravity(const Value: TLayoutGravity);
     procedure SetPrefixStyle(const Value: TPrefixStyle);
@@ -671,6 +687,7 @@ type
     procedure DoTextChanged;
     procedure DoFontChanged(Sender: TObject);
     procedure DoColorChanged(Sender: TObject);
+    function GetStateColor(const State: TViewState): TAlphaColor; virtual; abstract;
   public
     constructor Create(AOwner: TComponent);
     destructor Destroy; override;
@@ -702,14 +719,35 @@ type
 
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
     property OnTextChanged: TNotifyEvent read FOnTextChanged write FOnTextChanged;
-  published
+
     property AutoSize: Boolean read FAutoSize write SetAutoSize default False;
-    property Color: TViewColor read FColor write SetColor;
     property Font: TFont read GetFont write SetFont;
     property PrefixStyle: TPrefixStyle read FPrefixStyle write SetPrefixStyle default TPrefixStyle.NoPrefix;
     property Trimming: TTextTrimming read FTrimming write SetTrimming default TTextTrimming.None;
     property WordWrap: Boolean read GetWordWrap write SetWordWrap default False;
     property Gravity: TLayoutGravity read GetGravity write SetGravity default TLayoutGravity.None;
+  end;
+
+  /// <summary>
+  /// 字体设置
+  /// </summary>
+  TTextSettings = class(TTextSettingsBase)
+  private
+    FColor: TViewColor;
+    procedure SetColor(const Value: TViewColor);
+  protected
+    function GetStateColor(const State: TViewState): TAlphaColor; override;
+  public
+    constructor Create(AOwner: TComponent);
+    destructor Destroy; override;
+  published
+    property AutoSize;
+    property Color: TViewColor read FColor write SetColor;
+    property Font;
+    property PrefixStyle;
+    property Trimming;
+    property WordWrap;
+    property Gravity;
   end;
 
   /// <summary>
@@ -841,9 +879,12 @@ type
     FDownUpOffset: Single;
     {$ENDIF}
     FLayout: TViewLayout;
+    [Weak] FBadgeView: TControl;
     function IsDrawing: Boolean;
     function IsDesignerControl(Control: TControl): Boolean;
     function IsAutoSize: Boolean; virtual;
+    function IsAdjustLayout: Boolean; virtual;
+    procedure SetBadgeView(const Value: TControl);
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; virtual;
     procedure IncViewState(const State: TViewState); virtual;
     procedure DecViewState(const State: TViewState); virtual;
@@ -875,6 +916,7 @@ type
     procedure DoInVisibleChange; virtual;
     procedure DoBackgroundChanged(Sender: TObject); virtual;
     procedure DoEndUpdate; override;
+    procedure DoMatrixChanged(Sender: TObject); override;
     procedure HandleSizeChanged; override;
     procedure Click; override;
 
@@ -2334,9 +2376,44 @@ begin
   FHintText := TAlphaColorRec.Gray;
 end;
 
-function TViewColor.DefaultColorStored: Boolean;
+function TViewColor.ColorActivatedStored: Boolean;
 begin
-  Result := FDefaultChange;
+  Result := GetColorStoreState(8);
+end;
+
+function TViewColor.ColorCheckedStored: Boolean;
+begin
+  Result := GetColorStoreState(6);
+end;
+
+function TViewColor.ColorDefaultStored: Boolean;
+begin
+  Result := GetColorStoreState(1);
+end;
+
+function TViewColor.ColorEnabledStored: Boolean;
+begin
+  Result := GetColorStoreState(7);
+end;
+
+function TViewColor.ColorFocusedStored: Boolean;
+begin
+  Result := GetColorStoreState(3);
+end;
+
+function TViewColor.ColorHoveredStored: Boolean;
+begin
+  Result := GetColorStoreState(4);
+end;
+
+function TViewColor.ColorPressedStored: Boolean;
+begin
+  Result := GetColorStoreState(2);
+end;
+
+function TViewColor.ColorSelectedStored: Boolean;
+begin
+  Result := GetColorStoreState(5);
 end;
 
 destructor TViewColor.Destroy;
@@ -2369,6 +2446,11 @@ begin
   end;
 end;
 
+function TViewColor.GetColorStoreState(const Index: Integer): Boolean;
+begin
+  Result := (FColorStoreState and Index) <> 0;
+end;
+
 function TViewColor.GetStateColor(State: TViewState): TAlphaColor;
 begin
   Result := GetColor(State);
@@ -2389,6 +2471,7 @@ procedure TViewColor.SetActivated(const Value: TAlphaColor);
 begin
   if FActivated <> Value then begin
     FActivated := Value;
+    ActivatedChange := True;
     DoChange(Self);
   end;
 end;
@@ -2397,6 +2480,7 @@ procedure TViewColor.SetChecked(const Value: TAlphaColor);
 begin
   if FChecked <> Value then begin
     FChecked := Value;
+    CheckedChange := True;
     DoChange(Self);
   end;
 end;
@@ -2421,11 +2505,20 @@ begin
   DoChange(Self);
 end;
 
+procedure TViewColor.SetColorStoreState(const Index: Integer;
+  const Value: Boolean);
+begin
+  if Value then
+    FColorStoreState := (FColorStoreState or Cardinal(Index))
+  else
+    FColorStoreState := (FColorStoreState and (not Index));
+end;
+
 procedure TViewColor.SetDefault(const Value: TAlphaColor);
 begin
   if Value <> FDefault then begin
-    FDefaultChange := True;
     FDefault := Value;
+    DefaultChange := True;
     DoChange(Self);
   end;
 end;
@@ -2434,6 +2527,7 @@ procedure TViewColor.SetEnabled(const Value: TAlphaColor);
 begin
   if FEnabled <> Value then begin  
     FEnabled := Value;
+    EnabledChange := True;
     DoChange(Self);
   end;
 end;
@@ -2442,6 +2536,7 @@ procedure TViewColor.SetFocused(const Value: TAlphaColor);
 begin
   if Focused <> Value then begin  
     FFocused := Value;
+    FocusedChange := True;
     DoChange(Self);
   end;
 end;
@@ -2450,6 +2545,7 @@ procedure TViewColor.SetHovered(const Value: TAlphaColor);
 begin
   if FHovered <> Value then begin  
     FHovered := Value;
+    HoveredChange := True;
     DoChange(Self);
   end;
 end;
@@ -2458,6 +2554,7 @@ procedure TViewColor.SetPressed(const Value: TAlphaColor);
 begin
   if FPressed <> Value then begin  
     FPressed := Value;
+    PressedChange := True;
     DoChange(Self);
   end;
 end;
@@ -2466,6 +2563,7 @@ procedure TViewColor.SetSelected(const Value: TAlphaColor);
 begin
   if FSelected <> Value then begin  
     FSelected := Value;
+    SelectedChange := True;
     DoChange(Self);
   end;
 end;
@@ -2880,6 +2978,18 @@ end;
 procedure TView.DoLayoutChanged(Sender: TObject);
 begin
   HandleSizeChanged;
+end;
+
+procedure TView.DoMatrixChanged(Sender: TObject);
+begin
+  inherited DoMatrixChanged(Sender);
+  if Assigned(FBadgeView) then begin 
+    if Visible then begin  
+      FBadgeView.Visible := True;
+      TView(FBadgeView).Realign;
+    end else
+      FBadgeView.Visible := False;
+  end;
 end;
 
 procedure TView.DoMaxSizeChange;
@@ -3314,6 +3424,11 @@ begin
   Result := TViewState.Activated in FViewState;
 end;
 
+function TView.IsAdjustLayout: Boolean;
+begin
+  Result := True;
+end;
+
 function TView.IsAutoSize: Boolean;
 begin
   Result := False;
@@ -3577,6 +3692,12 @@ end;
 procedure TView.SetBackgroundBase(const Value: TDrawable);
 begin
   SetBackground(Value);
+end;
+
+procedure TView.SetBadgeView(const Value: TControl);
+begin
+  if Assigned(Self) then  
+    FBadgeView := Value;
 end;
 
 procedure TView.SetBackground(const Value: TAlphaColor);
@@ -4037,9 +4158,9 @@ begin
 
       // 得到组件IView接口，及是否启用最大最小大小限制
       View := nil;
-      if (Supports(Control, IView, View)) then
-        SaveAdjustViewBounds := View.GetAdjustViewBounds
-      else
+      if (Supports(Control, IView, View)) then begin
+        SaveAdjustViewBounds := View.GetAdjustViewBounds;
+      end else
         SaveAdjustViewBounds := False;
 
       // 判断组件在另一个方向是否需要自动大小
@@ -4392,10 +4513,10 @@ begin
     if IsAW or IsAH then begin
       for I := 0 to ControlsCount - 1 do begin
         Control := Controls[I];
+        if not Control.Visible then Continue;
         {$IFDEF MSWINDOWS}
         if IsDesignerControl(Control) then Continue;
         {$ENDIF}
-        if not Control.Visible then Continue;
         
         if IsAW then begin
           V := Control.Position.X + Control.Width + Control.Margins.Right;
@@ -4442,6 +4563,7 @@ begin
     {$IFDEF MSWINDOWS}
     if IsDesignerControl(Control) then Continue;
     {$ENDIF}
+    
     // 如果还没有找到需要自动大小的组件，则进行检测
     if (AControl = nil) then begin
       View := nil;
@@ -4725,6 +4847,7 @@ begin
       {$IFDEF MSWINDOWS}
       if IsDesignerControl(Control) then Continue;
       {$ENDIF}
+      
       if IsAW then begin
         V := Control.Width + Control.Position.X + Control.Margins.Right + Padding.Right;
         if V > AWidth then
@@ -5002,9 +5125,9 @@ begin
   end;
 end;
 
-{ TTextSettings }
+{ TTextSettingsBase }
 
-function TTextSettings.CalcTextObjectSize(const MaxWidth, SceneScale: Single;
+function TTextSettingsBase.CalcTextObjectSize(const MaxWidth, SceneScale: Single;
   const Margins: TBounds; var Size: TSizeF): Boolean;
 const
   FakeText = 'P|y'; // Do not localize
@@ -5082,12 +5205,12 @@ begin
   end;
 end;
 
-procedure TTextSettings.Change;
+procedure TTextSettingsBase.Change;
 begin
   DoChange();
 end;
 
-constructor TTextSettings.Create(AOwner: TComponent);
+constructor TTextSettingsBase.Create(AOwner: TComponent);
 var
   DefaultValueService: IInterface;
   TrimmingDefault: TValue;
@@ -5101,8 +5224,6 @@ begin
   FLayout.Font.OnChanged := DoFontChanged;
 
   FPrefixStyle := TPrefixStyle.NoPrefix;
-  FColor := TTextColor.Create();
-  FColor.OnChanged := DoColorChanged;
   if (csDesigning in AOwner.ComponentState) then begin
     FIsSizeChange := True;
     if TView(AOwner).SupportsPlatformService(IFMXDefaultPropertyValueService, DefaultValueService) then
@@ -5115,14 +5236,13 @@ begin
     FIsSizeChange := False;
 end;
 
-destructor TTextSettings.Destroy;
+destructor TTextSettingsBase.Destroy;
 begin
-  FreeAndNil(FColor);
   FreeAndNil(FLayout);
   inherited;
 end;
 
-procedure TTextSettings.DoChange;
+procedure TTextSettingsBase.DoChange;
 begin
   if Assigned(FOnChanged) then
     FOnChanged(Self);
@@ -5130,13 +5250,13 @@ begin
   FIsColorChange := False;
 end;
 
-procedure TTextSettings.DoColorChanged(Sender: TObject);
+procedure TTextSettingsBase.DoColorChanged(Sender: TObject);
 begin
   FIsColorChange := True;
   DoChange;
 end;
 
-procedure TTextSettings.DoFontChanged(Sender: TObject);
+procedure TTextSettingsBase.DoFontChanged(Sender: TObject);
 begin
   if Assigned(FOnLastFontChanged) then
     FOnLastFontChanged(Sender);
@@ -5144,7 +5264,7 @@ begin
   DoChange;
 end;
 
-procedure TTextSettings.DoTextChanged;
+procedure TTextSettingsBase.DoTextChanged;
 begin
   if FAutoSize then FIsSizeChange := True;
   FIsEffectsChange := True;
@@ -5155,7 +5275,7 @@ begin
   end;
 end;
 
-procedure TTextSettings.Draw(const Canvas: TCanvas; const AText: string;
+procedure TTextSettingsBase.Draw(const Canvas: TCanvas; const AText: string;
   const R: TRectF; const Opacity: Single; State: TViewState);
 var
   V, H: TTextAlign;
@@ -5193,7 +5313,7 @@ begin
   end;
 end;
 
-procedure TTextSettings.Draw(const Canvas: TCanvas; const R: TRectF;
+procedure TTextSettingsBase.Draw(const Canvas: TCanvas; const R: TRectF;
   const Opacity: Single; State: TViewState);
 begin
   if FPrefixStyle = TPrefixStyle.HidePrefix then
@@ -5202,7 +5322,7 @@ begin
     Draw(Canvas, FText, R, Opacity, State);
 end;
 
-procedure TTextSettings.FillText(const Canvas: TCanvas; const ARect: TRectF;
+procedure TTextSettingsBase.FillText(const Canvas: TCanvas; const ARect: TRectF;
   const AText: string; const AOpacity: Single;
   const Flags: TFillTextFlags; const ATextAlign, AVTextAlign: TTextAlign;
   State: TViewState);
@@ -5218,31 +5338,31 @@ begin
   Layout.Opacity := AOpacity;
   Layout.HorizontalAlign := ATextAlign;
   Layout.VerticalAlign := AVTextAlign;
-  Layout.Color := FColor.GetStateColor(State);
+  Layout.Color := GetStateColor(State);
   Layout.Trimming := FTrimming;
   Layout.RightToLeft := TFillTextFlag.RightToLeft in Flags;
   Layout.EndUpdate;
   Layout.RenderLayout(Canvas);
 end;
 
-function TTextSettings.GetFillTextFlags: TFillTextFlags;
+function TTextSettingsBase.GetFillTextFlags: TFillTextFlags;
 begin
   if Assigned(FOwner) then
     Result := TView(FOwner).FillTextFlags
   else Result := [];
 end;
 
-function TTextSettings.GetFont: TFont;
+function TTextSettingsBase.GetFont: TFont;
 begin
   Result := FLayout.Font;
 end;
 
-function TTextSettings.GetGravity: TLayoutGravity;
+function TTextSettingsBase.GetGravity: TLayoutGravity;
 begin
   Result := FGravity;
 end;
 
-function TTextSettings.GetHorzAlign: TTextAlign;
+function TTextSettingsBase.GetHorzAlign: TTextAlign;
 begin
   case FGravity of
     TLayoutGravity.None,
@@ -5255,12 +5375,12 @@ begin
   end;
 end;
 
-function TTextSettings.GetTextLength: Integer;
+function TTextSettingsBase.GetTextLength: Integer;
 begin
   Result := Length(FText);
 end;
 
-function TTextSettings.GetVertAlign: TTextAlign;
+function TTextSettingsBase.GetVertAlign: TTextAlign;
 begin
   case FGravity of
     TLayoutGravity.None,
@@ -5273,12 +5393,12 @@ begin
   end;
 end;
 
-function TTextSettings.GetWordWrap: Boolean;
+function TTextSettingsBase.GetWordWrap: Boolean;
 begin
   Result := FLayout.WordWrap;
 end;
 
-procedure TTextSettings.SetAutoSize(const Value: Boolean);
+procedure TTextSettingsBase.SetAutoSize(const Value: Boolean);
 begin
   if FAutoSize <> Value then begin
     FAutoSize := Value;
@@ -5289,18 +5409,13 @@ begin
   end;
 end;
 
-procedure TTextSettings.SetColor(const Value: TViewColor);
-begin
-  FColor.Assign(Value);
-end;
-
-procedure TTextSettings.SetFont(const Value: TFont);
+procedure TTextSettingsBase.SetFont(const Value: TFont);
 begin
   if (FLayout.Font = nil) or (Value = nil) then Exit;
   FLayout.Font := Value;
 end;
 
-procedure TTextSettings.SetGravity(const Value: TLayoutGravity);
+procedure TTextSettingsBase.SetGravity(const Value: TLayoutGravity);
 begin
   if FGravity <> Value then begin
     FGravity := Value;
@@ -5308,12 +5423,12 @@ begin
   end;
 end;
 
-procedure TTextSettings.SetHorzAlign(const Value: TTextAlign);
+procedure TTextSettingsBase.SetHorzAlign(const Value: TTextAlign);
 begin
   SetHorzVertValue(Value, VertAlign);
 end;
 
-procedure TTextSettings.SetHorzVertValue(const H, V: TTextAlign);
+procedure TTextSettingsBase.SetHorzVertValue(const H, V: TTextAlign);
 begin
   case H of
     TTextAlign.Leading:
@@ -5343,7 +5458,7 @@ begin
   end;
 end;
 
-procedure TTextSettings.SetPrefixStyle(const Value: TPrefixStyle);
+procedure TTextSettingsBase.SetPrefixStyle(const Value: TPrefixStyle);
 begin
   if FPrefixStyle <> Value then begin
     FPrefixStyle := Value;
@@ -5352,7 +5467,7 @@ begin
   end;
 end;
 
-procedure TTextSettings.SetText(const Value: string);
+procedure TTextSettingsBase.SetText(const Value: string);
 begin
   if FText <> Value then begin
     FText := Value;
@@ -5362,7 +5477,7 @@ begin
   end;
 end;
 
-procedure TTextSettings.SetTrimming(const Value: TTextTrimming);
+procedure TTextSettingsBase.SetTrimming(const Value: TTextTrimming);
 begin
   if FTrimming <> Value then begin
     FTrimming := Value;
@@ -5371,18 +5486,43 @@ begin
   end;
 end;
 
-procedure TTextSettings.SetVertAlign(const Value: TTextAlign);
+procedure TTextSettingsBase.SetVertAlign(const Value: TTextAlign);
 begin
   SetHorzVertValue(HorzAlign, Value);
 end;
 
-procedure TTextSettings.SetWordWrap(const Value: Boolean);
+procedure TTextSettingsBase.SetWordWrap(const Value: Boolean);
 begin
   if FLayout.WordWrap <> Value then begin
     FLayout.WordWrap := Value;
     if FAutoSize then FIsSizeChange := True;
     DoChange;
   end;
+end;
+
+{ TTextSettings }
+
+constructor TTextSettings.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FColor := TTextColor.Create();
+  FColor.OnChanged := DoColorChanged;
+end;
+
+destructor TTextSettings.Destroy;
+begin
+  FreeAndNil(FColor);
+  inherited Destroy;
+end;
+
+function TTextSettings.GetStateColor(const State: TViewState): TAlphaColor;
+begin
+  Result := FColor.GetStateColor(State);
+end;
+
+procedure TTextSettings.SetColor(const Value: TViewColor);
+begin
+  FColor.Assign(Value);
 end;
 
 { TViewImageLink }

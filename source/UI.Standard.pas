@@ -320,7 +320,6 @@ type
 type
   TStyleView = class(TTextView)
   protected
-    procedure DoDrawStyleControl(var R: TRectF); virtual;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
   end;
 
@@ -352,6 +351,118 @@ type
     property Gravity default TLayoutGravity.Center;
     property OnCanFocus;
   end;
+
+type
+  /// <summary>
+  /// 字体设置
+  /// </summary>
+  TTextSettings = class(TTextSettingsBase)
+  private
+    FColor: TAlphaColor;
+    FColorChange: Boolean;
+    procedure SetColor(const Value: TAlphaColor);
+    function IsColorStored: Boolean;
+  protected
+    function GetStateColor(const State: TViewState): TAlphaColor; override;
+  public
+    constructor Create(AOwner: TComponent);
+    property ColorChange: Boolean read FColorChange write FColorChange;
+  published
+    property Color: TAlphaColor read FColor write SetColor stored IsColorStored;
+    property Font;
+    property PrefixStyle;
+    property Trimming;
+    property Gravity default TLayoutGravity.Center;
+  end;
+
+  TBadgeBackground = class(TPersistent)
+  private
+    FColor: TAlphaColor;
+    FXRadius, FYRadius: Single;
+    FCorners: TCorners;
+    FOnChanged: TNotifyEvent;
+    function IsStoredCorners: Boolean;
+    procedure SetColor(const Value: TAlphaColor);
+    procedure SetCorners(const Value: TCorners);
+    procedure SetXRadius(const Value: Single);
+    procedure SetYRadius(const Value: Single);
+  protected
+  public
+    constructor Create();
+    procedure Assign(Source: TPersistent); override;
+    property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
+  published
+    property Color: TAlphaColor read FColor write SetColor default TAlphaColorRec.Red;
+    // 边框圆角
+    property XRadius: Single read FXRadius write SetXRadius;
+    property YRadius: Single read FYRadius write SetYRadius;
+    property Corners: TCorners read FCorners write SetCorners stored IsStoredCorners;
+  end;
+
+type
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TBadgeView = class(TControl)
+  private
+    [Weak] FTargetView: IView;
+    FMaxLength: Integer;
+    FValue: Integer;
+    FBackground: TBadgeBackground;
+    FText: TTextSettings;
+    procedure SetValue(const Value: Integer);
+    procedure SetMaxLength(const Value: Integer);
+    procedure SetTargetView(const Value: IView);
+    procedure SetBackground(const Value: TBadgeBackground);
+    function GetText: string;
+    procedure SetTextSettings(const Value: TTextSettings);
+    function IsVisibleView: Boolean;
+  protected
+    procedure Paint; override;
+    procedure DoRealign; override;
+    function GetDefaultSize: TSizeF; override;
+    function GetFirstParent: TFmxObject;
+    procedure DoChanged(Sender: TObject); virtual;
+    procedure DoMatrixChanged(Sender: TObject); override;
+    procedure AncestorParentChanged; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    procedure AfterConstruction; override;
+    function GetViewText: string;
+    property Text: string read GetText;
+  published
+    /// <summary>
+    /// 目标View
+    /// </summary>
+    property TargetView: IView read FTargetView write SetTargetView;
+    /// <summary>
+    /// 显示的内容最大长度, 比如为2时，Value > 99 时也显示 99
+    /// </summary>
+    property MaxLength: Integer read FMaxLength write SetMaxLength default 2;
+    /// <summary>
+    /// 要显示的值
+    /// </summary>
+    property Value: Integer read FValue write SetValue default 0;
+    /// <summary>
+    /// 背景颜色
+    /// </summary>
+    property Background: TBadgeBackground read FBackground write SetBackground;
+    /// <summary>
+    /// 字体设置
+    /// </summary>
+    property TextSettings: TTextSettings read FText write SetTextSettings;
+    
+    property Width;
+    property Height;
+    property Scale;
+    property Size;
+    property Position;
+    property RotationAngle;
+    property RotationCenter;
+    property Margins;
+    property Visible;
+    property OnPaint;
+  end;
+
 
 implementation
 
@@ -875,12 +986,6 @@ begin
     Result := inherited CanRePaintBk(View, State);
 end;
 
-procedure TStyleView.DoDrawStyleControl(var R: TRectF);
-begin
-  if Assigned(FOnDrawViewBackgroud) then
-    FOnDrawViewBackgroud(Self, Canvas, R, DrawState);
-end;
-
 { TButtonView }
 
 procedure TButtonView.AfterDialogKey(var Key: Word; Shift: TShiftState);
@@ -920,6 +1025,8 @@ begin
   CanFocus := True;
   Padding.Rect := RectF(4, 4, 4, 4);
   Gravity := TLayoutGravity.Center;
+  if not Assigned(FBackground) then
+    FBackground := CreateBackground;
 end;
 
 function TButtonView.CreateBackground: TDrawable;
@@ -928,15 +1035,15 @@ begin
   Result.ItemPressed.Color := $FFE0E0E0;
   Result.ItemPressed.DefaultColor := Result.ItemPressed.Color;
   Result.ItemPressed.Kind := TViewBrushKind.Solid;
+  Result.ItemPressed.DefaultKind := TBrushKind.Solid;
   with TDrawableBorder(Result).Border do begin
-    Width := 1;
     DefaultStyle := TViewBorderStyle.RectBorder;
     Style := DefaultStyle;
     Color.Default := $AFCCCCCC;
     Color.DefaultChange := False;
-    Color.Pressed := $FFC0C0C0;
+    Color.Pressed := $EF33ccff;
+    Color.PressedChange := False;
   end;
-  Result.OnChanged := DoBackgroundChanged;
   Result.OnChanged := DoBackgroundChanged;
 end;
 
@@ -2127,6 +2234,274 @@ begin
   if FScaleType <> Value then begin
     FScaleType := Value;
     Repaint;
+  end;
+end;
+
+{ TBadgeView }
+
+procedure TBadgeView.AfterConstruction;
+begin
+  inherited AfterConstruction;
+  FText.OnChanged := DoChanged;
+end;
+
+constructor TBadgeView.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FMaxLength := 2;
+  FBackground := TBadgeBackground.Create;
+  FBackground.FXRadius := 8;
+  FBackground.FYRadius := 8;
+  FBackground.OnChanged := DoChanged;
+  FText := TTextSettings.Create(Self);
+  FText.Color := TAlphaColorRec.White;
+  FText.ColorChange := False;   
+  HitTest := False;
+  SetAcceptsControls(False);
+end;
+
+destructor TBadgeView.Destroy;
+begin
+  if Assigned(FTargetView) then begin  
+    FTargetView.SetBadgeView(nil);
+    FTargetView := nil;
+  end;
+  FreeAndNil(FText);
+  FreeAndNil(FBackground);
+  inherited;
+end;
+
+procedure TBadgeView.DoChanged(Sender: TObject);
+begin
+  Repaint;
+  if FText.IsEffectsChange then
+    UpdateEffects;
+end;
+
+procedure TBadgeView.DoMatrixChanged(Sender: TObject);
+begin
+  inherited DoMatrixChanged(Sender);
+  DoRealign;
+end;
+
+procedure TBadgeView.DoRealign;
+var
+  P: TPointF;
+begin
+  if FDisableAlign or (not Assigned(FTargetView)) then
+    Exit;
+  if (csDestroying in ComponentState) then
+    Exit;
+  FDisableAlign := True;
+  P := FTargetView.LocalToAbsolute(TPointF.Zero);
+  Position.Point := PointF(
+    P.X + FTargetView.Width - Width * 0.5 + Margins.Left, 
+    P.Y - Height * 0.5 + Margins.Top);
+  FDisableAlign := False;
+end;
+
+function TBadgeView.GetDefaultSize: TSizeF;
+begin
+  Result := TSizeF.Create(16, 16);
+end;
+
+function TBadgeView.GetFirstParent: TFmxObject;
+begin
+  Result := Self;
+  while Result.Parent <> nil do begin
+    //LogD('P: ' + Result.Parent.ClassName);
+    if csDesigning in ComponentState then begin
+      if Result.Parent.ClassName = 'TControlForm' then
+        Break;
+    end;
+    Result := Result.Parent;
+    if Result is TCustomForm then
+      Break;
+  end;
+end;
+
+function TBadgeView.GetText: string;
+begin
+  Result := FText.Text;
+end;
+
+function TBadgeView.GetViewText: string;
+const
+  MV: array [0..6] of Integer = (0, 9, 99, 999, 9999, 99999, 999999);
+begin
+  if (FMaxLength <= 0) or (FMaxLength > High(MV)) then
+    Result := ''
+  else begin
+    if FValue > MV[FMaxLength] then
+      Result := IntToStr(MV[FMaxLength])
+    else
+      Result := IntToStr(FValue);
+  end;
+end;
+
+function TBadgeView.IsVisibleView: Boolean;
+begin
+  Result := (FValue > 0) and Assigned(FTargetView);
+end;
+
+procedure TBadgeView.Paint;
+var
+  R: TRectF;
+begin
+  if IsVisibleView then begin  
+    R := RectF(0, 0, Width, Height);
+    with FBackground do begin
+      Canvas.Fill.Color := FColor;
+      Canvas.FillRect(R, FXRadius, FYRadius, FCorners, FTargetView.Opacity);
+    end;
+    if Assigned(FText) and (FValue > 0) then
+      FText.Draw(Canvas, R, FTargetView.Opacity, TViewState.None);
+  end;
+  if (csDesigning in ComponentState) and not Locked then
+    DrawDesignBorder;
+end;
+
+procedure TBadgeView.AncestorParentChanged;
+var
+  LParent: TFmxObject;
+begin
+  inherited AncestorParentChanged;
+  if csDesigning in ComponentState then begin
+    LParent := GetFirstParent;
+    if (Parent <> LParent) and (LParent <> nil) and (LParent <> Self) then
+      Parent := LParent;
+  end;
+end;
+
+procedure TBadgeView.SetBackground(const Value: TBadgeBackground);
+begin
+  FBackground.Assign(Value);
+end;
+
+procedure TBadgeView.SetValue(const Value: Integer);
+begin
+  if FValue <> Value then begin
+    FValue := Value;
+    FText.Text := GetViewText;
+    Repaint;
+  end;
+end;
+
+procedure TBadgeView.SetMaxLength(const Value: Integer);
+begin
+  if FMaxLength <> Value then begin
+    FMaxLength := Value;
+    DoRealign;
+    Repaint;
+  end;
+end;
+
+procedure TBadgeView.SetTargetView(const Value: IView);
+begin
+  if FTargetView <> Value then begin 
+    FTargetView := Value;   
+    if Assigned(FTargetView) then begin
+      FTargetView.SetBadgeView(Self);
+      DoRealign;
+    end;
+    Repaint;
+  end;
+end;
+
+procedure TBadgeView.SetTextSettings(const Value: TTextSettings);
+begin
+  FText.Assign(Value);
+end;
+
+{ TTextSettings }
+
+constructor TTextSettings.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  Gravity := TLayoutGravity.Center;
+  FColor := TAlphaColorRec.Black;
+  FColorChange := False;
+end;
+
+function TTextSettings.GetStateColor(const State: TViewState): TAlphaColor;
+begin
+  Result := FColor;
+end;
+
+function TTextSettings.IsColorStored: Boolean;
+begin
+  Result := FColorChange;
+end;
+
+procedure TTextSettings.SetColor(const Value: TAlphaColor);
+begin
+  FColor := Value;
+end;
+
+{ TBadgeBackground }
+
+procedure TBadgeBackground.Assign(Source: TPersistent);
+var
+  SaveChange: TNotifyEvent;
+begin
+  if Source is TBadgeBackground then begin
+    SaveChange := FOnChanged;
+    FOnChanged := nil;
+    FCorners := TBadgeBackground(Source).Corners;
+    FXRadius := TBadgeBackground(Source).FXRadius;
+    FYRadius := TBadgeBackground(Source).FYRadius;
+    FColor := TBadgeBackground(Source).FColor;
+    FOnChanged := SaveChange;
+    if Assigned(FOnChanged) then
+      FOnChanged(Self);
+  end else
+    inherited;
+end;
+
+constructor TBadgeBackground.Create;
+begin
+  FCorners := AllCorners;
+  FColor := TAlphaColorRec.Red;
+end;
+
+function TBadgeBackground.IsStoredCorners: Boolean;
+begin
+  Result := FCorners <> AllCorners;
+end;
+
+procedure TBadgeBackground.SetColor(const Value: TAlphaColor);
+begin
+  if FColor <> Value then begin
+    FColor := Value;
+    if Assigned(FOnChanged) then
+      FOnChanged(Self);
+  end;
+end;
+
+procedure TBadgeBackground.SetCorners(const Value: TCorners);
+begin
+  if FCorners <> Value then begin
+    FCorners := Value;
+    if Assigned(FOnChanged) then
+      FOnChanged(Self);
+  end;
+end;
+
+procedure TBadgeBackground.SetXRadius(const Value: Single);
+begin
+  if FXRadius <> Value then begin
+    FXRadius := Value;
+    if Assigned(FOnChanged) then
+      FOnChanged(Self);
+  end;
+end;
+
+procedure TBadgeBackground.SetYRadius(const Value: Single);
+begin
+  if FYRadius <> Value then begin
+    FYRadius := Value;
+    if Assigned(FOnChanged) then
+      FOnChanged(Self);
   end;
 end;
 

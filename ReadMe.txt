@@ -19,6 +19,7 @@ FMXUI  (YangYxd)
   TFrameView Frame视图扩展类
   TListViewEx 列表框视图
   TListExView ListView扩展类(Delphi官方列表框)
+  TBadgeView 未读消息提示小红点
   
   TAsync 异步任务处理类
   TToastManager Toast管理器

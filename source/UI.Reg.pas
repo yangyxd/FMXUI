@@ -85,6 +85,8 @@ begin
   RegisterComponents(PageName, [TImageView]);
   RegisterComponents(PageName, [TTextView]);
   RegisterComponents(PageName, [TButtonView]);
+  RegisterComponents(PageName, [TBadgeView]);
+
   RegisterComponents(PageName, [TEditView]);
   RegisterComponents(PageName, [TListExView]);
   RegisterComponents(PageName, [TListViewEx]);
@@ -178,6 +180,10 @@ begin
       'SolidForeGround',
       'PaddingBorder',
       'OnValueChange',
+      { TBadgeView }
+      'TargetView',
+      'BadgeCount',
+      'TextColor',
       { Text }
       'Text',
       'TextHint',
