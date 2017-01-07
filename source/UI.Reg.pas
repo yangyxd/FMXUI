@@ -169,6 +169,7 @@ begin
       'OnTyping',
       { TTextView }
       'Drawable',
+      'GroupIndex',
       'OnDrawBackgroud',
       { TProgressView }
       'Min',
@@ -238,7 +239,7 @@ begin
   AddEnumElementAliases(TypeInfo(TDrawablePosition),
     ['Left', 'Right', 'Top', 'Bottom', 'Center']);
   AddEnumElementAliases(TypeInfo(TViewBorderStyle),
-    ['None', 'RectBorder', 'LineBottom', 'LineSimple']);
+    ['None', 'RectBorder', 'RectBitmap', 'LineEdit', 'LineTop', 'LineBottom', 'LineLeft', 'LineRight']);
   AddEnumElementAliases(TypeInfo(TViewBrushKind),
     ['None', 'Solid', 'Gradient', 'Bitmap', 'Resource', 'Patch9Bitmap']);
   AddEnumElementAliases(TypeInfo(TViewScroll),

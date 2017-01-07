@@ -1,0 +1,20 @@
+object Frame4_Page1: TFrame4_Page1
+  Size.Width = 320.000000000000000000
+  Size.Height = 460.000000000000000000
+  Size.PlatformDefault = False
+  object ListView: TListViewEx
+    Align = Client
+    Background.ItemDefault.Color = claWhite
+    Background.ItemDefault.Kind = Solid
+    Background.ItemPressed.Color = claBisque
+    Background.ItemPressed.Kind = Solid
+    Gravity = None
+    Size.Width = 320.000000000000000000
+    Size.Height = 460.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Divider = xAFE3E4E5
+    EnablePullRefresh = False
+    EnablePullLoad = False
+  end
+end

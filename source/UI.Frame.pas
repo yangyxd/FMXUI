@@ -179,6 +179,7 @@ type
     FNeedFree: Boolean;   // 需要释放
     FNeedHide: Boolean;   // 需要隐藏
     FNeedFinish: Boolean; // 需要关闭
+    FNeedDoCreate: Boolean; // 需要执行DoCreate;
     procedure SetParams(const Value: TFrameParams);
     function GetTitle: string;
     procedure SetTitle(const Value: string);
@@ -232,21 +233,22 @@ type
     // 检查所属窗体是否还存在 Frame
     function CheckChildern(): Boolean;
     // 内部 Show 实现
-    procedure InternalShow(TriggerOnShow: Boolean;
-      AOnFinish: TNotifyEventA = nil; Ani: TFrameAniType = TFrameAniType.DefaultAni);
+    procedure InternalShow(TriggerOnShow: Boolean; AOnFinish: TNotifyEventA = nil;
+      Ani: TFrameAniType = TFrameAniType.DefaultAni; SwitchFlag: Boolean = False);
     procedure InternalHide();
   protected
     procedure Paint; override;
+    procedure SetParent(const Value: TFmxObject); override;
     procedure AfterDialogKey(var Key: Word; Shift: TShiftState); override;
   protected
     /// <summary>
     /// 播放动画
     /// <param name="Ani">动画类型</param>
     /// <param name="IsIn">是否是正要显示</param>
-    /// <param name="IsClose">是否正要关闭</param>
+    /// <param name="SwitchFlag">动画切换标志</param>
     /// <param name="AEvent">动画播放完成事件</param>
     /// </summary>
-    procedure AnimatePlay(Ani: TFrameAniType; IsIn, IsClose: Boolean; AEvent: TNotifyEventA);
+    procedure AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean; AEvent: TNotifyEventA);
 
     procedure OnFinishOrClose(Sender: TObject);
   public
@@ -282,11 +284,13 @@ type
     /// <summary>
     /// 显示 Frame
     /// </summary>
-    class function ShowFrame(Parent: TFmxObject; Params: TFrameParams; Ani: TFrameAniType = TFrameAniType.None): TFrameView; overload;
+    class function ShowFrame(Parent: TFmxObject; Params: TFrameParams;
+      Ani: TFrameAniType = TFrameAniType.None; SwitchFlag: Boolean = False): TFrameView; overload;
     /// <summary>
     /// 显示 Frame
     /// </summary>
-    class function ShowFrame(Parent: TFmxObject; const Title: string = ''; Ani: TFrameAniType = TFrameAniType.None): TFrameView; overload;
+    class function ShowFrame(Parent: TFmxObject; const Title: string = ''; Ani: TFrameAniType = TFrameAniType.None;
+      SwitchFlag: Boolean = False): TFrameView; overload;
     /// <summary>
     /// 显示 Frame
     /// </summary>
@@ -330,7 +334,9 @@ type
     /// 显示 Frame
     /// </summary>
     procedure Show(); overload; override;
-    procedure Show(Ani: TFrameAniType; AOnFinish: TNotifyEventA); reintroduce; overload;
+    procedure Show(Ani: TFrameAniType; AOnFinish: TNotifyEventA;
+      SwitchFlag: Boolean = False;
+      TriggerOnShow: Boolean = True); reintroduce; overload;
     /// <summary>
     /// 关闭 Frame
     /// </summary>
@@ -340,7 +346,7 @@ type
     /// 隐藏 Frame
     /// </summary>
     procedure Hide(); overload; override;
-    procedure Hide(Ani: TFrameAniType); reintroduce; overload;
+    procedure Hide(Ani: TFrameAniType; SwitchFlag: Boolean = False); reintroduce; overload;
     /// <summary>
     /// 完成当前 Frame (返回上一个 Frame 或 关闭)
     /// </summary>
@@ -487,7 +493,7 @@ begin
     inherited AfterDialogKey(Key, Shift);
 end;
 
-procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, IsClose: Boolean;
+procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
   AEvent: TNotifyEventA);
 
   // 淡入淡出
@@ -509,14 +515,14 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, IsClose: Boolean;
     TFrameAnimator.AnimateFloat(Self, 'Opacity', NewValue, AEvent, 0.2, 0.01);
   end;
 
-  // 移入移出
+  // 移入移出, 右边进入
   procedure DoMoveInOut();
   var
     NewValue: Single;
   begin
     if IsIn then begin
       Self.Opacity := 1;
-      if not IsClose then begin
+      if not SwitchFlag then begin
         Self.Position.X := Self.Width - 1;  //目标frame新显示
         NewValue := 0;
       end else begin
@@ -524,7 +530,7 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, IsClose: Boolean;
         NewValue := 0;
       end;
     end else begin
-      if not IsClose then
+      if not SwitchFlag then
         NewValue := -Self.Width + 1 //旧的frame向右返回
       else
         NewValue := Self.Width - 1; //旧的frame向左隐藏
@@ -537,7 +543,7 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, IsClose: Boolean;
     TFrameAnimator.AnimateFloat(Self, 'Position.X', NewValue, AEvent);
   end;
 
-begin
+begin
   case Ani of
     TFrameAniType.None:
       begin
@@ -550,7 +556,7 @@ begin
       end;
     TFrameAniType.DefaultAni:
       if not (DefaultAnimate in [TFrameAniType.None, TFrameAniType.DefaultAni]) then
-        AnimatePlay(DefaultAnimate, IsIn, IsClose, AEvent)
+        AnimatePlay(DefaultAnimate, IsIn, SwitchFlag, AEvent)
       else if Assigned(AEvent) then
         AEvent(Self);
     TFrameAniType.FadeInOut:
@@ -683,7 +689,7 @@ begin
     Height := 400;
   end;
   FBackColor := FDefaultBackColor;
-  DoCreate();
+  FNeedDoCreate := True;
 end;
 
 class function TFrameView.CreateFrame(Parent: TFmxObject;
@@ -800,7 +806,7 @@ begin
     FLastView := nil;
     FNextView := nil;
   end else if Assigned(FLastView) then begin
-    FLastView.InternalShow(False, nil, Ani);
+    FLastView.InternalShow(False, nil, Ani, True);
     FLastView.FNextView := nil;
     FLastView := nil;
   end;
@@ -941,13 +947,13 @@ begin
   Hide(TFrameAniType.DefaultAni);
 end;
 
-procedure TFrameView.Hide(Ani: TFrameAniType);
+procedure TFrameView.Hide(Ani: TFrameAniType; SwitchFlag: Boolean);
 begin
   if FAnimateing then
     FNeedHide := True
   else begin
     FAnimateing := True;
-    AnimatePlay(Ani, False, False,
+    AnimatePlay(Ani, False, SwitchFlag,
       procedure (Sender: TObject) begin
         if not FShowing then begin
           InternalHide;
@@ -992,7 +998,8 @@ begin
   FNeedHide := False;
 end;
 
-procedure TFrameView.InternalShow(TriggerOnShow: Boolean; AOnFinish: TNotifyEventA; Ani: TFrameAniType);
+procedure TFrameView.InternalShow(TriggerOnShow: Boolean;
+  AOnFinish: TNotifyEventA; Ani: TFrameAniType; SwitchFlag: Boolean);
 begin
   if FShowing then Exit;  
   FShowing := True;
@@ -1012,7 +1019,7 @@ begin
   Opacity := 0;
   FHideing := True;
   Visible := True;
-  AnimatePlay(Ani, True, not TriggerOnShow, 
+  AnimatePlay(Ani, True, SwitchFlag,
     procedure (Sender: TObject) begin
       FShowing := False;
       if Assigned(AOnFinish) then
@@ -1073,6 +1080,15 @@ begin
   FParams := Value;
 end;
 
+procedure TFrameView.SetParent(const Value: TFmxObject);
+begin
+  inherited;
+  if FNeedDoCreate and Assigned(Parent) then begin
+    FNeedDoCreate := False;
+    DoCreate();
+  end;
+end;
+
 procedure TFrameView.SetStatusColor(const Value: TAlphaColor);
   {$IFDEF IOS}
   procedure ExecuteIOS();
@@ -1122,9 +1138,10 @@ begin
     Params.Add(CS_Title, Value);
 end;
 
-procedure TFrameView.Show(Ani: TFrameAniType; AOnFinish: TNotifyEventA);
+procedure TFrameView.Show(Ani: TFrameAniType; AOnFinish: TNotifyEventA;
+  SwitchFlag, TriggerOnShow: Boolean);
 begin
-  InternalShow(True, AOnFinish, Ani);
+  InternalShow(TriggerOnShow, AOnFinish, Ani, SwitchFlag);
 end;
 
 procedure TFrameView.Show;
@@ -1135,11 +1152,11 @@ begin
 end;
 
 class function TFrameView.ShowFrame(Parent: TFmxObject;
-  const Title: string; Ani: TFrameAniType): TFrameView;
+  const Title: string; Ani: TFrameAniType; SwitchFlag: Boolean): TFrameView;
 begin
   Result := CreateFrame(Parent, Title);
   if Result <> nil then
-    Result.Show(Ani, nil);
+    Result.Show(Ani, nil, SwitchFlag);
 end;
 
 procedure TFrameView.ShowWaitDialog(const AMsg: string;
@@ -1232,11 +1249,11 @@ begin
 end;
 
 class function TFrameView.ShowFrame(Parent: TFmxObject;
-  Params: TFrameParams; Ani: TFrameAniType): TFrameView;
+  Params: TFrameParams; Ani: TFrameAniType; SwitchFlag: Boolean): TFrameView;
 begin
   Result := CreateFrame(Parent, Params);
   if Result <> nil then
-    Result.Show(Ani, nil);
+    Result.Show(Ani, nil, SwitchFlag);
 end;
 
 { TFrameState }

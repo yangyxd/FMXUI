@@ -82,6 +82,8 @@ begin
   inherited;
   FList := TList<TDataItem>.Create();
   FAdapter := TCustomListDataAdapter.Create(FList);
+  ListView.Adapter := FAdapter;
+  AddItems(20);
 end;
 
 procedure TCustomListview.DoFree;
@@ -95,8 +97,6 @@ end;
 procedure TCustomListview.DoShow;
 begin
   inherited;
-  ListView.Adapter := FAdapter;
-  AddItems(20);
 end;
 
 procedure TCustomListview.ListViewPullLoad(Sender: TObject);

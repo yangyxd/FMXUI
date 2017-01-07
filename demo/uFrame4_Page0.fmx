@@ -1,0 +1,18 @@
+object Frame4_Page0: TFrame4_Page0
+  Size.Width = 320.000000000000000000
+  Size.Height = 476.000000000000000000
+  Size.PlatformDefault = False
+  object ListViewEx1: TListViewEx
+    Align = Client
+    Background.ItemPressed.Color = xFFD9D9D9
+    Background.ItemPressed.Kind = Solid
+    Gravity = None
+    Size.Width = 320.000000000000000000
+    Size.Height = 476.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Divider = xAFE3E4E5
+    EnablePullRefresh = False
+    EnablePullLoad = False
+  end
+end

@@ -13,7 +13,12 @@ uses
   ui_CustomListView in 'ui_CustomListView.pas' {CustomListview: TFrame},
   ui_CustomListView_ListItem in 'ui_CustomListView_ListItem.pas' {CustomListView_ListItem: TFrame},
   ui_PopupMenu in 'ui_PopupMenu.pas' {MainPopupMenu: TFrame},
-  uFrameProgressView in 'uFrameProgressView.pas' {FrameProgressView: TFrame};
+  uFrameProgressView in 'uFrameProgressView.pas' {FrameProgressView: TFrame},
+  uFrame4 in 'uFrame4.pas' {Frame4: TFrame},
+  uFrame4_Page0 in 'uFrame4_Page0.pas' {Frame4_Page0: TFrame},
+  uFrame4_Page1 in 'uFrame4_Page1.pas' {Frame4_Page1: TFrame},
+  uFrame4_Page2 in 'uFrame4_Page2.pas' {Frame4_Page2: TFrame},
+  uFrame4_Page3 in 'uFrame4_Page3.pas' {Frame4_Page3: TFrame};
 
 {$R *.res}
 

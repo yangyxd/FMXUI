@@ -251,8 +251,12 @@ type
   /// </summary>
   TViewBorderStyle = (None {无边框},
     RectBorder {四周矩形边框,会使用圆角设置},
-    LineBottom {底部边框（带两端凸出},
-    LineSimple {底部边框}, LineCorners {按照Corners来画边框});
+    RectBitmap {实心的矩形, 像框},
+    LineEdit {底部边框（带两端凸出},
+    LineTop {顶部边框},
+    LineBottom {底部边框},
+    LineLeft {左边边框},
+    LineRight {右边边框} );
 
   TViewBorder = class(TPersistent)
   private
@@ -946,6 +950,7 @@ type
     procedure DoMinSizeChange; virtual;
     procedure DoInVisibleChange; virtual;
     procedure DoBackgroundChanged(Sender: TObject); virtual;
+    procedure DoCheckedChange(); virtual;
     procedure DoEndUpdate; override;
     procedure DoMatrixChanged(Sender: TObject); override;
     procedure HandleSizeChanged; override;
@@ -2983,6 +2988,10 @@ begin
   DoAdjustViewBounds(ANewWidth, ANewHeight);
 end;
 
+procedure TView.DoCheckedChange;
+begin
+end;
+
 procedure TView.DoDeactivate;
 begin
   DecViewState(TViewState.Activated);
@@ -3801,6 +3810,7 @@ begin
       IncViewState(TViewState.Checked)
     else
       DecViewState(TViewState.Checked);
+    DoCheckedChange();
     Invalidate;
   end;
 end;
@@ -5657,19 +5667,41 @@ begin
             LRect.Top := R.Top + TH;
             LRect.Right := R.Right - TH;
             LRect.Bottom := R.Bottom - TH;
-            Canvas.DrawRect(LRect, XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush);
+            Canvas.DrawRect(LRect, XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
           end else
-            Canvas.DrawRect(R, XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush);
+            Canvas.DrawRect(R, XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
         end;
-      TViewBorderStyle.LineBottom:
+      TViewBorderStyle.RectBitmap:
+        begin
+          Canvas.FillRect(R, XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
+        end;
+      TViewBorderStyle.LineEdit:
         begin
           Canvas.DrawLine(R.BottomRight, PointF(R.Left, R.Bottom), FView.Opacity, FBorder.Brush);
           TH := Min(6, Min(FBorder.Width * 4, R.Height / 4));
           Canvas.DrawLine(PointF(R.Left, R.Bottom - TH), PointF(R.Left, R.Bottom), FView.Opacity, FBorder.Brush);
           Canvas.DrawLine(PointF(R.Right, R.Bottom - TH), R.BottomRight, FView.Opacity, FBorder.Brush);
         end;
-      TViewBorderStyle.LineSimple:
-        Canvas.DrawLine(R.BottomRight, PointF(R.Left, R.Bottom), FView.Opacity, FBorder.Brush);
+      TViewBorderStyle.LineTop:
+        begin
+          Canvas.FillRect(RectF(R.Left, R.Top, R.Right, R.Top + FBorder.Width),
+            XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
+        end;
+      TViewBorderStyle.LineBottom:
+        begin
+          Canvas.FillRect(RectF(R.Left, R.Bottom - FBorder.Width, R.Right, R.Bottom),
+            XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
+        end;
+      TViewBorderStyle.LineLeft:
+        begin
+          Canvas.FillRect(RectF(R.Left, R.Top, R.Left + FBorder.Width, R.Bottom),
+            XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
+        end;
+      TViewBorderStyle.LineRight:
+        begin
+          Canvas.FillRect(RectF(R.Right - FBorder.Width, R.Top, R.Right, R.Bottom),
+            XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
+        end;
     end;
   end;
 end;

@@ -21,6 +21,7 @@ type
     ButtonView4: TButtonView;
     ButtonView5: TButtonView;
     ButtonView6: TButtonView;
+    ButtonView7: TButtonView;
     procedure TextView17Click(Sender: TObject);
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
@@ -29,6 +30,7 @@ type
     procedure ButtonView4Click(Sender: TObject);
     procedure ButtonView5Click(Sender: TObject);
     procedure ButtonView6Click(Sender: TObject);
+    procedure ButtonView7Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -48,6 +50,7 @@ uses
   uFrameProgressView,
   uFrameMore,
   uFrameDialog,
+  uFrame4,
   uFrame3,
   uFrame2;
 
@@ -79,6 +82,11 @@ end;
 procedure TFrame1.ButtonView6Click(Sender: TObject);
 begin
   StartFrame(TFrameProgressView);
+end;
+
+procedure TFrame1.ButtonView7Click(Sender: TObject);
+begin
+  StartFrame(TFrame4);
 end;
 
 procedure TFrame1.DoHide;

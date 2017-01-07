@@ -1,0 +1,15 @@
+object Frame4_Page3: TFrame4_Page3
+  Size.Width = 320.000000000000000000
+  Size.Height = 487.000000000000000000
+  Size.PlatformDefault = False
+  object View1: TView
+    Align = Contents
+    Background.ItemDefault.Color = claTan
+    Background.ItemDefault.Kind = Solid
+    Gravity = None
+    Size.Width = 320.000000000000000000
+    Size.Height = 487.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+  end
+end

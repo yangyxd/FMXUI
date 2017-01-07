@@ -245,6 +245,7 @@ type
     FOnTextChange: TNotifyEvent;
     FOnDrawViewBackgroud: TOnDrawViewBackgroud;
     FInFitSize: Boolean;
+    FGroupIndex: Integer;
 
     function GetAutoSize: Boolean;
     function GetText: string;
@@ -257,6 +258,7 @@ type
     function GetDrawableHeight(): Integer;
     procedure SetTextHint(const Value: string);
     function GetTextLength: Integer;
+    procedure SetGroupIndex(const Value: Integer);
   protected
     procedure Loaded; override;
     procedure DblClick; override;
@@ -273,6 +275,8 @@ type
     function GetData: TValue; override;
     procedure SetData(const Value: TValue); override;
     procedure SetName(const Value: TComponentName); override;
+    procedure DoGroupSelected(); virtual;
+    procedure DoCheckedChange(); override;
   protected
     function TextStored: Boolean;
     function IsAutoSize: Boolean; override;
@@ -309,6 +313,7 @@ type
     property TextHint: string read FTextHint write SetTextHint;
     property TextSettings: UI.Base.TTextSettings read FText write SetTextSettings;
     property Drawable: TDrawableIcon read GetDrawable write SetDrawable;
+    property GroupIndex: Integer read FGroupIndex write SetGroupIndex default 0;
     property ScrollBars;
     property DisableMouseWheel;
     property OnTextChange: TNotifyEvent read FOnTextChange write FOnTextChange;
@@ -630,6 +635,12 @@ begin
     UpdateEffects;
 end;
 
+procedure TTextView.DoCheckedChange;
+begin
+  inherited;
+  DoGroupSelected;
+end;
+
 procedure TTextView.DoDrawableChanged(Sender: TObject);
 begin
   DoChanged(Sender);
@@ -649,6 +660,31 @@ begin
 //    if not FText.WordWrap then
 //      Result.Right := Result.Right - Padding.Right;
 //  end;
+end;
+
+procedure TTextView.DoGroupSelected;
+var
+  I: Integer;
+  Control: TControl;
+  Item: TFmxObject;
+begin
+  if (FGroupIndex <> 0) and (Checked) then begin
+    if Assigned(ParentControl) then begin
+      for I := 0 to ParentControl.ControlsCount - 1 do begin
+        Control := ParentControl.Controls[I];
+        if Control = Self then Continue;
+        if (Control is TTextView) and (TTextView(Control).FGroupIndex = FGroupIndex) then
+          TTextView(Control).Checked := False;
+      end;
+    end else if Parent is TCommonCustomForm then begin
+      for I := 0 to TCommonCustomForm(Parent).ChildrenCount - 1 do begin
+        Item := TCommonCustomForm(Parent).Children.Items[I];
+        if Item = Self then Continue;
+        if (Item is TTextView) and (TTextView(Item).FGroupIndex = FGroupIndex) then
+          TTextView(Item).Checked := False;
+      end;
+    end;
+  end;
 end;
 
 procedure TTextView.DoLayoutChanged(Sender: TObject);
@@ -951,6 +987,14 @@ procedure TTextView.SetGravity(const Value: TLayoutGravity);
 begin
   FGravity := Value;
   FText.Gravity := Value;
+end;
+
+procedure TTextView.SetGroupIndex(const Value: Integer);
+begin
+  if FGroupIndex <> Value then begin
+    FGroupIndex := Value;
+    DoGroupSelected();
+  end;
 end;
 
 procedure TTextView.SetName(const Value: TComponentName);
