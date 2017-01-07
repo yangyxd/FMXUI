@@ -8,7 +8,7 @@ object Frame2: TFrame2
     HeightSize = WrapContent
     Gravity = Center
     Size.Width = 352.000000000000000000
-    Size.Height = 152.000000000000000000
+    Size.Height = 154.000000000000000000
     Size.PlatformDefault = False
     Position.X = 16.000000000000000000
     Position.Y = 120.000000000000000000
@@ -16,22 +16,25 @@ object Frame2: TFrame2
     OnResize = GridsLayout1Resize
     ColumnCount = 5
     Divider = xAFE3E4E5
-    HorizontalSpacing = 0.500000000000000000
-    VerticalSpacing = 0.500000000000000000
+    SpacingHorizontal = 1.000000000000000000
+    SpacingVertical = 1.000000000000000000
     StretchMode = ColumnWidth
     object TextView1: TTextView
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       WidthSize = FillParent
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 0.500000000000000000
-      Position.Y = 0.500000000000000000
+      Position.X = 1.000000000000000000
+      Position.Y = 1.000000000000000000
       TabOrder = 14
       Text = '1'
       TextSettings.Gravity = Center
@@ -40,15 +43,19 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 70.800003051757810000
-      Position.Y = 0.500000000000000000
+      Position.X = 71.199996948242190000
+      Position.Y = 1.000000000000000000
       TabOrder = 13
+      OnClick = TextView2Click
       Text = '2'
       TextSettings.Gravity = Center
     end
@@ -56,15 +63,19 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 141.100006103515600000
-      Position.Y = 0.500000000000000000
+      Position.X = 141.399993896484400000
+      Position.Y = 1.000000000000000000
       TabOrder = 12
+      OnClick = TextView3Click
       Text = '3'
       TextSettings.Gravity = Center
     end
@@ -72,14 +83,17 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 211.400009155273400000
-      Position.Y = 0.500000000000000000
+      Position.X = 211.599990844726600000
+      Position.Y = 1.000000000000000000
       TabOrder = 11
       Text = '4'
       TextSettings.Gravity = Center
@@ -88,14 +102,17 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 281.700012207031300000
-      Position.Y = 0.500000000000000000
+      Position.X = 281.799987792968700000
+      Position.Y = 1.000000000000000000
       TabOrder = 10
       Text = '5'
       TextSettings.Gravity = Center
@@ -104,14 +121,17 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 0.500000000000000000
-      Position.Y = 51.000000000000000000
+      Position.X = 1.000000000000000000
+      Position.Y = 52.000000000000000000
       TabOrder = 5
       Text = '5'
       TextSettings.Gravity = Center
@@ -120,14 +140,17 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 70.800003051757810000
-      Position.Y = 51.000000000000000000
+      Position.X = 71.199996948242190000
+      Position.Y = 52.000000000000000000
       TabOrder = 6
       Text = '4'
       TextSettings.Gravity = Center
@@ -136,15 +159,18 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       WidthSize = FillParent
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 141.100006103515600000
-      Position.Y = 51.000000000000000000
+      Position.X = 141.399993896484400000
+      Position.Y = 52.000000000000000000
       TabOrder = 7
       Text = '3'
       TextSettings.Gravity = Center
@@ -153,14 +179,17 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 211.400009155273400000
-      Position.Y = 51.000000000000000000
+      Position.X = 211.599990844726600000
+      Position.Y = 52.000000000000000000
       TabOrder = 8
       Text = '2'
       TextSettings.Gravity = Center
@@ -169,14 +198,17 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 281.700012207031300000
-      Position.Y = 51.000000000000000000
+      Position.X = 281.799987792968700000
+      Position.Y = 52.000000000000000000
       TabOrder = 9
       Text = '1'
       TextSettings.Gravity = Center
@@ -185,14 +217,17 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 0.500000000000000000
-      Position.Y = 101.500000000000000000
+      Position.X = 1.000000000000000000
+      Position.Y = 103.000000000000000000
       TabOrder = 0
       Text = '5'
       TextSettings.Gravity = Center
@@ -201,14 +236,17 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 70.800003051757810000
-      Position.Y = 101.500000000000000000
+      Position.X = 71.199996948242190000
+      Position.Y = 103.000000000000000000
       TabOrder = 1
       Text = '4'
       TextSettings.Gravity = Center
@@ -217,14 +255,17 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 141.100006103515600000
-      Position.Y = 101.500000000000000000
+      Position.X = 141.399993896484400000
+      Position.Y = 103.000000000000000000
       TabOrder = 2
       Text = '3'
       TextSettings.Gravity = Center
@@ -233,14 +274,17 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 211.400009155273400000
-      Position.Y = 101.500000000000000000
+      Position.X = 211.599990844726600000
+      Position.Y = 103.000000000000000000
       TabOrder = 3
       Text = '2'
       TextSettings.Gravity = Center
@@ -249,14 +293,17 @@ object Frame2: TFrame2
       Background.ItemPressed.Color = claSilver
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = claTeal
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
-      Size.Width = 69.800003051757810000
+      Size.Width = 69.199996948242190000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 281.700012207031300000
-      Position.Y = 101.500000000000000000
+      Position.X = 281.799987792968700000
+      Position.Y = 103.000000000000000000
       TabOrder = 4
       Text = '1'
       TextSettings.Gravity = Center
@@ -286,6 +333,10 @@ object Frame2: TFrame2
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = xBFC0C0C0
       Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
@@ -296,6 +347,9 @@ object Frame2: TFrame2
       OnClick = TextView17Click
       Text = '<'
       TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
       TextSettings.Font.Size = 18.000000000000000000
       TextSettings.PrefixStyle = HidePrefix
       TextSettings.Gravity = Center
@@ -306,6 +360,10 @@ object Frame2: TFrame2
     object tvTitle: TTextView
       Background.Border.Color.Default = xBFC0C0C0
       Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       Weight = 1.000000000000000000
       Margins.Right = 50.000000000000000000
@@ -317,9 +375,83 @@ object Frame2: TFrame2
       TabOrder = 1
       Text = 'GridsView'
       TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
       TextSettings.Font.Size = 18.000000000000000000
       TextSettings.PrefixStyle = HidePrefix
       TextSettings.Gravity = Center
     end
+  end
+  object BadgeView1: TBadgeView
+    AutoSize = True
+    TargetView = TextView8
+    Style = Icon
+    Value = 8
+    Background.XRadius = 8.000000000000000000
+    Background.YRadius = 8.000000000000000000
+    Icon.Bitmap.Bitmap.PNG = {
+      89504E470D0A1A0A0000000D49484452000000230000001008060000009C37C6
+      5A000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+      034649444154484BBD964D48155114C7CF3977C6D713172D5C1458BA107A4490
+      A5900BA1204117462D0A0C5AE4A2685141418BD611D52AA240822208A14D0B23
+      0383820409178AAED2858BFC805CB46861E57B33F79CCEBD73DFF33D9508C47E
+      70E19EFFDC997BE77CCD206C606E2F34721C9F2181C380D809D636864BDB868D
+      59469049DD74EA3726234716E047B8E4A91C4600686E5F7419852E01C1D120EF
+      1C0C9F11E5E981A5E46550D60F33BBBFEE951AFDC1FC6FA8A7EE1F584C6E6773
+      E5CBFEE82A013D7673003B0F8C33407436B33318601C051A10A18D4146097025
+      5CAAC0C0DDFA9C0FBF7F417FBE1E76793195158870546717BDEDB1F30C34AFCF
+      E875963EFBD4C1C5D208CD36E75AF401F7FC1A8F192F2CA7E7047838081E1479
+      AE07F11A5A7E90A23C1291B19AC1B29A32DECDD5C3A4BFC961E05961B134A079
+      301114C50C81E0FB60283C38DD0CBB09442EA8D5908919EE80C6C6D7A4589B60
+      D54482A711F145F530640A06B9CB808C876520CC1F67F7451D9A1F9F820462ED
+      18221F0FA6A62835E525EE233D557BD0D6613E6129ED861C5C0ACA3F23802785
+      69CCCD355C6B10455F05F14EB5B62BB21308D4EDEC325A40ED5AC1D011EC5A4A
+      F8D05833A1077B1D941A344C6F3434039501702BE8BD69B138EE36CDE7650285
+      BB3437BAC01627CBDA4F880BBAB4261AFA121DEA99ADC11CEC664C0749E21B5B
+      850B2DB668688E5706F331A7D70136427DDCEA36558F7C64C11E951B84CC21A7
+      69EFFA64046BBC5286B49CD6936D23847DD6D84EC9897FEB6A0C6953CC2A241B
+      55D547225D6E534D9851B2E23726433D4E73F9022CEE8035B866A89EA1A9606F
+      4902324849328C8455D5F077F4054FBA305AC254CB7A8FD3D443BD22FC6E2DB2
+      336B6B1AB60DE83D531A4E1CD2F96A266DC6BBDD44838585D25C903C9B724687
+      65EBD7249A23871692190D479F5FACB8FE64385EC9DB5C67A50705B43F2DBBCF
+      C3E6A6A74DCA12FF7065EAED806B7A646D1318D3220233EAD64D7924256C73B9
+      E6E67E7D2AAD65CF38FC7D6835714D6B903CE5A6E70FE3986B8ADFBA1C09E6FF
+      43E4496129B9E6A6956A4A8BC979ADAF9B6557EF34C230AD657F453F94D78394
+      7D9BAA71DD57DBFA199DB66BA9B5E92F444D3FD816C6ACB2864A67539496860A
+      DFE07B76C101F007954D81DE0B343FBA0000000049454E44AE426082}
+    Icon.Bitmap.WrapMode = TileStretch
+    Scale.X = 0.800000011920928900
+    Scale.Y = 0.800000011920928900
+    Size.Width = 35.000000000000000000
+    Size.Height = 16.000000000000000000
+    Size.PlatformDefault = False
+    Position.X = 203.849990844726600000
+    Position.Y = 166.399993896484400000
+  end
+  object BadgeView2: TBadgeView
+    AutoSize = True
+    TargetView = TextView2
+    Value = 2
+    Background.XRadius = 8.000000000000000000
+    Background.YRadius = 8.000000000000000000
+    Icon.Bitmap.WrapMode = Tile
+    Size.Width = 16.000000000000000000
+    Size.Height = 16.000000000000000000
+    Size.PlatformDefault = False
+    Position.X = 146.000000000000000000
+    Position.Y = 115.400001525878900000
+  end
+  object BadgeView3: TBadgeView
+    AutoSize = False
+    TargetView = TextView9
+    Style = EmptyText
+    Value = 1
+    Background.Color = claPlum
+    Background.XRadius = 8.000000000000000000
+    Background.YRadius = 8.000000000000000000
+    Icon.Bitmap.WrapMode = Tile
+    Position.X = 286.399993896484400000
+    Position.Y = 166.399993896484400000
   end
 end

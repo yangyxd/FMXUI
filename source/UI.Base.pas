@@ -567,6 +567,34 @@ type
     CenterVertical, CenterHorizontal, CenterHBottom, CenterVRight, Center);
 
   /// <summary>
+  /// 提示样式
+  /// </summary>
+  TBadgeStyle = (EmptyText {空白}, NumberText {数字值 (显示数字)},
+    NewText {显示New文本}, HotText {显示Hot文本}, Icon {显示指定的图像});
+
+  /// <summary>
+  /// 标记提示接口
+  /// </summary>
+  IViewBadge = interface(IInterface)
+    ['{493E5A10-0227-46AE-A17A-3B31D1B04D71}']
+    function GetText: string;
+    function GetIcon: TBrush;
+    function GetValue: Integer;
+    function GetMaxValue: Integer;
+    function GetStyle: TBadgeStyle;
+    procedure SetValue(const Value: Integer);
+    procedure SetMaxValue(const Value: Integer);
+    procedure SetStyle(const Value: TBadgeStyle);
+
+    procedure Realign;
+    procedure SetVisible(const Value: Boolean);
+
+    property Value: Integer read GetValue write SetValue;
+    property MaxValue: Integer read GetMaxValue write SetMaxValue;
+    property Style: TBadgeStyle read GetStyle write SetStyle;
+  end;
+
+  /// <summary>
   /// 视图布局属性接口
   /// </summary>
   IView = interface(IInterface)
@@ -590,6 +618,7 @@ type
     function GetComponent: TComponent;
     function GetComponentState: TComponentState;
     function GetInVisible: Boolean;
+    function GetBadgeView: IViewBadge;
 
     function GetPosition: TPosition;
     function GetWidth: Single;
@@ -603,7 +632,6 @@ type
     procedure IncViewState(const State: TViewState);
     procedure DecViewState(const State: TViewState);
 
-    procedure SetBadgeView(const Value: TControl);
     procedure SetLayout(const Value: TViewLayout);
     procedure SetBackground(const Value: TDrawable);
     procedure SetWeight(const Value: Single);
@@ -616,6 +644,7 @@ type
     procedure SetAdjustViewBounds(const Value: Boolean);
     procedure SetHeightSize(const Value: TViewSize);
     procedure SetWidthSize(const Value: TViewSize);
+    procedure SetBadgeView(const Value: IViewBadge);
 
     property Layout: TViewLayout read GetLayout write SetLayout;
     property Background: TDrawable read GetBackground write SetBackground;
@@ -629,6 +658,7 @@ type
     property AdjustViewBounds: Boolean read GetAdjustViewBounds write SetAdjustViewBounds;
     property HeightSize: TViewSize read GetHeightSize write SetHeightSize;
     property WidthSize: TViewSize read GetWidthSize write SetWidthSize;
+    property BadgeView: IViewBadge read GetBadgeView write SetBadgeView;
 
     property Opacity: Single read GetOpacity;
     property Width: Single read GetWidth;
@@ -648,7 +678,7 @@ type
     function RemoveView(View: TView): Integer;
     function GetAbsoluteInVisible: Boolean;
   end;
-  
+
   TTextSettingsBase = class(TPersistent)
   private
     [Weak] FOwner: TControl;
@@ -879,12 +909,13 @@ type
     FDownUpOffset: Single;
     {$ENDIF}
     FLayout: TViewLayout;
-    [Weak] FBadgeView: TControl;
+    [Weak] FBadgeView: IViewBadge;
     function IsDrawing: Boolean;
     function IsDesignerControl(Control: TControl): Boolean;
     function IsAutoSize: Boolean; virtual;
     function IsAdjustLayout: Boolean; virtual;
-    procedure SetBadgeView(const Value: TControl);
+    function GetBadgeView: IViewBadge;
+    procedure SetBadgeView(const Value: IViewBadge);
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; virtual;
     procedure IncViewState(const State: TViewState); virtual;
     procedure DecViewState(const State: TViewState); virtual;
@@ -1044,6 +1075,10 @@ type
     /// 临时最大高度, 设置为0时，恢复原始的MaxWidth
     /// </summary>
     property TempMaxWidth: Single read FMaxWidth write SetTempMaxWidth;
+    /// <summary>
+    /// 提示标记视图
+    /// </summary>
+    property BadgeView: IViewBadge read FBadgeView;
   published
     /// <summary>
     /// 组件相对于容器的对齐方式。当容器为非布局组件时有效，在部分布局组件中有效，但不建议使用。
@@ -2984,11 +3019,9 @@ procedure TView.DoMatrixChanged(Sender: TObject);
 begin
   inherited DoMatrixChanged(Sender);
   if Assigned(FBadgeView) then begin 
-    if Visible then begin  
-      FBadgeView.Visible := True;
-      TView(FBadgeView).Realign;
-    end else
-      FBadgeView.Visible := False;
+    FBadgeView.SetVisible(Visible);
+    if Visible then
+      FBadgeView.Realign;
   end;
 end;
 
@@ -3490,6 +3523,11 @@ begin
   Result := FBackground;
 end;
 
+function TView.GetBadgeView: IViewBadge;
+begin
+  Result := FBadgeView;
+end;
+
 procedure TView.Loaded;
 begin
   inherited Loaded;
@@ -3694,9 +3732,9 @@ begin
   SetBackground(Value);
 end;
 
-procedure TView.SetBadgeView(const Value: TControl);
+procedure TView.SetBadgeView(const Value: IViewBadge);
 begin
-  if Assigned(Self) then  
+  if Assigned(Self) then
     FBadgeView := Value;
 end;
 

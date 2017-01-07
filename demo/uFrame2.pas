@@ -29,8 +29,12 @@ type
     LinearLayout1: TLinearLayout;
     TextView17: TTextView;
     tvTitle: TTextView;
+    BadgeView1: TBadgeView;
+    BadgeView2: TBadgeView;
     procedure TextView17Click(Sender: TObject);
     procedure GridsLayout1Resize(Sender: TObject);
+    procedure TextView2Click(Sender: TObject);
+    procedure TextView3Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -49,6 +53,18 @@ end;
 procedure TFrame2.TextView17Click(Sender: TObject);
 begin
   Finish();
+end;
+
+procedure TFrame2.TextView2Click(Sender: TObject);
+begin
+  if Assigned(TextView2.BadgeView) then
+    TextView2.BadgeView.Value := TextView2.BadgeView.Value + 1;
+end;
+
+procedure TFrame2.TextView3Click(Sender: TObject);
+begin
+  if Assigned(TextView2.BadgeView) then
+    TextView2.BadgeView.Value := TextView2.BadgeView.Value - 1;
 end;
 
 end.

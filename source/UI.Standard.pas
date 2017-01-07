@@ -353,10 +353,7 @@ type
   end;
 
 type
-  /// <summary>
-  /// 字体设置
-  /// </summary>
-  TTextSettings = class(TTextSettingsBase)
+  TSimpleTextSettings = class(TTextSettingsBase)
   private
     FColor: TAlphaColor;
     FColorChange: Boolean;
@@ -393,7 +390,6 @@ type
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
   published
     property Color: TAlphaColor read FColor write SetColor default TAlphaColorRec.Red;
-    // 边框圆角
     property XRadius: Single read FXRadius write SetXRadius;
     property YRadius: Single read FYRadius write SetYRadius;
     property Corners: TCorners read FCorners write SetCorners stored IsStoredCorners;
@@ -401,47 +397,76 @@ type
 
 type
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
-  TBadgeView = class(TControl)
+  TBadgeView = class(TControl, IViewBadge)
   private
     [Weak] FTargetView: IView;
-    FMaxLength: Integer;
+    FMaxValue: Integer;
     FValue: Integer;
     FBackground: TBadgeBackground;
-    FText: TTextSettings;
+    FText: TSimpleTextSettings;
+    FStyle: TBadgeStyle;
+    FIcon: TBrush;
+    FAutoSize: Boolean;
+    FAdjustSizeing: Boolean;
+    FValueOutTail: string;
     procedure SetValue(const Value: Integer);
-    procedure SetMaxLength(const Value: Integer);
+    procedure SetMaxValue(const Value: Integer);
     procedure SetTargetView(const Value: IView);
     procedure SetBackground(const Value: TBadgeBackground);
     function GetText: string;
-    procedure SetTextSettings(const Value: TTextSettings);
+    procedure SetTextSettings(const Value: TSimpleTextSettings);
     function IsVisibleView: Boolean;
+    procedure SetStyle(const Value: TBadgeStyle);
+    procedure SetValueOutTail(const Value: string);
+    function GetIcon: TBrush;
+    procedure SetAutoSize(const Value: Boolean);
+    procedure SetIcon(const Value: TBrush);
+    function GetValue: Integer;
+    function GetMaxValue: Integer;
+    function GetStyle: TBadgeStyle;
   protected
     procedure Paint; override;
+    procedure Resize; override;
     procedure DoRealign; override;
+    procedure DoAdjustSize; virtual;
     function GetDefaultSize: TSizeF; override;
     function GetFirstParent: TFmxObject;
     procedure DoChanged(Sender: TObject); virtual;
+    procedure DoTextChanged(Sender: TObject); virtual;
     procedure DoMatrixChanged(Sender: TObject); override;
     procedure AncestorParentChanged; override;
+    procedure PaddingChanged; override;
+    function GetViewText: string;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure AfterConstruction; override;
-    function GetViewText: string;
     property Text: string read GetText;
   published
+    /// <summary>
+    /// 是否自动大小
+    /// </summary>
+    property AutoSize: Boolean read FAutoSize write SetAutoSize;
     /// <summary>
     /// 目标View
     /// </summary>
     property TargetView: IView read FTargetView write SetTargetView;
     /// <summary>
-    /// 显示的内容最大长度, 比如为2时，Value > 99 时也显示 99
+    /// 效果样式
     /// </summary>
-    property MaxLength: Integer read FMaxLength write SetMaxLength default 2;
+    property Style: TBadgeStyle read FStyle write SetStyle default TBadgeStyle.NumberText;
     /// <summary>
-    /// 要显示的值
+    /// 当 Style 为 NumberText 时，显示 Value 的最大值
+    /// </summary>
+    property MaxValue: Integer read FMaxValue write SetMaxValue default 99;
+    /// <summary>
+    /// 当 Style 为 NumberText 时，要显示的数值
     /// </summary>
     property Value: Integer read FValue write SetValue default 0;
+    /// <summary>
+    /// 当 Style 为 NumberText 时，数值大于MaxValue时，要在属部加入的内容，如 "+"
+    /// </summary>
+    property ValueOutTail: string read FValueOutTail write SetValueOutTail;
     /// <summary>
     /// 背景颜色
     /// </summary>
@@ -449,7 +474,11 @@ type
     /// <summary>
     /// 字体设置
     /// </summary>
-    property TextSettings: TTextSettings read FText write SetTextSettings;
+    property TextSettings: TSimpleTextSettings read FText write SetTextSettings;
+    /// <summary>
+    /// 当 Style 为 Icon 时，要显示的图标
+    /// </summary>
+    property Icon: TBrush read GetIcon write SetIcon;
     
     property Width;
     property Height;
@@ -459,6 +488,7 @@ type
     property RotationAngle;
     property RotationCenter;
     property Margins;
+    property Padding;
     property Visible;
     property OnPaint;
   end;
@@ -2242,22 +2272,26 @@ end;
 procedure TBadgeView.AfterConstruction;
 begin
   inherited AfterConstruction;
-  FText.OnChanged := DoChanged;
+  if Assigned(FBackground) then   
+    FBackground.OnChanged := DoChanged;
+  FText.OnChanged := DoTextChanged;
 end;
 
 constructor TBadgeView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FMaxLength := 2;
+  FMaxValue := 99;
+  FStyle := TBadgeStyle.NumberText;
   FBackground := TBadgeBackground.Create;
   FBackground.FXRadius := 8;
-  FBackground.FYRadius := 8;
-  FBackground.OnChanged := DoChanged;
-  FText := TTextSettings.Create(Self);
+  FBackground.FYRadius := 8;     
+  FText := TSimpleTextSettings.Create(Self);
   FText.Color := TAlphaColorRec.White;
   FText.ColorChange := False;   
   HitTest := False;
   SetAcceptsControls(False);
+  if csDesigning in ComponentState then
+    GetIcon;
 end;
 
 destructor TBadgeView.Destroy;
@@ -2268,14 +2302,57 @@ begin
   end;
   FreeAndNil(FText);
   FreeAndNil(FBackground);
+  FreeAndNil(FIcon);
   inherited;
+end;
+
+procedure TBadgeView.DoAdjustSize;
+var
+  P: TSizeF;
+begin
+  if (Scene = nil) or (not Assigned(FText)) then
+    Exit;
+  FAdjustSizeing := True;
+  try
+    P.Width := Width;
+    P.Height := Height;
+    case FStyle of
+      TBadgeStyle.NumberText, TBadgeStyle.NewText, TBadgeStyle.HotText:
+        begin
+          FText.CalcTextObjectSize(0, Scene.GetSceneScale, nil, P);
+          P.Width := P.Width + Padding.Left + Padding.Right;
+          P.Height := P.Height + Padding.Top + Padding.Bottom;
+          if Assigned(FBackground) then begin
+            if P.Width < FBackground.FXRadius * 2 then P.Width := FBackground.FXRadius * 2;
+            if P.Height < FBackground.FYRadius * 2 then P.Height := FBackground.FYRadius * 2;
+          end;
+        end;
+      TBadgeStyle.Icon:
+        begin
+          if not Assigned(FIcon) or (FIcon.Kind <> TBrushKind.Bitmap) then
+            Exit;
+          if not Assigned(FIcon.Bitmap) then
+            Exit;
+          if not Assigned(FIcon.Bitmap.Bitmap) then
+            Exit;
+          P.Width := FIcon.Bitmap.Bitmap.Width + Padding.Left + Padding.Right;
+          P.Height := FIcon.Bitmap.Bitmap.Height + Padding.Top + Padding.Bottom;
+          if P.Width < 1 then P.Width := 1;
+          if P.Height < 1 then P.Height := 1;
+        end
+    else
+      Exit;
+    end;
+    if (P.Width <> Width) or (P.Height <> Height) then
+      SetSize(P.Width, P.Height);
+  finally
+    FAdjustSizeing := False;
+  end;
 end;
 
 procedure TBadgeView.DoChanged(Sender: TObject);
 begin
   Repaint;
-  if FText.IsEffectsChange then
-    UpdateEffects;
 end;
 
 procedure TBadgeView.DoMatrixChanged(Sender: TObject);
@@ -2295,9 +2372,20 @@ begin
   FDisableAlign := True;
   P := FTargetView.LocalToAbsolute(TPointF.Zero);
   Position.Point := PointF(
-    P.X + FTargetView.Width - Width * 0.5 + Margins.Left, 
-    P.Y - Height * 0.5 + Margins.Top);
+    P.X + FTargetView.Width - Width * 0.65 + Margins.Left,
+    P.Y - Height * 0.35 + Margins.Top);
   FDisableAlign := False;
+end;
+
+procedure TBadgeView.DoTextChanged(Sender: TObject);
+begin
+  if FAutoSize then begin
+    DoAdjustSize;
+    DoRealign;
+  end;
+  Repaint;
+  if FText.IsEffectsChange then
+    UpdateEffects;
 end;
 
 function TBadgeView.GetDefaultSize: TSizeF;
@@ -2309,7 +2397,6 @@ function TBadgeView.GetFirstParent: TFmxObject;
 begin
   Result := Self;
   while Result.Parent <> nil do begin
-    //LogD('P: ' + Result.Parent.ClassName);
     if csDesigning in ComponentState then begin
       if Result.Parent.ClassName = 'TControlForm' then
         Break;
@@ -2320,28 +2407,67 @@ begin
   end;
 end;
 
+function TBadgeView.GetIcon: TBrush;
+begin
+  if not Assigned(FIcon) then begin
+    FIcon := TBrush.Create(TBrushKind.Bitmap, 0);
+    FIcon.OnChanged := DoChanged;
+  end;
+  Result := FIcon;
+end;
+
+function TBadgeView.GetMaxValue: Integer;
+begin
+  Result := FMaxValue;
+end;
+
+function TBadgeView.GetStyle: TBadgeStyle;
+begin
+  Result := FStyle;
+end;
+
 function TBadgeView.GetText: string;
 begin
   Result := FText.Text;
 end;
 
-function TBadgeView.GetViewText: string;
-const
-  MV: array [0..6] of Integer = (0, 9, 99, 999, 9999, 99999, 999999);
+function TBadgeView.GetValue: Integer;
 begin
-  if (FMaxLength <= 0) or (FMaxLength > High(MV)) then
-    Result := ''
-  else begin
-    if FValue > MV[FMaxLength] then
-      Result := IntToStr(MV[FMaxLength])
-    else
-      Result := IntToStr(FValue);
+  Result := FValue;
+end;
+
+function TBadgeView.GetViewText: string;
+begin
+  case FStyle of
+    TBadgeStyle.EmptyText: Result := '';
+    TBadgeStyle.NumberText:
+      begin
+        if Value < 1 then
+          Result := ''
+        else if (MaxValue > 0) and (Value < MaxValue) then
+          Result := IntToStr(Value)
+        else
+          Result := IntToStr(MaxValue) + FValueOutTail;
+      end;
+    TBadgeStyle.NewText: Result := 'NEW';
+    TBadgeStyle.HotText: Result := 'HOT';
   end;
 end;
 
 function TBadgeView.IsVisibleView: Boolean;
 begin
-  Result := (FValue > 0) and Assigned(FTargetView);
+  if FStyle = TBadgeStyle.Icon then
+    Result := (FValue > 0) and Assigned(FIcon) and Assigned(FIcon.Bitmap) and Assigned(FIcon.Bitmap.Bitmap) and
+      (FIcon.Bitmap.Bitmap.Width > 0) and (FIcon.Bitmap.Bitmap.Height > 0)
+  else
+    Result := (FValue > 0)
+end;
+
+procedure TBadgeView.PaddingChanged;
+begin   
+  inherited PaddingChanged; 
+  if FAutoSize then
+    DoAdjustSize;  
 end;
 
 procedure TBadgeView.Paint;
@@ -2350,15 +2476,32 @@ var
 begin
   if IsVisibleView then begin  
     R := RectF(0, 0, Width, Height);
-    with FBackground do begin
-      Canvas.Fill.Color := FColor;
-      Canvas.FillRect(R, FXRadius, FYRadius, FCorners, FTargetView.Opacity);
+    if FStyle = TBadgeStyle.Icon then begin
+      if Assigned(FIcon) then begin      
+        with FBackground do begin
+          Canvas.FillRect(R, FXRadius, FYRadius, FCorners, FTargetView.Opacity, FIcon);
+        end;
+      end;
+    end else begin
+      if Assigned(FBackground) then
+        with FBackground do begin
+          Canvas.Fill.Color := FColor;
+          Canvas.FillRect(R, FXRadius, FYRadius, FCorners, FTargetView.Opacity);
+        end;
+      if Assigned(FText) and (FText.TextLength > 0) then
+        FText.Draw(Canvas, R, FTargetView.Opacity, TViewState.None);
     end;
-    if Assigned(FText) and (FValue > 0) then
-      FText.Draw(Canvas, R, FTargetView.Opacity, TViewState.None);
   end;
   if (csDesigning in ComponentState) and not Locked then
     DrawDesignBorder;
+end;
+
+procedure TBadgeView.Resize;
+begin
+  inherited;
+  if FAutoSize and (not FAdjustSizeing) then
+    DoAdjustSize;
+  DoRealign;
 end;
 
 procedure TBadgeView.AncestorParentChanged;
@@ -2373,9 +2516,29 @@ begin
   end;
 end;
 
+procedure TBadgeView.SetAutoSize(const Value: Boolean);
+begin
+  if FAutoSize <> Value then begin
+    FAutoSize := Value;
+    if FAutoSize then
+      DoAdjustSize;
+    DoRealign;
+    Repaint;
+  end;
+end;
+
 procedure TBadgeView.SetBackground(const Value: TBadgeBackground);
 begin
   FBackground.Assign(Value);
+end;
+
+procedure TBadgeView.SetIcon(const Value: TBrush);
+begin
+  if Value = nil then begin
+    FreeAndNil(FIcon);
+    Exit;
+  end;
+  Icon.Assign(Value);
 end;
 
 procedure TBadgeView.SetValue(const Value: Integer);
@@ -2387,18 +2550,40 @@ begin
   end;
 end;
 
-procedure TBadgeView.SetMaxLength(const Value: Integer);
+procedure TBadgeView.SetValueOutTail(const Value: string);
 begin
-  if FMaxLength <> Value then begin
-    FMaxLength := Value;
+  if FValueOutTail <> Value then begin
+    FValueOutTail := Value;
     DoRealign;
+    Repaint;
+  end;
+end;
+
+procedure TBadgeView.SetMaxValue(const Value: Integer);
+begin
+  if FMaxValue <> Value then begin
+    FMaxValue := Value;
+    DoRealign;
+    Repaint;
+  end;
+end;
+
+procedure TBadgeView.SetStyle(const Value: TBadgeStyle);
+begin
+  if FStyle <> Value then begin
+    FStyle := Value;
+    FText.Text := GetViewText;
+    if FAutoSize then
+      DoAdjustSize;
     Repaint;
   end;
 end;
 
 procedure TBadgeView.SetTargetView(const Value: IView);
 begin
-  if FTargetView <> Value then begin 
+  if FTargetView <> Value then begin
+    if Assigned(FTargetView) and (FTargetView.BadgeView = Self as IViewBadge) then
+      FTargetView.SetBadgeView(nil);
     FTargetView := Value;   
     if Assigned(FTargetView) then begin
       FTargetView.SetBadgeView(Self);
@@ -2408,14 +2593,14 @@ begin
   end;
 end;
 
-procedure TBadgeView.SetTextSettings(const Value: TTextSettings);
+procedure TBadgeView.SetTextSettings(const Value: TSimpleTextSettings);
 begin
   FText.Assign(Value);
 end;
 
-{ TTextSettings }
+{ TSimpleTextSettings }
 
-constructor TTextSettings.Create(AOwner: TComponent);
+constructor TSimpleTextSettings.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   Gravity := TLayoutGravity.Center;
@@ -2423,17 +2608,17 @@ begin
   FColorChange := False;
 end;
 
-function TTextSettings.GetStateColor(const State: TViewState): TAlphaColor;
+function TSimpleTextSettings.GetStateColor(const State: TViewState): TAlphaColor;
 begin
   Result := FColor;
 end;
 
-function TTextSettings.IsColorStored: Boolean;
+function TSimpleTextSettings.IsColorStored: Boolean;
 begin
   Result := FColorChange;
 end;
 
-procedure TTextSettings.SetColor(const Value: TAlphaColor);
+procedure TSimpleTextSettings.SetColor(const Value: TAlphaColor);
 begin
   FColor := Value;
 end;

@@ -32,7 +32,8 @@ type
   TListExView = class(TListView, IView)
   private
     FOnFooterClick: TAppearanceListView.TItemEvent;
-    procedure SetBadgeView(const Value: TControl);
+    function GetBadgeView: IViewBadge;
+    procedure SetBadgeView(const Value: IViewBadge);
     procedure SetLayout(const Value: TViewLayout);
     procedure SetBackground(const Value: TDrawable);
     procedure SetWeight(const Value: Single);
@@ -350,6 +351,11 @@ begin
   Result := nil;
 end;
 
+function TListExView.GetBadgeView: IViewBadge;
+begin
+  Result := nil;
+end;
+
 function TListExView.GetComponent: TComponent;
 begin
   Result := Self;
@@ -526,7 +532,7 @@ begin
   raise EViewError.Create(SNotSupports);
 end;
 
-procedure TListExView.SetBadgeView(const Value: TControl);
+procedure TListExView.SetBadgeView(const Value: IViewBadge);
 begin
 end;
 

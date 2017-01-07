@@ -181,9 +181,14 @@ begin
       'PaddingBorder',
       'OnValueChange',
       { TBadgeView }
+      'AutoSize',
       'TargetView',
       'BadgeCount',
       'TextColor',
+      'Style',
+      'MaxValue',
+      'Icon',
+      'ValueOutTail',
       { Text }
       'Text',
       'TextHint',
@@ -244,6 +249,8 @@ begin
     ['Horizontal', 'Vertical', 'CircleRing']);
   AddEnumElementAliases(TypeInfo(TImageScaleType),
     ['None', 'Matrix', 'Center', 'CenterCrop', 'CenterInside', 'FitCenter', 'FitStart', 'FitEnd']);
+  AddEnumElementAliases(TypeInfo(TBadgeStyle),
+    ['EmptyText', 'NumberText', 'NewText', 'HotText', 'Icon']);
 end;
 
 procedure UnregisterAliases;
@@ -257,6 +264,7 @@ begin
   RemoveEnumElementAliases(TypeInfo(TViewStretchMode));
   RemoveEnumElementAliases(TypeInfo(TProgressKind));
   RemoveEnumElementAliases(TypeInfo(TImageScaleType));
+  RemoveEnumElementAliases(TypeInfo(TBadgeStyle));
 end;
 
 { TViewControlEditor }
