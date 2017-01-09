@@ -6,6 +6,9 @@
 {                                                       }
 {*******************************************************}
 
+// 注意：如果多行文本显示不完整，请将patch下的
+// FMX.TextLayout.GPU.pas 放到你的项目目录下
+
 unit UI.Base;
 
 interface
@@ -5229,12 +5232,14 @@ begin
       Size.Width := RoundToScale(FLayout.Width + FLayout.TextRect.Left * 2 + FLayout.Font.Size * 0.334, SceneScale);
     end;
     {$IFDEF ANDROID}
-    Size.Height := RoundToScale(FLayout.Height + FLayout.Font.Size * 0.334, SceneScale);
-    if Size.Height > 50 then
-      Size.Height := Size.Height + FLayout.Font.Size * 0.6;
+    //Size.Height := RoundToScale(FLayout.Height + FLayout.Font.Size * 0.334, SceneScale);
+    Size.Height := RoundToScale(FLayout.Height, SceneScale);
+//    if Size.Height > 50 then
+//      Size.Height := Size.Height + FLayout.Font.Size * 0.6;
     {$ELSE}
     {$IFNDEF MSWINDOWS}
-    Size.Height := RoundToScale(FLayout.Height + FLayout.Font.Size * 0.2, SceneScale);
+    //Size.Height := RoundToScale(FLayout.Height + FLayout.Font.Size * 0.2, SceneScale);
+    Size.Height := RoundToScale(FLayout.Height, SceneScale);
     {$ELSE}
     Size.Height := RoundToScale(FLayout.Height, SceneScale);
     {$ENDIF}
