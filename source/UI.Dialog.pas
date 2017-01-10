@@ -1208,6 +1208,8 @@ end;
 
 procedure TDialog.AnimatePlay(Ani: TFrameAniType; IsIn: Boolean;
   AEvent: TNotifyEventA);
+var
+  AniView: TControl;
 
   // 背景淡入淡出
   procedure DoFadeInOutBackgroyund();
@@ -1231,41 +1233,71 @@ procedure TDialog.AnimatePlay(Ani: TFrameAniType; IsIn: Boolean;
     NewValue: Single;
   begin
     // 背景处理
-    if Assigned(FViewRoot) and Assigned(FViewRoot.FLayBubble) then begin
+    if Assigned(AniView) then begin
       if IsIn then begin
-        FViewRoot.FLayBubble.Opacity := 0;
+        AniView.Opacity := 0;
         NewValue := 1;
       end else begin
         NewValue := 0;
       end;
-      TFrameAnimator.AnimateFloat(FViewRoot.FLayBubble, 'Opacity', NewValue, AEvent, 0.1);
+      TFrameAnimator.AnimateFloat(AniView, 'Opacity', NewValue, AEvent, 0.1);
+    end;
+  end;
+
+  // 从底部弹出
+  procedure DoBottomMoveInOut();
+  var
+    NewValue: Single;
+  begin
+    if Assigned(AniView) and Assigned(FViewRoot) then begin
+      if IsIn then begin
+        AniView.Position.Y := FViewRoot.Height;
+        NewValue := FViewRoot.Height - AniView.Height;
+        TFrameAnimator.AnimateFloat(AniView, 'Position.Y', NewValue, AEvent);
+      end else begin
+        NewValue := FViewRoot.Height;
+        TFrameAnimator.AnimateFloat(AniView, 'Position.Y', NewValue, AEvent, 0.1);
+      end;
     end;
   end;
 
 begin
   if not Assigned(FViewRoot) then Exit;  
+  if Assigned(FViewRoot.FLayBubble) then
+    AniView := FViewRoot.FLayBubble
+  else begin
+    if FViewRoot.ChildrenCount = 1 then
+      AniView := FViewRoot.Controls[0]
+    else
+      AniView := nil;
+  end;
+
   // 淡入淡出背景
   DoFadeInOutBackgroyund();
   // 如果图层完全不可见，设置动画时会出错
-  if (not Assigned(FViewRoot.FLayBubble)) or
-    (FViewRoot.FLayBubble.Background.ItemDefault.Color and $FF000000 = 0) then begin
+  if (not Assigned(AniView)) or
+    ((AniView is TView) and (TView(AniView).Background.ItemDefault.Color and $FF000000 = 0)) then begin
     if Assigned(AEvent) then
       AEvent(Self);
     Exit;
   end;
+
   // 处理动画
   case Ani of
-    TFrameAniType.None:
-      begin
-        if Assigned(AEvent) then
-          AEvent(Self);
-        if IsIn then
-          FViewRoot.FLayBubble.Opacity := 1
-        else
-          FViewRoot.FLayBubble.Opacity := 0;
-      end;
     TFrameAniType.FadeInOut:
       DoFadeInOut;
+    TFrameAniType.BottomMoveInOut:
+      DoBottomMoveInOut;
+  else
+    begin
+      // 无动画效果
+      if Assigned(AEvent) then
+        AEvent(Self);
+      if IsIn then
+        AniView.Opacity := 1
+      else
+        AniView.Opacity := 0;
+    end;
   end;
 end;
 
@@ -1297,7 +1329,7 @@ var
 begin
   Dialog := GetDialog(Target);
   if Assigned(Dialog) then
-    Dialog.Dismiss;
+    Dialog.AsyncDismiss;
 end;
 
 constructor TDialog.Create(AOwner: TComponent);
@@ -2479,6 +2511,10 @@ begin
   else begin
     FViewRoot.FMsgMessage.Text := AMsg;
     FViewRoot.FMsgMessage.Visible := True;
+    FViewRoot.FLayBubble.WidthSize := TViewSize.CustomSize;
+    FViewRoot.FLayBubble.Width := FViewRoot.FMsgMessage.Width +
+      FViewRoot.FMsgMessage.Padding.Left + FViewRoot.FMsgMessage.Padding.Right;
+    FViewRoot.FMsgMessage.WidthSize := TViewSize.FillParent;
   end;
 
   SetBackColor(Style.FDialogMaskColor);

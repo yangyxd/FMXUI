@@ -1883,7 +1883,7 @@ procedure TProgressView.PaintBackground;
     W, PW: Single;
   begin
     inherited PaintBackground;
-    if ((FMax - FMin) <= 0) then
+    if (FMax - FMin <= 0) or (FValue - FMin <= 0) then
       Exit;
     PW := FForeGround.Padding.Left + FForeGround.Padding.Right;
     W := (FValue - FMin) / (FMax - FMin) * (Width - PW) + PW;
@@ -1897,7 +1897,7 @@ procedure TProgressView.PaintBackground;
     H, V, PH: Single;
   begin
     inherited PaintBackground;
-    if ((FMax - FMin) <= 0) then
+    if (FMax - FMin <= 0) or (FValue - FMin <= 0) then
       Exit;
     PH := FForeGround.Padding.Top + FForeGround.Padding.Bottom;
     V := Height - PH;

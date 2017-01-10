@@ -545,15 +545,6 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
 
 begin
   case Ani of
-    TFrameAniType.None:
-      begin
-        if Assigned(AEvent) then
-          AEvent(Self);
-        if IsIn then
-          Opacity := 1
-        else
-          Opacity := 0;
-      end;
     TFrameAniType.DefaultAni:
       if not (DefaultAnimate in [TFrameAniType.None, TFrameAniType.DefaultAni]) then
         AnimatePlay(DefaultAnimate, IsIn, SwitchFlag, AEvent)
@@ -563,6 +554,16 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
       DoFadeInOut;
     TFrameAniType.MoveInOut:
       DoMoveInOut;
+  else
+    begin
+      // 无动画效果
+      if Assigned(AEvent) then
+        AEvent(Self);
+      if IsIn then
+        Opacity := 1
+      else
+        Opacity := 0;
+    end;
   end;
 end;
 
