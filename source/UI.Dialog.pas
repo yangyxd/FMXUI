@@ -71,7 +71,8 @@ const
   COLOR_MessageTextColor = $ff101010;
   COLOR_TitleBackGroundColor = $00000000;
   {$IFDEF IOS}
-  COLOR_TitleTextColor = $ff077dfe;
+  //COLOR_TitleTextColor = $ff077dfe;
+  COLOR_TitleTextColor = $ff7D7e7f;
   {$ELSE}
   COLOR_TitleTextColor = $ff7D7D7D;
   {$ENDIF}
@@ -80,7 +81,7 @@ const
   COLOR_ProcessBackgroundColor = $7fbababa;
   {$ENDIF}
   {$IFDEF IOS}
-  COLOR_ProcessBackgroundColor = $00000000;
+  COLOR_ProcessBackgroundColor = $80000000;
   {$ENDIF}
   {$IFDEF ANDROID}
   COLOR_ProcessBackgroundColor = $7f000000;
@@ -91,8 +92,10 @@ const
   COLOR_ButtonPressColor = $ffd9d9d9;
   COLOR_ButtonBorderColor = $ffe0e0e0;
   {$IFDEF IOS}
-  COLOR_ButtonTextColor = $FF077dfe;
-  COLOR_ButtonTextPressColor = $FF0049f5;
+//  COLOR_ButtonTextColor = $FF077dfe;
+//  COLOR_ButtonTextPressColor = $FF0049f5;
+  COLOR_ButtonTextColor = $FF404040;
+  COLOR_ButtonTextPressColor = $FF101010;
   {$ELSE}
   COLOR_ButtonTextColor = $FF404040;
   COLOR_ButtonTextPressColor = $FF101010;
@@ -2275,8 +2278,8 @@ begin
   FMsgMessage.Parent := FLayBubble;
   FMsgMessage.Clickable := False;
   FMsgMessage.Margins.Top := 24;
-  FMsgMessage.Padding.Left := 24;
-  FMsgMessage.Padding.Right := 24;
+  FMsgMessage.Padding.Left := 16;
+  FMsgMessage.Padding.Right := 16;
   FMsgMessage.WidthSize := TViewSize.WrapContent;
   FMsgMessage.HeightSize := TViewSize.WrapContent;
   FMsgMessage.Gravity := TLayoutGravity.Center;
@@ -2512,8 +2515,7 @@ begin
     FViewRoot.FMsgMessage.Text := AMsg;
     FViewRoot.FMsgMessage.Visible := True;
     FViewRoot.FLayBubble.WidthSize := TViewSize.CustomSize;
-    FViewRoot.FLayBubble.Width := FViewRoot.FMsgMessage.Width +
-      FViewRoot.FMsgMessage.Padding.Left + FViewRoot.FMsgMessage.Padding.Right;
+    FViewRoot.FLayBubble.Width := FViewRoot.FMsgMessage.Width + 32;
     FViewRoot.FMsgMessage.WidthSize := TViewSize.FillParent;
   end;
 

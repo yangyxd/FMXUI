@@ -43,6 +43,9 @@ FMXUI  (YangYxd)
   
   FMXUI ListView 用法简介
   http://www.cnblogs.com/yangyxd/articles/6225893.html
+  
+  FMXUI 沉侵式状态栏
+  http://www.cnblogs.com/yangyxd/p/6275249.html
 
 【联系我们】
 
