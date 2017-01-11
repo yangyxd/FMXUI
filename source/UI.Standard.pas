@@ -700,8 +700,12 @@ procedure TTextView.DoPaintBackground(var R: TRectF);
 begin
   R := RectF(R.Left + Padding.Left, R.Top + Padding.Top,
     R.Right - Padding.Right, R.Bottom - Padding.Bottom);
-  if Assigned(FDrawable) and (not FDrawable.IsEmpty) then
-    FDrawable.AdjustDraw(Canvas, R, True);
+  if Assigned(FDrawable) and (not FDrawable.IsEmpty) then begin
+    if TViewState.Checked in FViewState then
+      FDrawable.AdjustDraw(Canvas, R, True, TViewState.Checked)
+    else
+      FDrawable.AdjustDraw(Canvas, R, True, DrawState);
+  end;
   if (Assigned(FText)) then
     DoPaintText(R);
 end;

@@ -190,7 +190,8 @@ type
     function CreateBrush(): TBrush; overload;
 
     procedure Draw(Canvas: TCanvas); virtual;
-    procedure DrawTo(Canvas: TCanvas; const R: TRectF); virtual;
+    procedure DrawTo(Canvas: TCanvas; const R: TRectF); inline;
+    procedure DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState); virtual;
     procedure DrawBrushTo(Canvas: TCanvas; ABrush: TBrush; const R: TRectF);
 
     procedure SetRadius(const X, Y: Single);
@@ -383,11 +384,11 @@ type
     /// <summary>
     /// 绘制，并调整原来的区域
     /// </summary>
-    procedure AdjustDraw(Canvas: TCanvas; var R: TRectF; ExecDraw: Boolean);
+    procedure AdjustDraw(Canvas: TCanvas; var R: TRectF; ExecDraw: Boolean; AState: TViewState);
 
     procedure CreateBrush(var Value: TBrush; IsDefault: Boolean); override;
     procedure Draw(Canvas: TCanvas); override;
-    procedure DrawTo(Canvas: TCanvas; const R: TRectF); override;
+    procedure DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState); override;
     procedure DrawImage(Canvas: TCanvas; Index: Integer; const R: TRectF); virtual;
   published
     property SizeWidth: Integer read FWidth write SetWidth default 16;
@@ -1788,20 +1789,25 @@ begin
     FillRect(Canvas, R, FXRadius, FYRadius, FCorners, FView.GetOpacity, ABrush, FCornerType);
 end;
 
-procedure TDrawableBase.DrawTo(Canvas: TCanvas; const R: TRectF);
+procedure TDrawableBase.DrawStateTo(Canvas: TCanvas; const R: TRectF;
+  AState: TViewState);
 var
   V: TBrush;
   VR: TRectF;
-  AState: TViewState;
 begin
   if FIsEmpty or (not Assigned(FView)) then Exit;
   if FView.InVisible or (csDestroying in FView.GetComponentState) then Exit;
-  AState := FView.GetDrawState;
   V := GetStateItem(AState);
   VR := GetDrawRect(R.Left, R.Top, R.Right, R.Bottom);
   if V <> nil then
     FillRect(Canvas, VR, FXRadius, FYRadius, FCorners, FView.GetOpacity, V, FCornerType);
   DoDrawed(Canvas, VR, AState);
+end;
+
+procedure TDrawableBase.DrawTo(Canvas: TCanvas; const R: TRectF);
+begin
+  if FIsEmpty or (not Assigned(FView)) then Exit;
+  DrawStateTo(Canvas, R, FView.GetDrawState);
 end;
 
 procedure TDrawableBase.FillArc(Canvas: TCanvas; const Center, Radius: TPointF;
@@ -2101,7 +2107,8 @@ end;
 
 { TDrawableIcon }
 
-procedure TDrawableIcon.AdjustDraw(Canvas: TCanvas; var R: TRectF; ExecDraw: Boolean);
+procedure TDrawableIcon.AdjustDraw(Canvas: TCanvas; var R: TRectF; ExecDraw: Boolean;
+  AState: TViewState);
 var
   DR: TRectF;
   SW, SH: Single;
@@ -2116,7 +2123,7 @@ begin
           DR.Top := R.Top + (SH - FHeight) / 2;
           DR.Right := DR.Left + FWidth;
           DR.Bottom := DR.Top + FHeight;  
-          DrawTo(Canvas, DR);
+          DrawStateTo(Canvas, DR, AState);
         end;
         R.Left := R.Left + FWidth + FPadding;
       end;
@@ -2127,7 +2134,7 @@ begin
           DR.Top := R.Top + (SH - FHeight) / 2;
           DR.Right := R.Right;
           DR.Bottom := DR.Top + FHeight;
-          DrawTo(Canvas, DR);
+          DrawStateTo(Canvas, DR, AState);
         end;
         R.Right := R.Right - FWidth - FPadding;
       end;
@@ -2138,7 +2145,7 @@ begin
           DR.Top := R.Top;
           DR.Right := DR.Left + FWidth;
           DR.Bottom := DR.Top + FHeight;
-          DrawTo(Canvas, DR);
+          DrawStateTo(Canvas, DR, AState);
         end;
         R.Top := R.Top + FHeight + FPadding;
       end;
@@ -2149,7 +2156,7 @@ begin
           DR.Top := R.Bottom - FHeight;
           DR.Right := DR.Left + FWidth;
           DR.Bottom := R.Bottom;
-          DrawTo(Canvas, DR);
+          DrawStateTo(Canvas, DR, AState);
         end;
         R.Bottom := R.Bottom - FHeight - FPadding;
       end;
@@ -2160,7 +2167,7 @@ begin
           DR.Top := R.Top + (SH - FHeight) / 2;
           DR.Right := DR.Left + FWidth;
           DR.Bottom := DR.Top + FHeight;
-          DrawTo(Canvas, DR);
+          DrawStateTo(Canvas, DR, AState);
         end;
       end;
   end;
@@ -2240,12 +2247,12 @@ begin
   end;
 end;
 
-procedure TDrawableIcon.DrawTo(Canvas: TCanvas; const R: TRectF);
+procedure TDrawableIcon.DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState);
 var
   ImageIndex: Integer;
 begin
-  inherited DrawTo(Canvas, R);
-  ImageIndex := GetStateImageIndex();
+  inherited DrawStateTo(Canvas, R, AState);
+  ImageIndex := GetStateImageIndex(AState);
   if (ImageIndex >= 0) and Assigned(FImageLink.Images) then
     DrawImage(Canvas, ImageIndex, R);
 end;

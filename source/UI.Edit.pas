@@ -651,7 +651,7 @@ begin
   R := RectF(R.Left + Padding.Left, R.Top + Padding.Top,
     R.Right - Padding.Right, R.Bottom - Padding.Bottom);
   if Assigned(FDrawable) and (not FDrawable.IsEmpty) then
-    FDrawable.AdjustDraw(Canvas, R, True);
+    FDrawable.AdjustDraw(Canvas, R, True, DrawState);
   if (Assigned(FText)) then
     DoPaintText(R);
 end;
@@ -2614,7 +2614,7 @@ begin
     FContentRect := RectF(Pos.X + Padding.Left, Pos.Y + Padding.Top,
       Size.cx - Padding.Right, Size.cy - Padding.Bottom);
     if Assigned(FDrawable) and (not FDrawable.IsEmpty) then
-      FDrawable.AdjustDraw(Canvas, FContentRect, False);
+      FDrawable.AdjustDraw(Canvas, FContentRect, False, DrawState);
 
     // 计算出文本顶部位置
     case FText.VertAlign of
