@@ -502,17 +502,26 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
     NewValue: Single;
   begin
     if IsIn then begin
-      Self.Opacity := 0;
-      NewValue := 1;
+      if SwitchFlag then begin
+        Self.Opacity := 1;
+        TFrameAnimator.DelayExecute(Self, AEvent, 0.2);
+      end else begin
+        NewValue := 1;
+        TFrameAnimator.AnimateFloat(Self, 'Opacity', NewValue, AEvent, 0.2);
+      end;
     end else begin
-      NewValue := 0;
       if FinishIsFreeApp then begin
         if Assigned(AEvent) then
           AEvent(Self);
         Exit;
       end;
+      if SwitchFlag then begin
+        NewValue := 0;
+        TFrameAnimator.AnimateFloat(Self, 'Opacity', NewValue, AEvent, 0.2);
+      end else begin
+        TFrameAnimator.DelayExecute(Self, AEvent, 0.2);
+      end;
     end;
-    TFrameAnimator.AnimateFloat(Self, 'Opacity', NewValue, AEvent, 0.2, 0.01);
   end;
 
   // 移入移出, 右边进入

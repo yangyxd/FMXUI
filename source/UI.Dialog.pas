@@ -1240,7 +1240,7 @@ var
       end else begin
         NewValue := 0;
       end;
-      TFrameAnimator.AnimateFloat(AniView, 'Opacity', NewValue, AEvent, 0.1);
+      TFrameAnimator.AnimateFloat(AniView, 'Opacity', NewValue, AEvent, 0.15);
     end;
   end;
 
@@ -1256,7 +1256,7 @@ var
         TFrameAnimator.AnimateFloat(AniView, 'Position.Y', NewValue, AEvent);
       end else begin
         NewValue := FViewRoot.Height;
-        TFrameAnimator.AnimateFloat(AniView, 'Position.Y', NewValue, AEvent, 0.1);
+        TFrameAnimator.AnimateFloat(AniView, 'Position.Y', NewValue, AEvent, 0.05);
       end;
     end;
   end;
@@ -1406,8 +1406,8 @@ begin
     if (FViewRoot <> nil) then begin
       if (FViewRoot.FLayBubble <> nil) then
         FViewRoot.FLayBubble.Visible := False
-      else if FViewRoot.ControlsCount = 1 then // ShowView 时会是这种情况
-        FViewRoot.Controls[0].Visible := False;
+//      else if FViewRoot.ControlsCount = 1 then // ShowView 时会是这种情况
+//        FViewRoot.Controls[0].Visible := False;
     end;
     AnimatePlay(FAnimate, False,
       procedure (Sendet: TObject)
