@@ -79,7 +79,6 @@ function RectSF(const Left, Top, Width, Height: Single): TRectF;
 function OffsetRectD(var R: TRectD; const DX, DY: Double): Boolean;
 function GetRectF(const R: TRectD): TRectF;
 
-
 implementation
 
 uses

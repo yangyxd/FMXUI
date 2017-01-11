@@ -8,6 +8,7 @@ object Form1: TForm1
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
   OnShow = FormShow
   DesignerMasterStyle = 0
   object ToastManager1: TToastManager

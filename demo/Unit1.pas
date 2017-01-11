@@ -12,6 +12,7 @@ type
   TForm1 = class(TForm)
     ToastManager1: TToastManager;
     procedure FormShow(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -26,8 +27,15 @@ implementation
 {$R *.fmx}
 
 uses
+  UI.Frame,
   uFrame1,
   uFrame2;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  TFrameView.SetDefaultStatusColor($ff800080);
+  //TFrameView.SetDefaultBackColor($fff1f2f3);
+end;
 
 procedure TForm1.FormShow(Sender: TObject);
 begin

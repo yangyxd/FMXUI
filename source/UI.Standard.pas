@@ -2421,7 +2421,7 @@ begin
   P := FTargetView.LocalToAbsolute(TPointF.Zero);
   Position.Point := PointF(
     P.X + FTargetView.Width - Width * 0.65 + Margins.Left,
-    P.Y - Height * 0.35 + Margins.Top);
+    P.Y - Height * 0.35 + Margins.Top{$IFDEF ANDROID} - TView.GetStatusHeight{$ENDIF});
   FDisableAlign := False;
 end;
 

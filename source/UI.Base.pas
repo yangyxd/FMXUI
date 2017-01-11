@@ -26,6 +26,7 @@ uses
   Androidapi.JNI.JavaTypes,
   Androidapi.JNI.GraphicsContentViewText,
   Androidapi.JNI.Util,
+  Androidapi.JNI.Os,
   FMX.Helpers.Android,
   {$ENDIF}
   FMX.BehaviorManager,
@@ -1050,6 +1051,8 @@ type
     procedure StartTriggerAnimation(const AInstance: TFmxObject; const ATrigger: string); override;
     procedure StartTriggerAnimationWait(const AInstance: TFmxObject; const ATrigger: string); override;
 
+    class function GetStatusHeight: Single;
+
     { Rtti Function }
     class function GetRttiValue(Instance: TObject; const Name: string): TValue; overload;
     class function GetRttiValue<T>(Instance: TObject; const Name: string): T; overload;
@@ -1408,11 +1411,14 @@ resourcestring
   SRefOutLimitMax = '组件引用层级超过上限值: 256';
   SUnsupportPropertyType = '不支持的属性类型.';
 
-{$IFDEF ANDROID}
 var
+  /// <summary>
+  /// APP 状态条高度 (Android 平台有效)
+  /// </summary>
+  StatusHeight: Single = 0;
+  {$IFDEF ANDROID}
   FAudioManager: JAudioManager = nil;
-{$ENDIF}
-
+  {$ENDIF}
 
 function ComponentStateToString(const State: TComponentState): string;
 
@@ -1540,6 +1546,29 @@ begin
     Result := True;
   end;
 end;
+
+{$IFDEF ANDROID}
+procedure DoInitFrameStatusHeight();
+var
+  resourceId: Integer;
+begin
+  if TJBuild_VERSION.JavaClass.SDK_INT < 21 then
+    Exit;
+  resourceId := {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
+    .getResources().getIdentifier(
+      StringToJString('status_bar_height'),
+      StringToJString('dimen'),
+      StringToJString('android'));
+  if resourceId > 0 then begin
+    StatusHeight := {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
+      .getResources().getDimensionPixelSize(resourceId);
+    if StatusHeight > 0 then
+      StatusHeight := StatusHeight / {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
+        .getResources().getDisplayMetrics().scaledDensity;
+  end else
+    StatusHeight := 0;
+end;
+{$ENDIF}
 
 { TDrawableBase }
 
@@ -3247,6 +3276,11 @@ begin
     Result := Scene.GetSceneScale;
   if Result <= 0 then
     Result := 1;
+end;
+
+class function TView.GetStatusHeight: Single;
+begin
+  Result := StatusHeight;
 end;
 
 function TView.GetViewBackground: TDrawable;
@@ -6685,6 +6719,7 @@ end;
 initialization
   {$IFDEF ANDROID}
   TView.InitAudioManager();
+  DoInitFrameStatusHeight();
   {$ENDIF}
 
 finalization

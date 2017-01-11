@@ -1,4 +1,4 @@
-﻿{*******************************************************}
+{*******************************************************}
 {                                                       }
 {             Delphi FireMonkey Platform                }
 { Copyright(c) 2016 Embarcadero Technologies, Inc.      }
@@ -873,14 +873,8 @@ procedure TTextLayoutNG.DoRenderLayout;
     //Checking for lines lower than bottom border
     if VerticalAlign <> TTextAlign.Trailing then
       while FFrame.Count > 0 do
-{--->
         if (FFrame[FFrame.Count - 1].TopLeft.Y + FFrame[FFrame.Count - 1].Height) > MaxSize.Y then
           if FFrame[FFrame.Count - 1].TopLeft.Y > MaxSize.Y then
-<---}
-{+++>}
-        if (((FFrame[FFrame.Count - 1].TopLeft.Y + FFrame[FFrame.Count - 1].Height) > MaxSize.Y) and (VerticalAlign <> TTextAlign.Center)) or // 2017/01/11 修正显示省略字符 by Aone
-           (FFrame[FFrame.Count - 1].TopLeft.Y > MaxSize.Y) then
-{<+++}
           begin
             FFrame.Height := FFrame.Height - FFrame[FFrame.Count - 1].Height;
             FFrame.Delete(FFrame.Count - 1);
@@ -909,10 +903,8 @@ procedure TTextLayoutNG.DoRenderLayout;
             end;
             Break;
           end
-;{+++>---> // 2017/01/11 修正显示省略字符 by Aone
         else
           Break;
-<---}
     //
     for I := 0 to FFrame.Count - 1 do
       if FFrame[I].Width > MaxSize.X then
@@ -1007,7 +999,6 @@ var
   LRun, NewRun: TGPURun;
   I, LineIndex, RunIndex, CharIndex, RunLength: Integer;
   WidthLimit, LineWidth, LineWidthLimit: Single;
-{+++>}h: Single; // 2017/01/11 修正显示省略字符 by Aone
   CurrentPos, RemainLength, RunEndIndex, WordBeginIndex, CharLength: Integer;
 begin
   FOldColor := Self.Color;
@@ -1031,7 +1022,6 @@ begin
   //Calculation metrics
   WidthLimit := MaxSize.X - Padding.Left - Padding.Right;
   LineIndex := 0;
-{+++>}h := Padding.Top; // 2017/01/11 修正显示省略字符 by Aone
   while LineIndex < FFrame.Count do
   begin
     LLine := FFrame[LineIndex];
@@ -1067,9 +1057,9 @@ begin
               if Text.Chars[CharIndex].GetUnicodeCategory <> TUnicodeCategory.ucSpaceSeparator then
               begin
                 WordBeginIndex := CharIndex;
-{--->           while (WordBeginIndex > LRun.StartIndex) and (Text.Chars[WordBeginIndex - 1].GetUnicodeCategory <> TUnicodeCategory.ucSpaceSeparator) do
-{+++>           while (WordBeginIndex > LRun.StartIndex) do // 单字符折行（只适用 Android & iOS 平台）
-{+++>}          while (WordBeginIndex > LRun.StartIndex) and not (Text.Chars[WordBeginIndex - 1].GetUnicodeCategory in [TUnicodeCategory.ucSpaceSeparator, TUnicodeCategory.ucOtherLetter]) do // 2016.12.22 修正中英文混排折行 by Aone
+                // while (WordBeginIndex > LRun.StartIndex) and (Text.Chars[WordBeginIndex - 1].GetUnicodeCategory <> TUnicodeCategory.ucSpaceSeparator) do
+                // by YangYxd
+                while (WordBeginIndex > LRun.StartIndex) and not (Text.Chars[WordBeginIndex - 1].GetUnicodeCategory in [TUnicodeCategory.ucSpaceSeparator, TUnicodeCategory.ucOtherLetter]) do
                   Dec(WordBeginIndex);
                 if Text.Chars[WordBeginIndex].IsLowSurrogate then
                   Dec(WordBeginIndex);
@@ -1108,18 +1098,10 @@ begin
 
                 CurrentPos := WordBeginIndex;
               end;
-{+++>}        h := h + LLine.Height; // 2017/01/11 修正显示省略字符 by Aone
             end
             else
             begin
               CurrentPos := CharIndex;
-{+++>}
-            end;
-            // 2017/01/11 修正显示省略字符 by Aone
-            if (not WordWrap) or
-               ((VerticalAlign = TTextAlign.Leading) and (h > MaxSize.Y - LLine.Height)) then 
-            begin
-{<+++}
               //Getting back to last visible
               if Trimming <> TTextTrimming.None then
               begin

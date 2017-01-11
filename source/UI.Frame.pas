@@ -450,6 +450,7 @@ var
 // 解决有时返回键失效问题
 var
   FVKState: PByte = nil;
+  FFirstCreateFrame: Boolean = True;
 
 procedure UpdateAndroidKeyboardServiceState;
 var
@@ -652,12 +653,38 @@ end;
 
 class function TFrameView.CreateFrame(Parent: TFmxObject;
   Params: TFrameParams): TFrameView;
+
+  {$IFDEF ANDROID}
+  procedure DoUpdateParentFormState(Parent: TFmxObject);
+  begin
+    // 设置了状态条颜色，并且状态条高度大于0时，将父级Form的Padding.Top设为状态条高度
+    if (FDefaultStatusColor <> 0) and (TView.GetStatusHeight > 0) then begin
+      while Parent <> nil do begin
+        if (Parent is TCommonCustomForm) then begin
+          TCommonCustomForm(Parent).Padding.Top := 
+            TCommonCustomForm(Parent).Padding.Top + TView.GetStatusHeight;
+          Break;
+        end;
+        Parent := Parent.Parent;
+      end;
+    end;
+  end;
+  {$ENDIF}      
+  
 var
   Dlg: IDialog;
 begin
   Result := nil;
   if (Assigned(Parent)) then begin
     try
+      {$IFDEF ANDROID}
+      // 检测是否是第一次创建 Frame
+      if FFirstCreateFrame then begin  
+        DoUpdateParentFormState(Parent);
+        FFirstCreateFrame := False;  
+      end;
+      {$ENDIF}
+      
       // 检测是否是存在Dialog
       if Parent is TControl then begin
         Dlg := TDialog.GetDialog(Parent as TControl);
@@ -737,8 +764,7 @@ var
   R: TRectF;
 begin
   inherited Paint;
-  if (FBackColor and $FF000000 > 0) then
-  begin
+  if (FBackColor and $FF000000 > 0) then begin
     R := LocalRect;
     Canvas.Fill.Kind := TBrushKind.Solid;
     Canvas.Fill.Color := FBackColor;
@@ -798,7 +824,7 @@ end;
 
 procedure TFrameView.DoShow;
 begin
-  if FDefaultStatusColor <> 0 then
+  if (FDefaultStatusColor <> 0) then
     StatusColor := FDefaultStatusColor;
   if Assigned(FOnShow) then
     FOnShow(Self);
@@ -916,17 +942,13 @@ function TFrameView.GetStatusColor: TAlphaColor;
   {$IFDEF ANDROID}
   function ExecuteAndroid(): TAlphaColor;
   var
-    wnd: JWindow;
+    F: TCustomForm;
   begin
-    if TJBuild_VERSION.JavaClass.SDK_INT < 21 then
+    F := ParentForm;
+    if not Assigned(F) then
       Result := 0
-    else begin
-      wnd := TAndroidHelper.Activity.getWindow();
-      if Assigned(wnd) then 
-        Result := wnd.getStatusBarColor()
-      else
-        Result := 0;
-    end;
+    else
+      Result := F.Fill.Color;
   end;
   {$ENDIF}
 
@@ -1080,7 +1102,15 @@ end;
 
 class procedure TFrameView.SetDefaultStatusColor(const Value: TAlphaColor);
 begin
-  FDefaultStatusColor := Value;
+  if FDefaultStatusColor <> Value then begin  
+    FDefaultStatusColor := Value;
+    {$IFDEF POSIX}
+    // 在移动平台时，设置状态条颜色时，如果背景颜色为透明，且状态条高度>0时，
+    // 将背景颜色设为白色
+    if (Value and $FF000000 > 0) and (FDefaultBackColor = 0) and (TView.GetStatusHeight > 0) then
+      FDefaultBackColor := $fff1f2f3; 
+    {$ENDIF}
+  end;  
 end;
 
 procedure TFrameView.SetParams(const Value: TFrameParams);
@@ -1115,19 +1145,14 @@ procedure TFrameView.SetStatusColor(const Value: TAlphaColor);
   {$IFDEF ANDROID}
   procedure ExecuteAndroid();   
   var
-    wnd: JWindow;
+    F: TCustomForm;
   begin
-    if TJBuild_VERSION.JavaClass.SDK_INT < 21 then
-      Exit;
-    wnd := TAndroidHelper.Activity.getWindow;
-    if (not Assigned(wnd)) then Exit;
-    // 取消设置透明状态栏,使 ContentView 内容不再覆盖状态栏
-    // wnd.clearFlags($04000000); // FLAG_TRANSLUCENT_STATUS
-    wnd.getDecorView().setSystemUiVisibility($00000400 or $00000100);
-    // 需要设置这个 flag 才能调用 setStatusBarColor 来设置状态栏颜色
-    wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS); // FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
-    // 设置颜色
-    wnd.setStatusBarColor(Value);
+    if TView.GetStatusHeight > 0 then begin
+      F := ParentForm;
+      if not Assigned(F) then
+        Exit;
+      F.Fill.Color := Value;        
+    end;
   end;
   {$ENDIF}
 
@@ -1136,7 +1161,7 @@ begin
   ExecuteIOS();
   {$ENDIF}
   {$IFDEF ANDROID}
-  // ExecuteAndroid();  // 没有效果。。。
+  ExecuteAndroid(); 
   {$ENDIF}
 end;
 
