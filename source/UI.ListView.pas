@@ -1178,7 +1178,7 @@ procedure TListViewContent.DoRealign;
     I: Integer;
     Control: TControl;
   begin
-    for I := 0 to Parent.ChildrenCount - 1 do begin
+    for I := 0 to Parent.ControlsCount - 1 do begin
       Control := Parent.Controls[I];
       if not Control.Visible then
         Continue;
@@ -1186,7 +1186,7 @@ procedure TListViewContent.DoRealign;
         Control.OnClick := DoItemChildClick;
         FItemViews.AddOrSetValue(Control, Index);
       end;
-      if Control.ChildrenCount > 0 then
+      if Control.ControlsCount > 0 then
         SetChildClickEvent(Control, Index);
     end;
   end;
@@ -1198,13 +1198,13 @@ procedure TListViewContent.DoRealign;
     I: Integer;
     Control: TControl;
   begin
-    for I := 0 to Parent.ChildrenCount - 1 do begin
+    for I := 0 to Parent.ControlsCount - 1 do begin
       Control := Parent.Controls[I];
       if not Control.Visible then
         Continue;
       if Control.HitTest then
         FItemViews.AddOrSetValue(Control, Index);
-      if Control.ChildrenCount > 0 then
+      if Control.ControlsCount > 0 then
         SetChildClickEvent(Control, Index);
     end;
   end;

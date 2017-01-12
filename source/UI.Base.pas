@@ -1552,7 +1552,7 @@ procedure DoInitFrameStatusHeight();
 var
   resourceId: Integer;
 begin
-  if TJBuild_VERSION.JavaClass.SDK_INT < 21 then
+  if TJBuild_VERSION.JavaClass.SDK_INT < 19 then
     Exit;
   resourceId := {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
     .getResources().getIdentifier(

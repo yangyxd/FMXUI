@@ -1146,12 +1146,31 @@ procedure TFrameView.SetStatusColor(const Value: TAlphaColor);
   procedure ExecuteAndroid();   
   var
     F: TCustomForm;
+    wnd: JWindow;
   begin
     if TView.GetStatusHeight > 0 then begin
       F := ParentForm;
       if not Assigned(F) then
         Exit;
       F.Fill.Color := Value;        
+    end else begin
+      if TJBuild_VERSION.JavaClass.SDK_INT < 21 then
+        Exit;
+      wnd := TAndroidHelper.Activity.getWindow;
+      if (not Assigned(wnd)) then Exit;
+      CallInUiThread(
+        procedure
+        begin
+          wnd.getDecorView().setFitsSystemWindows(True);
+          // 取消设置透明状态栏,使 ContentView 内容不再覆盖状态栏
+          wnd.clearFlags($04000000); // FLAG_TRANSLUCENT_STATUS
+          wnd.getDecorView().setSystemUiVisibility($00000400 or $00000100);
+          // 需要设置这个 flag 才能调用 setStatusBarColor 来设置状态栏颜色
+          wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS); // FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
+          // 设置颜色
+          wnd.setStatusBarColor($ff3399ff);
+        end
+      );
     end;
   end;
   {$ENDIF}
