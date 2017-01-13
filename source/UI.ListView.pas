@@ -1768,7 +1768,10 @@ var
   ItemView: TPair<Integer, TViewBase>;
   ItemViewType: Integer;
 begin
-  FCount := FAdapter.Count;
+  if Assigned(FAdapter) then
+    FCount := FAdapter.Count
+  else
+    FCount := 0;
   for ItemView in FViews do begin
     if ItemView.Key >= FCount then
       RemoveObject(ItemView.Value)

@@ -1168,7 +1168,7 @@ procedure TFrameView.SetStatusColor(const Value: TAlphaColor);
           // 需要设置这个 flag 才能调用 setStatusBarColor 来设置状态栏颜色
           wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS); // FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
           // 设置颜色
-          wnd.setStatusBarColor($ff3399ff);
+          wnd.setStatusBarColor(Integer($ff3399ff));
         end
       );
     end;
