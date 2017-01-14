@@ -41,7 +41,7 @@ type
 
 type
   /// <summary>
-  /// 空心视图
+  /// 空心图形视图
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TRingView = class(TView)
@@ -67,6 +67,7 @@ type
     procedure RecreatePath; virtual;
     procedure PathChanged;
     procedure DoMouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
+    procedure MouseClick(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -74,11 +75,11 @@ type
     /// <summary>
     /// 外层样式
     /// </summary>
-    property StyleOuter: TRingViewStyle read FOuter write SetOuter default TRingViewStyle.Rectangle;
+    property KindOuter: TRingViewStyle read FOuter write SetOuter default TRingViewStyle.Rectangle;
     /// <summary>
     /// 内层样式
     /// </summary>
-    property StyleInner: TRingViewStyle read FInner write SetInner default TRingViewStyle.Ellipse;
+    property KindInner: TRingViewStyle read FInner write SetInner default TRingViewStyle.Ellipse;
     /// <summary>
     /// 内层与外层之间的距离
     /// </summary>
@@ -2841,7 +2842,7 @@ begin
   if (TMouseButton.mbLeft = Button) and Clickable then begin
     if FClickInPath and Assigned(Canvas) then begin
       if not Canvas.PtInPath(PointF(X, Y), FPath) then
-        Exit;     
+        Exit;
     end;
     IncViewState(TViewState.Pressed);
     if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
@@ -2851,6 +2852,16 @@ end;
 function TRingView.IsStoredDistance: Boolean;
 begin
   Result := FDistance <> 10;
+end;
+
+procedure TRingView.MouseClick(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+begin
+  if FClickInPath and (TMouseButton.mbLeft = Button) and Clickable then begin
+    if not Canvas.PtInPath(PointF(X, Y), FPath) then
+      Exit;
+  end;
+  inherited;
 end;
 
 procedure TRingView.PaintBackground;
