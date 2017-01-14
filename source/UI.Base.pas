@@ -175,6 +175,7 @@ type
       const StartAngle, SweepAngle, AOpacity: Single; const ABrush: TBrush); inline;
 
     procedure DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState); virtual;
+    procedure InitDrawable; virtual;
   public
     constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
@@ -187,7 +188,7 @@ type
 
     procedure Assign(Source: TPersistent); override;
     procedure Change; virtual;
-    procedure CreateBrush(var Value: TBrush; IsDefault: Boolean); overload; virtual; abstract;
+    procedure CreateBrush(var Value: TBrush; IsDefault: Boolean); overload; virtual;
     function CreateBrush(): TBrush; overload;
 
     procedure Draw(Canvas: TCanvas); virtual;
@@ -232,7 +233,6 @@ type
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
-    procedure CreateBrush(var Value: TBrush; IsDefault: Boolean); override;
   published
     property Padding: TBounds read FPadding write SetPadding;
     property Paddings: string read GetPaddings write SetPaddings stored False;
@@ -925,6 +925,7 @@ type
     function IsAdjustLayout: Boolean; virtual;
     function GetBadgeView: IViewBadge;
     procedure SetBadgeView(const Value: IViewBadge);
+    function EmptyBackground(const V: TDrawable; const State: TViewState): Boolean;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; virtual;
     procedure IncViewState(const State: TViewState); virtual;
     procedure DecViewState(const State: TViewState); virtual;
@@ -1398,6 +1399,9 @@ type
     property ForceColumnSize: Boolean read FForceColumnSize write SetForceColumnSize default False;
   end;
 
+function ViewStateToString(const State: TViewStates): string;
+function ComponentStateToString(const State: TComponentState): string;
+
 implementation
 
 uses
@@ -1456,6 +1460,40 @@ begin
     SetLength(Result, P - P1 - 1)
   else
     Result := '';
+end;
+
+function ViewStateToString(const State: TViewStates): string;
+
+  procedure Write(var P: PChar; const V: string);
+  var
+    PV, PM: PChar;
+  begin
+    PV := PChar(V);
+    PM := PV + Length(V);
+    while PV < PM do begin
+      P^ := PV^;
+      Inc(P);
+      Inc(PV);
+    end;
+  end;
+
+var
+  P, P1: PChar;
+begin
+  SetLength(Result, 256);
+  P := PChar(Result);
+  P1 := P;
+  if TViewState.Pressed in State then Write(P, 'Pressed,');
+  if TViewState.Focused in State then Write(P, 'Focused,');
+  if TViewState.Hovered in State then Write(P, 'Hovered,');
+  if TViewState.Selected in State then Write(P, 'Selected,');
+  if TViewState.Checked in State then Write(P, 'Checked,');
+  if TViewState.Enabled in State then Write(P, 'Enabled,');
+  if TViewState.Activated in State then Write(P, 'Activated,');
+  if (P - P1) > 0 then
+    SetLength(Result, P - P1 - 1)
+  else
+    Result := 'None';
 end;
 
 type TPrivateControl = class(TControl);
@@ -1640,6 +1678,18 @@ begin
     if (FDefaultKind = TViewBrushKind.Solid) and (FDefaultColor <> TAlphaColorRec.Null) then
       CreateBrush(FDefault, True);
   end;
+  InitDrawable;
+end;
+
+procedure TDrawableBase.CreateBrush(var Value: TBrush; IsDefault: Boolean);
+begin
+  if Assigned(Value) then
+    FreeAndNil(Value);
+  if IsDefault then
+    Value := TViewBrush.Create(FDefaultKind, FDefaultColor)
+  else
+    Value := TViewBrush.Create(TViewBrushKind.None, TAlphaColorRec.Null);
+  Value.OnChanged := DoChange;
 end;
 
 function TDrawableBase.CreateBrush: TBrush;
@@ -1675,6 +1725,10 @@ end;
 function TDrawableBase.GetValue(const Index: Integer): TBrush;
 begin
   Result := GetBrush(TViewState(Index), not (csLoading in FView.GetComponentState));
+end;
+
+procedure TDrawableBase.InitDrawable;
+begin
 end;
 
 function TDrawableBase.IsStoredCorners: Boolean;
@@ -2078,17 +2132,6 @@ begin
   FPadding := TBounds.Create(TRectF.Empty);
   FPadding.OnChange := DoChange;
   inherited Create(View, ADefaultKind, ADefaultColor);
-end;
-
-procedure TDrawable.CreateBrush(var Value: TBrush; IsDefault: Boolean);
-begin
-  if Assigned(Value) then
-    FreeAndNil(Value);
-  if IsDefault then
-    Value := TViewBrush.Create(FDefaultKind, FDefaultColor)
-  else
-    Value := TViewBrush.Create(TViewBrushKind.None, TAlphaColorRec.Null);
-  Value.OnChanged := DoChange;
 end;
 
 destructor TDrawable.Destroy;
@@ -2917,8 +2960,16 @@ end;
 
 function TView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
 begin
-  Result := CanRepaint and Assigned(View.Background) and
-    Assigned(View.Background.GetStateBrush(State));
+  Result := CanRepaint and EmptyBackground(View.Background, State);
+end;
+
+function TView.EmptyBackground(const V: TDrawable;
+  const State: TViewState): Boolean;
+begin
+  Result := Assigned(V) and
+    (Assigned(V.GetStateBrush(State)) or
+    ((V is TDrawableBorder) and Assigned(TDrawableBorder(V)._Border) and
+    (TDrawableBorder(V)._Border.Color.GetColor(State) and $FF000000 > 0)));
 end;
 
 procedure TView.Click;
@@ -3702,11 +3753,13 @@ begin
         FDrawState := GetRealDrawState;
     end;
     FDrawing := True;
+    Canvas.BeginScene();
     try
       PaintBackground();
       if (csDesigning in ComponentState) and not Locked then
         DrawDesignBorder;
     finally
+      Canvas.EndScene;
       FDrawing := False;
     end;
   end;

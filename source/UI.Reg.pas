@@ -81,11 +81,12 @@ procedure Register;
 begin
   RegisterComponents(PageName, [TView, TLinearLayout, TRelativeLayout, TGridsLayout]);
 
-  RegisterComponents(PageName, [TProgressView]);
   RegisterComponents(PageName, [TImageView]);
   RegisterComponents(PageName, [TTextView]);
   RegisterComponents(PageName, [TButtonView]);
   RegisterComponents(PageName, [TBadgeView]);
+  RegisterComponents(PageName, [TProgressView]);
+  RegisterComponents(PageName, [TRingView]);
 
   RegisterComponents(PageName, [TEditView]);
   RegisterComponents(PageName, [TListExView]);
@@ -181,6 +182,13 @@ begin
       'SolidForeGround',
       'PaddingBorder',
       'OnValueChange',
+      { TRingView }
+      'StyleOuter',
+      'StyleInner',
+      'Distance',
+      'AngleStart',
+      'AngleEnd',
+      'ClickInPath',
       { TBadgeView }
       'AutoSize',
       'TargetView',
@@ -252,6 +260,8 @@ begin
     ['None', 'Matrix', 'Center', 'CenterCrop', 'CenterInside', 'FitCenter', 'FitStart', 'FitEnd']);
   AddEnumElementAliases(TypeInfo(TBadgeStyle),
     ['EmptyText', 'NumberText', 'NewText', 'HotText', 'Icon']);
+  AddEnumElementAliases(TypeInfo(TRingViewStyle),
+    ['Rectangle', 'Circle', 'Ellipse']);
 end;
 
 procedure UnregisterAliases;
@@ -266,6 +276,7 @@ begin
   RemoveEnumElementAliases(TypeInfo(TProgressKind));
   RemoveEnumElementAliases(TypeInfo(TImageScaleType));
   RemoveEnumElementAliases(TypeInfo(TBadgeStyle));
+  RemoveEnumElementAliases(TypeInfo(TRingViewStyle));
 end;
 
 { TViewControlEditor }

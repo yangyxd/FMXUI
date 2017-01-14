@@ -1069,11 +1069,37 @@ begin
                 WordBeginIndex := CharIndex;
 {--->           while (WordBeginIndex > LRun.StartIndex) and (Text.Chars[WordBeginIndex - 1].GetUnicodeCategory <> TUnicodeCategory.ucSpaceSeparator) do
 {+++>           while (WordBeginIndex > LRun.StartIndex) do // 单字符折行（只适用 Android & iOS 平台）
-{+++>}          while (WordBeginIndex > LRun.StartIndex) and not (Text.Chars[WordBeginIndex - 1].GetUnicodeCategory in [TUnicodeCategory.ucSpaceSeparator, TUnicodeCategory.ucOtherLetter]) do // 2016.12.22 修正中英文混排折行 by Aone
+{+++>}          while (WordBeginIndex > LRun.StartIndex) and not (Text.Chars[WordBeginIndex - 1].GetUnicodeCategory in
+                      [TUnicodeCategory.ucSpaceSeparator
+                      ,TUnicodeCategory.ucOtherLetter        // 2016.12.22 修正中英文混排折行 by Aone
+                      // 2017.01.13 修正避开首字标点 by Aone
+                      ,TUnicodeCategory.ucConnectPunctuation // 字元為可連接兩個字元的連接子標點符號。
+                      ,TUnicodeCategory.ucDashPunctuation    // 字元為破折號或連字號。
+                      ,TUnicodeCategory.ucOtherPunctuation   // 字元為不是連接子標點符號、破折號標點符號、開始標點符號、結束標點符號、啟始引號標點符號或終結引號標點符號的標點符號。
+                    //,TUnicodeCategory.ucOpenPunctuation    // 字元為成對標點符號標記的其中一個開頭字元，例如括弧、方括弧和大括號。
+                      ,TUnicodeCategory.ucClosePunctuation   // 字元為成對標點符號標記的其中一個結束字元，例如括弧、方括弧和大括號。
+                    //,TUnicodeCategory.ucInitialPunctuation // 字元為開頭或啟始引號。
+                      ,TUnicodeCategory.ucFinalPunctuation   // 字元為結束或終結引號。
+                      ]) do
                   Dec(WordBeginIndex);
                 if Text.Chars[WordBeginIndex].IsLowSurrogate then
                   Dec(WordBeginIndex);
                 RunEndIndex := WordBeginIndex;
+{+++>}          // 2017.01.13 修正避开首字标点 by Aone
+                while (RunEndIndex > LRun.StartIndex) and (Text.Chars[RunEndIndex].GetUnicodeCategory in
+                      [TUnicodeCategory.ucConnectPunctuation // 字元為可連接兩個字元的連接子標點符號。
+                      ,TUnicodeCategory.ucDashPunctuation    // 字元為破折號或連字號。
+                      ,TUnicodeCategory.ucOtherPunctuation   // 字元為不是連接子標點符號、破折號標點符號、開始標點符號、結束標點符號、啟始引號標點符號或終結引號標點符號的標點符號。
+                    //,TUnicodeCategory.ucOpenPunctuation    // 字元為成對標點符號標記的其中一個開頭字元，例如括弧、方括弧和大括號。
+                      ,TUnicodeCategory.ucClosePunctuation   // 字元為成對標點符號標記的其中一個結束字元，例如括弧、方括弧和大括號。
+                    //,TUnicodeCategory.ucInitialPunctuation // 字元為開頭或啟始引號。
+                      ,TUnicodeCategory.ucFinalPunctuation   // 字元為結束或終結引號。
+                      ]) do
+                begin
+                     Dec(WordBeginIndex);
+                     Dec(RunEndIndex);
+                end;
+{<+++}
                 while (RunEndIndex > LRun.StartIndex) and (Text.Chars[RunEndIndex - 1].GetUnicodeCategory = TUnicodeCategory.ucSpaceSeparator) do
                   Dec(RunEndIndex);
                 if Text.Chars[RunEndIndex].IsLowSurrogate then
@@ -1140,7 +1166,12 @@ begin
                   RunLength := CurrentPos - LRun.StartIndex;
                 TTextTrimming.Character:
                   if CurrentPos > 0 then
-                    if Text.Chars[CurrentPos - 1].IsLetterOrDigit then
+{--->               if Text.Chars[CurrentPos - 1].IsLetterOrDigit then
+{+++>}              // 2017.01.13 修正避开首字标点 by Aone
+                    if Text.Chars[CurrentPos - 1].IsLetterOrDigit or
+                       Text.Chars[CurrentPos - 1].IsPunctuation or
+                      (Text.Chars[CurrentPos - 1].GetUnicodeCategory = TUnicodeCategory.ucOtherLetter) then
+{<+++}
                     begin
                       RunLength := CurrentPos - LRun.StartIndex - 1;
                       while (RunLength > 0) and not Text.Chars[LRun.StartIndex + RunLength - 1].IsLetterOrDigit do

@@ -31,10 +31,90 @@ type
     const R: TRectF; State: TViewState) of object;
 
 type
+  TPathDataHelper = class helper for TPathData
+    procedure AddRing(const ACenter: TPointF;
+      const R1, R2, AStartAngle, ASweepAngle: Single);
+  end;
+
+type
+  TRingViewStyle = (Rectangle {矩形}, Circle {圆形}, Ellipse {椭圆});
+
+type
+  /// <summary>
+  /// 空心视图
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TRingView = class(TView)
+  private
+    FOuter: TRingViewStyle;
+    FInner: TRingViewStyle;
+    FDistance: Single;
+    FStartAngle: Single;
+    FAngle: Single;
+    FPathChanged: Boolean;
+    FClickInPath: Boolean;
+    procedure SetDistance(const Value: Single);
+    procedure SetInner(const Value: TRingViewStyle);
+    procedure SetOuter(const Value: TRingViewStyle);
+    function IsStoredDistance: Boolean;
+    procedure SetEndAngle(const Value: Single);
+    procedure SetStartAngle(const Value: Single);
+  protected
+    FPath: TPathData;
+    procedure Resize; override;
+    procedure DoBackgroundChanged(Sender: TObject); override;
+    procedure PaintBackground; override;
+    procedure RecreatePath; virtual;
+    procedure PathChanged;
+    procedure DoMouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  published
+    /// <summary>
+    /// 外层样式
+    /// </summary>
+    property StyleOuter: TRingViewStyle read FOuter write SetOuter default TRingViewStyle.Rectangle;
+    /// <summary>
+    /// 内层样式
+    /// </summary>
+    property StyleInner: TRingViewStyle read FInner write SetInner default TRingViewStyle.Ellipse;
+    /// <summary>
+    /// 内层与外层之间的距离
+    /// </summary>
+    property Distance: Single read FDistance write SetDistance stored IsStoredDistance;
+    /// <summary>
+    /// 开始角度，当 Style 不是 Rectangle 时有效
+    /// </summary>
+    property AngleStart: Single read FStartAngle write SetStartAngle;
+    /// <summary>
+    /// 角度，当 Style 不是 Rectangle 时有效
+    /// </summary>
+    property AngleEnd: Single read FAngle write SetEndAngle;
+    /// <summary>
+    /// 是否是能点击到路径上
+    /// </summary>
+    property ClickInPath: Boolean read FClickInPath write FClickInPath default True;
+  end;
+
+type
   /// <summary>
   /// 进度视图类型
   /// </summary>
   TProgressKind = (Horizontal {水平}, Vertical {垂直}, CircleRing {圆环});
+
+type
+  TDrawableProgress = class(TDrawable)
+  private
+    FWidth: Single;
+    function IsStoredWidth: Boolean;
+    procedure SetWidth(const Value: Single);
+  protected
+    procedure InitDrawable; override;
+  published
+    property RingWidth: Single read FWidth write SetWidth stored IsStoredWidth;
+  end;  
+  
 type
   /// <summary>
   /// 进度视图
@@ -48,35 +128,59 @@ type
     FStartAngle: Single;
     FKind: TProgressKind;
     FOnValueChange: TNotifyEvent;
-    FForeGround: TDrawable;
+    FForeGround: TDrawableProgress;
     FShapePath: TPathData;
-    FSolidForeGround: Boolean;
     FPaddingBorder: Boolean;
-    procedure SetForeGround(const Value: TDrawable);
+    FPathChanged: Boolean;
+    procedure SetForeGround(const Value: TDrawableProgress);
     procedure SetMaxValue(const Value: Int64);
     procedure SetMinValue(const Value: Int64);
     procedure SetProValue(const Value: Int64);
     procedure SetKind(const Value: TProgressKind);
     procedure SetStartAngle(const Value: Single);
-    procedure SetSolidForeGround(const Value: Boolean);
     procedure SetPaddingBorder(const Value: Boolean);
   protected
     procedure DoForegroundChanged(Sender: TObject); virtual;
     procedure DoValueChanged(Sender: TObject); virtual;
   protected
     procedure PaintBackground; override;
+    procedure RecreatePath; virtual;
+    function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   published
+    /// <summary>
+    /// 最小值
+    /// </summary>
     property Min: Int64 read FMin write SetMinValue default 0;
+    /// <summary>
+    /// 最大值
+    /// </summary>
     property Max: Int64 read FMax write SetMaxValue default 100;
+    /// <summary>
+    /// 当前值
+    /// </summary>
     property Value: Int64 read FValue write SetProValue default 50;
-    property ForeGround: TDrawable read FForeGround write SetForeGround;
+    /// <summary>
+    /// 前景层样式 (显示值的绘制)
+    /// </summary>
+    property ForeGround: TDrawableProgress read FForeGround write SetForeGround;
+    /// <summary>
+    /// 开始角度
+    /// </summary>
     property StartAngle: Single read FStartAngle write SetStartAngle;
+    /// <summary>
+    /// 进度条类型
+    /// </summary>
     property Kind: TProgressKind read FKind write SetKind default TProgressKind.Horizontal;
-    property SolidForeGround: Boolean read FSolidForeGround write SetSolidForeGround default False;
+    /// <summary>
+    /// 前存在边框时，空出边框位置
+    /// </summary>
     property PaddingBorder: Boolean read FPaddingBorder write SetPaddingBorder default False;
+    /// <summary>
+    /// 当前值变更事件
+    /// </summary>
     property OnValueChange: TNotifyEvent read FOnValueChange write FOnValueChange;
   end;
 
@@ -1126,22 +1230,8 @@ begin
 end;
 
 function TButtonView.GetDefaultSize: TSizeF;
-var
-  DeviceInfo: IDeviceBehavior;
 begin
-  if TBehaviorServices.Current.SupportsBehaviorService(IDeviceBehavior, DeviceInfo, Self) then
-    case DeviceInfo.GetOSPlatform(Self) of
-      TOSPlatform.Windows:
-        Result := TSizeF.Create(80, 22);
-      TOSPlatform.OSX:
-        Result := TSizeF.Create(80, 22);
-      TOSPlatform.iOS:
-        Result := TSizeF.Create(73, 44);
-      TOSPlatform.Android:
-        Result := TSizeF.Create(73, 44);
-    end
-  else
-    Result := TSizeF.Create(80, 22);
+  Result := TSizeF.Create(80, 22);
 end;
 
 procedure TButtonView.SetScrollbar(const Value: TViewScroll);
@@ -1839,10 +1929,16 @@ begin
     FOnScrollChange(self);
   FAniCalculations.Shown := True;
   FScrolling := False;
-end;
-
+end;  
 
 { TProgressView }
+
+function TProgressView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
+begin
+  Result := inherited CanRePaintBk(View, State);
+  if (not Result) and Assigned(FForeGround) then 
+    Result := Assigned(FForeGround.GetStateBrush(State));
+end;
 
 constructor TProgressView.Create(AOwner: TComponent);
 begin
@@ -1851,8 +1947,9 @@ begin
   FValue := 50;
   FKind := TProgressKind.Horizontal;
   FStartAngle := 0;
+  FPathChanged := True;
 
-  FForeGround := TDrawableBorder.Create(Self);
+  FForeGround := TDrawableProgress.Create(Self);
   FForeGround.ItemDefault.Color := TAlphaColorRec.Blue;
   FForeGround.ItemDefault.DefaultColor := TAlphaColorRec.Blue;
   FForeGround.ItemDefault.Kind := TViewBrushKind.Solid;
@@ -1869,6 +1966,7 @@ end;
 
 procedure TProgressView.DoForegroundChanged(Sender: TObject);
 begin
+  FPathChanged := True;
   Repaint;
 end;
 
@@ -1876,6 +1974,7 @@ procedure TProgressView.DoValueChanged(Sender: TObject);
 begin
   if Assigned(FOnValueChange) then
     FOnValueChange(Self);
+  FPathChanged := True;
   Invalidate;
 end;
 
@@ -1890,7 +1989,13 @@ procedure TProgressView.PaintBackground;
     if (FMax - FMin <= 0) or (FValue - FMin <= 0) then
       Exit;
     PW := FForeGround.Padding.Left + FForeGround.Padding.Right;
-    W := (FValue - FMin) / (FMax - FMin) * (Width - PW) + PW;
+    if FValue > FMax then
+      W := FMax
+    else if FValue < FMin then
+      W := FMin
+    else
+      W := FValue;
+    W := (W - FMin) / (FMax - FMin) * (Width - PW) + PW;
     R := RectF(0, 0, W, Height);
     FForeGround.DrawTo(Canvas, R);
   end;
@@ -1905,21 +2010,31 @@ procedure TProgressView.PaintBackground;
       Exit;
     PH := FForeGround.Padding.Top + FForeGround.Padding.Bottom;
     V := Height - PH;
-    H := V - (FValue - FMin) / (FMax - FMin) * V;
+    if FValue > FMax then
+      H := FMax
+    else if FValue < FMin then
+      H := FMin
+    else
+      H := FValue;
+    H := V - (H - FMin) / (FMax - FMin) * V;
     R := RectF(0, H, Width, Height);
     FForeGround.DrawTo(Canvas, R);
   end;
 
   procedure DoDrawCircleRing();
   var
-    W, H, SA, EA: Single;
+    W, H: Single;
     R: TRectF;
-    LCenter, LRadius, LSrcRadius: TPointF;
+    LCenter, LRadius: TPointF;
     V: TBrush;
     LOpacity: Single;
     LBorder: TViewBorder;
-    LDrawBorder: Boolean;
   begin
+    if FPathChanged then begin
+      FPathChanged := False;
+      RecreatePath;
+    end;
+    
     W := Width;
     H := Height;
     LOpacity := GetAbsoluteOpacity;
@@ -1948,83 +2063,14 @@ procedure TProgressView.PaintBackground;
         R := RectF(LCenter.X - LRadius.X, LCenter.Y - LRadius.Y,
           LCenter.X + LRadius.X, LCenter.Y + LRadius.Y);
         Canvas.DrawEllipse(R, LOpacity, LBorder.Brush);
-//        Canvas.DrawArc(LCenter, LRadius, 0, 360, LOpacity, LBorder.Brush);
       end;
     end;
 
     // 画前景
     if Assigned(FForeGround) then begin
-      SA := FStartAngle;
-      EA := SA + (FValue - FMin) / (FMax - FMin) * 360;
-      LBorder := TDrawableBorder(FForeGround)._Border;
-
-      R := RectF(FForeGround.Padding.Left, FForeGround.Padding.Top,
-        W - FForeGround.Padding.Right, H - FForeGround.Padding.Bottom);
-
-      LCenter := PointF(R.Width * 0.5 + R.Left, R.Height * 0.5 + R.Top);
-      if R.Width > R.Height then
-        LRadius := PointF(R.Height * 0.5, R.Height * 0.5)
-      else
-        LRadius := PointF(R.Width * 0.5, R.Width * 0.5);
-
-      if FPaddingBorder and Assigned(LBorder) then begin
-        LRadius.X := LRadius.X - LBorder.Width;
-        LRadius.Y := LRadius.Y - LBorder.Width;
-      end;
-
-      if not Assigned(FShapePath) then
-        FShapePath := TPathData.Create
-      else
-        FShapePath.Clear;
-
-      LDrawBorder := Assigned(LBorder) and (LBorder.Style = TViewBorderStyle.RectBorder) and
-        (LBorder.Width > 0);
       V := FForeGround.GetStateItem(DrawState);
-
-      if FSolidForeGround and LDrawBorder and (V <> nil) then begin
-        LSrcRadius := LRadius;
-        if LBorder.Kind = TBrushKind.Solid then
-          LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState);
-        if FPaddingBorder then begin
-          LSrcRadius.X := LRadius.X + LBorder.Width;
-          LSrcRadius.Y := LRadius.Y + LBorder.Width;
-        end else
-          LSrcRadius := LRadius;
-
-        FShapePath.MoveTo(LCenter);
-        FShapePath.AddArc(LCenter, LSrcRadius, SA, EA - SA);
-        FShapePath.MoveTo(LCenter);
-        Canvas.FillPath(FShapePath, LOpacity, LBorder.Brush);
-        FShapePath.Clear;
-      end;
-
-      FShapePath.MoveTo(LCenter);
-      if FSolidForeGround then
-        FShapePath.AddArc(LCenter, LRadius, 0, 360)
-      else
-        FShapePath.AddArc(LCenter, LRadius, SA, EA - SA);
-      FShapePath.MoveTo(LCenter);
-
       if V <> nil then
         Canvas.FillPath(FShapePath, LOpacity, V);
-
-      if LDrawBorder and ((not FSolidForeGround) or (V = nil)) then begin
-        if LBorder.Kind = TBrushKind.Solid then
-          LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState);
-        if FPaddingBorder then begin
-          LRadius.X := LRadius.X + LBorder.Width;
-          LRadius.Y := LRadius.Y + LBorder.Width;
-        end;
-
-        if LBorder.Width > 0.1 then begin
-          LRadius.X := LRadius.X - LBorder.Width * 0.5;
-          LRadius.Y := LRadius.X;
-        end;
-
-        FShapePath.Clear;
-        FShapePath.AddArc(LCenter, LRadius, SA, EA - SA);
-        Canvas.DrawPath(FShapePath, LOpacity, LBorder.Brush);
-      end;
     end;
   end;
 
@@ -2048,7 +2094,39 @@ begin
   end;
 end;
 
-procedure TProgressView.SetForeGround(const Value: TDrawable);
+procedure TProgressView.RecreatePath;
+var
+  SA, EA, LRadius: Single;
+  R: TRectF;
+  LCenter: TPointF;
+begin
+  if FShapePath = nil then
+    FShapePath := TPathData.Create
+  else
+    FShapePath.Clear;
+    
+  SA := FStartAngle;
+  EA := FValue;
+  if EA < FMin then EA := FMin;  
+  if EA > FMax then EA := FMax;
+  EA := (EA - FMin) / (FMax - FMin) * 360;
+      
+  R := RectF(FForeGround.Padding.Left, FForeGround.Padding.Top,
+    Width - FForeGround.Padding.Right, Height - FForeGround.Padding.Bottom);
+
+  LCenter := PointF(R.Width * 0.5 + R.Left, R.Height * 0.5 + R.Top);
+  if R.Width > R.Height then
+    LRadius := R.Height * 0.5
+  else
+    LRadius := R.Width * 0.5;
+
+  if FPaddingBorder and Assigned(FBackground) and Assigned(TDrawableBorder(FBackground)._Border) then 
+    LRadius := LRadius - TDrawableBorder(FBackground)._Border.Width;
+
+  FShapePath.AddRing(LCenter, LRadius, LRadius - FForeGround.RingWidth, SA, EA);
+end;
+
+procedure TProgressView.SetForeGround(const Value: TDrawableProgress);
 begin
   FForeGround.SetDrawable(Value);
 end;
@@ -2057,7 +2135,7 @@ procedure TProgressView.SetKind(const Value: TProgressKind);
 begin
   if FKind <> Value then begin
     FKind := Value;
-    FreeAndNil(FShapePath);
+    FPathChanged := True;
     Repaint;
   end;
 end;
@@ -2082,6 +2160,7 @@ procedure TProgressView.SetPaddingBorder(const Value: Boolean);
 begin
   if FPaddingBorder <> Value then begin
     FPaddingBorder := Value;
+    FPathChanged := True;
     Repaint;
   end;
 end;
@@ -2094,18 +2173,11 @@ begin
   end;
 end;
 
-procedure TProgressView.SetSolidForeGround(const Value: Boolean);
-begin
-  if FSolidForeGround <> Value then begin
-    FSolidForeGround := Value;
-    Repaint;
-  end;
-end;
-
 procedure TProgressView.SetStartAngle(const Value: Single);
 begin
   if FStartAngle <> Value then begin
     FStartAngle := Value;
+    FPathChanged := True;
     Repaint;
   end;
 end;
@@ -2735,6 +2807,231 @@ begin
     FYRadius := Value;
     if Assigned(FOnChanged) then
       FOnChanged(Self);
+  end;
+end;
+
+{ TRingView }
+
+constructor TRingView.Create(AOwner: TComponent);
+begin
+  inherited;
+  FPath := TPathData.Create;
+  FDistance := 10;
+  FInner := TRingViewStyle.Ellipse;
+  FPathChanged := True;
+  FClickInPath := True;
+end;
+
+destructor TRingView.Destroy;
+begin
+  FreeAndNil(FPath);
+  inherited Destroy;
+end;
+
+procedure TRingView.DoBackgroundChanged(Sender: TObject);
+begin
+  FPathChanged := True;
+  inherited;
+end;
+
+procedure TRingView.DoMouseDown(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+begin
+  if (csDesigning in ComponentState) or FInVisible then Exit;
+  if (TMouseButton.mbLeft = Button) and Clickable then begin
+    if FClickInPath and Assigned(Canvas) then begin
+      if not Canvas.PtInPath(PointF(X, Y), FPath) then
+        Exit;     
+    end;
+    IncViewState(TViewState.Pressed);
+    if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
+  end;
+end;
+
+function TRingView.IsStoredDistance: Boolean;
+begin
+  Result := FDistance <> 10;
+end;
+
+procedure TRingView.PaintBackground;
+var
+  V: TBrush;
+  LBorder: TViewBorder;
+begin
+  if FPathChanged then begin
+    RecreatePath;
+    FPathChanged := False;
+  end;
+
+  if AbsoluteInVisible then
+    Exit;
+
+  V := FBackground.GetStateItem(DrawState);
+  if V <> nil then
+    Canvas.FillPath(FPath, AbsoluteOpacity, V);
+
+  LBorder := TDrawableBorder(FBackground)._Border;
+  if Assigned(LBorder) and (LBorder.Width > 0) and (LBorder.Style = TViewBorderStyle.RectBorder) then begin
+    if LBorder.Kind = TBrushKind.Solid then
+      LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState); 
+    Canvas.DrawPath(FPath, AbsoluteOpacity, LBorder.Brush);
+  end;
+end;
+
+procedure TRingView.PathChanged;
+begin
+  FPathChanged := True;
+  Invalidate;
+end;
+
+procedure TRingView.RecreatePath;
+var
+  R: TRectF;
+  LC, LR: TPointF;
+begin
+  FPath.Clear;
+  R := RectF(FBackground.Padding.Left, FBackground.Padding.Top,
+    Width - FBackground.Padding.Right, Height - FBackground.Padding.Bottom);;
+
+  if (FOuter = TRingViewStyle.Circle) and (FInner = TRingViewStyle.Circle) and (FStartAngle <> FAngle) then 
+  begin
+    LC := PointF(R.Width / 2 + R.Left, R.Height / 2 + R.Top);
+    if R.Width > R.Height then
+      LR := PointF(R.Height / 2, R.Height / 2)
+    else
+      LR := PointF(R.Width / 2, R.Width / 2);
+    FPath.AddRing(LC, LR.X, LR.X - FDistance, FStartAngle, FAngle - FStartAngle);
+    Exit;
+  end;   
+    
+  case FOuter of
+    TRingViewStyle.Rectangle:
+      FPath.AddRectangle(R, FBackground.XRadius, FBackground.YRadius,
+        FBackground.Corners, FBackground.CornerType);
+    TRingViewStyle.Circle:
+      begin
+        LC := PointF(R.Width / 2 + R.Left, R.Height / 2 + R.Top);
+        if R.Width > R.Height then
+          LR := PointF(R.Height / 2, R.Height / 2)
+        else
+          LR := PointF(R.Width / 2, R.Width / 2);
+        FPath.AddEllipse(RectF(LC.X - LR.X, LC.Y - LR.Y, LC.X + LR.X, LC.Y + LR.Y));
+      end;
+    TRingViewStyle.Ellipse:
+      FPath.AddEllipse(R);
+  end;
+
+  case FInner of
+    TRingViewStyle.Rectangle:
+      begin
+        R.Inflate(-FDistance, -FDistance);
+        FPath.AddRectangle(R, FBackground.XRadius, FBackground.YRadius,
+          FBackground.Corners, FBackground.CornerType);
+      end;
+    TRingViewStyle.Circle:
+      begin  
+        R.Inflate(-FDistance, -FDistance);
+        LC := PointF(R.Width / 2 + R.Left, R.Height / 2 + R.Top);
+        if R.Width > R.Height then
+          LR := PointF(R.Height / 2, R.Height / 2)
+        else
+          LR := PointF(R.Width / 2, R.Width / 2);
+        FPath.AddEllipse(RectF(LC.X - LR.X, LC.Y - LR.Y, LC.X + LR.X, LC.Y + LR.Y));
+        FPath.ClosePath;
+      end;
+    TRingViewStyle.Ellipse:
+      begin
+        R.Inflate(-FDistance, -FDistance); 
+        FPath.AddEllipse(R);
+        FPath.ClosePath;
+      end;
+  end;
+  
+end;
+
+procedure TRingView.Resize;
+begin
+  inherited Resize;
+  PathChanged;
+end;
+
+procedure TRingView.SetDistance(const Value: Single);
+begin
+  if FDistance <> Value then begin
+    FDistance := Value;
+    PathChanged;
+  end;
+end;
+
+procedure TRingView.SetEndAngle(const Value: Single);
+begin
+  if FAngle <> Value then begin
+    FAngle := Value;
+    PathChanged;
+  end;
+end;
+
+procedure TRingView.SetInner(const Value: TRingViewStyle);
+begin
+  if FInner <> Value then begin
+    FInner := Value;
+    PathChanged;
+  end;
+end;
+
+procedure TRingView.SetOuter(const Value: TRingViewStyle);
+begin
+  if FOuter <> Value then begin
+    FOuter := Value;
+    PathChanged;
+  end;
+end;
+
+procedure TRingView.SetStartAngle(const Value: Single);
+begin
+  if FStartAngle <> Value then begin
+    FStartAngle := Value;
+    PathChanged;
+  end;
+end;
+
+{ TPathDataHelper }
+
+procedure TPathDataHelper.AddRing(const ACenter: TPointF;
+  const R1, R2, AStartAngle, ASweepAngle: Single);
+var
+  A, CA, SA: Single;
+begin
+  AddArc(ACenter, PointF(R1, R1), AStartAngle, ASweepAngle);
+  A := AStartAngle * PI / 180;
+  SA := sin(A);
+  CA := cos(A);
+  MoveTo(PointF(ACenter.X + R1 * CA, ACenter.Y + R1 * SA));
+  LineTo(PointF(ACenter.X + R2 * CA, ACenter.Y + R2 * SA));
+  AddArc(ACenter, PointF(R2, R2), AStartAngle, ASweepAngle);
+  A := (AStartAngle + ASweepAngle) * PI / 180;
+  SA := sin(A);
+  CA := cos(A);
+  LineTo(PointF(ACenter.X + R1 * CA, ACenter.Y + R1 * SA));  
+end;
+
+{ TDrawableProgress }
+
+procedure TDrawableProgress.InitDrawable;
+begin
+  FWidth := 8;
+end;
+
+function TDrawableProgress.IsStoredWidth: Boolean;
+begin
+  Result := FWidth <> 8;
+end;
+
+procedure TDrawableProgress.SetWidth(const Value: Single);
+begin
+  if FWidth <> Value then begin  
+    FWidth := Value;
+    DoChange(Self);
   end;
 end;
 

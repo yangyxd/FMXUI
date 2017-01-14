@@ -1,5 +1,5 @@
 object FrameProgressView: TFrameProgressView
-  Size.Width = 364.000000000000000000
+  Size.Width = 366.000000000000000000
   Size.Height = 628.000000000000000000
   Size.PlatformDefault = False
   object LinearLayout1: TLinearLayout
@@ -7,7 +7,7 @@ object FrameProgressView: TFrameProgressView
     Background.ItemDefault.Color = claPurple
     Background.ItemDefault.Kind = Solid
     Gravity = None
-    Size.Width = 364.000000000000000000
+    Size.Width = 366.000000000000000000
     Size.Height = 50.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
@@ -15,6 +15,10 @@ object FrameProgressView: TFrameProgressView
     object TextView1: TTextView
       Background.Border.Color.Default = xBFC0C0C0
       Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
@@ -32,16 +36,23 @@ object FrameProgressView: TFrameProgressView
     object tvTitle: TTextView
       Background.Border.Color.Default = xBFC0C0C0
       Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       Weight = 1.000000000000000000
       HitTest = True
-      Size.Width = 264.000000000000000000
+      Size.Width = 266.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       Position.X = 50.000000000000000000
       TabOrder = 1
       Text = 'ProgressView Demo'
       TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
       TextSettings.Font.Size = 18.000000000000000000
       TextSettings.PrefixStyle = HidePrefix
       TextSettings.Gravity = Center
@@ -49,13 +60,17 @@ object FrameProgressView: TFrameProgressView
     object TextView2: TTextView
       Background.Border.Color.Default = xBFC0C0C0
       Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
       Size.Width = 50.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 314.000000000000000000
+      Position.X = 316.000000000000000000
       TabOrder = 3
       TextSettings.PrefixStyle = HidePrefix
       Drawable.Position = Center
@@ -16300,11 +16315,16 @@ object FrameProgressView: TFrameProgressView
       3D32F3DC2B1B1E0000000049454E44AE426082}
     Background.ItemDefault.Bitmap.WrapMode = TileStretch
     Background.ItemDefault.Kind = Bitmap
-    Background.Border.Color.Default = claSienna
+    Background.Border.Color.Default = claSkyblue
     Background.Border.Color.Pressed = claTomato
+    Background.Border.Color.Focused = claNull
+    Background.Border.Color.Hovered = claNull
     Background.Border.Color.Selected = claViolet
+    Background.Border.Color.Checked = claNull
+    Background.Border.Color.Enabled = claNull
     Background.Border.Color.Activated = claPeru
-    Background.Border.Width = 20.000000000000000000
+    Background.Border.Width = 8.000000000000000000
+    Background.Border.Style = RectBorder
     Background.Border.Cap = Round
     Background.Border.Join = Round
     Clickable = True
@@ -16318,19 +16338,14 @@ object FrameProgressView: TFrameProgressView
     TabOrder = 5
     OnClick = ProgressView1Click
     Value = 60
-    ForeGround.Padding.Left = 20.000000000000000000
-    ForeGround.Padding.Top = 20.000000000000000000
-    ForeGround.Padding.Right = 20.000000000000000000
-    ForeGround.Padding.Bottom = 20.000000000000000000
+    ForeGround.Padding.Left = 1.000000000000000000
+    ForeGround.Padding.Top = 1.000000000000000000
+    ForeGround.Padding.Right = 1.000000000000000000
+    ForeGround.Padding.Bottom = 1.000000000000000000
     ForeGround.XRadius = 5.000000000000000000
     ForeGround.YRadius = 5.000000000000000000
     ForeGround.ItemDefault.Color = claWhite
-    ForeGround.Border.Color.Default = claLightskyblue
-    ForeGround.Border.Width = 12.000000000000000000
-    ForeGround.Border.Style = RectBorder
-    ForeGround.Border.Dash = Custom
-    ForeGround.Border.Cap = Round
-    ForeGround.Border.Join = Round
+    ForeGround.RingWidth = 6.000000000000000000
     StartAngle = -90.000000000000000000
     Kind = CircleRing
     PaddingBorder = True
@@ -16338,22 +16353,29 @@ object FrameProgressView: TFrameProgressView
   object Timer1: TTimer
     Interval = 50
     OnTimer = Timer1Timer
-    Left = 136
-    Top = 480
+    Left = 320
+    Top = 240
   end
   object ProgressView2: TProgressView
-    Background.Padding.Left = 30.000000000000000000
-    Background.Padding.Top = 30.000000000000000000
-    Background.Padding.Right = 30.000000000000000000
-    Background.Padding.Bottom = 30.000000000000000000
     Background.XRadius = 5.000000000000000000
     Background.YRadius = 5.000000000000000000
-    Background.ItemDefault.Color = claPink
-    Background.ItemDefault.Kind = Solid
-    Background.Border.Color.Default = claSienna
+    Background.ItemDefault.Kind = Gradient
+    Background.ItemDefault.Gradient.Points = <
+      item
+        Color = claBlack
+        Offset = 0.000000000000000000
+      end
+      item
+        Color = xFFEBE7E7
+        Offset = 1.000000000000000000
+      end>
+    Background.ItemDefault.Gradient.Style = Radial
+    Background.Border.Color.Default = claPeru
     Background.Border.Color.Pressed = claTomato
-    Background.Border.Color.Selected = claViolet
-    Background.Border.Color.Activated = claPeru
+    Background.Border.Color.Focused = claNull
+    Background.Border.Color.Selected = claNull
+    Background.Border.Color.Checked = claNull
+    Background.Border.Color.Enabled = claNull
     Background.Border.Width = 20.000000000000000000
     Background.Border.Style = RectBorder
     Background.Border.Cap = Round
@@ -16361,26 +16383,37 @@ object FrameProgressView: TFrameProgressView
     Clickable = True
     Gravity = None
     HitTest = True
-    Size.Width = 153.000000000000000000
+    Size.Width = 161.000000000000000000
     Size.Height = 145.000000000000000000
     Size.PlatformDefault = False
-    Position.X = 160.000000000000000000
+    Position.X = 168.000000000000000000
     Position.Y = 64.000000000000000000
     TabOrder = 4
     OnClick = ProgressView2Click
-    ForeGround.Padding.Left = 9.000000000000000000
-    ForeGround.Padding.Top = 9.000000000000000000
-    ForeGround.Padding.Right = 9.000000000000000000
-    ForeGround.Padding.Bottom = 9.000000000000000000
+    Value = 80
+    ForeGround.Padding.Left = 2.000000000000000000
+    ForeGround.Padding.Top = 2.000000000000000000
+    ForeGround.Padding.Right = 2.000000000000000000
+    ForeGround.Padding.Bottom = 2.000000000000000000
     ForeGround.XRadius = 5.000000000000000000
     ForeGround.YRadius = 5.000000000000000000
-    ForeGround.ItemDefault.Kind = None
-    ForeGround.Border.Color.Default = claMaroon
-    ForeGround.Border.Width = 12.000000000000000000
-    ForeGround.Border.Style = RectBorder
+    ForeGround.ItemDefault.Kind = Gradient
+    ForeGround.ItemDefault.Gradient.Points = <
+      item
+        Color = xFF95068B
+        Offset = 0.000000000000000000
+      end
+      item
+        Color = xFFE394DE
+        Offset = 1.000000000000000000
+      end>
+    ForeGround.ItemDefault.Gradient.StartPosition.X = 0.500000000000000000
+    ForeGround.ItemDefault.Gradient.StartPosition.Y = 1.000000000000000000
+    ForeGround.ItemDefault.Gradient.StopPosition.X = 0.499999970197677600
+    ForeGround.ItemDefault.Gradient.StopPosition.Y = 0.000000000000000000
+    ForeGround.RingWidth = 16.000000000000000000
     StartAngle = -90.000000000000000000
     Kind = CircleRing
-    PaddingBorder = True
   end
   object ProgressView3: TProgressView
     Background.Padding.Left = 8.000000000000000000
@@ -16393,7 +16426,11 @@ object FrameProgressView: TFrameProgressView
     Background.ItemDefault.Kind = Solid
     Background.Border.Color.Default = claSienna
     Background.Border.Color.Pressed = claTomato
+    Background.Border.Color.Focused = claNull
+    Background.Border.Color.Hovered = claNull
     Background.Border.Color.Selected = claViolet
+    Background.Border.Color.Checked = claNull
+    Background.Border.Color.Enabled = claNull
     Background.Border.Color.Activated = claPeru
     Background.Border.Style = RectBorder
     Background.Border.Cap = Round
@@ -16416,9 +16453,6 @@ object FrameProgressView: TFrameProgressView
     ForeGround.XRadius = 5.000000000000000000
     ForeGround.YRadius = 5.000000000000000000
     ForeGround.ItemDefault.Color = x7F0000FF
-    ForeGround.Border.Color.Default = claLightskyblue
-    ForeGround.Border.Cap = Round
-    ForeGround.Border.Join = Round
     StartAngle = -90.000000000000000000
     PaddingBorder = True
   end
@@ -16433,7 +16467,11 @@ object FrameProgressView: TFrameProgressView
     Background.ItemDefault.Kind = Solid
     Background.Border.Color.Default = claSienna
     Background.Border.Color.Pressed = claTomato
+    Background.Border.Color.Focused = claNull
+    Background.Border.Color.Hovered = claNull
     Background.Border.Color.Selected = claViolet
+    Background.Border.Color.Checked = claNull
+    Background.Border.Color.Enabled = claNull
     Background.Border.Color.Activated = claPeru
     Background.Border.Style = RectBorder
     Background.Border.Cap = Round
@@ -16441,11 +16479,10 @@ object FrameProgressView: TFrameProgressView
     Clickable = True
     Gravity = None
     HitTest = True
-    Size.Width = 49.000000000000000000
+    Size.Width = 25.000000000000000000
     Size.Height = 297.000000000000000000
     Size.PlatformDefault = False
-    Position.X = 8.000000000000000000
-    Position.Y = 280.000000000000000000
+    Position.Y = 256.000000000000000000
     TabOrder = 2
     OnClick = ProgressView1Click
     Value = 99
@@ -16456,21 +16493,57 @@ object FrameProgressView: TFrameProgressView
     ForeGround.XRadius = 5.000000000000000000
     ForeGround.YRadius = 5.000000000000000000
     ForeGround.ItemDefault.Color = x7F0000FF
-    ForeGround.Border.Color.Default = claLightskyblue
-    ForeGround.Border.Cap = Round
-    ForeGround.Border.Join = Round
     StartAngle = -90.000000000000000000
     Kind = Vertical
     PaddingBorder = True
   end
-  object Arc1: TArc
-    Position.X = 80.000000000000000000
-    Position.Y = 264.000000000000000000
-    Size.Width = 121.000000000000000000
-    Size.Height = 121.000000000000000000
+  object RingView1: TRingView
+    Background.Padding.Left = 20.000000000000000000
+    Background.Padding.Top = 20.000000000000000000
+    Background.Padding.Right = 20.000000000000000000
+    Background.Padding.Bottom = 20.000000000000000000
+    Background.XRadius = 20.000000000000000000
+    Background.YRadius = 20.000000000000000000
+    Background.ItemDefault.Color = claSpringgreen
+    Background.ItemDefault.Kind = Solid
+    Background.Border.Color.Default = claSlateblue
+    Background.Border.Color.Pressed = claTomato
+    Background.Border.Color.Focused = claNull
+    Background.Border.Color.Selected = claNull
+    Background.Border.Color.Checked = claNull
+    Background.Border.Color.Enabled = claNull
+    Background.Border.Width = 5.000000000000000000
+    Background.Border.Style = RectBorder
+    Background.Border.Join = Round
+    Clickable = True
+    Gravity = None
+    HitTest = True
+    Size.Width = 233.000000000000000000
+    Size.Height = 161.000000000000000000
     Size.PlatformDefault = False
-    Stroke.Thickness = 15.000000000000000000
-    EndAngle = 360.000000000000000000
+    Position.X = 48.000000000000000000
+    Position.Y = 336.000000000000000000
+    TabOrder = 8
+    OnClick = RingView1Click
+    StyleInner = Rectangle
+    Distance = 42.000000000000000000
+    AngleEnd = 60.000000000000000000
+  end
+  object TextView3: TTextView
+    WidthSize = WrapContent
+    Size.Width = 57.000000000000000000
+    Size.Height = 17.000000000000000000
+    Size.PlatformDefault = False
+    Position.X = 48.000000000000000000
+    Position.Y = 256.000000000000000000
+    TabOrder = 11
+    Text = 'TextView3'
+  end
+  object Timer2: TTimer
+    Interval = 10
+    OnTimer = Timer2Timer
+    Left = 336
+    Top = 296
   end
   object ImageList1: TImageList
     Source = <
@@ -16485,19 +16558,19 @@ object FrameProgressView: TFrameProgressView
             PNG = {
               89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
               03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
-              017A494441545847D5984D4EC33010855347390751ABAA825295CB941E07718A
-              6CCB1D5882C28E1D7083C2162E10E5CFBC89662201CE0AE4193EC99A7A62C94F
-              AFCEC476F21778EF73B403454EE9D2F7FDB6AEEB5708F214A9CF8F74808E79DB
-              B6CF2448E8BAEE8E1FC7078E6CC421A12CCB0EF93D0F890B265EC2A127D63250
-              55D587A6A01F0E11C85FF290B860E2953587D6D61C3A0D38F4AE2AA8699A236B
-              19417E8F30E361F1C0C467D61C5A85D610D8A1A938741E720861C743E20241CB
-              A9B70C41C5A18DB535B4B0B28686C920688B7648D3F462C832F8E23F3AE76EB9
-              1B8D195CC851871EB22C3BE19C3A0E0E5D5B1244E0DF715770EA8DFB23455178
-              FE191D936B6A04A2826F1FF23AF5498000AA535FF6DC5CA774F64B02044C5574
-              9D5D81C08ED9A9EC0204047709240C41D5B1F58463EA6BCCD6CE53206156D798
-              ADD38C000174EEFB5EC7E8DCA72ECCD609598000BA4BF81F8EA9DEBA0810B080
-              632FAC69003B8B7B7EAC0784D9BAC913A0278743371439F50B92E4137F134A66
-              C837C42C0000000049454E44AE426082}
+              0179494441545847D5984D4EC33010855347390751ABAA825295CB941E877093
+              720796A0B06307DCA0B0850B44F9336FA2994880B30279864FB2A69E58F2D3AB
+              33B19DFC05DEFB1CED409153BAF47DBFADEBFA15823C45EAF3231DA063DEB6ED
+              330912BAAEBBE3C7F181231B714828CBB2437ECF43E282899770E889B50C5455
+              F5A129E8874304F2973C242E987865CDA1B535874E030EBDAB0A6A9AE6C85A46
+              90DF23CC78583C30F199358756A1350476682A0E9D871C42D8F190B840D072EA
+              2D43507168636D0D2DACACA1613208DAA21DD234BD18B20CBEF88FCEB95BEE46
+              63061772D4A1872CCB4E38A78E8343D7960411F877DC159C7AE3FE4851149E7F
+              46C7E49A1A81A8E0DB87BC4E7D122080EAD4973D37D7299DFD92000153155D67
+              5720B063762ABB0001C15D02094350756C3DE198FA1AB3B5F3144898D53566EB
+              342340009DFBBED7313AF7A90BB37542162080EE12FE8763AAB72E02042CE0D8
+              0B6B1AC0CEE29E1FEB0161B66EF204E8C9E1D00D454EFD8224F904B3064A216E
+              D0190A0000000049454E44AE426082}
             FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_back.png'
           end>
         Name = 'btn_back'
@@ -16549,21 +16622,21 @@ object FrameProgressView: TFrameProgressView
             PNG = {
               89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
               03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
-              01BA494441545847ED98CD4AC34010C79B14143C481154042D3E8B82BE8567EB
-              C18BFA265AF5EADD9E05F525B445FC3A99F6500FB9242AE643FF63FF1522A9B2
-              9B66CD213F187676666087E9EE76B2952CC471BC00D90D82E0E603C82873B133
-              C42C58782E8AA27349E62762877F9EA1E6C0A23BCC2115F8F7186A0EFC548F5C
-              3F15F8EF19AA8CCD5119C771EA5453F13C6F91AA39C230BC66515281FF8AA1CA
-              6857CAB6ED66AFD70B384D2076F88F38350736F2344ED9290B9340ECE267A832
-              16472DB0FE14640BB20299B12CCB855C429A901786299329A921A8CA24860924
-              1240DE06D69292E29069A36383CF62D8C0C95B835EC7DDE460A39FC17602FDF9
-              2BC82448A426DD40ABD58AA17F2373760F35869A0395D96EB7DBE12095246217
-              3F43CD812EE08E39A402FF2D4395D1FEEFEBF7FBCB5453F17D7F89AA390A59A9
-              6AB5BADFE974224E13881DFE034ECD8162E476FAC6754FADF39E7AFAD77BAAA4
-              640485EC3CC7D1A33720AB90618F7E01398468F7E8DAA03AB97DCD68834537BB
-              DDEE3BF3482076F81B0C35479E5FC8DA8CAAD210D7755F196A0E74017FBDBA3C
-              3054992C5DC2AF6F05F01F5335073672F15EF2042C9CC39B67A5F2092137B5F0
-              A65F4F520000000049454E44AE426082}
+              01BB494441545847ED98CD4AC34010C79B04143C481154042D3E8B82BE8567EB
+              C18BFA1CBD68D5AB77EF82FA129A227E9D4C7BA8875C5A15F3A1FFB1FF0A9154
+              D94DB3E6901F0C3B3B33B0C374773BD94A16E2385E80EC064170F3016494B9D8
+              1962162C3C1745D1B924F313B1C33FCF507360D11DE6900AFC7B0C35077EAA47
+              AE9F0AFCF70C55C6E6A88CE77935AAA9F47ABD45AAE608C3F09A454905FE2B86
+              2AA35D29DBB69B9D4E27E03481D8E13FE2D41CD8C8D33865A72C4C02B18B9FA1
+              CA581CB5C0FA53902DC80A64C6B22C1F720969425E18A64CA6A486A02A931826
+              904800791B584B4A8A43A68D8E0D3E8B6103276F0D7A0D7793878D7E06DB09F4
+              E7AF20932091AA74038D462386FE8DCCD93D54196A0E5466DB75DD70904A12B1
+              8B9FA1E6401770C71C5281FF96A1CA68FFF775BBDD65AAA9F4FBFD25AAE62864
+              A51CC7D96FB55A11A709C40EFF01A7E64031723B7DE3BAA7D6794F3DFDEB3D55
+              52328242769EE3E8D1EB9055C8B047BF801C42B47B746D509DDCBE66B4C1A29B
+              ED76FB9D7924103BFC75869A23CF2F646D46556988EFFBAF0C3507BA80BF5E5D
+              1E18AA4C962EE1D7B702F88FA99A031BB9782F790216CEE1CDB352F9047A03B4
+              7CE16144B30000000049454E44AE426082}
             FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_top_more.png'
           end>
         Name = 'btn_top_more'
@@ -16593,7 +16666,7 @@ object FrameProgressView: TFrameProgressView
             SourceRect.Bottom = 37.000000000000000000
           end>
       end>
-    Left = 184
-    Top = 416
+    Left = 312
+    Top = 192
   end
 end

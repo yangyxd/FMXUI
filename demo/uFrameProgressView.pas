@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
   UI.Frame, UI.Base, UI.Standard, UI.ListView, System.ImageList, FMX.ImgList,
-  FMX.Objects;
+  FMX.Objects, FMX.Controls.Presentation;
 
 type
   TFrameProgressView = class(TFrame)
@@ -20,11 +20,17 @@ type
     ProgressView2: TProgressView;
     ProgressView3: TProgressView;
     ProgressView4: TProgressView;
-    Arc1: TArc;
+    RingView1: TRingView;
+    TextView3: TTextView;
+    Timer2: TTimer;
     procedure TextView1Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure ProgressView1Click(Sender: TObject);
     procedure ProgressView2Click(Sender: TObject);
+    procedure ProgressView5Click(Sender: TObject);
+    procedure Image1Click(Sender: TObject);
+    procedure Timer2Timer(Sender: TObject);
+    procedure RingView1Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -48,6 +54,11 @@ begin
   inherited;
 end;
 
+procedure TFrameProgressView.Image1Click(Sender: TObject);
+begin
+  Hint('click');
+end;
+
 procedure TFrameProgressView.ProgressView1Click(Sender: TObject);
 begin
   Timer1Timer(Timer1);
@@ -56,6 +67,16 @@ end;
 procedure TFrameProgressView.ProgressView2Click(Sender: TObject);
 begin
   Timer1.Enabled := not Timer1.Enabled;
+end;
+
+procedure TFrameProgressView.ProgressView5Click(Sender: TObject);
+begin
+  Hint(TView(Sender).Name);
+end;
+
+procedure TFrameProgressView.RingView1Click(Sender: TObject);
+begin
+  Hint('click');
 end;
 
 procedure TFrameProgressView.TextView1Click(Sender: TObject);
@@ -77,6 +98,11 @@ begin
   ProgressView4.Value := ProgressView4.Value + 1;
   if ProgressView4.Value > ProgressView4.Max then
     ProgressView4.Value := ProgressView4.Min;
+end;
+
+procedure TFrameProgressView.Timer2Timer(Sender: TObject);
+begin
+  TextView3.Text := ViewStateToString(ProgressView2.ViewState);
 end;
 
 end.
