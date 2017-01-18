@@ -87,6 +87,7 @@ begin
   RegisterComponents(PageName, [TBadgeView]);
   RegisterComponents(PageName, [TProgressView]);
   RegisterComponents(PageName, [TRingView]);
+  RegisterComponents(PageName, [TMultiPathView]);
 
   RegisterComponents(PageName, [TEditView]);
   RegisterComponents(PageName, [TListExView]);
@@ -198,6 +199,9 @@ begin
       'MaxValue',
       'Icon',
       'ValueOutTail',
+      { TMultiPathView }
+      'Paths',
+      'ActiveIndex',
       { Text }
       'Text',
       'TextHint',

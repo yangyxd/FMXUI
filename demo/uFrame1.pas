@@ -22,6 +22,8 @@ type
     ButtonView5: TButtonView;
     ButtonView6: TButtonView;
     ButtonView7: TButtonView;
+    ButtonView8: TButtonView;
+    ButtonView9: TButtonView;
     procedure TextView17Click(Sender: TObject);
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
@@ -31,6 +33,8 @@ type
     procedure ButtonView5Click(Sender: TObject);
     procedure ButtonView6Click(Sender: TObject);
     procedure ButtonView7Click(Sender: TObject);
+    procedure ButtonView8Click(Sender: TObject);
+    procedure ButtonView9Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -45,6 +49,8 @@ implementation
 {$R *.fmx}
 
 uses
+  uFrameMultiPathView,
+  uFrameRingView,
   ui_CustomListView,
   ui_PopupMenu,
   uFrameProgressView,
@@ -87,6 +93,16 @@ end;
 procedure TFrame1.ButtonView7Click(Sender: TObject);
 begin
   StartFrame(TFrame4);
+end;
+
+procedure TFrame1.ButtonView8Click(Sender: TObject);
+begin
+  StartFrame(TFrameRingView);
+end;
+
+procedure TFrame1.ButtonView9Click(Sender: TObject);
+begin
+  StartFrame(TFrameMultiPathView);
 end;
 
 procedure TFrame1.DoHide;

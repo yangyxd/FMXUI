@@ -1652,3 +1652,4 @@ initialization
 finalization
   TTextLayoutNG.Uninitialize;
 end.
+

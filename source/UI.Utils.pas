@@ -79,10 +79,13 @@ function RectSF(const Left, Top, Width, Height: Single): TRectF;
 function OffsetRectD(var R: TRectD; const DX, DY: Double): Boolean;
 function GetRectF(const R: TRectD): TRectF;
 
+// 计算角度(0~360)
+function GetAngle(const CX, CY, X, Y: Single): Single;
+
 implementation
 
 uses
-  {$IFNDEF MSWINDOWS}System.Diagnostics, {$ENDIF}SyncObjs;
+  {$IFNDEF MSWINDOWS}System.Diagnostics, {$ENDIF}SyncObjs, Math;
 
 {$IFDEF MSWINDOWS}
 type
@@ -218,6 +221,19 @@ begin
   Result.Top := R.Top;
   Result.Right := R.Right;
   Result.Bottom := R.Bottom;
+end;
+
+function GetAngle(const CX, CY, X, Y: Single): Single;
+begin
+  Result := Math.ArcTan2(Abs(X - CX), Abs(Y - CY)) * 180 / PI;
+  if (X > CX) and (Y > CY) then
+    Result := 90 - Result // 右下角
+  else if (X < CX) and (Y > CY) then
+    Result := 90 + Result // 左下角
+  else if (X < CX) and (Y < CY) then
+    Result := 180 + (90 - Result) // 左上角
+  else
+    Result := 270 + Result // 右上角
 end;
 
 function GetPPI(Context: TFmxObject): Single;

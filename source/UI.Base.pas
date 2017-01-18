@@ -1028,6 +1028,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    function PointInObject(X, Y: Single): Boolean; override;
 
     procedure PlaySoundEffect(ASoundConstant: Integer);
     procedure PlayClickEffect(); virtual;
@@ -3794,6 +3795,14 @@ begin
 {$ELSE}
 begin
 {$ENDIF}
+end;
+
+function TView.PointInObject(X, Y: Single): Boolean;
+begin
+  if AbsoluteInVisible then
+    Result := False
+  else
+    Result := inherited PointInObject(X, Y);
 end;
 
 procedure TView.ReadState(Reader: TReader);

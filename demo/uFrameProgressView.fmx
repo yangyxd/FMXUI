@@ -1,5 +1,5 @@
 object FrameProgressView: TFrameProgressView
-  Size.Width = 366.000000000000000000
+  Size.Width = 359.000000000000000000
   Size.Height = 628.000000000000000000
   Size.PlatformDefault = False
   object LinearLayout1: TLinearLayout
@@ -7,7 +7,7 @@ object FrameProgressView: TFrameProgressView
     Background.ItemDefault.Color = claPurple
     Background.ItemDefault.Kind = Solid
     Gravity = None
-    Size.Width = 366.000000000000000000
+    Size.Width = 359.000000000000000000
     Size.Height = 50.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
@@ -43,7 +43,7 @@ object FrameProgressView: TFrameProgressView
       Clickable = True
       Weight = 1.000000000000000000
       HitTest = True
-      Size.Width = 266.000000000000000000
+      Size.Width = 259.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       Position.X = 50.000000000000000000
@@ -70,7 +70,7 @@ object FrameProgressView: TFrameProgressView
       Size.Width = 50.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 316.000000000000000000
+      Position.X = 309.000000000000000000
       TabOrder = 3
       TextSettings.PrefixStyle = HidePrefix
       Drawable.Position = Center
@@ -16335,7 +16335,7 @@ object FrameProgressView: TFrameProgressView
     Size.PlatformDefault = False
     Position.X = 8.000000000000000000
     Position.Y = 64.000000000000000000
-    TabOrder = 5
+    TabOrder = 6
     OnClick = ProgressView1Click
     Value = 60
     ForeGround.Padding.Left = 1.000000000000000000
@@ -16362,14 +16362,13 @@ object FrameProgressView: TFrameProgressView
     Background.ItemDefault.Kind = Gradient
     Background.ItemDefault.Gradient.Points = <
       item
-        Color = claBlack
+        Color = xFFB9F4AF
         Offset = 0.000000000000000000
       end
       item
         Color = xFFEBE7E7
         Offset = 1.000000000000000000
       end>
-    Background.ItemDefault.Gradient.Style = Radial
     Background.Border.Color.Default = claPeru
     Background.Border.Color.Pressed = claTomato
     Background.Border.Color.Focused = claNull
@@ -16482,6 +16481,7 @@ object FrameProgressView: TFrameProgressView
     Size.Width = 25.000000000000000000
     Size.Height = 297.000000000000000000
     Size.PlatformDefault = False
+    Position.X = 16.000000000000000000
     Position.Y = 256.000000000000000000
     TabOrder = 2
     OnClick = ProgressView1Click
@@ -16496,38 +16496,6 @@ object FrameProgressView: TFrameProgressView
     StartAngle = -90.000000000000000000
     Kind = Vertical
     PaddingBorder = True
-  end
-  object RingView1: TRingView
-    Background.Padding.Left = 20.000000000000000000
-    Background.Padding.Top = 20.000000000000000000
-    Background.Padding.Right = 20.000000000000000000
-    Background.Padding.Bottom = 20.000000000000000000
-    Background.XRadius = 20.000000000000000000
-    Background.YRadius = 20.000000000000000000
-    Background.ItemDefault.Color = claSpringgreen
-    Background.ItemDefault.Kind = Solid
-    Background.Border.Color.Default = claSlateblue
-    Background.Border.Color.Pressed = claTomato
-    Background.Border.Color.Focused = claNull
-    Background.Border.Color.Selected = claNull
-    Background.Border.Color.Checked = claNull
-    Background.Border.Color.Enabled = claNull
-    Background.Border.Width = 5.000000000000000000
-    Background.Border.Style = RectBorder
-    Background.Border.Join = Round
-    Clickable = True
-    Gravity = None
-    HitTest = True
-    Size.Width = 233.000000000000000000
-    Size.Height = 161.000000000000000000
-    Size.PlatformDefault = False
-    Position.X = 48.000000000000000000
-    Position.Y = 336.000000000000000000
-    TabOrder = 8
-    OnClick = RingView1Click
-    KindInner = Circle
-    Distance = 24.000000000000000000
-    AngleEnd = 60.000000000000000000
   end
   object TextView3: TTextView
     WidthSize = WrapContent
@@ -16544,6 +16512,49 @@ object FrameProgressView: TFrameProgressView
     OnTimer = Timer2Timer
     Left = 336
     Top = 296
+  end
+  object ProgressView5: TProgressView
+    Background.Padding.Left = 8.000000000000000000
+    Background.Padding.Top = 8.000000000000000000
+    Background.Padding.Right = 8.000000000000000000
+    Background.Padding.Bottom = 8.000000000000000000
+    Background.XRadius = 5.000000000000000000
+    Background.YRadius = 5.000000000000000000
+    Background.Border.Color.Default = claSkyblue
+    Background.Border.Color.Pressed = claTomato
+    Background.Border.Color.Focused = claNull
+    Background.Border.Color.Hovered = claNull
+    Background.Border.Color.Selected = claViolet
+    Background.Border.Color.Checked = claNull
+    Background.Border.Color.Enabled = claNull
+    Background.Border.Color.Activated = claPeru
+    Background.Border.Width = 8.000000000000000000
+    Background.Border.Style = RectBorder
+    Background.Border.Cap = Round
+    Background.Border.Join = Round
+    Clickable = True
+    Gravity = None
+    HitTest = True
+    Size.Width = 265.000000000000000000
+    Size.Height = 273.000000000000000000
+    Size.PlatformDefault = False
+    Position.X = 56.000000000000000000
+    Position.Y = 272.000000000000000000
+    TabOrder = 5
+    OnClick = ProgressView1Click
+    Max = 360
+    Value = 60
+    ForeGround.Padding.Left = 1.000000000000000000
+    ForeGround.Padding.Top = 1.000000000000000000
+    ForeGround.Padding.Right = 1.000000000000000000
+    ForeGround.Padding.Bottom = 1.000000000000000000
+    ForeGround.XRadius = 5.000000000000000000
+    ForeGround.YRadius = 5.000000000000000000
+    ForeGround.ItemDefault.Color = claWhite
+    ForeGround.RingWidth = 6.000000000000000000
+    StartAngle = -90.000000000000000000
+    Kind = CircleRing
+    PaddingBorder = True
   end
   object ImageList1: TImageList
     Source = <
@@ -16623,20 +16634,20 @@ object FrameProgressView: TFrameProgressView
               89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
               03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
               01BB494441545847ED98CD4AC34010C79B04143C481154042D3E8B82BE8567EB
-              C18BFA163D6AD5AB77EF82FA129A227E9D4C7BA8875C5A15F3A1FFB1FF0A9154
-              D94DB3E6901F0C3B3B33B0C374773BD94A16E2385E80EC064170F3016494B9D8
-              1962162C3C1745D1B924F313B1C33FCF507360D11DE6900AFC7B0C35077EAA47
-              AE9F0AFCF70C55C6E6A88CE77935AAA9F47ABD45AAE608C3F09A454905FE2B86
-              2AA35D29DBB69B9D4E27E03481D8E13FE2D41CD8C8D33865A72C4C02B18B9FA1
-              CA581CB5C0FA53902DC80A64C6B22C1F720969425E18A64CA6A486A02A931826
-              904800791B584B4A8A43A68D8E0D3E8B6103276F0D7A0D7793878D7E06DB09F4
-              E7AF20932091AA74038D462386FE8DCCD93D54196A0E5466DB75DD70904A12B1
-              8B9FA1E6401770C71C5281FF96A1CA68FFF775BBDD65AAA9F4FBFD25AAE62864
-              A51CC7D96FB55A11A709C40EFF01A7E64031723B7DE3BAA7D6794F3DFDEB3D55
-              52328242769EE3E8D1EB9055C8B047BF801C42B47B746D509DDCBE66B4C1A29B
-              ED76FB9D7924103BFC75869A23CF2F646D46556988EFFBAF0C3507BA80BF5E5D
-              1E18AA4C962EE1D7B702F88FA99A031BB9782F790216CEE1CDB352F904F631B4
-              589A5645530000000049454E44AE426082}
+              C18BFA087D03AD7AF5EE5D505F4253C4AF93690FF5904BAB623EF43FF65F2192
+              2ABB69D61CF283616767067698EE6E275BC9421CC70B90DD20086E3E808C3217
+              3B43CC8285E7A2283A97647E2276F8E7196A0E2CBAC31C52817F8FA1E6C04FF5
+              C8F55381FF9EA1CAD81C95F13CAF4635955EAFB748D51C61185EB328A9C07FC5
+              5065B42B65DB76B3D3E9049C26103BFC479C9A031B791AA7EC9485492076F133
+              54198BA316587F0AB2055981CC5896E5432E214DC80BC394C994D410546512C3
+              041209206F036B494971C8B4D1B1C167316CE0E4AD41AFE16EF2B0D1CF603B81
+              FEFC1564122452956EA0D168C4D0BF9139BB872A43CD81CA6CBBAE1B0E524922
+              76F133D41CE802EE98432AF0DF325419EDFFBE6EB7BB4C35957EBFBF44D51C85
+              AC94E338FBAD562BE23481D8E13FE0D41C28466EA76F5CF7D43AEFA9A77FBDA7
+              4A4A4650C8CE731C3D7A1DB20A19F6E817904388768FAE0DAA93DBD78C365874
+              B3DD6EBF338F046287BFCE5073E4F985ACCDA82A0DF17DFF95A1E64017F0D7AB
+              CB034395C9D225FCFA5600FF315573602317EF254FC0C239BC79562A9F6D60B4
+              044926BA5A0000000049454E44AE426082}
             FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_top_more.png'
           end>
         Name = 'btn_top_more'

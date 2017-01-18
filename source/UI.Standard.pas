@@ -51,6 +51,8 @@ type
     FDistance: Single;
     FStartAngle: Single;
     FAngle: Single;
+    FCenter: TPointF;
+    FRadius: Single;
     FPathChanged: Boolean;
     FClickInPath: Boolean;
     procedure SetDistance(const Value: Single);
@@ -66,11 +68,10 @@ type
     procedure PaintBackground; override;
     procedure RecreatePath; virtual;
     procedure PathChanged;
-    procedure DoMouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
-    procedure MouseClick(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    function PointInObject(X, Y: Single): Boolean; override;
   published
     /// <summary>
     /// 外层样式
@@ -114,8 +115,8 @@ type
     procedure InitDrawable; override;
   published
     property RingWidth: Single read FWidth write SetWidth stored IsStoredWidth;
-  end;  
-  
+  end;
+
 type
   /// <summary>
   /// 进度视图
@@ -144,6 +145,7 @@ type
     procedure DoForegroundChanged(Sender: TObject); virtual;
     procedure DoValueChanged(Sender: TObject); virtual;
   protected
+    procedure Resize; override;
     procedure PaintBackground; override;
     procedure RecreatePath; virtual;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
@@ -211,10 +213,11 @@ type
     procedure DoDrawImage(); virtual;
     procedure CreateImage; virtual;
     procedure DoImageChange(Sender: TObject); virtual;
+    function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-  published     
+  published
     /// <summary>
     /// 可绘制图像
     /// </summary>
@@ -589,7 +592,7 @@ type
     /// 当 Style 为 Icon 时，要显示的图标
     /// </summary>
     property Icon: TBrush read GetIcon write SetIcon;
-    
+
     property Width;
     property Height;
     property Scale;
@@ -603,6 +606,214 @@ type
     property OnPaint;
   end;
 
+type
+  TPathViewStyle = class(TPersistent)
+  private
+    FFill: TBrush;
+    FStroke: TStrokeBrush;
+    FOnChange: TNotifyEvent;
+    function GetFill: TBrush;
+    function GetStroke: TStrokeBrush;
+    procedure SetFill(const Value: TBrush);
+    procedure SetStroke(const Value: TStrokeBrush);
+  protected
+    procedure DoChanged(Sender: TObject);
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Assign(Source: TPersistent); override;
+    function IsEmpty: Boolean;
+    property OnChange: TNotifyEvent read FOnChange write FOnChange;
+  published
+    /// <summary>
+    /// 填充刷子
+    /// </summary>
+    property Fill: TBrush read GetFill write SetFill;
+    /// <summary>
+    /// 边框画笔
+    /// </summary>
+    property Border: TStrokeBrush read GetStroke write SetStroke;
+  end;
+
+  TPathViewStyles = class(TPersistent)
+  private
+    FItemDefault: TPathViewStyle;
+    FItemActive: TPathViewStyle;
+    FItemHover: TPathViewStyle;
+    FItemPressed: TPathViewStyle;
+    FOnChanged: TNotifyEvent;
+    function GetActiveStyle: TPathViewStyle;
+    function GetHoverStyle: TPathViewStyle;
+    function GetPressedStyle: TPathViewStyle;
+    procedure SetActiveStyle(const Value: TPathViewStyle);
+    procedure SetHoverStyle(const Value: TPathViewStyle);
+    procedure SetPressedStyle(const Value: TPathViewStyle);
+    function GetDefaultStyle: TPathViewStyle;
+    procedure SetDefaultStyle(const Value: TPathViewStyle);
+  protected
+    procedure DoChanged(Sender: TObject);
+    procedure CreateStyle(var Value: TPathViewStyle);
+    procedure UpdateStyle(var Source: TPathViewStyle; const Value: TPathViewStyle);
+  public
+    destructor Destroy; override;
+    procedure Assign(Source: TPersistent); override;
+    property OnChange: TNotifyEvent read FOnChanged write FOnChanged;
+  published
+    /// <summary>
+    /// 激活时
+    /// </summary>
+    property ItemDefault: TPathViewStyle read GetDefaultStyle write SetDefaultStyle;
+    /// <summary>
+    /// 激活时
+    /// </summary>
+    property ItemActivated: TPathViewStyle read GetActiveStyle write SetActiveStyle;
+    /// <summary>
+    /// 鼠标悬停时
+    /// </summary>
+    property ItemHovered: TPathViewStyle read GetHoverStyle write SetHoverStyle;
+    /// <summary>
+    /// 按下时
+    /// </summary>
+    property ItemPressed: TPathViewStyle read GetPressedStyle write SetPressedStyle;
+  end;
+
+  /// <summary>
+  /// 单个路径信息
+  /// </summary>
+  TPathViewItem = class(TCollectionItem)
+  private
+    FOnChange: TNotifyEvent;
+    FPath: TPathData;
+    FStyle: TPathViewStyles;
+    FVisible: Boolean;
+    FDisplayName: string;
+    function GetPath: TPathData;
+    procedure SetPath(const Value: TPathData);
+    procedure SetVisible(const Value: Boolean);
+    function GetStyle: TPathViewStyles;
+    procedure SetStyle(const Value: TPathViewStyles);
+  protected
+    procedure DoChanged(Sender: TObject);
+    function GetDisplayName: string; override;
+    procedure SetDisplayName(const Value: string); override;
+  public
+    constructor Create(Collection: TCollection); override;
+    destructor Destroy; override;
+    property OnChange: TNotifyEvent read FOnChange write FOnChange;
+  published
+    /// <summary>
+    /// 路径
+    /// </summary>
+    property Path: TPathData read GetPath write SetPath;
+    /// <summary>
+    /// 是否可视
+    /// </summary>
+    property Visible: Boolean read FVisible write SetVisible default True;
+    /// <summary>
+    /// 样式
+    /// </summary>
+    property Style: TPathViewStyles read GetStyle write SetStyle;
+  end;
+
+  /// <summary>
+  /// 路径集合
+  /// </summary>
+  TPathViewCollection = class(TCollection)
+  protected
+    [Weak] FOwner: TPersistent;
+    function GetItem(Index: Integer): TPathViewItem;
+    procedure SetItem(Index: Integer; const Value: TPathViewItem);
+    procedure DoItemChanged(ASender: TObject);
+    procedure Update(Item: TCollectionItem); override;
+    function GetOwner: TPersistent; override;
+  public
+    constructor Create(AOwner: TControl; ItemClass: TCollectionItemClass);
+    function Add: TPathViewItem; reintroduce;
+    function FindItemID(ID: Integer): TPathViewItem; reintroduce;
+    property Items[Index: Integer]: TPathViewItem read GetItem write SetItem; default;
+  end;
+
+  TOnPathViewItemClick = procedure (Sender: TObject; Index: Integer) of object;
+
+  TCustomMultiPathView = class(TView)
+  private
+    FActiveIndex: Integer;
+    FHoverIndex: Integer;
+    FPressedIndex: Integer;
+    FClickInPath: Boolean;
+    FOnItemHover: TNotifyEvent;
+    FOnItemClick: TOnPathViewItemClick;
+    procedure SetPaths(const Value: TPathViewCollection);
+    procedure SetActiveIndex(const Value: Integer);
+    function GetPathCount: Integer;
+  protected
+    FPaths: TPathViewCollection;
+    procedure PaintBackground; override;
+    procedure Click; override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
+    procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
+    function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+
+    function PointInObject(X, Y: Single): Boolean; override;
+
+    /// <summary>查找指定位置对应的路径项目</summary>
+    /// <param name="LocalPoint">要查找的路径内的一个点坐标</param>
+    /// <returns>返回找到的路径，如果没找到，返回空</returns>
+    function ItemAt(const LocalPoint: TPointF): TPathViewItem;
+    /// <summary>查找指定位置对应的路径项目</summary>
+    /// <param name="LocalPoint">要查找的路径内的一个点坐标</param>
+    /// <returns>返回找到的路径的索引，如果没找到，返回-1</returns>
+    function IndexAt(const LocalPoint: TPointF): Integer;
+
+    /// <summary>
+    /// 路径集合
+    /// </summary>
+    property Paths: TPathViewCollection read FPaths write SetPaths;
+    /// <summary>
+    /// 激活的路径索引号
+    /// </summary>
+    property ActiveIndex: Integer read FActiveIndex write SetActiveIndex default -1;
+    /// <summary>
+    /// 当前鼠标指向的路径索引号
+    /// </summary>
+    property HoverIndex: Integer read FHoverIndex;
+    /// <summary>
+    /// 当前按下的路径索引号
+    /// </summary>
+    property PressedIndex: Integer read FPressedIndex;
+    /// <summary>
+    /// 返回 Paths 数量
+    /// </summary>
+    property PathCount: Integer read GetPathCount;
+    /// <summary>
+    /// 是否是能点击到路径上
+    /// </summary>
+    property ClickInPath: Boolean read FClickInPath write FClickInPath default False;
+
+    property OnItemHover: TNotifyEvent read FOnItemHover write FOnItemHover;
+    property OnItemClick: TOnPathViewItemClick read FOnItemClick write FOnItemClick;
+  end;
+
+type
+  /// <summary>
+  /// 多重路径可视组件
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TMultiPathView = class(TCustomMultiPathView)
+  public
+    constructor Create(AOwner: TComponent); override;
+  published
+    property ActiveIndex;
+    property Paths;
+    property ClickInPath;
+    property OnItemHover;
+    property OnItemClick;
+    property Clickable default True;
+  end;
 
 implementation
 
@@ -827,7 +1038,7 @@ begin
     if Assigned(FScroll) and (FScroll.Visible) then begin
       case FScrollbar of
         TViewScroll.None: SR := R;
-        TViewScroll.Horizontal: 
+        TViewScroll.Horizontal:
           begin
             SR := GetRectF(FContentBounds^);
             SR.Top := R.Top;
@@ -835,7 +1046,7 @@ begin
             SR.Bottom := R.Bottom{$IFDEF MSWINDOWS} - FScroll.Height{$ENDIF};
             OffsetRect(SR, -(ScrollValue * (SR.Width - R.Width)), 0);
           end;
-        TViewScroll.Vertical: 
+        TViewScroll.Vertical:
           begin
             SR := GetRectF(FContentBounds^);
             SR.Left := R.Left;
@@ -843,7 +1054,7 @@ begin
             OffsetRect(SR, 0, -(ScrollValue * (SR.Height - R.Height)));
           end;
       end;
-    end else 
+    end else
       SR := R;
     if Assigned(FOnDrawText) then
       FOnDrawText(Self, Canvas, FText, SR)
@@ -1353,7 +1564,7 @@ begin
   inherited Destroy;
   if FContentBounds <> nil then begin
     Dispose(FContentBounds);
-    FContentBounds := nil;    
+    FContentBounds := nil;
   end;
 end;
 
@@ -1447,7 +1658,7 @@ begin
   AutoCapture := False;
   if Assigned(FScroll) then begin
     RemoveComponent(FScroll);
-    FreeAndNil(FScroll);     
+    FreeAndNil(FScroll);
   end;
 end;
 
@@ -1930,14 +2141,14 @@ begin
     FOnScrollChange(self);
   FAniCalculations.Shown := True;
   FScrolling := False;
-end;  
+end;
 
 { TProgressView }
 
 function TProgressView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
 begin
   Result := inherited CanRePaintBk(View, State);
-  if (not Result) and Assigned(FForeGround) then 
+  if (not Result) and Assigned(FForeGround) then
     Result := Assigned(FForeGround.GetStateBrush(State));
 end;
 
@@ -2035,7 +2246,7 @@ procedure TProgressView.PaintBackground;
       FPathChanged := False;
       RecreatePath;
     end;
-    
+
     W := Width;
     H := Height;
     LOpacity := GetAbsoluteOpacity;
@@ -2105,13 +2316,13 @@ begin
     FShapePath := TPathData.Create
   else
     FShapePath.Clear;
-    
+
   SA := FStartAngle;
   EA := FValue;
-  if EA < FMin then EA := FMin;  
+  if EA < FMin then EA := FMin;
   if EA > FMax then EA := FMax;
   EA := (EA - FMin) / (FMax - FMin) * 360;
-      
+
   R := RectF(FForeGround.Padding.Left, FForeGround.Padding.Top,
     Width - FForeGround.Padding.Right, Height - FForeGround.Padding.Bottom);
 
@@ -2121,10 +2332,16 @@ begin
   else
     LRadius := R.Width * 0.5;
 
-  if FPaddingBorder and Assigned(FBackground) and Assigned(TDrawableBorder(FBackground)._Border) then 
+  if FPaddingBorder and Assigned(FBackground) and Assigned(TDrawableBorder(FBackground)._Border) then
     LRadius := LRadius - TDrawableBorder(FBackground)._Border.Width;
 
   FShapePath.AddRing(LCenter, LRadius, LRadius - FForeGround.RingWidth, SA, EA);
+end;
+
+procedure TProgressView.Resize;
+begin
+  inherited Resize;
+  FPathChanged := True;
 end;
 
 procedure TProgressView.SetForeGround(const Value: TDrawableProgress);
@@ -2185,6 +2402,13 @@ end;
 
 { TImageView }
 
+function TImageView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
+begin
+  Result := inherited CanRePaintBk(View, State);
+  if (not Result) and Assigned(FImage) then
+    Result := EmptyBackground(FImage, State);
+end;
+
 constructor TImageView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -2214,12 +2438,12 @@ begin
   Img := FImage.GetStateItem(FDrawState);
   if Img = nil then Exit;
   R := RectF(
-    Padding.Left + FImage.Padding.Left, 
-    Padding.Top + FImage.Padding.Top, 
-    Width - Padding.Right - FImage.Padding.Right, 
+    Padding.Left + FImage.Padding.Left,
+    Padding.Top + FImage.Padding.Top,
+    Width - Padding.Right - FImage.Padding.Right,
     Height - Padding.Bottom - FImage.Padding.Bottom);
 
-  // 如果不是图像，直接缓制，不管 ScaleType 
+  // 如果不是图像，直接缓制，不管 ScaleType
   if (Img.Kind <> TBrushKind.Bitmap) or (FScaleType = TImageScaleType.None) then begin
     FImage.DrawBrushTo(Canvas, Img, R);
     Exit;
@@ -2233,31 +2457,31 @@ begin
   IH := Img.Bitmap.Image.Height;
   if (IW = 0) or (IH = 0) then
     Exit;
-    
+
   LWrapMode := Img.Bitmap.WrapMode;
   LBitmapChange := Img.Bitmap.OnChanged;
   Img.Bitmap.OnChanged := nil;
   W := R.Width;
   H := R.Height;
-  
+
   case FScaleType of
     TImageScaleType.Matrix:
       begin
         Img.Bitmap.WrapMode := TWrapMode.TileOriginal;
         if IW < W then SW := IW else SW := W;
-        if IH < H then SH := IH else SH := H;                  
+        if IH < H then SH := IH else SH := H;
         VR := RectSF(R.Left, R.Top, SW, SH);
-        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, SW, SH), VR, AbsoluteOpacity);  
+        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, SW, SH), VR, AbsoluteOpacity);
       end;
-      
-    TImageScaleType.Center: 
+
+    TImageScaleType.Center:
       begin
         Img.Bitmap.WrapMode := TWrapMode.Tile;
         VR := RectSF(R.Left + (W - IW) * 0.5, R.Top + (H - IH) * 0.5, IW, IH);
         Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);
       end;
-      
-    TImageScaleType.CenterCrop: 
+
+    TImageScaleType.CenterCrop:
       begin
         Img.Bitmap.WrapMode := TWrapMode.TileStretch;
         SW := W / IW;
@@ -2268,12 +2492,12 @@ begin
         end else begin
           SW := IW * SH;
           SH := H;
-        end; 
+        end;
         VR := RectSF(R.Left + (W - SW) * 0.5, R.Top + (H - SH) * 0.5, SW, SH);
-        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);   
+        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);
       end;
-      
-    TImageScaleType.CenterInside: 
+
+    TImageScaleType.CenterInside:
       begin
         if (W >= IW) and (H >= IH) then begin
           Img.Bitmap.WrapMode := TWrapMode.Tile;
@@ -2288,13 +2512,13 @@ begin
           end else begin
             SW := IW * SH;
             SH := H;
-          end; 
+          end;
           VR := RectSF(R.Left + (W - SW) * 0.5, R.Top + (H - SH) * 0.5, SW, SH);
         end;
         Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);
       end;
-      
-    TImageScaleType.FitCenter: 
+
+    TImageScaleType.FitCenter:
       begin
         Img.Bitmap.WrapMode := TWrapMode.TileStretch;
         SW := W / IW;
@@ -2305,13 +2529,13 @@ begin
         end else begin
           SW := IW * SH;
           SH := H;
-        end; 
+        end;
         VR := RectSF(R.Left + (W - SW) * 0.5, R.Top + (H - SH) * 0.5, SW, SH);
-        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);      
+        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);
       end;
-      
-    TImageScaleType.FitStart: 
-      begin 
+
+    TImageScaleType.FitStart:
+      begin
         Img.Bitmap.WrapMode := TWrapMode.TileStretch;
         SW := W / IW;
         SH := H / IH;
@@ -2321,11 +2545,11 @@ begin
         end else begin
           SW := IW * SH;
           SH := H;
-        end; 
+        end;
         VR := RectSF(R.Left, R.Top, SW, SH);
-        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);      
+        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);
       end;
-      
+
     TImageScaleType.FitEnd:
       begin
         Img.Bitmap.WrapMode := TWrapMode.TileStretch;
@@ -2337,9 +2561,9 @@ begin
         end else begin
           SW := IW * SH;
           SH := H;
-        end; 
+        end;
         VR := RectSF(R.Right - SW, R.Bottom - SH, SW, SH);
-        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);      
+        Canvas.DrawBitmap(Img.Bitmap.Bitmap, RectF(0, 0, IW, IH), VR, AbsoluteOpacity);
       end;
   end;
 
@@ -2347,7 +2571,7 @@ begin
   Img.Bitmap.OnChanged := LBitmapChange;
 
   if FImage is TDrawableBorder then
-    TDrawableBorder(FImage).DrawBorder(Canvas, R, DrawState); 
+    TDrawableBorder(FImage).DrawBorder(Canvas, R, DrawState);
 end;
 
 procedure TImageView.DoImageChange(Sender: TObject);
@@ -2393,7 +2617,7 @@ end;
 procedure TBadgeView.AfterConstruction;
 begin
   inherited AfterConstruction;
-  if Assigned(FBackground) then   
+  if Assigned(FBackground) then
     FBackground.OnChanged := DoChanged;
   FText.OnChanged := DoTextChanged;
 end;
@@ -2405,10 +2629,10 @@ begin
   FStyle := TBadgeStyle.NumberText;
   FBackground := TBadgeBackground.Create;
   FBackground.FXRadius := 8;
-  FBackground.FYRadius := 8;     
+  FBackground.FYRadius := 8;
   FText := TSimpleTextSettings.Create(Self);
   FText.Color := TAlphaColorRec.White;
-  FText.ColorChange := False;   
+  FText.ColorChange := False;
   HitTest := False;
   SetAcceptsControls(False);
   if csDesigning in ComponentState then
@@ -2417,7 +2641,7 @@ end;
 
 destructor TBadgeView.Destroy;
 begin
-  if Assigned(FTargetView) then begin  
+  if Assigned(FTargetView) then begin
     FTargetView.SetBadgeView(nil);
     FTargetView := nil;
   end;
@@ -2585,20 +2809,20 @@ begin
 end;
 
 procedure TBadgeView.PaddingChanged;
-begin   
-  inherited PaddingChanged; 
+begin
+  inherited PaddingChanged;
   if FAutoSize then
-    DoAdjustSize;  
+    DoAdjustSize;
 end;
 
 procedure TBadgeView.Paint;
 var
   R: TRectF;
 begin
-  if IsVisibleView then begin  
+  if IsVisibleView then begin
     R := RectF(0, 0, Width, Height);
     if FStyle = TBadgeStyle.Icon then begin
-      if Assigned(FIcon) then begin      
+      if Assigned(FIcon) then begin
         with FBackground do begin
           Canvas.FillRect(R, FXRadius, FYRadius, FCorners, FTargetView.Opacity, FIcon);
         end;
@@ -2705,7 +2929,7 @@ begin
   if FTargetView <> Value then begin
     if Assigned(FTargetView) and (FTargetView.BadgeView = Self as IViewBadge) then
       FTargetView.SetBadgeView(nil);
-    FTargetView := Value;   
+    FTargetView := Value;
     if Assigned(FTargetView) then begin
       FTargetView.SetBadgeView(Self);
       DoRealign;
@@ -2835,39 +3059,16 @@ begin
   inherited;
 end;
 
-procedure TRingView.DoMouseDown(Button: TMouseButton; Shift: TShiftState; X,
-  Y: Single);
-begin
-  if (csDesigning in ComponentState) or FInVisible then Exit;
-  if (TMouseButton.mbLeft = Button) and Clickable then begin
-    if FClickInPath and Assigned(Canvas) then begin
-      if not Canvas.PtInPath(PointF(X, Y), FPath) then
-        Exit;
-    end;
-    IncViewState(TViewState.Pressed);
-    if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
-  end;
-end;
-
 function TRingView.IsStoredDistance: Boolean;
 begin
   Result := FDistance <> 10;
-end;
-
-procedure TRingView.MouseClick(Button: TMouseButton; Shift: TShiftState; X,
-  Y: Single);
-begin
-  if FClickInPath and (TMouseButton.mbLeft = Button) and Clickable then begin
-    if not Canvas.PtInPath(PointF(X, Y), FPath) then
-      Exit;
-  end;
-  inherited;
 end;
 
 procedure TRingView.PaintBackground;
 var
   V: TBrush;
   LBorder: TViewBorder;
+  LOnChange: TNotifyEvent;
 begin
   if FPathChanged then begin
     RecreatePath;
@@ -2883,9 +3084,14 @@ begin
 
   LBorder := TDrawableBorder(FBackground)._Border;
   if Assigned(LBorder) and (LBorder.Width > 0) and (LBorder.Style = TViewBorderStyle.RectBorder) then begin
-    if LBorder.Kind = TBrushKind.Solid then
-      LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState); 
-    Canvas.DrawPath(FPath, AbsoluteOpacity, LBorder.Brush);
+    if LBorder.Kind = TBrushKind.Solid then begin
+      LOnChange := LBorder.Brush.OnChanged;
+      LBorder.Brush.OnChanged := nil;
+      LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState);
+      Canvas.DrawPath(FPath, AbsoluteOpacity, LBorder.Brush);
+      LBorder.Brush.OnChanged := LOnChange;
+    end else
+      Canvas.DrawPath(FPath, AbsoluteOpacity, LBorder.Brush);
   end;
 end;
 
@@ -2893,6 +3099,43 @@ procedure TRingView.PathChanged;
 begin
   FPathChanged := True;
   Invalidate;
+end;
+
+function TRingView.PointInObject(X, Y: Single): Boolean;
+var
+  LP: TPointF;
+  LR, LE, LS: Single;
+begin
+  if FClickInPath and (not AbsoluteInVisible) and (not FInPaintTo) and (FPath.Count > 0) then begin
+    if (FOuter = TRingViewStyle.Circle) and (FInner = TRingViewStyle.Circle) then begin
+      // 圆环
+      LP := AbsoluteToLocal(PointF(X, Y));
+      if FStartAngle = FAngle then
+        Result := False  // 夹角为0时不显示
+      else begin
+        // 判断是否在圆环内
+        Result := Sqr(LP.X - FCenter.X) + Sqr(LP.Y - FCenter.Y) <= Sqr(FRadius);
+        if Result then
+          Result := Sqr(LP.X - FCenter.X) + Sqr(LP.Y - FCenter.Y) >= Sqr(FRadius - FDistance);
+        // 在圆环内时，判断是否在指定夹角内
+        if Result and (FAngle - FStartAngle < 360) then begin
+          LS := FStartAngle;
+          LE := FAngle;
+          if LS < 0 then LS := 360 - LS;
+          if LE < 0 then LE := 360 - LE;
+          if LS > LE then begin
+            LR := LS;
+            LS := LE;
+            LE := LR;
+          end;
+          LR := GetAngle(FCenter.X, FCenter.Y, LP.X, LP.Y);
+          Result := (LR >= LS) and (LR <= LE);
+        end;
+      end;
+    end else
+      Result := Canvas.PtInPath(AbsoluteToLocal(PointF(X, Y)), FPath);
+  end else
+    Result := inherited PointInObject(X, Y);
 end;
 
 procedure TRingView.RecreatePath;
@@ -2904,17 +3147,27 @@ begin
   R := RectF(FBackground.Padding.Left, FBackground.Padding.Top,
     Width - FBackground.Padding.Right, Height - FBackground.Padding.Bottom);;
 
-  if (FOuter = TRingViewStyle.Circle) and (FInner = TRingViewStyle.Circle) and (FStartAngle <> FAngle) then 
+  if (FOuter = TRingViewStyle.Circle) and (FInner = TRingViewStyle.Circle) then
   begin
+    if FStartAngle = FAngle then
+      Exit;
     LC := PointF(R.Width / 2 + R.Left, R.Height / 2 + R.Top);
     if R.Width > R.Height then
-      LR := PointF(R.Height / 2, R.Height / 2)
+      FRadius := R.Height / 2
     else
-      LR := PointF(R.Width / 2, R.Width / 2);
-    FPath.AddRing(LC, LR.X, LR.X - FDistance, FStartAngle, FAngle - FStartAngle);
+      FRadius := R.Width / 2;
+    FCenter := LC;
+    if (FAngle - FStartAngle < 360) then begin
+      FPath.AddRing(LC, FRadius, FRadius - FDistance, FStartAngle, FAngle - FStartAngle);
+    end else begin
+      FPath.AddEllipse(RectF(LC.X - FRadius, LC.Y - FRadius, LC.X + FRadius, LC.Y + FRadius));
+      LR.X := FRadius - FDistance;
+      FPath.AddEllipse(RectF(LC.X - LR.X, LC.Y - LR.X, LC.X + LR.X, LC.Y + LR.X));
+      FPath.ClosePath;
+    end;
     Exit;
-  end;   
-    
+  end;
+
   case FOuter of
     TRingViewStyle.Rectangle:
       FPath.AddRectangle(R, FBackground.XRadius, FBackground.YRadius,
@@ -2940,7 +3193,7 @@ begin
           FBackground.Corners, FBackground.CornerType);
       end;
     TRingViewStyle.Circle:
-      begin  
+      begin
         R.Inflate(-FDistance, -FDistance);
         LC := PointF(R.Width / 2 + R.Left, R.Height / 2 + R.Top);
         if R.Width > R.Height then
@@ -2952,12 +3205,12 @@ begin
       end;
     TRingViewStyle.Ellipse:
       begin
-        R.Inflate(-FDistance, -FDistance); 
+        R.Inflate(-FDistance, -FDistance);
         FPath.AddEllipse(R);
         FPath.ClosePath;
       end;
   end;
-  
+
 end;
 
 procedure TRingView.Resize;
@@ -3023,7 +3276,7 @@ begin
   A := (AStartAngle + ASweepAngle) * PI / 180;
   SA := sin(A);
   CA := cos(A);
-  LineTo(PointF(ACenter.X + R1 * CA, ACenter.Y + R1 * SA));  
+  LineTo(PointF(ACenter.X + R1 * CA, ACenter.Y + R1 * SA));
 end;
 
 { TDrawableProgress }
@@ -3040,10 +3293,497 @@ end;
 
 procedure TDrawableProgress.SetWidth(const Value: Single);
 begin
-  if FWidth <> Value then begin  
+  if FWidth <> Value then begin
     FWidth := Value;
     DoChange(Self);
   end;
+end;
+
+{ TPathViewItem }
+
+constructor TPathViewItem.Create(Collection: TCollection);
+begin
+  inherited;
+  FVisible := True;
+  FPath := TPathData.Create;
+  FPath.OnChanged := DoChanged;
+end;
+
+destructor TPathViewItem.Destroy;
+begin
+  FreeAndNil(FStyle);
+  FreeAndNil(FPath);
+  inherited;
+end;
+
+procedure TPathViewItem.DoChanged(Sender: TObject);
+begin
+  if Assigned(FOnChange) then
+    FOnChange(Self);
+end;
+
+function TPathViewItem.GetDisplayName: string;
+begin
+  Result := FDisplayName;
+end;
+
+function TPathViewItem.GetPath: TPathData;
+begin
+  Result := FPath;
+end;
+
+function TPathViewItem.GetStyle: TPathViewStyles;
+begin
+  if not Assigned(FStyle) then begin
+    FStyle := TPathViewStyles.Create();
+    FStyle.OnChange := DoChanged;
+  end;
+  Result := FStyle;
+end;
+
+procedure TPathViewItem.SetDisplayName(const Value: string);
+begin
+  if FDisplayName <> Value then begin
+    FDisplayName := Value;
+    inherited;
+  end;
+end;
+
+procedure TPathViewItem.SetPath(const Value: TPathData);
+begin
+  FPath.Assign(Value);
+end;
+
+procedure TPathViewItem.SetStyle(const Value: TPathViewStyles);
+begin
+  if (Value = nil) then begin
+    FreeAndNil(FStyle);
+  end else
+    Style.Assign(Value);
+end;
+
+procedure TPathViewItem.SetVisible(const Value: Boolean);
+begin
+  if FVisible <> Value then begin
+    FVisible := Value;
+    DoChanged(Self);
+  end;
+end;
+
+{ TPathViewCollection }
+
+function TPathViewCollection.Add: TPathViewItem;
+begin
+  Result := inherited Add as TPathViewItem;
+end;
+
+constructor TPathViewCollection.Create(AOwner: TControl;
+  ItemClass: TCollectionItemClass);
+begin
+  inherited Create(ItemClass);
+  FOwner := AOwner;
+end;
+
+procedure TPathViewCollection.DoItemChanged(ASender: TObject);
+begin
+  Changed;
+end;
+
+function TPathViewCollection.FindItemID(ID: Integer): TPathViewItem;
+begin
+  Result := inherited FindItemID(ID) as TPathViewItem;
+end;
+
+function TPathViewCollection.GetItem(Index: Integer): TPathViewItem;
+begin
+  Result := inherited GetItem(Index) as TPathViewItem;
+end;
+
+function TPathViewCollection.GetOwner: TPersistent;
+begin
+  Result := FOwner;
+end;
+
+procedure TPathViewCollection.SetItem(Index: Integer;
+  const Value: TPathViewItem);
+begin
+  inherited SetItem(Index, Value);
+end;
+
+procedure TPathViewCollection.Update(Item: TCollectionItem);
+begin
+  inherited;
+  (FOwner as TControl).Repaint;
+end;
+
+{ TCustomMultiPathView }
+
+function TCustomMultiPathView.CanRePaintBk(const View: IView;
+  State: TViewState): Boolean;
+begin
+  Result := inherited CanRePaintBk(View, State);
+  if (not Result) then begin
+    {$IFDEF NEXTGEN}
+    Result := (FPaths.Count > 0) and (FPressedIndex <> -1);
+    {$ELSE}
+    Result := (FPaths.Count > 0) and ((FHoverIndex <> -1) or (FPressedIndex <> -1));
+    {$ENDIF}
+  end;
+end;
+
+procedure TCustomMultiPathView.Click;
+begin
+  inherited Click;
+  if Assigned(FOnItemClick) and (FPressedIndex <> -1) then
+    FOnItemClick(Self, FPressedIndex);
+end;
+
+constructor TCustomMultiPathView.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FPaths := TPathViewCollection.Create(Self, TPathViewItem);
+  FHoverIndex := -1;
+  FActiveIndex := -1;
+  FPressedIndex := -1;
+  FClickInPath := False;
+end;
+
+destructor TCustomMultiPathView.Destroy;
+begin
+  FreeAndNil(FPaths);
+  inherited;
+end;
+
+function TCustomMultiPathView.GetPathCount: Integer;
+begin
+  Result := FPaths.Count;
+end;
+
+function TCustomMultiPathView.IndexAt(const LocalPoint: TPointF): Integer;
+var
+  I: Integer;
+  LCanvas: TCanvas;
+begin
+  LCanvas := Canvas;
+  for I := 0 to FPaths.Count - 1 do begin
+    if Assigned(FPaths[I].FPath) and FPaths[I].Visible and
+      LCanvas.PtInPath(LocalPoint, FPaths[I].FPath) then
+    begin
+      Result := I;
+      Exit;
+    end;
+  end;
+  Result := -1;
+end;
+
+function TCustomMultiPathView.ItemAt(const LocalPoint: TPointF): TPathViewItem;
+var
+  I: Integer;
+begin
+  I := IndexAt(LocalPoint);
+  if I < 0 then
+    Result := nil
+  else
+    Result := FPaths[I];
+end;
+
+procedure TCustomMultiPathView.MouseDown(Button: TMouseButton;
+  Shift: TShiftState; X, Y: Single);
+begin
+  if (TMouseButton.mbLeft = Button) and (Clickable) then
+    FPressedIndex := IndexAt(PointF(X, Y));
+  inherited MouseDown(Button, Shift, X, Y);
+end;
+
+procedure TCustomMultiPathView.MouseMove(Shift: TShiftState; X, Y: Single);
+{$IFNDEF NEXTGEN}
+var
+  I: Integer;
+{$ENDIF}
+begin
+  inherited MouseMove(Shift, X, Y);
+  {$IFNDEF NEXTGEN}
+  I := IndexAt(PointF(X, Y));
+  if I <> FHoverIndex then begin
+    FHoverIndex := I;
+    if Assigned(FOnItemHover) then
+      FOnItemHover(Self);
+    Invalidate;
+  end;
+  {$ENDIF}
+end;
+
+procedure TCustomMultiPathView.MouseUp(Button: TMouseButton; Shift: TShiftState;
+  X, Y: Single);
+begin
+  if FPressedIndex <> -1 then
+    FActiveIndex := FPressedIndex;
+  inherited MouseUp(Button, Shift, X, Y);
+  FHoverIndex := -1;
+  FPressedIndex := -1;
+end;
+
+procedure TCustomMultiPathView.PaintBackground;
+
+  procedure DrawStyle(const Canvas: TCanvas; const APath: TPathViewItem;
+    const AStyle: TPathViewStyle; const AOpacity: Single);
+  begin
+    if Assigned(AStyle) then begin
+      if Assigned(AStyle.FFill) and (AStyle.FFill.Kind <> TBrushKind.None) then
+        Canvas.FillPath(APath.FPath, AOpacity, AStyle.FFill);
+      if Assigned(AStyle.FStroke) and (AStyle.FStroke.Kind <> TBrushKind.None) then
+        Canvas.DrawPath(APath.FPath, AOpacity, AStyle.FStroke);
+    end;
+  end;
+
+var
+  I: Integer;
+  APath: TPathViewItem;
+  LOpacity: Single;
+  LCanvas: TCanvas;
+  LStyle: TPathViewStyle;
+begin
+  inherited PaintBackground;
+  if AbsoluteInVisible then
+    Exit;
+  LCanvas := Canvas;
+  LOpacity := AbsoluteOpacity;
+  for I := 0 to FPaths.Count - 1 do begin
+    APath := FPaths[I];
+    if (not Assigned(APath.FPath)) or (APath.FVisible = False) then
+      Continue;
+    if APath.FPath.Count = 0 then
+      Continue;
+    if not Assigned(APath.FStyle) then
+      Continue;
+
+    if I = FPressedIndex then
+      LStyle := APath.FStyle.FItemPressed
+    else if I = FActiveIndex then begin
+      LStyle := APath.FStyle.FItemActive
+    end else if I = HoverIndex then begin
+      LStyle := APath.FStyle.FItemHover;
+    end else
+      LStyle := nil;
+
+    if (LStyle = nil) or (LStyle.IsEmpty) then
+      LStyle := APath.FStyle.FItemDefault;
+
+    DrawStyle(LCanvas, APath, LStyle, LOpacity)
+  end;
+end;
+
+function TCustomMultiPathView.PointInObject(X, Y: Single): Boolean;
+begin
+  if FClickInPath and (FPaths.Count > 0) and (not AbsoluteInVisible) and (not FInPaintTo) then begin
+    Result := IndexAt(AbsoluteToLocal(PointF(X, Y))) <> -1;
+    {$IFNDEF NEXTGEN}
+    if (not Result) and (FHoverIndex <> -1) then begin
+      FHoverIndex := -1;
+      if not (csDesigning in ComponentState) then
+        Invalidate;
+    end;
+    {$ENDIF}
+  end else
+    Result := inherited PointInObject(X, Y);
+end;
+
+procedure TCustomMultiPathView.SetActiveIndex(const Value: Integer);
+begin
+  if FActiveIndex <> Value then begin
+    FActiveIndex := Value;
+    Invalidate;
+  end;
+end;
+
+procedure TCustomMultiPathView.SetPaths(const Value: TPathViewCollection);
+begin
+  FPaths.Assign(Value);
+end;
+
+{ TPathViewStyle }
+
+procedure TPathViewStyle.Assign(Source: TPersistent);
+var
+  LastOnChange: TNotifyEvent;
+begin
+  if Source is TPathViewStyle then begin
+    LastOnChange := FOnChange;
+    Self.Fill := TPathViewStyle(Source).FFill;
+    Self.FStroke := TPathViewStyle(Source).FStroke;
+    FOnChange := LastOnChange;
+    DoChanged(Self);
+  end else
+    inherited;
+end;
+
+constructor TPathViewStyle.Create;
+begin
+  inherited Create;
+end;
+
+destructor TPathViewStyle.Destroy;
+begin
+  FreeAndNil(FFill);
+  FreeAndNil(FStroke);
+  inherited;
+end;
+
+procedure TPathViewStyle.DoChanged(Sender: TObject);
+begin
+  if Assigned(FOnChange) then
+    FOnChange(Self);
+end;
+
+function TPathViewStyle.GetFill: TBrush;
+begin
+  if FFill = nil then begin
+    FFill := TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Null);
+    FFill.OnChanged := DoChanged;
+  end;
+  Result := FFill;
+end;
+
+function TPathViewStyle.GetStroke: TStrokeBrush;
+begin
+  if FStroke = nil then begin
+    FStroke := TStrokeBrush.Create(TBrushKind.Solid, TAlphaColorRec.Null);
+    FStroke.OnChanged := DoChanged;
+  end;
+  Result := FStroke;
+end;
+
+function TPathViewStyle.IsEmpty: Boolean;
+begin
+  Result := ((FFill = nil) or (FFill.Kind = TBrushKind.None)) and
+    ((FStroke = nil) or (FStroke.Kind = TBrushKind.None));
+end;
+
+procedure TPathViewStyle.SetFill(const Value: TBrush);
+begin
+  if (Value = nil) then begin
+    FreeAndNil(FFill);
+    DoChanged(Self);
+  end else
+    Fill.Assign(Value);
+end;
+
+procedure TPathViewStyle.SetStroke(const Value: TStrokeBrush);
+begin
+  if (Value = nil) then begin
+    FreeAndNil(FStroke);
+    DoChanged(Self);
+  end else
+    FStroke.Assign(Value);
+end;
+
+{ TPathViewStyles }
+
+procedure TPathViewStyles.Assign(Source: TPersistent);
+var
+  LastOnChange: TNotifyEvent;
+begin
+  if Source is TPathViewStyles then begin
+    LastOnChange := FOnChanged;
+    Self.ItemDefault := TPathViewStyles(Source).FItemDefault;
+    Self.ItemActivated := TPathViewStyles(Source).FItemActive;
+    Self.ItemHovered := TPathViewStyles(Source).FItemHover;
+    Self.ItemPressed := TPathViewStyles(Source).FItemPressed;
+    FOnChanged := LastOnChange;
+    DoChanged(Self);
+  end else
+    inherited;
+end;
+
+procedure TPathViewStyles.CreateStyle(var Value: TPathViewStyle);
+begin
+  Value := TPathViewStyle.Create;
+  Value.FOnChange := DoChanged;
+end;
+
+destructor TPathViewStyles.Destroy;
+begin
+  FreeAndNil(FItemDefault);
+  FreeAndNil(FItemActive);
+  FreeAndNil(FItemHover);
+  FreeAndNil(FItemPressed);
+  inherited;
+end;
+
+procedure TPathViewStyles.DoChanged(Sender: TObject);
+begin
+  if Assigned(FOnChanged) then FOnChanged(Self);
+end;
+
+function TPathViewStyles.GetActiveStyle: TPathViewStyle;
+begin
+  if not Assigned(FItemActive) then
+    CreateStyle(FItemActive);
+  Result := FItemActive;
+end;
+
+function TPathViewStyles.GetDefaultStyle: TPathViewStyle;
+begin
+  if not Assigned(FItemDefault) then
+    CreateStyle(FItemDefault);
+  Result := FItemDefault;
+end;
+
+function TPathViewStyles.GetHoverStyle: TPathViewStyle;
+begin
+  if not Assigned(FItemHover) then
+    CreateStyle(FItemHover);
+  Result := FItemHover;
+end;
+
+function TPathViewStyles.GetPressedStyle: TPathViewStyle;
+begin
+  if not Assigned(FItemPressed) then
+    CreateStyle(FItemPressed);
+  Result := FItemPressed;
+end;
+
+procedure TPathViewStyles.SetActiveStyle(const Value: TPathViewStyle);
+begin
+  UpdateStyle(FItemActive, Value);
+end;
+
+procedure TPathViewStyles.SetDefaultStyle(const Value: TPathViewStyle);
+begin
+  UpdateStyle(FItemDefault, Value);
+end;
+
+procedure TPathViewStyles.SetHoverStyle(const Value: TPathViewStyle);
+begin
+  UpdateStyle(FItemHover, Value);
+end;
+
+procedure TPathViewStyles.SetPressedStyle(const Value: TPathViewStyle);
+begin
+  UpdateStyle(FItemPressed, Value);
+end;
+
+procedure TPathViewStyles.UpdateStyle(var Source: TPathViewStyle;
+  const Value: TPathViewStyle);
+begin
+  if (Value = nil) then begin
+    if (Source <> nil) then begin
+      FreeAndNil(Source);
+      DoChanged(Self);
+    end;
+    Exit;
+  end;
+  if Source = nil then
+    CreateStyle(Source);
+  Source.Assign(Value);
+end;
+
+{ TMultiPathView }
+
+constructor TMultiPathView.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  Clickable := True;
 end;
 
 initialization

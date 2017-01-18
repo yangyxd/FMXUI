@@ -20,9 +20,9 @@ type
     ProgressView2: TProgressView;
     ProgressView3: TProgressView;
     ProgressView4: TProgressView;
-    RingView1: TRingView;
     TextView3: TTextView;
     Timer2: TTimer;
+    ProgressView5: TProgressView;
     procedure TextView1Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure ProgressView1Click(Sender: TObject);
@@ -98,6 +98,9 @@ begin
   ProgressView4.Value := ProgressView4.Value + 1;
   if ProgressView4.Value > ProgressView4.Max then
     ProgressView4.Value := ProgressView4.Min;
+  ProgressView5.Value := ProgressView5.Value + 1;
+  if ProgressView5.Value > ProgressView5.Max then
+    ProgressView5.Value := ProgressView5.Min;
 end;
 
 procedure TFrameProgressView.Timer2Timer(Sender: TObject);

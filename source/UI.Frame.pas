@@ -193,6 +193,8 @@ type
     function GetParentForm: TCustomForm;
     procedure SetBackColor(const Value: TAlphaColor);
     function GetIsDestroy: Boolean;
+
+    function FinishIsFreeApp: Boolean;
   protected
     [Weak] FLastView: TFrameView;
     [Weak] FNextView: TFrameView;
@@ -225,8 +227,6 @@ type
 
     function GetData: TValue; override;
     procedure SetData(const Value: TValue); override;
-
-    function FinishIsFreeApp: Boolean;
 
     // 检查是否需要释放，如果需要，就释放掉
     function CheckFree(): Boolean;

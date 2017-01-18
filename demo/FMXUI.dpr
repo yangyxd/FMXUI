@@ -18,7 +18,9 @@ uses
   uFrame4_Page0 in 'uFrame4_Page0.pas' {Frame4_Page0: TFrame},
   uFrame4_Page1 in 'uFrame4_Page1.pas' {Frame4_Page1: TFrame},
   uFrame4_Page2 in 'uFrame4_Page2.pas' {Frame4_Page2: TFrame},
-  uFrame4_Page3 in 'uFrame4_Page3.pas' {Frame4_Page3: TFrame};
+  uFrame4_Page3 in 'uFrame4_Page3.pas' {Frame4_Page3: TFrame},
+  uFrameRingView in 'uFrameRingView.pas' {FrameRingView: TFrame},
+  uFrameMultiPathView in 'uFrameMultiPathView.pas' {FrameMultiPathView: TFrame};
 
 {$R *.res}
 

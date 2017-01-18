@@ -3,6 +3,7 @@ unit Unit1;
 interface
 
 uses
+  UI.ListViewEx,
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, UI.Base,
   FMX.Controls.Presentation, FMX.StdCtrls, UI.Standard, UI.Toast, FMX.Layouts,
@@ -35,6 +36,7 @@ procedure TForm1.FormCreate(Sender: TObject);
 begin
   TFrameView.SetDefaultStatusColor($ff800080);
   //TFrameView.SetDefaultBackColor($fff1f2f3);
+
 end;
 
 procedure TForm1.FormShow(Sender: TObject);
