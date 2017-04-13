@@ -891,6 +891,7 @@ type
     function GetViewStates: TViewStates; override;
     function GetBackground: TDrawable; override;
     function GetViewBackground: TDrawable; override;
+    function DoGetUpdateRect: TRectF; override;
     procedure SetMaxHeight(const Value: Single); override;
     procedure SetMaxWidth(const Value: Single); override;
     procedure SetMinHeight(const Value: Single); override;
@@ -3000,6 +3001,7 @@ begin
     FLayout.OnChanged := DoLayoutChanged;
   end;
   WidthSize := TViewSize.CustomSize;
+  DisableFocusEffect := True;
 end;
 
 function TView.CreateBackground: TDrawable;
@@ -3094,6 +3096,16 @@ begin
   inherited DoEndUpdate;
   TempMaxHeight := 0;
   TempMaxWidth := 0;
+end;
+
+function TView.DoGetUpdateRect: TRectF;
+var
+  LastFocus: Boolean;
+begin
+  LastFocus := CanFocus;
+  CanFocus := False;
+  Result := inherited DoGetUpdateRect;
+  CanFocus := LastFocus;
 end;
 
 procedure TView.DoGravity;
@@ -3743,7 +3755,7 @@ end;
 
 procedure TView.Paint;
 begin
-  //inherited Paint;
+  inherited Paint;
   if not FDrawing then begin
     if FIsFocused then begin
       Include(FViewState, TViewState.Focused);

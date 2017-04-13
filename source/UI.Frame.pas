@@ -553,27 +553,31 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
     TFrameAnimator.AnimateFloat(Self, 'Position.X', NewValue, AEvent);
   end;
 
-begin
-  case Ani of
-    TFrameAniType.DefaultAni:
-      if not (DefaultAnimate in [TFrameAniType.None, TFrameAniType.DefaultAni]) then
-        AnimatePlay(DefaultAnimate, IsIn, SwitchFlag, AEvent)
-      else if Assigned(AEvent) then
-        AEvent(Self);
-    TFrameAniType.FadeInOut:
-      DoFadeInOut;
-    TFrameAniType.MoveInOut:
-      DoMoveInOut;
-  else
-    begin
-      // 无动画效果
-      if Assigned(AEvent) then
-        AEvent(Self);
-      if IsIn then
-        Opacity := 1
-      else
-        Opacity := 0;
+
+begin
+  try
+    case Ani of
+      TFrameAniType.DefaultAni:
+        if not (DefaultAnimate in [TFrameAniType.None, TFrameAniType.DefaultAni]) then
+          AnimatePlay(DefaultAnimate, IsIn, SwitchFlag, AEvent)
+        else if Assigned(AEvent) then
+          AEvent(Self);
+      TFrameAniType.FadeInOut:
+        DoFadeInOut;
+      TFrameAniType.MoveInOut:
+        DoMoveInOut;
+    else
+      begin
+        // 无动画效果
+        if Assigned(AEvent) then
+          AEvent(Self);
+        if IsIn then
+          Opacity := 1
+        else
+          Opacity := 0;
+      end;
     end;
+  except
   end;
 end;
 

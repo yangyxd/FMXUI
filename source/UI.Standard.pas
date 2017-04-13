@@ -149,6 +149,7 @@ type
     procedure PaintBackground; override;
     procedure RecreatePath; virtual;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
+    function DoGetUpdateRect: TRectF; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1362,7 +1363,7 @@ end;
 
 function TTextView.ToString: string;
 begin
-  Result := Format('%s ''%s''', [inherited ToString, FText]);
+  Result := Format('%s ''%s''', [inherited ToString, FText.Text]);
 end;
 
 procedure TTextView.TriggerAcceleratorKey;
@@ -2182,6 +2183,11 @@ begin
   Repaint;
 end;
 
+function TProgressView.DoGetUpdateRect: TRectF;
+begin
+  Result := inherited DoGetUpdateRect;
+end;
+
 procedure TProgressView.DoValueChanged(Sender: TObject);
 begin
   if Assigned(FOnValueChange) then
@@ -2289,7 +2295,6 @@ procedure TProgressView.PaintBackground;
 begin
   if AbsoluteInVisible then
     Exit;
-
   case FKind of
     Horizontal: // ˮƽ
       begin
