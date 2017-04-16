@@ -671,8 +671,10 @@ class function TFrameView.CreateFrame(Parent: TFmxObject;
     if (FDefaultStatusColor <> 0) and (TView.GetStatusHeight > 0) then begin
       while Parent <> nil do begin
         if (Parent is TCommonCustomForm) then begin
-          TCommonCustomForm(Parent).Padding.Top := 
+          TCommonCustomForm(Parent).Padding.Top :=
             TCommonCustomForm(Parent).Padding.Top + TView.GetStatusHeight;
+          TCommonCustomForm(Parent).Padding.Bottom :=
+            TCommonCustomForm(Parent).Padding.Bottom + TView.GetNavigationBarHeight;
           Break;
         end;
         Parent := Parent.Parent;

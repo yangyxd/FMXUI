@@ -1054,7 +1054,14 @@ type
     procedure StartTriggerAnimation(const AInstance: TFmxObject; const ATrigger: string); override;
     procedure StartTriggerAnimationWait(const AInstance: TFmxObject; const ATrigger: string); override;
 
+    /// <summary>
+    /// 获取状态栏高度
+    /// </summary>
     class function GetStatusHeight: Single;
+    /// <summary>
+    /// 获取底部虚拟键高度
+    /// </summary>
+    class function GetNavigationBarHeight: Single;
 
     { Rtti Function }
     class function GetRttiValue(Instance: TObject; const Name: string): TValue; overload;
@@ -1422,6 +1429,10 @@ var
   /// APP 状态条高度 (Android 平台有效)
   /// </summary>
   StatusHeight: Single = 0;
+  /// <summary>
+  /// APP 底部虚拟键高度 (Android 平台有效)
+  /// </summary>
+  NavigationBarHeight: Single = 0;
   {$IFDEF ANDROID}
   FAudioManager: JAudioManager = nil;
   {$ENDIF}
@@ -1594,19 +1605,90 @@ var
 begin
   if TJBuild_VERSION.JavaClass.SDK_INT < 19 then
     Exit;
-  resourceId := {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
-    .getResources().getIdentifier(
-      StringToJString('status_bar_height'),
-      StringToJString('dimen'),
-      StringToJString('android'));
-  if resourceId > 0 then begin
-    StatusHeight := {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
-      .getResources().getDimensionPixelSize(resourceId);
-    if StatusHeight > 0 then
-      StatusHeight := StatusHeight / {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
-        .getResources().getDisplayMetrics().scaledDensity;
-  end else
-    StatusHeight := 0;
+  try
+    resourceId := {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
+      .getResources().getIdentifier(
+        StringToJString('status_bar_height'),
+        StringToJString('dimen'),
+        StringToJString('android'));
+    if resourceId <> 0 then begin
+      StatusHeight := {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
+        .getResources().getDimensionPixelSize(resourceId);
+      if StatusHeight > 0 then
+        StatusHeight := StatusHeight / {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
+          .getResources().getDisplayMetrics().scaledDensity;
+    end else
+      StatusHeight := 0;
+  except
+  end;
+end;
+
+// 感谢 Flying Wang
+type
+  JSystemPropertiesClass = interface(IJavaClass)
+    ['{C14AB573-CC6F-4087-A1FB-047E92F8E718}']
+    function get(name: JString): JString; cdecl;
+  end;
+
+  [JavaSignature('android/os/SystemProperties')]
+  JSystemProperties = interface(IJavaInstance)
+    ['{58A4A7BF-80D0-4FF8-9CF3-F94123C8EEB7}']
+  end;
+  TJSystemProperties = class(TJavaGenericImport<JSystemPropertiesClass, JSystemProperties>) end;
+
+procedure DoInitNavigationBarHeight();
+var
+  resourceId: Integer;
+  HasNavigationBar: Boolean;
+  oStr: JString;
+  AStr: string;
+begin
+  NavigationBarHeight := 0;
+  if TJBuild_VERSION.JavaClass.SDK_INT < 21 then
+    Exit;
+  HasNavigationBar := False;
+  try
+    resourceId := {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
+      .getResources.getIdentifier(
+        StringToJString('config_showNavigationBar'),
+        StringToJString('bool'),
+        StringToJString('android'));
+    if resourceId <> 0 then begin
+      HasNavigationBar := TAndroidHelper.Context.getResources.getBoolean(resourceId);
+      try
+        // http://blog.csdn.net/lgaojiantong/article/details/42874529
+        oStr := TJSystemProperties.JavaClass.get(StringToJString('qemu.hw.mainkeys'));
+        if oStr = nil then Exit;
+        AStr := JStringToString(oStr).Trim;
+      except
+        AStr := '';
+      end;
+      if AStr <> '' then begin
+        if AStr = '0' then
+          HasNavigationBar := True
+        else if AStr = '1' then
+          HasNavigationBar := False
+        else begin
+          if TryStrToBool(AStr, HasNavigationBar) then
+            HasNavigationBar := not HasNavigationBar;
+        end;
+      end;
+      if not HasNavigationBar then
+        Exit;
+      resourceId := {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
+        .getResources.getIdentifier(
+          StringToJString('navigation_bar_height'),
+          StringToJString('dimen'),
+          StringToJString('android'));
+      if resourceId <> 0 then begin
+        NavigationBarHeight := TAndroidHelper.Context.getResources.getDimensionPixelSize(resourceId);
+        if NavigationBarHeight > 0 then
+          NavigationBarHeight := NavigationBarHeight / {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
+            .getResources().getDisplayMetrics().scaledDensity;
+      end;
+    end;
+  except
+  end;
 end;
 {$ENDIF}
 
@@ -3270,6 +3352,11 @@ end;
 function TView.GetMinWidth: Single;
 begin
   Result := FMinWidth;
+end;
+
+class function TView.GetNavigationBarHeight: Single;
+begin
+  Result := NavigationBarHeight;
 end;
 
 function TView.GetOpacity: Single;
@@ -6794,6 +6881,7 @@ initialization
   {$IFDEF ANDROID}
   TView.InitAudioManager();
   DoInitFrameStatusHeight();
+  DoInitNavigationBarHeight();
   {$ENDIF}
 
 finalization
