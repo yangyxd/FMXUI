@@ -168,6 +168,7 @@ type
     FParams: TFrameParams;
     FPrivateState: TFrameState;
     FBackColor: TAlphaColor;
+    FUseDefaultBackColor: Boolean;
     FOnShow: TNotifyEvent;
     FOnHide: TNotifyEvent;
     FOnFinish: TNotifyEvent;
@@ -390,6 +391,10 @@ type
     /// 是否已经释放
     /// </summary>
     property IsDestroy: Boolean read GetIsDestroy;
+    /// <summary>
+    /// 是否使用了默认背景色
+    /// </summary>
+    property IsUseDefaultBackColor: Boolean read FUseDefaultBackColor;
   published
     property Title: string read GetTitle write SetTitle;
     /// <summary>
@@ -646,6 +651,7 @@ begin
     Exit;
   end;
   // 动画执行中， 设置需要关闭的标识
+  FWaitDialog := nil;
   if FAnimateing then
     FNeedFree := True
   else begin
@@ -730,6 +736,7 @@ begin
     Height := 400;
   end;
   FBackColor := FDefaultBackColor;
+  FUseDefaultBackColor := True;
   FNeedDoCreate := True;
 end;
 
@@ -884,7 +891,7 @@ end;
 
 function TFrameView.GetIsWaitDismiss: Boolean;
 begin
-  Result := Assigned(FWaitDialog) and (FWaitDialog.IsDismiss);
+  Result := IsDestroy or (Assigned(FWaitDialog) and (FWaitDialog.IsDismiss));
 end;
 
 function TFrameView.GetParams: TFrameParams;
@@ -1004,7 +1011,7 @@ end;
 
 procedure TFrameView.HideWaitDialog;
 begin
-  if Assigned(Self) and Assigned(FWaitDialog) then begin
+  if (not IsDestroy) and Assigned(FWaitDialog) then begin
     FWaitDialog.Dismiss;
     FWaitDialog := nil;
   end;
@@ -1087,6 +1094,7 @@ procedure TFrameView.SetBackColor(const Value: TAlphaColor);
 begin
   if FBackColor <> Value then begin
     FBackColor := Value;
+    FUseDefaultBackColor := False;
     //Repaint;
   end;
 end;
@@ -1129,6 +1137,8 @@ begin
   inherited;
   if FNeedDoCreate and Assigned(Parent) then begin
     FNeedDoCreate := False;
+    if FUseDefaultBackColor and Assigned(TDialog.GetDialog(Self)) then
+      FBackColor := 0;  // 作为Dialog的子View时，不使用默认背景色
     DoCreate();
   end;
 end;

@@ -1686,9 +1686,12 @@ begin
       Exit;
     FTimer.Enabled := False;
     if (FState = TListViewState.PullDownComplete) then begin
-      if Assigned(FHeader) then begin  
-        FHeader.DoUpdateState(TListViewState.None, 0);  
-        ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - (FHeader as TControl).Height;
+      if Assigned(FHeader) then begin
+        ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - FPullOffset;
+        FPullOffset := 0;
+        FHeader.DoUpdateState(TListViewState.None, 0);
+        if not ListView.FEnablePullRefresh then
+          ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - (FHeader as TControl).Height;
         ListView.DoUpdateScrollingLimits(True);
       end;
     end;

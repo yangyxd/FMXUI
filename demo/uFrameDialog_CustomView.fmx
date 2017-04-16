@@ -1,0 +1,87 @@
+object FrameDialogCustomView: TFrameDialogCustomView
+  Size.Width = 428.000000000000000000
+  Size.Height = 165.000000000000000000
+  Size.PlatformDefault = False
+  OnResize = FrameResize
+  object LinearLayout1: TLinearLayout
+    Align = Top
+    HeightSize = WrapContent
+    Gravity = None
+    Padding.Left = 8.000000000000000000
+    Padding.Top = 8.000000000000000000
+    Padding.Right = 8.000000000000000000
+    Padding.Bottom = 8.000000000000000000
+    Size.Width = 428.000000000000000000
+    Size.Height = 164.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Orientation = Vertical
+    object EditView1: TEditView
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claNull
+      Background.Border.Color.Focused = xFF0066CC
+      Background.Border.Color.Hovered = claSilver
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      ClipChildren = True
+      WidthSize = FillParent
+      Padding.Left = 6.000000000000000000
+      Padding.Top = 2.000000000000000000
+      Padding.Right = 6.000000000000000000
+      Padding.Bottom = 2.000000000000000000
+      Size.Width = 412.000000000000000000
+      Size.Height = 41.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 8.000000000000000000
+      Position.Y = 8.000000000000000000
+      TabOrder = 1
+      TextHint = #36755#20837#29992#25143#21517
+      TextSettings.Gravity = CenterVertical
+    end
+    object EditView2: TEditView
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claNull
+      Background.Border.Color.Focused = xFF0066CC
+      Background.Border.Color.Hovered = claSilver
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      ClipChildren = True
+      WidthSize = FillParent
+      Padding.Left = 6.000000000000000000
+      Padding.Top = 2.000000000000000000
+      Padding.Right = 6.000000000000000000
+      Padding.Bottom = 2.000000000000000000
+      Margins.Top = 8.000000000000000000
+      Size.Width = 412.000000000000000000
+      Size.Height = 41.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 8.000000000000000000
+      Position.Y = 57.000000000000000000
+      TabOrder = 0
+      TextHint = #36755#20837#23494#30721
+      TextSettings.Gravity = CenterVertical
+    end
+    object ButtonView1: TButtonView
+      WidthSize = FillParent
+      Padding.Left = 4.000000000000000000
+      Padding.Top = 4.000000000000000000
+      Padding.Right = 4.000000000000000000
+      Padding.Bottom = 4.000000000000000000
+      Margins.Top = 12.000000000000000000
+      Margins.Bottom = 4.000000000000000000
+      Size.Width = 412.000000000000000000
+      Size.Height = 42.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 8.000000000000000000
+      Position.Y = 110.000000000000000000
+      TabOrder = 2
+      OnClick = ButtonView1Click
+      Text = #30331#24405
+      TextSettings.Gravity = Center
+    end
+  end
+end

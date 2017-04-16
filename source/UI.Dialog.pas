@@ -972,7 +972,6 @@ begin
   FOnClickListenerA := AListener;
 end;
 
-
 function TDialogBuilder.SetItems(const AItems: TArray<string>;
   AListener: TOnDialogClickListener): TDialogBuilder;
 begin

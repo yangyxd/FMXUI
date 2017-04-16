@@ -1,6 +1,6 @@
 object FrmaeDialog: TFrmaeDialog
   Size.Width = 320.000000000000000000
-  Size.Height = 511.000000000000000000
+  Size.Height = 633.000000000000000000
   Size.PlatformDefault = False
   object LinearLayout1: TLinearLayout
     Align = Top
@@ -25,6 +25,10 @@ object FrmaeDialog: TFrmaeDialog
     object tvTitle: TTextView
       Background.Border.Color.Default = xBFC0C0C0
       Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
       Weight = 1.000000000000000000
       Margins.Right = 50.000000000000000000
       Size.Width = 220.000000000000000000
@@ -34,6 +38,9 @@ object FrmaeDialog: TFrmaeDialog
       TabOrder = 1
       Text = 'tvTitle'
       TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
       TextSettings.Font.Size = 18.000000000000000000
       TextSettings.Gravity = Center
     end
@@ -41,11 +48,11 @@ object FrmaeDialog: TFrmaeDialog
   object VertScrollBox1: TVertScrollBox
     Align = Client
     Size.Width = 320.000000000000000000
-    Size.Height = 461.000000000000000000
+    Size.Height = 583.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
-    Viewport.Width = 304.000000000000000000
-    Viewport.Height = 461.000000000000000000
+    Viewport.Width = 320.000000000000000000
+    Viewport.Height = 583.000000000000000000
     object LinearLayout2: TLinearLayout
       Align = Top
       HeightSize = WrapContent
@@ -54,30 +61,28 @@ object FrmaeDialog: TFrmaeDialog
       Padding.Top = 12.000000000000000000
       Padding.Right = 12.000000000000000000
       Padding.Bottom = 12.000000000000000000
-      Size.Width = 304.000000000000000000
-      Size.Height = 491.000000000000000000
+      Size.Width = 320.000000000000000000
+      Size.Height = 540.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
       Orientation = Vertical
       object ButtonView1: TButtonView
-        Background.ItemPressed.Kind = Solid
         Background.Border.Color.Pressed = claSilver
-        Background.Border.Color.Focused = xEFCCCCCC
-        Background.Border.Color.Hovered = xEFCCCCCC
-        Background.Border.Color.Checked = xEFCCCCCC
-        Background.Border.Color.Activated = xEFCCCCCC
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
         WidthSize = FillParent
         Padding.Left = 4.000000000000000000
         Padding.Top = 4.000000000000000000
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 280.000000000000000000
+        Size.Width = 296.000000000000000000
         Size.Height = 37.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 12.000000000000000000
-        TabOrder = 10
+        TabOrder = 11
         OnClick = ButtonView1Click
         Text = #25991#26412#23545#35805#26694
         TextSettings.Gravity = Center
@@ -85,24 +90,22 @@ object FrmaeDialog: TFrmaeDialog
         Drawable.ItemDefault.ImageIndex = 0
       end
       object ButtonView10: TButtonView
-        Background.ItemPressed.Kind = Solid
         Background.Border.Color.Pressed = claSilver
-        Background.Border.Color.Focused = xEFCCCCCC
-        Background.Border.Color.Hovered = xEFCCCCCC
-        Background.Border.Color.Checked = xEFCCCCCC
-        Background.Border.Color.Activated = xEFCCCCCC
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
         WidthSize = FillParent
         Padding.Left = 4.000000000000000000
         Padding.Top = 4.000000000000000000
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 280.000000000000000000
+        Size.Width = 296.000000000000000000
         Size.Height = 37.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 53.000000000000000000
-        TabOrder = 9
+        TabOrder = 10
         OnClick = ButtonView10Click
         Text = #26631#39064#25991#26412#23545#35805#26694
         TextSettings.Gravity = Center
@@ -110,24 +113,22 @@ object FrmaeDialog: TFrmaeDialog
         Drawable.ItemDefault.ImageIndex = 0
       end
       object ButtonView2: TButtonView
-        Background.ItemPressed.Kind = Solid
         Background.Border.Color.Pressed = claSilver
-        Background.Border.Color.Focused = xEFCCCCCC
-        Background.Border.Color.Hovered = xEFCCCCCC
-        Background.Border.Color.Checked = xEFCCCCCC
-        Background.Border.Color.Activated = xEFCCCCCC
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
         WidthSize = FillParent
         Padding.Left = 4.000000000000000000
         Padding.Top = 4.000000000000000000
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 280.000000000000000000
+        Size.Width = 296.000000000000000000
         Size.Height = 37.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 94.000000000000000000
-        TabOrder = 8
+        TabOrder = 9
         OnClick = ButtonView2Click
         Text = #24102#25353#38062#30340#25991#26412#23545#35805#26694
         TextSettings.Gravity = Center
@@ -135,24 +136,22 @@ object FrmaeDialog: TFrmaeDialog
         Drawable.ItemDefault.ImageIndex = 1
       end
       object ButtonView3: TButtonView
-        Background.ItemPressed.Kind = Solid
         Background.Border.Color.Pressed = claSilver
-        Background.Border.Color.Focused = xEFCCCCCC
-        Background.Border.Color.Hovered = xEFCCCCCC
-        Background.Border.Color.Checked = xEFCCCCCC
-        Background.Border.Color.Activated = xEFCCCCCC
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
         WidthSize = FillParent
         Padding.Left = 4.000000000000000000
         Padding.Top = 4.000000000000000000
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 280.000000000000000000
+        Size.Width = 296.000000000000000000
         Size.Height = 37.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 135.000000000000000000
-        TabOrder = 7
+        TabOrder = 8
         OnClick = ButtonView3Click
         Text = #24102#26631#39064#26639#30340#23545#35805#26694
         TextSettings.Gravity = Center
@@ -160,12 +159,10 @@ object FrmaeDialog: TFrmaeDialog
         Drawable.ItemDefault.ImageIndex = 2
       end
       object ButtonView4: TButtonView
-        Background.ItemPressed.Kind = Solid
         Background.Border.Color.Pressed = claSilver
-        Background.Border.Color.Focused = xEFCCCCCC
-        Background.Border.Color.Hovered = xEFCCCCCC
-        Background.Border.Color.Checked = xEFCCCCCC
-        Background.Border.Color.Activated = xEFCCCCCC
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
         WidthSize = FillParent
         Padding.Left = 4.000000000000000000
         Padding.Top = 4.000000000000000000
@@ -173,12 +170,12 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 280.000000000000000000
+        Size.Width = 296.000000000000000000
         Size.Height = 37.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 184.000000000000000000
-        TabOrder = 6
+        TabOrder = 7
         OnClick = ButtonView4Click
         Text = #21015#34920#23545#35805#26694
         TextSettings.Gravity = Center
@@ -186,24 +183,22 @@ object FrmaeDialog: TFrmaeDialog
         Drawable.ItemDefault.ImageIndex = 3
       end
       object ButtonView5: TButtonView
-        Background.ItemPressed.Kind = Solid
         Background.Border.Color.Pressed = claSilver
-        Background.Border.Color.Focused = xEFCCCCCC
-        Background.Border.Color.Hovered = xEFCCCCCC
-        Background.Border.Color.Checked = xEFCCCCCC
-        Background.Border.Color.Activated = xEFCCCCCC
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
         WidthSize = FillParent
         Padding.Left = 4.000000000000000000
         Padding.Top = 4.000000000000000000
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 280.000000000000000000
+        Size.Width = 296.000000000000000000
         Size.Height = 37.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 225.000000000000000000
-        TabOrder = 5
+        TabOrder = 6
         OnClick = ButtonView5Click
         Text = #21333#36873#21015#34920#23545#35805#26694
         TextSettings.Gravity = Center
@@ -214,19 +209,17 @@ object FrmaeDialog: TFrmaeDialog
         Background.XRadius = 5.000000000000000000
         Background.YRadius = 5.000000000000000000
         Background.ItemDefault.Color = claBisque
-        Background.ItemPressed.Kind = Solid
         Background.Border.Color.Pressed = claSilver
-        Background.Border.Color.Focused = xEFCCCCCC
-        Background.Border.Color.Hovered = xEFCCCCCC
-        Background.Border.Color.Checked = xEFCCCCCC
-        Background.Border.Color.Activated = xEFCCCCCC
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
         WidthSize = FillParent
         Padding.Left = 4.000000000000000000
         Padding.Top = 4.000000000000000000
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 280.000000000000000000
+        Size.Width = 296.000000000000000000
         Size.Height = 37.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -239,24 +232,22 @@ object FrmaeDialog: TFrmaeDialog
         Drawable.ItemDefault.ImageIndex = 5
       end
       object ButtonView11: TButtonView
-        Background.ItemPressed.Kind = Solid
         Background.Border.Color.Pressed = claSilver
-        Background.Border.Color.Focused = xEFCCCCCC
-        Background.Border.Color.Hovered = xEFCCCCCC
-        Background.Border.Color.Checked = xEFCCCCCC
-        Background.Border.Color.Activated = xEFCCCCCC
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
         WidthSize = FillParent
         Padding.Left = 4.000000000000000000
         Padding.Top = 4.000000000000000000
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 280.000000000000000000
+        Size.Width = 296.000000000000000000
         Size.Height = 37.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 307.000000000000000000
-        TabOrder = 4
+        TabOrder = 5
         OnClick = ButtonView11Click
         Text = #21333#36873#21015#34920#23545#35805#26694
         TextSettings.Gravity = Center
@@ -264,12 +255,10 @@ object FrmaeDialog: TFrmaeDialog
         Drawable.ItemDefault.ImageIndex = 4
       end
       object ButtonView7: TButtonView
-        Background.ItemPressed.Kind = Solid
         Background.Border.Color.Pressed = claSilver
-        Background.Border.Color.Focused = xEFCCCCCC
-        Background.Border.Color.Hovered = xEFCCCCCC
-        Background.Border.Color.Checked = xEFCCCCCC
-        Background.Border.Color.Activated = xEFCCCCCC
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
         WidthSize = FillParent
         Padding.Left = 4.000000000000000000
         Padding.Top = 4.000000000000000000
@@ -277,12 +266,12 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 280.000000000000000000
+        Size.Width = 296.000000000000000000
         Size.Height = 37.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 356.000000000000000000
-        TabOrder = 3
+        TabOrder = 4
         OnClick = ButtonView7Click
         Text = #31561#24453#23545#35805#26694
         TextSettings.Gravity = Center
@@ -290,48 +279,68 @@ object FrmaeDialog: TFrmaeDialog
         Drawable.ItemDefault.ImageIndex = 6
       end
       object ButtonView8: TButtonView
-        Background.ItemPressed.Kind = Solid
         Background.Border.Color.Pressed = claSilver
-        Background.Border.Color.Focused = xEFCCCCCC
-        Background.Border.Color.Hovered = xEFCCCCCC
-        Background.Border.Color.Checked = xEFCCCCCC
-        Background.Border.Color.Activated = xEFCCCCCC
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
         WidthSize = FillParent
         Padding.Left = 4.000000000000000000
         Padding.Top = 4.000000000000000000
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 280.000000000000000000
+        Size.Width = 296.000000000000000000
         Size.Height = 37.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 397.000000000000000000
-        TabOrder = 2
+        TabOrder = 3
         OnClick = ButtonView8Click
         Text = #31561#24453#23545#35805#26694' ('#20801#35768#21462#28040')'
         TextSettings.Gravity = Center
         Drawable.Images = ImageList1
         Drawable.ItemDefault.ImageIndex = 6
       end
-      object ButtonView9: TButtonView
-        Background.ItemPressed.Kind = Solid
+      object ButtonView12: TButtonView
         Background.Border.Color.Pressed = claSilver
-        Background.Border.Color.Focused = xEFCCCCCC
-        Background.Border.Color.Hovered = xEFCCCCCC
-        Background.Border.Color.Checked = xEFCCCCCC
-        Background.Border.Color.Activated = xEFCCCCCC
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
         WidthSize = FillParent
         Padding.Left = 4.000000000000000000
         Padding.Top = 4.000000000000000000
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 280.000000000000000000
+        Size.Width = 296.000000000000000000
         Size.Height = 37.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 438.000000000000000000
+        TabOrder = 2
+        OnClick = ButtonView12Click
+        Text = #33258#23450#20041'View'#23545#35805#26694
+        TextSettings.Gravity = Center
+        Drawable.Images = ImageList1
+        Drawable.ItemDefault.ImageIndex = 6
+      end
+      object ButtonView9: TButtonView
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Margins.Bottom = 4.000000000000000000
+        Size.Width = 296.000000000000000000
+        Size.Height = 37.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 12.000000000000000000
+        Position.Y = 487.000000000000000000
         TabOrder = 1
         OnClick = ButtonView9Click
         Text = 'ListView '#27979#35797

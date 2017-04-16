@@ -27,6 +27,7 @@ type
     ButtonView9: TButtonView;
     ButtonView11: TButtonView;
     ButtonView10: TButtonView;
+    ButtonView12: TButtonView;
     procedure SpeedButton1Click(Sender: TObject);
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
@@ -39,6 +40,7 @@ type
     procedure ButtonView9Click(Sender: TObject);
     procedure ButtonView11Click(Sender: TObject);
     procedure ButtonView10Click(Sender: TObject);
+    procedure ButtonView12Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -54,7 +56,7 @@ implementation
 
 uses
   uFrameListViewTest,
-  UI.Dialog, UI.Async;
+  UI.Dialog, UI.Async, uFrameDialog_CustomView;
 
 { TFrmaeDialog }
 
@@ -99,6 +101,17 @@ begin
         Hint('Ñ¡ÔñÁË: ' + Dialog.Builder.ItemArray[Dialog.Builder.CheckedItem]);
       end
     )
+    .Show;
+end;
+
+procedure TFrmaeDialog.ButtonView12Click(Sender: TObject);
+var
+  View: TFrameDialogCustomView;
+begin
+  View := TFrameDialogCustomView.Create(Self);
+  TDialogBuilder.Create(Self)
+    .SetTitle('µÇÂ¼')
+    .SetView(View)
     .Show;
 end;
 
