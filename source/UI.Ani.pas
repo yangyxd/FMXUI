@@ -13,7 +13,8 @@ type
   /// 动画类型
   /// </summary>
   TFrameAniType = (None, DefaultAni {默认}, FadeInOut {淡入淡出},
-    MoveInOut {移进移出}, BottomMoveInOut {底部弹进弹出}
+    MoveInOut {移进移出}, BottomMoveInOut {底部弹进弹出},
+    LeftSlideMenu {左边栏菜单}, RightSlideMenu {右边栏菜单}
   );
 
   TNotifyEventA = reference to procedure (Sender: TObject);

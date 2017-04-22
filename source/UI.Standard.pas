@@ -418,6 +418,8 @@ type
     property Gravity stored False;
     property AutoSize: Boolean read GetAutoSize write SetAutoSize default False;
     property EnableExecuteAction default True;
+    property Hint;
+    property ShowHint;
     property Text: string read GetText write SetText stored TextStored;
     property TextHint: string read FTextHint write SetTextHint;
     property TextSettings: UI.Base.TTextSettings read FText write SetTextSettings;

@@ -21,7 +21,8 @@ uses
   uFrame4_Page3 in 'uFrame4_Page3.pas' {Frame4_Page3: TFrame},
   uFrameRingView in 'uFrameRingView.pas' {FrameRingView: TFrame},
   uFrameMultiPathView in 'uFrameMultiPathView.pas' {FrameMultiPathView: TFrame},
-  uFrameDialog_CustomView in 'uFrameDialog_CustomView.pas' {FrameDialogCustomView: TFrame};
+  uFrameDialog_CustomView in 'uFrameDialog_CustomView.pas' {FrameDialogCustomView: TFrame},
+  uFramePopMenu in 'uFramePopMenu.pas' {FramePopMenu: TFrame};
 
 {$R *.res}
 

@@ -120,6 +120,8 @@ const
   SIZE_ICON = 32;
   SIZE_ButtonBorder = 0.6;
 
+  SIZE_MENU_WIDTH = 0.8;
+
 type
   TButtonViewColor = class(TViewColor)
   public
@@ -317,7 +319,7 @@ type
   end;
 
   TControlClass = type of TControl;
-  TDialogViewPosition = (Top, Bottom, Left, Right, Center);
+  TDialogViewPosition = (Top, Bottom, Left, Right, Center, LeftFill, RightFill);
 
   TDialog = class(TComponent, IDialog)
   private
@@ -342,6 +344,8 @@ type
 
     FEventing: Boolean;      // 事件处理中
     FAllowDismiss: Boolean;  // 需要释放
+
+    FTempValue: Single;      // 临时变量
 
     procedure SetCancelable(const Value: Boolean);
     function GetCancelable: Boolean;
@@ -1263,6 +1267,60 @@ var
     end;
   end;
 
+  // 从左边弹出 弹入菜单
+  procedure DoLeftSlideMenu();
+  var
+    NewValue: Single;
+    LFrame: TFrame;
+  begin
+    if (Owner is TFrame) then LFrame := TFrame(Owner) else LFrame := nil;
+    if Assigned(AniView) and Assigned(FViewRoot) then begin
+      if IsIn then begin
+        NewValue := AniView.Position.X;
+        AniView.Position.X := -FViewRoot.Width + 1;
+        TFrameAnimator.AnimateFloat(AniView, 'Position.X', NewValue, AEvent);
+
+        if Assigned(LFrame) then begin
+          FTempValue := LFrame.Position.X;
+          TFrameAnimator.AnimateFloat(LFrame, 'Position.X', FTempValue + AniView.Width, AEvent);
+        end;
+      end else begin
+        NewValue := -FViewRoot.Width + 1;
+        TFrameAnimator.AnimateFloat(AniView, 'Position.X', NewValue, AEvent, 0.15);
+
+        if Assigned(LFrame) then
+          TAnimator.AnimateFloatWait(LFrame, 'Position.X', FTempValue, 0.15);
+      end;
+    end;
+  end;
+
+  // 从右边弹出 弹入菜单
+  procedure DoRightSlideMenu();
+  var
+    NewValue: Single;
+    LFrame: TFrame;
+  begin
+    if (Owner is TFrame) then LFrame := TFrame(Owner) else LFrame := nil;
+    if Assigned(AniView) and Assigned(FViewRoot) then begin
+      if IsIn then begin
+        NewValue := FViewRoot.Width - AniView.Width;
+        AniView.Position.X := FViewRoot.Width + 1;
+        TFrameAnimator.AnimateFloat(AniView, 'Position.X', NewValue, AEvent);
+
+        if Assigned(LFrame) then begin
+          FTempValue := LFrame.Position.X;
+          TFrameAnimator.AnimateFloat(LFrame, 'Position.X', FTempValue - AniView.Width, AEvent);
+        end
+      end else begin
+        NewValue := FViewRoot.Width + 1;
+        TFrameAnimator.AnimateFloat(AniView, 'Position.X', NewValue, AEvent, 0.15);
+
+        if Assigned(LFrame) then
+          TAnimator.AnimateFloatWait(LFrame, 'Position.X', FTempValue, 0.15);
+      end;
+    end;
+  end;
+
 begin
   if not Assigned(FViewRoot) then Exit;  
   if Assigned(FViewRoot.FLayBubble) then
@@ -1290,6 +1348,10 @@ begin
       DoFadeInOut;
     TFrameAniType.BottomMoveInOut:
       DoBottomMoveInOut;
+    TFrameAniType.LeftSlideMenu:
+      DoLeftSlideMenu;
+    TFrameAniType.RightSlideMenu:
+      DoRightSlideMenu;
   else
     begin
       // 无动画效果
@@ -1663,6 +1725,26 @@ begin
         end;
     end;
   end;
+
+  case Position of
+    LeftFill:
+      begin
+        X := 0 + XOffset;
+        Y := 0 + YOffset;
+        View.Height := Dialog.FViewRoot.Height - YOffset * 2;
+        View.Width := (Dialog.FViewRoot.Width - XOffset) * SIZE_MENU_WIDTH;
+      end;
+    RightFill:
+      begin
+        PW := Dialog.FViewRoot.Width;
+        PH := Dialog.FViewRoot.Height;
+        View.Width := (PW - XOffset) * SIZE_MENU_WIDTH;
+        X := PW - XOffset - View.Width;
+        View.Height := PH - YOffset * 2;
+        Y := 0 + YOffset;
+      end;
+  end;
+
   View.Position.Point := TPointF.Create(X, Y);
 
   Dialog.FAnimate := Ani;
