@@ -17,7 +17,7 @@ interface
 
 uses
   UI.Debug, UI.Utils,
-  {$IFDEF MSWINDOWS}Windows, {$ENDIF}
+  FMX.Forms,
   {$IFDEF ANDROID}
   Androidapi.Helpers,
   Androidapi.Jni,
@@ -850,6 +850,9 @@ type
     FInvaliding: Boolean;
     FRecalcInVisible: Boolean;
     FAbsoluteInVisible: Boolean;
+    {$IFDEF MSWINDOWS}
+    FCaptureDragForm: Boolean;
+    {$ENDIF}
     function GetParentView: IViewGroup;
     function GetClickable: Boolean;
     procedure SetClickable(const Value: Boolean);
@@ -883,6 +886,9 @@ type
     procedure SetIsChecked(const Value: Boolean);
     function GetHeightSize: TViewSize;
     function GetWidthSize: TViewSize;
+    function GetCaptureDragForm: Boolean;
+    procedure SetCaptureDragForm(const Value: Boolean);
+    function GetParentForm: TCustomForm;
   protected
     function GetMaxHeight: Single; override;
     function GetMaxWidth: Single; override;
@@ -1055,6 +1061,11 @@ type
     procedure StartTriggerAnimationWait(const AInstance: TFmxObject; const ATrigger: string); override;
 
     /// <summary>
+    /// 开始拖动窗口
+    /// </summary>
+    procedure StartWindowDrag;
+
+    /// <summary>
     /// 获取状态栏高度
     /// </summary>
     class function GetStatusHeight: Single;
@@ -1101,6 +1112,10 @@ type
     /// 提示标记视图
     /// </summary>
     property BadgeView: IViewBadge read FBadgeView;
+    /// <summary>
+    /// 获取父级Form
+    /// </summary>
+    property ParentForm: TCustomForm read GetParentForm;
   published
     /// <summary>
     /// 组件相对于容器的对齐方式。当容器为非布局组件时有效，在部分布局组件中有效，但不建议使用。
@@ -1130,6 +1145,10 @@ type
     /// 是否选中
     /// </summary>
     property Checked: Boolean read GetIsChecked write SetIsChecked default False;
+    /// <summary>
+    /// 是否允许捕获拖动主窗口
+    /// </summary>
+    property CaptureDragForm: Boolean read GetCaptureDragForm write SetCaptureDragForm default False;
     /// <summary>
     /// 是否执行动作操作
     /// </summary>
@@ -3237,6 +3256,10 @@ begin
     IncViewState(TViewState.Pressed);
     if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
   end;
+  {$IFDEF MSWINDOWS}
+  if FCaptureDragForm then
+    StartWindowDrag;
+  {$ENDIF}
 end;
 
 procedure TView.DoMouseEnter;
@@ -3264,6 +3287,15 @@ begin
       Exit;
     if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
   end;
+end;
+
+function TView.GetCaptureDragForm: Boolean;
+begin
+  {$IFDEF MSWINDOWS}
+  Result := FCaptureDragForm;
+  {$ELSE}
+  Result := False;
+  {$ENDIF}
 end;
 
 function TView.GetClickable: Boolean;
@@ -3377,6 +3409,21 @@ end;
 function TView.GetParentControl: TControl;
 begin
   Result := ParentControl;
+end;
+
+function TView.GetParentForm: TCustomForm;
+var
+  P: TFmxObject;
+begin
+  Result := nil;
+  P := Self;
+  while P <> nil do begin
+    if P is TCustomForm then begin
+      Result := P as TCustomForm;
+      Break;
+    end else
+      P := P.Parent;
+  end;
 end;
 
 function TView.GetParentMaxHeight: Single;
@@ -3970,6 +4017,14 @@ begin
     FBackground.SetDrawable(Value);
 end;
 
+procedure TView.SetCaptureDragForm(const Value: Boolean);
+begin
+  {$IFDEF MSWINDOWS}
+  FCaptureDragForm := Value;
+  {$ELSE}
+  {$ENDIF}
+end;
+
 procedure TView.SetClickable(const Value: Boolean);
 begin
   HitTest := Value;
@@ -4174,6 +4229,15 @@ begin
   finally
     DisableDisappear := False;
   end;
+end;
+
+procedure TView.StartWindowDrag;
+var
+  F: TCustomForm;
+begin
+  F := ParentForm;
+  if Assigned(F) then
+    F.StartWindowDrag;
 end;
 
 procedure TView.StopScrolling;

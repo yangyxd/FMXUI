@@ -293,6 +293,7 @@ type
     FAnilndictor: TAniIndicator;
   protected
     procedure AfterDialogKey(var Key: Word; Shift: TShiftState); override;
+    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1322,7 +1323,7 @@ var
   end;
 
 begin
-  if not Assigned(FViewRoot) then Exit;  
+  if not Assigned(FViewRoot) then Exit;
   if Assigned(FViewRoot.FLayBubble) then
     AniView := FViewRoot.FLayBubble
   else begin
@@ -1648,6 +1649,7 @@ begin
   Dialog.FViewRoot.OnClick := Dialog.DoRootClick;
   Dialog.FViewRoot.Parent := Dialog.GetFirstParent;
   if Dialog.FViewRoot.Parent = nil then begin
+    Dialog.FViewRoot.EndUpdate;
     Dialog.Dismiss;
     Exit;
   end;
@@ -1733,6 +1735,7 @@ begin
         Y := 0 + YOffset;
         View.Height := Dialog.FViewRoot.Height - YOffset * 2;
         View.Width := (Dialog.FViewRoot.Width - XOffset) * SIZE_MENU_WIDTH;
+        View.Align := TAlignLayout.Left;
       end;
     RightFill:
       begin
@@ -1742,6 +1745,7 @@ begin
         X := PW - XOffset - View.Width;
         View.Height := PH - YOffset * 2;
         Y := 0 + YOffset;
+        View.Align := TAlignLayout.Right;
       end;
   end;
 
@@ -2447,6 +2451,17 @@ begin
   else
     FMsgBody.Background.ItemDefault.Color := StyleMgr.BodyBackGroundColor;
   FMsgBody.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+end;
+
+procedure TDialogView.Resize;
+begin
+  inherited Resize;
+  if Assigned(Dialog) and (ControlsCount = 1) then begin
+    // 左右边栏菜单调整大小
+    if (TDialog(Dialog).FAnimate in [TFrameAniType.LeftSlideMenu, TFrameAniType.RightSlideMenu]) and
+      (TDialog(Dialog).Owner is TFrame) then
+      Controls[0].Width := Width * SIZE_MENU_WIDTH;
+  end;
 end;
 
 procedure TDialogView.SetTitle(const AText: string);
