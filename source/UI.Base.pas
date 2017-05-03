@@ -1961,7 +1961,7 @@ begin
   if FIsEmpty or (not Assigned(FView)) then Exit;
   if FView.InVisible or (csDestroying in FView.GetComponentState) then Exit;
   AState := FView.GetDrawState;
-  R := GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight);
+  R := Canvas.AlignToPixel(GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight));
   V := GetStateItem(AState);
   if V <> nil then
     FillRect(Canvas, R, FXRadius, FYRadius, FCorners, FView.GetOpacity, V, FCornerType);
@@ -2416,7 +2416,7 @@ begin
       Exit;
     Bitmap := Images.Bitmap(BitmapSize, Index);
     if Bitmap <> nil then begin
-      BitmapRect := TRectF.Create(0, 0, Bitmap.Width, Bitmap.Height);
+      BitmapRect := Canvas.AlignToPixel(TRectF.Create(0, 0, Bitmap.Width, Bitmap.Height));
       Canvas.DrawBitmap(Bitmap, BitmapRect, R, FView.GetOpacity, False);
     end;
   end;
