@@ -159,6 +159,7 @@ type
     FTitleGravity: TLayoutGravity;
     FTitleSpaceHeight: Single;
     FTitleSpaceColor: TAlphaColor;
+    FMaxWidth: Integer;
     procedure SetButtonColor(const Value: TButtonViewColor);
     procedure SetButtonBorder(const Value: TViewBorder);
     procedure SetButtonTextColor(const Value: TTextColor);
@@ -198,6 +199,8 @@ type
     property ButtonTextSize: Integer read FButtonTextSize write FButtonTextSize default FONT_ButtonTextSize;
     // 图标大小
     property IconSize: Integer read FIconSize write FIconSize default SIZE_ICON;
+    // 最大宽度
+    property MaxWidth: Integer read FMaxWidth write FMaxWidth default 0;
 
     property BackgroundRadius: Single read FBackgroundRadius write FBackgroundRadius;
     property ButtonColor: TButtonViewColor read FButtonColor write SetButtonColor;
@@ -801,6 +804,9 @@ type
   published
     property StyleManager: TDialogStyleManager read FStyleManager write FStyleManager;
   end;
+
+// 默认对话框样式
+function GetDefaultStyleMgr: TDialogStyleManager;
 
 implementation
 
@@ -2400,7 +2406,9 @@ begin
   FLayBubble.Orientation := TOrientation.Vertical;
   FLayBubble.CanFocus := False;
   FLayBubble.AdjustViewBounds := True;
-  FLayBubble.MaxHeight := Height - FLayBubble.Margins.Top - FLayBubble.Margins.Bottom;
+  if StyleMgr.MaxWidth > 0 then  
+    FLayBubble.MaxWidth := StyleMgr.MaxWidth;
+  FLayBubble.MaxHeight := Height - FLayBubble.Margins.Top - FLayBubble.Margins.Bottom;  
   // 标题栏
   FTitleView := TTextView.Create(Owner);
   {$IFDEF MSWINDOWS}

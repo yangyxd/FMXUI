@@ -95,7 +95,8 @@ begin
 
   RegisterComponents(PageName, [TDialogStyleManager]);
   RegisterComponents(PageName, [TToastManager]);
-  //RegisterComponents(PageName, [TAlertDialog]);
+
+  RegisterComponents(PageName, [TDrawableBrush]);
 
   RegisterComponentEditor(TView, TViewControlEditor);
   RegisterPropertyEditor(TypeInfo(TPatchBounds), TPersistent, '', TPatchBoundsProperty);
@@ -106,6 +107,7 @@ begin
   RegisterPropertiesInCategory(sFMXUICategoryName, [
       { TView }
       'AdjustViewBounds',
+      'Brush',
       'Background',
       'Clickable',
       'Checked',

@@ -50,10 +50,13 @@ type
   TDrawable = class;
   TDrawableIcon = class;
   TViewColor = class;
+  TDrawableBrush = class;
 
   EViewError = class(Exception);
   EViewLayoutError = class(Exception);
   EDrawableError = class(Exception);
+
+  TViewClass = class of TControl;
 
   /// <summary>
   /// 视图状态
@@ -167,7 +170,7 @@ type
 
     procedure DoChange(Sender: TObject);
 
-    procedure FillRect9Patch(Canvas: TCanvas; const ARect: TRectF; const XRadius, YRadius: Single; const ACorners: TCorners;
+    class procedure FillRect9Patch(Canvas: TCanvas; const ARect: TRectF; const XRadius, YRadius: Single; const ACorners: TCorners;
       const AOpacity: Single; const ABrush: TViewBrush; const ACornerType: TCornerType = TCornerType.Round);
     procedure FillRect(Canvas: TCanvas; const ARect: TRectF; const XRadius, YRadius: Single; const ACorners: TCorners;
       const AOpacity: Single; const ABrush: TBrush; const ACornerType: TCornerType = TCornerType.Round); inline;
@@ -199,6 +202,7 @@ type
     procedure SetRadius(const X, Y: Single);
     procedure SetDrawable(const Value: TDrawableBase); overload;
     procedure SetBrush(State: TViewState; const Value: TBrush); overload;
+    procedure SetBrush(State: TViewState; const Value: TDrawableBrush); overload;
     procedure SetColor(State: TViewState; const Value: TAlphaColor); overload;
     procedure SetGradient(State: TViewState; const Value: TGradient); overload;
     procedure SetBitmap(State: TViewState; const Value: TBitmap); overload;
@@ -339,6 +343,49 @@ type
   public
     constructor Create(AOwner: TDrawableIcon); reintroduce;
     procedure Change; override;
+  end;
+
+  /// <summary>
+  /// 可绘制刷子组件
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TDrawableBrush = class(TComponent, IGlyph, IInterfaceComponentReference)
+  private
+    FBrush: TBrush;
+    FImageLink: TGlyphImageLink;
+    FOnChanged: TNotifyEvent;
+    function GetBrush: TBrush;
+    function GetImages: TCustomImageList;
+    function GetIsEmpty: Boolean;
+    procedure SetBrush(const Value: TBrush);
+    function GetImageIndexEx: Integer;
+  protected
+    { IInterfaceComponentReference }
+    function GetComponent: TComponent;
+    {IGlyph}
+    function GetImageIndex: TImageIndex;
+    procedure SetImageIndex(const Value: TImageIndex);
+    procedure SetImages(const Value: TCustomImageList);
+    procedure ImagesChanged; virtual;
+    function GetImageList: TBaseImageList; inline;
+    procedure SetImageList(const Value: TBaseImageList);
+    function IGlyph.GetImages = GetImageList;
+    procedure IGlyph.SetImages = SetImageList;
+  protected
+    procedure CreateBrush(var Value: TBrush); virtual;
+    procedure DoChange(Sender: TObject);
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    procedure Draw(Canvas: TCanvas; const R: TRectF;
+      const XRadius, YRadius: Single; const ACorners: TCorners;
+      const AOpacity: Single = 1; const ACornerType: TCornerType = TCornerType.Round); virtual;
+    property IsEmpty: Boolean read GetIsEmpty;
+    property ImageIndex: Integer read GetImageIndexEx;
+  published
+    property Images: TCustomImageList read GetImages write SetImages;
+    property Brush: TBrush read GetBrush write SetBrush;
+    property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
   end;
 
   /// <summary>
@@ -796,12 +843,11 @@ type
   private
     [Weak] FScrollView: TView;
     FDownPoint: TPointF;
-    FLastBoundsAnimation: Boolean;
+    FIsDown: Boolean;
   protected
     procedure DoChanged; override;
     procedure DoStart; override;
     procedure DoStop; override;
-    procedure LimitsBounds;
   public
     constructor Create(AOwner: TPersistent); override;
     procedure MouseDown(X, Y: Double);
@@ -1010,6 +1056,7 @@ type
     function GetVScrollBar: TScrollBar; virtual;
     function GetHScrollBar: TScrollBar; virtual;
     function GetContentBounds: TRectD; virtual;
+    function CanAnimation: Boolean; virtual;
   protected
     {$IFDEF ANDROID}
     class procedure InitAudioManager();
@@ -1961,7 +2008,7 @@ begin
   if FIsEmpty or (not Assigned(FView)) then Exit;
   if FView.InVisible or (csDestroying in FView.GetComponentState) then Exit;
   AState := FView.GetDrawState;
-  R := Canvas.AlignToPixel(GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight));
+  R := GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight);
   V := GetStateItem(AState);
   if V <> nil then
     FillRect(Canvas, R, FXRadius, FYRadius, FCorners, FView.GetOpacity, V, FCornerType);
@@ -2013,7 +2060,7 @@ begin
     Canvas.FillRect(ARect, XRadius, YRadius, ACorners, AOpacity, ABrush, ACornerType);
 end;
 
-procedure TDrawableBase.FillRect9Patch(Canvas: TCanvas; const ARect: TRectF;
+class procedure TDrawableBase.FillRect9Patch(Canvas: TCanvas; const ARect: TRectF;
   const XRadius, YRadius: Single; const ACorners: TCorners;
   const AOpacity: Single; const ABrush: TViewBrush;
   const ACornerType: TCornerType);
@@ -2164,6 +2211,17 @@ begin
   V := GetBrush(State, True);
   V.Bitmap.Assign(Value);
   V.Kind := TBrushKind.Bitmap;
+end;
+
+procedure TDrawableBase.SetBrush(State: TViewState;
+  const Value: TDrawableBrush);
+var V: TBrush;
+begin
+  if not Assigned(Value) then Exit;
+  V := GetBrush(State, True);
+  if (Self is TDrawableIcon) and (Value.ImageIndex >= 0) then
+    TDrawableIcon(Self).Images := Value.Images;
+  V.Assign(Value.Brush);
 end;
 
 procedure TDrawableBase.SetBrush(State: TViewState; const Value: TBrush);
@@ -2416,7 +2474,7 @@ begin
       Exit;
     Bitmap := Images.Bitmap(BitmapSize, Index);
     if Bitmap <> nil then begin
-      BitmapRect := Canvas.AlignToPixel(TRectF.Create(0, 0, Bitmap.Width, Bitmap.Height));
+      BitmapRect := TRectF.Create(0, 0, Bitmap.Width, Bitmap.Height);
       Canvas.DrawBitmap(Bitmap, BitmapRect, R, FView.GetOpacity, False);
     end;
   end;
@@ -3061,6 +3119,11 @@ begin
     (Assigned(ParentControl)) and (ParentControl is TRelativeLayout);
 end;
 
+function TView.CanAnimation: Boolean;
+begin
+  Result := False;
+end;
+
 function TView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
 begin
   Result := CanRepaint and EmptyBackground(View.Background, State);
@@ -3491,13 +3554,13 @@ end;
 function TView.GetViewRect: TRectF;
 begin
   Result := RectF(Padding.Left, Padding.Top,
-    Width - Padding.Right, Height - Padding.Bottom);
+    Width - Padding.Right + Padding.Left, Height - Padding.Bottom + Padding.Top);
 end;
 
 function TView.GetViewRectD: TRectD;
 begin
   Result := RectD(Padding.Left, Padding.Top,
-    Width - Padding.Right, Height - Padding.Bottom);
+    Width - Padding.Right + Padding.Left, Height - Padding.Bottom + Padding.Top);
 end;
 
 function TView.GetViewStates: TViewStates;
@@ -6299,10 +6362,24 @@ begin
 end;
 
 procedure TScrollCalculations.DoChanged;
+var
+  IsBackPop: Boolean; // 是否正在回弹
 begin
   if (FScrollView <> nil) and not (csDestroying in FScrollView.ComponentState) then begin
+    if (not Down) and Animation and BoundsAnimation then begin
+      if FScrollView.ScrollBars = TViewScroll.Vertical then begin
+        IsBackPop := (FIsDown and (ViewportPosition.Y <= MinTarget.Point.Y)) or
+          ((not FIsDown) and (ViewportPosition.Y >= MaxTarget.Point.Y));
+        if IsBackPop then
+          Animation := False;
+      end else if FScrollView.ScrollBars = TViewScroll.Horizontal then begin
+        IsBackPop := (FIsDown and (ViewportPosition.X <= MinTarget.Point.X)) or
+          ((not FIsDown) and (ViewportPosition.X >= MaxTarget.Point.X));
+        if IsBackPop then
+          Animation := False;
+      end;
+    end;
     FScrollView.InternalAlign;
-    LimitsBounds;
   end;
   inherited;
 end;
@@ -6310,7 +6387,6 @@ end;
 procedure TScrollCalculations.DoStart;
 begin
   inherited;
-  FLastBoundsAnimation := BoundsAnimation;
   if (FScrollView <> nil) and not (csDestroying in FScrollView.ComponentState) then
     FScrollView.StartScrolling;
 end;
@@ -6318,31 +6394,26 @@ end;
 procedure TScrollCalculations.DoStop;
 begin
   inherited;
-  BoundsAnimation := FLastBoundsAnimation;
   if (FScrollView <> nil) and not (csDestroying in FScrollView.ComponentState) then
     FScrollView.StopScrolling;
-end;
-
-procedure TScrollCalculations.LimitsBounds;
-begin
-  if not Down then begin
-    if (ViewportPosition.Y < 0) or (ViewportPosition.Y > MaxTarget.Point.Y) then
-      // 临时设置为不允许超过边界, 防止因为速率过快，回弹后又反向滚动
-      // 使用 Rtti 方式直接修改，防止触发相应的处理过程
-      TView.SetRttiValue(Self, 'FBoundsAnimation', False);
-  end;
 end;
 
 procedure TScrollCalculations.MouseDown(X, Y: Double);
 begin
   FDownPoint := PointF(X, Y);
+  if FScrollView <> nil then
+    Animation := FScrollView.CanAnimation;
   inherited MouseDown(X, Y);
 end;
 
 procedure TScrollCalculations.MouseUp(X, Y: Double);
 begin
+  if FScrollView.ScrollBars = TViewScroll.Vertical then begin
+    FIsDown := Y > FDownPoint.Y;
+  end else if FScrollView.ScrollBars = TViewScroll.Horizontal then begin
+    FIsDown := X > FDownPoint.X;
+  end;
   inherited MouseUp(X, Y);
-  LimitsBounds;
 end;
 
 { TGridsLayout }
@@ -6939,6 +7010,144 @@ begin
     FVerticalSpacing := Value;
     DoRealign;
   end;
+end;
+
+{ TDrawableBrush }
+
+constructor TDrawableBrush.Create(AOwner: TComponent);
+begin
+  FImageLink := TGlyphImageLink.Create(Self);
+  FImageLink.OnChange := DoChange;
+  inherited Create(AOwner);
+  if (csDesigning in ComponentState) then
+    CreateBrush(FBrush);
+end;
+
+procedure TDrawableBrush.CreateBrush(var Value: TBrush);
+begin
+  if Assigned(Value) then
+    FreeAndNil(Value);
+  Value := TViewImagesBrush.Create(TBrushKind.None, TAlphaColorRec.Null);
+  Value.OnChanged := DoChange;
+end;
+
+destructor TDrawableBrush.Destroy;
+begin
+  FreeAndNil(FBrush);
+  FImageLink.DisposeOf;
+  inherited Destroy;
+end;
+
+procedure TDrawableBrush.DoChange(Sender: TObject);
+begin
+  if Assigned(FOnChanged) then
+    FOnChanged(Sender);
+end;
+
+procedure TDrawableBrush.Draw(Canvas: TCanvas; const R: TRectF;
+  const XRadius, YRadius: Single; const ACorners: TCorners;
+  const AOpacity: Single; const ACornerType: TCornerType);
+
+  procedure DrawImage(const Index: Integer);
+  var
+    Images: TCustomImageList;
+    Bitmap: TBitmap;
+    BitmapSize: TSize;
+  begin
+    Images := GetImages;
+    if Assigned(Images) and (Index >= 0) and (Index < Images.Count) then begin
+      BitmapSize := TSize.Create(Round(R.Width) * 2, Round(R.Height) * 2);
+      if BitmapSize.IsZero then
+        Exit;
+      Bitmap := Images.Bitmap(BitmapSize, Index);
+      if Bitmap <> nil then
+        Canvas.DrawBitmap(Bitmap, TRectF.Create(0, 0, Bitmap.Width, Bitmap.Height), R, AOpacity, False);
+    end;
+  end;
+
+begin
+  if (csDestroying in ComponentState) or IsEmpty then Exit;
+  if (Ord(FBrush.Kind) = Ord(TViewBrushKind.Patch9Bitmap)) and (FBrush is TViewBrush) then begin
+    TDrawableBase.FillRect9Patch(Canvas, R, XRadius, YRadius, ACorners, AOpacity, TViewBrush(FBrush), ACornerType);
+  end else
+    Canvas.FillRect(R, XRadius, YRadius, ACorners, AOpacity, FBrush, ACornerType);
+  if Assigned(FImageLink.Images) and (ImageIndex >= 0) then
+    DrawImage(ImageIndex);
+end;
+
+function TDrawableBrush.GetBrush: TBrush;
+begin
+  if not Assigned(FBrush) then
+    CreateBrush(FBrush);
+  Result := FBrush;
+end;
+
+function TDrawableBrush.GetComponent: TComponent;
+begin
+  Result := Self;
+end;
+
+function TDrawableBrush.GetImageIndex: TImageIndex;
+begin
+  Result := FImageLink.ImageIndex;
+end;
+
+function TDrawableBrush.GetImageIndexEx: Integer;
+begin
+  Result := FImageLink.ImageIndex;
+end;
+
+function TDrawableBrush.GetImageList: TBaseImageList;
+begin
+  Result := GetImages;
+end;
+
+function TDrawableBrush.GetImages: TCustomImageList;
+begin
+  if Assigned(FImageLink.Images) then
+    Result := TCustomImageList(FImageLink.Images)
+  else
+    Result := nil;
+end;
+
+function TDrawableBrush.GetIsEmpty: Boolean;
+begin
+  if ImageIndex >= 0 then
+    Result := not Assigned(FImageLink.Images)
+  else
+    Result := ((FBrush = nil) or (FBrush.Kind = TBrushKind.None));
+end;
+
+procedure TDrawableBrush.ImagesChanged;
+begin
+  DoChange(Self);
+end;
+
+procedure TDrawableBrush.SetBrush(const Value: TBrush);
+begin
+  if (Value = nil) then begin
+    FreeAndNil(FBrush);
+  end else begin
+    if not Assigned(FBrush) then
+      CreateBrush(FBrush);
+    FBrush.Assign(Value);
+  end;
+end;
+
+procedure TDrawableBrush.SetImageIndex(const Value: TImageIndex);
+begin
+  FImageLink.ImageIndex := Value;
+end;
+
+procedure TDrawableBrush.SetImageList(const Value: TBaseImageList);
+begin
+  ValidateInheritance(Value, TCustomImageList);
+  SetImages(TCustomImageList(Value));
+end;
+
+procedure TDrawableBrush.SetImages(const Value: TCustomImageList);
+begin
+  FImageLink.Images := Value;
 end;
 
 initialization

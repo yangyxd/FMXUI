@@ -245,6 +245,7 @@ type
   private
     FOnScrollChange: TNotifyEvent;
     FCanScroll: Boolean;
+    FCanAnimation: Boolean;
     FInInternalAlign: Boolean;
     FShowScrollBars: Boolean;
     FCachedAutoShowing: Boolean;
@@ -265,6 +266,8 @@ type
     procedure AniCalcChange(Sender: TObject);
 
     procedure CMGesture(var EventInfo: TGestureEventInfo); override;
+
+    function CanAnimation: Boolean; override;
 
     function IsRunningOnDesktop: Boolean;
     function HasTouchTracking: Boolean;
@@ -1516,17 +1519,22 @@ begin
     FAniCalculations.Shown := False;
 end;
 
+function TScrollView.CanAnimation: Boolean;
+begin
+  Result := FCanAnimation;
+end;
+
 procedure TScrollView.CMGesture(var EventInfo: TGestureEventInfo);
 var
   LP: TPointF;
 begin
-  if (FCanScroll) and (EventInfo.GestureID = igiPan) then
+  if (FCanScroll) and ((EventInfo.GestureID = igiPan)) then
   begin
     if FInVisible or (FAniCalculations = nil) then
       Exit;
     FMouseEvents := False;
     LP := AbsoluteToLocal(EventInfo.Location);
-    if TInteractiveGestureFlag.gfBegin in EventInfo.Flags then begin
+    if (TInteractiveGestureFlag.gfBegin in EventInfo.Flags) then begin
       AniMouseDown(True, LP.X, LP.Y)
     end else
       if EventInfo.Flags = [] then begin
@@ -1625,7 +1633,8 @@ end;
 
 procedure TScrollView.DoUpdateAniCalculations(const AAniCalculations: TScrollCalculations);
 begin
-  AAniCalculations.Animation := TScrollingBehaviour.Animation in GetScrollingBehaviours;
+  FCanAnimation := TScrollingBehaviour.Animation in GetScrollingBehaviours;
+  AAniCalculations.Animation := FCanAnimation;
   if TScrollingBehaviour.TouchTracking in GetScrollingBehaviours then
     AAniCalculations.TouchTracking := [ttVertical, ttHorizontal]
   else
@@ -1769,7 +1778,7 @@ end;
 
 function TScrollView.HScrollBarValue: Double;
 begin
-  if FAniCalculations <> nil then
+  if (FAniCalculations <> nil) and Assigned(FScroll) and (FScroll.Visible) then
     Result := ViewportPosition.X
   else
     Result := 0;
@@ -2013,8 +2022,12 @@ procedure TScrollView.RealignContent;
 begin
   case FScrollbar of
     TViewScroll.None: FCanScroll := False;
+    {$IFDEF NEXTGEN}
+    TViewScroll.Horizontal, TViewScroll.Vertical: FCanScroll := True;
+    {$ELSE}
     TViewScroll.Horizontal: FCanScroll := FContentBounds.Width > ViewRect.Width;
     TViewScroll.Vertical: FCanScroll := FContentBounds.Height > ViewRect.Height;
+    {$ENDIF}
   end;
   if Assigned(FScroll) then begin
     InvalidateContentSize;
@@ -2096,13 +2109,21 @@ begin
   LViewportPosition := ViewportPosition;
   R := ViewRect;
   if FScrollbar = TViewScroll.Vertical then begin
+    {$IFDEF NEXTGEN}
+    FCanScroll := True;
+    {$ELSE}
     FCanScroll := FContentBounds.Height > R.Height;
+    {$ENDIF}
     if (LViewportPosition.Y > FContentBounds.Height - FScroll.ViewportSize) and
       (LViewportPosition.Y > FAniCalculations.MaxTarget.Point.Y) then
       LViewportPosition.Y := FAniCalculations.MaxTarget.Point.Y;
     UpdateVScrollBar(LViewportPosition.Y, R.Height);
   end else if FScrollbar = TViewScroll.Horizontal then begin
+    {$IFDEF NEXTGEN}
+    FCanScroll := True;
+    {$ELSE}
     FCanScroll := FContentBounds.Width > R.Width;
+    {$ENDIF}
     if (LViewportPosition.X > FContentBounds.Width - FScroll.ViewportSize) and
       (LViewportPosition.X > FAniCalculations.MaxTarget.Point.X) then
       LViewportPosition.X := FAniCalculations.MaxTarget.Point.X;
@@ -2127,7 +2148,7 @@ end;
 
 function TScrollView.VScrollBarValue: Double;
 begin
-  if FAniCalculations <> nil then begin
+  if (FAniCalculations <> nil) and Assigned(FScroll) and (FScroll.Visible) then begin
     Result := ViewportPosition.Y; // / (FScroll.Max - FScroll.ViewportSize) * FScroll.Max
   end else
     Result := 0;
