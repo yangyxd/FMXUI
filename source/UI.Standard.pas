@@ -328,8 +328,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    procedure ScrollBy(const Dx, Dy: Single);
-    procedure ScrollTo(const Dx, Dy: Single);
+    procedure ScrollBy(const Dx, Dy: Double);
+    procedure ScrollTo(const Dx, Dy: Double);
     function VScrollBarValue: Double;
     function HScrollBarValue: Double;
     // 获取滚动条所在位置的百分比
@@ -1648,8 +1648,24 @@ begin
 end;
 
 procedure TScrollView.DoUpdateScrollingLimits(NeedUpdateScroll: Boolean);
+
+  {$IFNDEF NEXTGEN}
+  function GetScrollBar(): TScrollBar;
+  begin
+    case ScrollBars of
+      TViewScroll.Horizontal: Result := HScrollBar;
+      TViewScroll.Vertical: Result := VScrollBar;
+    else
+      Result := nil;
+    end;
+  end;
+  {$ENDIF}
 var
   Targets: array [0..1] of TAniCalculations.TTarget;
+  {$IFNDEF NEXTGEN}
+  FScroll: TScrollBar;
+  FTrackChanging: Boolean;
+  {$ENDIF}
 begin
   if FAniCalculations <> nil then
   begin
@@ -1660,8 +1676,25 @@ begin
 
     FAniCalculations.SetTargets(Targets);
 
-    if NeedUpdateScroll or (not HasTouchTracking) then
+    if NeedUpdateScroll or (not HasTouchTracking) then begin
+      {$IFNDEF NEXTGEN}
+      // 非移动平台，在拖动滚动条后，动态更新滚动条的值
+      FScroll := GetScrollBar;
+      if Assigned(FScroll) then begin
+        FTrackChanging := GetRttiValue<Boolean>(FScroll, 'FTrackChanging');
+        SetRttiValue<Boolean>(FScroll, 'FTrackChanging', False); // 临时将此变量设为False，否则为忽略本次调整
+      end else
+        FTrackChanging := False;
+      try
+        UpdateScrollBar;
+      finally
+        if Assigned(FScroll) then
+          SetRttiValue<Boolean>(FScroll, 'FTrackChanging', FTrackChanging);
+      end;
+      {$ELSE}
       UpdateScrollBar;
+      {$ENDIF}
+    end;
   end;
 end;
 
@@ -1733,7 +1766,7 @@ end;
 
 function TScrollView.GetScrollValue: Single;
 begin
-  Result := (FScroll.Value - FScroll.Min) / (FScroll.Max - FScroll.Min - FScroll.ViewportSize);
+  Result := (FScroll.ValueD - FScroll.MinD) / (FScroll.MaxD - FScroll.MinD - FScroll.ViewportSizeD);
 end;
 
 function TScrollView.GetViewportPosition: TPointD;
@@ -1788,7 +1821,7 @@ procedure TScrollView.HScrollChange(Sender: TObject);
 begin
   if FScrolling or (FAniCalculations = nil) then Exit;
   FScrolling := True;
-  ViewportPosition := PointF(HScrollBar.Value, ViewportPosition.Y);
+  ViewportPosition := PointF(HScrollBar.ValueD, ViewportPosition.Y);
   if not IsOpaque then
     UpdateEffects;
   if Assigned(FOnScrollChange) then
@@ -2043,12 +2076,12 @@ begin
     DoUpdateScrollingLimits;
 end;
 
-procedure TScrollView.ScrollBy(const Dx, Dy: Single);
+procedure TScrollView.ScrollBy(const Dx, Dy: Double);
 begin
   if VScrollBar <> nil then
-    VScrollBar.Value := VScrollBar.Value - Dy;
+    VScrollBar.ValueD := VScrollBar.ValueD - Dy;
   if HScrollBar <> nil then
-    HScrollBar.Value := HScrollBar.Value - Dx;
+    HScrollBar.ValueD := HScrollBar.ValueD - Dx;
 end;
 
 procedure TScrollView.ScrollStretchChanged;
@@ -2057,12 +2090,12 @@ begin
     Invalidate;
 end;
 
-procedure TScrollView.ScrollTo(const Dx, Dy: Single);
+procedure TScrollView.ScrollTo(const Dx, Dy: Double);
 begin
   if VScrollBar <> nil then
-    VScrollBar.Value := Dy;
+    VScrollBar.ValueD := Dy;
   if HScrollBar <> nil then
-    HScrollBar.Value := Dx;
+    HScrollBar.ValueD := Dx;
 end;
 
 procedure TScrollView.SetShowScrollBars(const Value: Boolean);
@@ -2110,21 +2143,21 @@ begin
   R := ViewRect;
   if FScrollbar = TViewScroll.Vertical then begin
     {$IFDEF NEXTGEN}
-    FCanScroll := True;
+    FCanScroll := True; // 移动平台始终能滚动
     {$ELSE}
     FCanScroll := FContentBounds.Height > R.Height;
     {$ENDIF}
-    if (LViewportPosition.Y > FContentBounds.Height - FScroll.ViewportSize) and
+    if (LViewportPosition.Y > FContentBounds.Height - FScroll.ViewportSizeD) and
       (LViewportPosition.Y > FAniCalculations.MaxTarget.Point.Y) then
       LViewportPosition.Y := FAniCalculations.MaxTarget.Point.Y;
     UpdateVScrollBar(LViewportPosition.Y, R.Height);
   end else if FScrollbar = TViewScroll.Horizontal then begin
     {$IFDEF NEXTGEN}
-    FCanScroll := True;
+    FCanScroll := True; // 移动平台始终能滚动
     {$ELSE}
     FCanScroll := FContentBounds.Width > R.Width;
     {$ENDIF}
-    if (LViewportPosition.X > FContentBounds.Width - FScroll.ViewportSize) and
+    if (LViewportPosition.X > FContentBounds.Width - FScroll.ViewportSizeD) and
       (LViewportPosition.X > FAniCalculations.MaxTarget.Point.X) then
       LViewportPosition.X := FAniCalculations.MaxTarget.Point.X;
     UpdateHScrollBar(LViewportPosition.X, R.Width);
@@ -2158,7 +2191,7 @@ procedure TScrollView.VScrollChange(Sender: TObject);
 begin
   if FScrolling or (FAniCalculations = nil) then Exit;
   FScrolling := True;
-  ViewportPosition := TPointF.Create(ViewportPosition.X, VScrollBar.Value);
+  ViewportPosition := TPointF.Create(ViewportPosition.X, VScrollBar.ValueD);
   if not IsOpaque then
     UpdateEffects;
   if Assigned(FOnScrollChange) then
@@ -3813,6 +3846,8 @@ begin
   inherited Create(AOwner);
   Clickable := True;
 end;
+
+
 
 initialization
 

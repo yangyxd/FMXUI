@@ -29,7 +29,7 @@ uses
   Androidapi.JNI.Os,
   FMX.Helpers.Android,
   {$ENDIF}
-  FMX.BehaviorManager,
+  FMX.BehaviorManager, FMX.StdActns,
   FMX.Utils, FMX.ImgList, FMX.MultiResBitmap, FMX.ActnList, System.Rtti, FMX.Consts,
   FMX.TextLayout, FMX.Objects, System.ImageList, System.RTLConsts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, System.Math,
@@ -859,6 +859,40 @@ type
     property MinTarget;
     property MaxTarget;
     property Target;
+  end;
+
+  TScrollBarHelper = class Helper for TScrollBar
+  private
+    function GetMaxD: Double;
+    function GetMinD: Double;
+    function GetValueD: Double;
+    procedure SetMaxD(const Value: Double);
+    procedure SetMinD(const Value: Double);
+    procedure SetValueD(const Value: Double);
+    function GetViewportSizeD: Double;
+    procedure SetViewportSizeD(const Value: Double);
+  public
+    property MinD: Double read GetMinD write SetMinD;
+    property MaxD: Double read GetMaxD write SetMaxD;
+    property ValueD: Double read GetValueD write SetValueD;
+    property ViewportSizeD: Double read GetViewportSizeD write SetViewportSizeD;
+  end;
+
+  TCustomTrackHelper = class Helper for TCustomTrack
+  private
+    function GetMaxD: Double;
+    function GetMinD: Double;
+    function GetValueD: Double;
+    procedure SetMaxD(const Value: Double);
+    procedure SetMinD(const Value: Double);
+    procedure SetValueD(const Value: Double);
+    function GetViewportSizeD: Double;
+    procedure SetViewportSizeD(const Value: Double);
+  public
+    property MinD: Double read GetMinD write SetMinD;
+    property MaxD: Double read GetMaxD write SetMaxD;
+    property ValueD: Double read GetValueD write SetValueD;
+    property ViewportSizeD: Double read GetViewportSizeD write SetViewportSizeD;
   end;
 
   TViewBase = class(TControl)
@@ -3897,7 +3931,7 @@ begin
     Scroll.ValueRange.Max := Max(Value + ViewportSize, ContentBounds.Right);
   end;
   Scroll.ValueRange.ViewportSize := ViewportSize;
-  Scroll.Value := Value;
+  Scroll.ValueD := Value;
 end;
 
 function TView.DoSetSize(const ASize: TControlSize;
@@ -4322,7 +4356,7 @@ begin
     finally
       AScroll.ValueRange.EndUpdate;
     end;
-    AScroll.SmallChange := AScroll.ViewportSize / SmallChangeFraction;
+    AScroll.SmallChange := AScroll.ViewportSizeD / SmallChangeFraction;
   end;
 end;
 
@@ -4339,7 +4373,7 @@ begin
     finally
       AScroll.ValueRange.EndUpdate;
     end;
-    AScroll.SmallChange := AScroll.ViewportSize / SmallChangeFraction;
+    AScroll.SmallChange := AScroll.ViewportSizeD / SmallChangeFraction;
   end;
 end;
 
@@ -6416,6 +6450,90 @@ begin
   inherited MouseUp(X, Y);
 end;
 
+{ TScrollBarHelper }
+
+function TScrollBarHelper.GetMaxD: Double;
+begin
+  Result := ValueRange.Max;
+end;
+
+function TScrollBarHelper.GetMinD: Double;
+begin
+  Result := ValueRange.Min;
+end;
+
+function TScrollBarHelper.GetValueD: Double;
+begin
+  Result := ValueRange.Value;
+end;
+
+function TScrollBarHelper.GetViewportSizeD: Double;
+begin
+  Result := ValueRange.ViewportSize;
+end;
+
+procedure TScrollBarHelper.SetMaxD(const Value: Double);
+begin
+  ValueRange.Max := Value;
+end;
+
+procedure TScrollBarHelper.SetMinD(const Value: Double);
+begin
+  ValueRange.Min := Value;
+end;
+
+procedure TScrollBarHelper.SetValueD(const Value: Double);
+begin
+  ValueRange.Value := Value;
+end;
+
+procedure TScrollBarHelper.SetViewportSizeD(const Value: Double);
+begin
+  ValueRange.ViewportSize := Value;
+end;
+
+{ TCustomTrackHelper }
+
+function TCustomTrackHelper.GetMaxD: Double;
+begin
+  Result := ValueRange.Max;
+end;
+
+function TCustomTrackHelper.GetMinD: Double;
+begin
+  Result := ValueRange.Min;
+end;
+
+function TCustomTrackHelper.GetValueD: Double;
+begin
+  Result := ValueRange.Value;
+end;
+
+function TCustomTrackHelper.GetViewportSizeD: Double;
+begin
+  Result := ValueRange.ViewportSize;
+end;
+
+procedure TCustomTrackHelper.SetMaxD(const Value: Double);
+begin
+  ValueRange.Max := Value;
+end;
+
+procedure TCustomTrackHelper.SetMinD(const Value: Double);
+begin
+  ValueRange.Min := Value;
+end;
+
+procedure TCustomTrackHelper.SetValueD(const Value: Double);
+begin
+  ValueRange.Value := Value;
+end;
+
+procedure TCustomTrackHelper.SetViewportSizeD(const Value: Double);
+begin
+  ValueRange.ViewportSize := Value;
+end;
+
 { TGridsLayout }
 
 constructor TGridsLayout.Create(AOwner: TComponent);
@@ -7149,6 +7267,7 @@ procedure TDrawableBrush.SetImages(const Value: TCustomImageList);
 begin
   FImageLink.Images := Value;
 end;
+
 
 initialization
   {$IFDEF ANDROID}

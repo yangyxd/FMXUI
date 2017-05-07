@@ -205,12 +205,20 @@ type
     /// </summary>
     procedure AddHeaderView(const View: TControl); overload;
     function AddHeaderView(const View: TViewClass): TControl; overload;
+    /// <summary>
+    /// 删除添加在列表头部的View
+    /// </summary>
+    procedure RemoveHeaderView();
 
     /// <summary>
     /// 在列表底部添加一个View
     /// </summary>
     procedure AddFooterView(const View: TControl); overload;
     function AddFooterView(const View: TViewClass): TControl; overload;
+    /// <summary>
+    /// 删除添加在列表底部的View
+    /// </summary>
+    procedure RemoveFooterView();
 
     /// <summary>
     /// 当前显示的首行索引号
@@ -239,6 +247,9 @@ type
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TListViewEx = class(TScrollView)
+  private const
+    CDefaultDividerColor = $afe3e4e5;    // 默认行列分隔线颜色
+    CDefaultBKPressedColor = $ffd9d9d9;  // 默认列表项按下时背景颜色
   private
     FAdapter: IListAdapter;
     FDivider: TAlphaColor;
@@ -338,12 +349,20 @@ type
     /// </summary>
     procedure AddHeaderView(const View: TControl); overload;
     function AddHeaderView(const View: TViewClass): TControl; overload;
+    /// <summary>
+    /// 删除添加在列表头部的View
+    /// </summary>
+    procedure RemoveHeaderView();
 
     /// <summary>
     /// 在列表底部添加一个View
     /// </summary>
     procedure AddFooterView(const View: TControl); overload;
     function AddFooterView(const View: TViewClass): TControl; overload;
+    /// <summary>
+    /// 删除添加在列表底部的View
+    /// </summary>
+    procedure RemoveFooterView();
 
     property Count: Integer read GetCount;
     property Empty: Boolean read IsEmpty;
@@ -659,7 +678,7 @@ begin
   New(FContentBounds);
   CreateCoentsView();
   FAllowItemChildClick := True;
-  FDivider := $afe3e4e5;
+  FDivider := CDefaultDividerColor;
   FDividerHeight := -1;
   FLocalDividerHeight := -1;
   SetLength(FItemsPoints, 0);
@@ -668,7 +687,7 @@ begin
   AutoCapture := True;
   ClipChildren := True;
   with Background.ItemPressed do begin
-    Color := $ffd9d9d9;
+    Color := CDefaultBKPressedColor;
     Kind := TViewBrushKind.Solid; 
   end;
   HitTest := True;
@@ -776,15 +795,13 @@ begin
     FContentViews.SetBounds(Padding.Left, Padding.Top, W,
       Height - Padding.Bottom - Padding.Top);
 
-
     inherited DoRealign;
     
     // 固定列宽
     if FContentViews.FColumnWidth > 0 then begin  
       I := AbsoluteColumnCount;
-      if I <> FContentViews.FLastColumnCount then begin
+      if I <> FContentViews.FLastColumnCount then
         DoColumnCountChange(I);
-      end;
     end;
 
     if (HeightSize = TViewSize.WrapContent) and (Height > FContentViews.Height) then begin
@@ -943,9 +960,7 @@ begin
 
   // 加上头部高度
   if (FEnablePullRefresh) and Assigned(FContentViews)
-    {$IFDEF NEXTGEN}
     and (FContentViews.FState = TListViewState.PullDownFinish)
-    {$ENDIF}
   then
     FContentBounds.Bottom := FContentBounds.Bottom + (FContentViews.FHeader as TControl).Height;
   // 加上底部高度
@@ -1060,6 +1075,16 @@ begin
     FContentViews.DoPullRefreshComplete;
 end;
 
+procedure TListViewEx.RemoveFooterView;
+begin
+  FContentViews.RemoveFooterView;
+end;
+
+procedure TListViewEx.RemoveHeaderView;
+begin
+  FContentViews.RemoveHeaderView;
+end;
+
 procedure TListViewEx.Resize;
 begin
   if FResizeing or
@@ -1076,7 +1101,7 @@ begin
     FContentViews.FMaxParentHeight := 0;
 
   inherited Resize;
-  
+
   if Assigned(FAdapter) then begin
     UpdateScrollBar;
     FContentViews.DoRealign;
@@ -1526,10 +1551,14 @@ begin
   // 根据滚动条偏移值，判断是否有变化
   AdjustH := Offset - FOffset;
   FOffset := Offset;
+
+  // 当前的列数
   LColumnCount := FLastColumnCount;
 
   if (LColumnCount > 1) or (FColumnWidth > 0) then begin
+    // 多列或固定列宽时
     AW := GetAbsoluteColumnWidth;
+    // 记录当前绘制时的列宽
     FLastColumnWidth := AW;
   end else
     AW := FSize.Width;
@@ -1548,7 +1577,7 @@ begin
 
   {$IFDEF MSWINDOWS}
   {$IFDEF DEBUG}
-  OutputDebugString('TListViewContent.DoRealign');
+  //OutputDebugString('TListViewContent.DoRealign');
   {$ENDIF}
   {$ENDIF}
 
@@ -1717,6 +1746,7 @@ begin
           AL := AL + DividerHeight + AW;
       end;
 
+
       // 获取列表项高度
       H := Item.H;
       if H = 0 then
@@ -1725,7 +1755,10 @@ begin
         Continue;
 
       // 记录最大高度
-      LMH := Max(LMH, H);
+      if (LColumnCount > 1) then
+        LMH := Max(LMH, H)
+      else
+        LMH := H;
 
       // 判断列表项可视状态
       if AL = 0 then begin
@@ -2280,6 +2313,22 @@ begin
   // 画分隔线
   if (FCount > 0) and (FirstRowIndex < FLastRowIndex) and (FViewBottom >= FLastPosition) then
     DrawDivider(Canvas);
+end;
+
+procedure TListViewContent.RemoveFooterView;
+begin
+  if Assigned(FFooterView) then begin
+    RemoveObject(FFooterView);
+    FFooterView := nil;
+  end;
+end;
+
+procedure TListViewContent.RemoveHeaderView;
+begin
+  if Assigned(FHeaderView) then begin
+    RemoveObject(FHeaderView);
+    FHeaderView := nil;
+  end;
 end;
 
 { TListAdapterBase }

@@ -18,6 +18,8 @@ object FrameListViewTest: TFrameListViewTest
     Divider = xAFE3E4E5
     OnScrollChange = ListViewEx1ScrollChange
     OnItemClick = ListViewEx1ItemClick
+    EnablePullRefresh = False
+    EnablePullLoad = False
   end
   object TextView1: TTextView
     Align = Top
@@ -25,8 +27,11 @@ object FrameListViewTest: TFrameListViewTest
     Background.ItemDefault.Kind = Solid
     Background.Border.Color.Default = xBFC0C0C0
     Background.Border.Color.Pressed = claSilver
+    Background.Border.Color.Focused = claNull
+    Background.Border.Color.Selected = claNull
+    Background.Border.Color.Checked = claNull
+    Background.Border.Color.Enabled = claNull
     Clickable = True
-    Gravity = None
     Padding.Left = 8.000000000000000000
     Padding.Top = 8.000000000000000000
     Padding.Right = 8.000000000000000000
@@ -37,7 +42,6 @@ object FrameListViewTest: TFrameListViewTest
     Size.PlatformDefault = False
     Position.Y = 50.000000000000000000
     TabOrder = 2
-    AutoSize = False
     Text = 
       'procedure TFrmaeDialog.ButtonView8Click(Sender: TObject);'#13#10'begin' +
       #13#10'  ShowWaitDialog('#39#27491#22312#25191#34892#20219#21153'...'#39','#13#10'    procedure (Dialog: IDialog)' +
@@ -75,8 +79,11 @@ object FrameListViewTest: TFrameListViewTest
     object tvTitle: TTextView
       Background.Border.Color.Default = xBFC0C0C0
       Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
-      Gravity = Center
       Weight = 1.000000000000000000
       Margins.Right = 50.000000000000000000
       HitTest = True
@@ -86,9 +93,11 @@ object FrameListViewTest: TFrameListViewTest
       Position.X = 50.000000000000000000
       TabOrder = 1
       OnClick = tvTitleClick
-      AutoSize = False
       Text = 'tvTitle'
       TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
       TextSettings.Font.Size = 18.000000000000000000
       TextSettings.Gravity = Center
     end

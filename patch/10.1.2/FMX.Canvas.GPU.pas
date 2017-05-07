@@ -12,6 +12,7 @@ unit FMX.Canvas.GPU;
 interface
 
 {$SCOPEDENUMS ON}
+{$HINTS OFF}
 
 uses
   System.Types, System.UITypes, System.UIConsts, System.Classes,

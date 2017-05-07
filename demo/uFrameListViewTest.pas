@@ -42,7 +42,7 @@ begin
   inherited;
 
   Adapter := TStringsListCheckAdapter.Create(nil);
-  Adapter.SetArrayLength(1000);
+  Adapter.SetArrayLength(10000);
   for I := 0 to Adapter.Count - 1 do
     Adapter.Items[I] := Format('列表项列表项列表项列表项列表项列表项列表项列表项列表项列表项项列表项列表项项列表项列表项列表项 %d', [I]);
   ListViewEx1.Adapter := Adapter;
@@ -68,7 +68,8 @@ end;
 
 procedure TFrameListViewTest.ListViewEx1ScrollChange(Sender: TObject);
 begin
-  //TCustomForm(Parent).Caption := IntToStr(ListViewEx1.FirstRowIndex)
+  TCustomForm(Parent).Caption := Format('ScrollBarValue: %.2f/%.2f',
+    [ListViewEx1.VScrollBar.ValueD, ListViewEx1.VScrollBar.MaxD])
 end;
 
 procedure TFrameListViewTest.SpeedButton1Click(Sender: TObject);
