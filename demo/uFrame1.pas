@@ -25,6 +25,8 @@ type
     ButtonView8: TButtonView;
     ButtonView9: TButtonView;
     ButtonView10: TButtonView;
+    ButtonView11: TButtonView;
+    ButtonView12: TButtonView;
     procedure TextView17Click(Sender: TObject);
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
@@ -37,6 +39,8 @@ type
     procedure ButtonView8Click(Sender: TObject);
     procedure ButtonView9Click(Sender: TObject);
     procedure ButtonView10Click(Sender: TObject);
+    procedure ButtonView11Click(Sender: TObject);
+    procedure ButtonView12Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -51,6 +55,8 @@ implementation
 {$R *.fmx}
 
 uses
+  uFrameListViewGroup,
+  uFrameImageView,
   uFramePopMenu,
   uFrameMultiPathView,
   uFrameRingView,
@@ -76,6 +82,16 @@ begin
       TDialogViewPosition.RightFill, True,
       TFrameAniType.RightSlideMenu);
   end;
+end;
+
+procedure TFrame1.ButtonView11Click(Sender: TObject);
+begin
+  StartFrame(TFrameImageView, 'ImageView Demo')
+end;
+
+procedure TFrame1.ButtonView12Click(Sender: TObject);
+begin
+  StartFrame(TFrameListViewGroup, TButtonView(Sender).Text);
 end;
 
 procedure TFrame1.ButtonView1Click(Sender: TObject);

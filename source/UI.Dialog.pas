@@ -163,29 +163,31 @@ type
     procedure SetButtonColor(const Value: TButtonViewColor);
     procedure SetButtonBorder(const Value: TViewBorder);
     procedure SetButtonTextColor(const Value: TTextColor);
+    function IsStoredBackgroundRadius: Boolean;
+    function IsStoredTitleSpaceHeight: Boolean;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   published
     // 遮罩层颜色
-    property DialogMaskColor: TAlphaColor read FDialogMaskColor write FDialogMaskColor;
+    property DialogMaskColor: TAlphaColor read FDialogMaskColor write FDialogMaskColor default COLOR_DialogMaskColor;
     // 消息框背景颜色
-    property BackgroundColor: TAlphaColor read FBackgroundColor write FBackgroundColor;
+    property BackgroundColor: TAlphaColor read FBackgroundColor write FBackgroundColor default COLOR_BackgroundColor;
     // 标题栏背景色
-    property TitleBackGroundColor: TAlphaColor read FTitleBackGroundColor write FTitleBackGroundColor;
+    property TitleBackGroundColor: TAlphaColor read FTitleBackGroundColor write FTitleBackGroundColor default COLOR_TitleBackGroundColor;
     // 标题栏文本颜色
-    property TitleTextColor: TAlphaColor read FTitleTextColor write FTitleTextColor;
+    property TitleTextColor: TAlphaColor read FTitleTextColor write FTitleTextColor default COLOR_TitleTextColor;
     // 主体区背景颜色
-    property BodyBackgroundColor: TAlphaColor read FBodyBackgroundColor write FBodyBackgroundColor;
+    property BodyBackgroundColor: TAlphaColor read FBodyBackgroundColor write FBodyBackgroundColor default COLOR_BodyBackgroundColor;
     // 消息文本颜色
-    property MessageTextColor: TAlphaColor read FMessageTextColor write FMessageTextColor;
+    property MessageTextColor: TAlphaColor read FMessageTextColor write FMessageTextColor default COLOR_MessageTextColor;
     // 消息文本背景颜色
-    property MessageTextBackground: TAlphaColor read FMessageTextBackground write FMessageTextBackground;
+    property MessageTextBackground: TAlphaColor read FMessageTextBackground write FMessageTextBackground default COLOR_MessageTextBackground;
 
     // 等待消息框背景颜色
-    property ProcessBackgroundColor: TAlphaColor read FProcessBackgroundColor write FProcessBackgroundColor;
+    property ProcessBackgroundColor: TAlphaColor read FProcessBackgroundColor write FProcessBackgroundColor default COLOR_ProcessBackgroundColor;
     // 等待消息框消息文字颜色
-    property ProcessTextColor: TAlphaColor read FProcessTextColor write FProcessTextColor;
+    property ProcessTextColor: TAlphaColor read FProcessTextColor write FProcessTextColor default COLOR_ProcessTextColor;
 
     // 标题栏文本重力
     property TitleGravity: TLayoutGravity read FTitleGravity write FTitleGravity default Title_Gravity;
@@ -202,7 +204,7 @@ type
     // 最大宽度
     property MaxWidth: Integer read FMaxWidth write FMaxWidth default 0;
 
-    property BackgroundRadius: Single read FBackgroundRadius write FBackgroundRadius;
+    property BackgroundRadius: Single read FBackgroundRadius write FBackgroundRadius stored IsStoredBackgroundRadius;
     property ButtonColor: TButtonViewColor read FButtonColor write SetButtonColor;
     property ButtonTextColor: TTextColor read FButtonTextColor write SetButtonTextColor;
     property ButtonBorder: TViewBorder read FButtonBorder write SetButtonBorder;
@@ -210,7 +212,7 @@ type
     // 标题与内容区分隔线颜色
     property TitleSpaceColor: TAlphaColor read FTitleSpaceColor write FTitleSpaceColor default COLOR_TitleSpaceColor;
     // 标题与内容区分隔线高度
-    property TitleSpaceHeight: Single read FTitleSpaceHeight write FTitleSpaceHeight;
+    property TitleSpaceHeight: Single read FTitleSpaceHeight write FTitleSpaceHeight stored IsStoredTitleSpaceHeight;
   end;
 
 type
@@ -556,6 +558,7 @@ type
     FMaskVisible: Boolean;
     FCheckedItem: Integer;
     FTag: Integer;
+    FWidth: Single;
 
     FCheckedItems: TArray<Boolean>;
 
@@ -708,6 +711,11 @@ type
     /// 设置 对话框 Root 层背景颜色
     /// </summary>
     function SetRootBackColor(const V: TAlphaColor): TDialogBuilder;
+
+    /// <summary>
+    /// 设置最大宽度
+    /// </summary>
+    function SetWidth(const V: Single): TDialogBuilder;
 
     /// <summary>
     /// 设置附加的数据
@@ -1012,6 +1020,12 @@ function TDialogBuilder.SetMaskVisible(V: Boolean): TDialogBuilder;
 begin
   Result := Self;
   FMaskVisible := V;
+end;
+
+function TDialogBuilder.SetWidth(const V: Single): TDialogBuilder;
+begin
+  Result := Self;
+  FWidth := V;
 end;
 
 function TDialogBuilder.SetMessage(const AMessage: string): TDialogBuilder;
@@ -1947,6 +1961,15 @@ begin
   FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
   FViewRoot.InitView(StyleManager);
 
+  if Builder.FWidth > 0 then begin
+    FViewRoot.FLayBubble.WidthSize := TViewSize.CustomSize;
+    FViewRoot.FLayBubble.Size.Width := Builder.FWidth;
+    FViewRoot.FLayBubble.MaxWidth := Builder.FWidth;       
+    FViewRoot.FLayBubble.AdjustViewBounds := True;
+  end else
+    FViewRoot.FLayBubble.WidthSize := TViewSize.FillParent;
+
+
   // 初始化消息区
   if (Builder.FIcon <> nil) or (Builder.FMessage <> '') then begin
     FViewRoot.InitMessage(StyleManager);
@@ -2400,15 +2423,17 @@ begin
   end;
   FLayBubble.Background.ItemDefault.Kind := TViewBrushKind.Solid;
   FLayBubble.Layout.CenterInParent := True;
-  FLayBubble.Clickable := True;
+  FLayBubble.Clickable := True;    
   FLayBubble.WidthSize := TViewSize.FillParent;
+    
   FLayBubble.HeightSize := TViewSize.WrapContent;
   FLayBubble.Orientation := TOrientation.Vertical;
   FLayBubble.CanFocus := False;
   FLayBubble.AdjustViewBounds := True;
   if StyleMgr.MaxWidth > 0 then  
     FLayBubble.MaxWidth := StyleMgr.MaxWidth;
-  FLayBubble.MaxHeight := Height - FLayBubble.Margins.Top - FLayBubble.Margins.Bottom;  
+  FLayBubble.MaxHeight := Height - FLayBubble.Margins.Top - FLayBubble.Margins.Bottom;   
+
   // 标题栏
   FTitleView := TTextView.Create(Owner);
   {$IFDEF MSWINDOWS}
@@ -2548,6 +2573,16 @@ begin
   FreeAndNil(FButtonBorder);
   FreeAndNil(FButtonTextColor);
   inherited;
+end;
+
+function TDialogStyleManager.IsStoredBackgroundRadius: Boolean;
+begin
+  Result := FBackgroundRadius <> SIZE_BackgroundRadius;
+end;
+
+function TDialogStyleManager.IsStoredTitleSpaceHeight: Boolean;
+begin
+  Result := FTitleSpaceHeight <> SIZE_TitleSpaceHeight;  
 end;
 
 procedure TDialogStyleManager.SetButtonBorder(const Value: TViewBorder);

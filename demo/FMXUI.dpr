@@ -22,7 +22,9 @@ uses
   uFrameRingView in 'uFrameRingView.pas' {FrameRingView: TFrame},
   uFrameMultiPathView in 'uFrameMultiPathView.pas' {FrameMultiPathView: TFrame},
   uFrameDialog_CustomView in 'uFrameDialog_CustomView.pas' {FrameDialogCustomView: TFrame},
-  uFramePopMenu in 'uFramePopMenu.pas' {FramePopMenu: TFrame};
+  uFramePopMenu in 'uFramePopMenu.pas' {FramePopMenu: TFrame},
+  uFrameImageView in 'uFrameImageView.pas' {FrameImageView: TFrame},
+  uFrameListViewGroup in 'uFrameListViewGroup.pas' {FrameListViewGroup: TFrame};
 
 {$R *.res}
 

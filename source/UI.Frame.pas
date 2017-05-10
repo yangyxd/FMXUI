@@ -173,6 +173,7 @@ type
     FOnHide: TNotifyEvent;
     FOnFinish: TNotifyEvent;
     FOnReStart: TNotifyEvent;
+    FOnFree: TNotifyEvent;
     FWaitDialog: TProgressDialog;
     FShowing: Boolean;    // 正在显示中
     FHideing: Boolean;    // 正在隐藏中
@@ -410,6 +411,7 @@ type
     property OnHide: TNotifyEvent read FOnHide write FOnHide;
     property OnFinish: TNotifyEvent read FOnFinish write FOnFinish;
     property OnReStart: TNotifyEvent read FOnReStart write FOnReStart;
+    property OnFree: TNotifyEvent read FOnFree write FOnFree;
   end;
 
 type
@@ -815,12 +817,16 @@ end;
 
 procedure TFrameView.DoFinish;
 begin
-  if Assigned(FOnFinish) then
+  if Assigned(FOnFinish) then begin
     FOnFinish(Self);
+    FOnFinish := nil;
+  end;
 end;
 
 procedure TFrameView.DoFree;
 begin
+  if Assigned(FOnFree) then
+    FOnFree(Self);
 end;
 
 procedure TFrameView.DoHide;

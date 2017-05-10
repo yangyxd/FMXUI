@@ -1663,7 +1663,6 @@ procedure TScrollView.DoUpdateScrollingLimits(NeedUpdateScroll: Boolean);
 var
   Targets: array [0..1] of TAniCalculations.TTarget;
   {$IFNDEF NEXTGEN}
-  FScroll: TScrollBar;
   FTrackChanging: Boolean;
   {$ENDIF}
 begin
@@ -1680,16 +1679,14 @@ begin
       {$IFNDEF NEXTGEN}
       // 非移动平台，在拖动滚动条后，动态更新滚动条的值
       FScroll := GetScrollBar;
-      if Assigned(FScroll) then begin
-        FTrackChanging := GetRttiValue<Boolean>(FScroll, 'FTrackChanging');
-        SetRttiValue<Boolean>(FScroll, 'FTrackChanging', False); // 临时将此变量设为False，否则为忽略本次调整
-      end else
-        FTrackChanging := False;
+      if not Assigned(FScroll) then
+        Exit;
+      FTrackChanging := GetRttiValue<Boolean>(FScroll, 'FTrackChanging');
+      SetRttiValue<Boolean>(FScroll, 'FTrackChanging', False); // 临时将此变量设为False，否则为忽略本次调整
       try
         UpdateScrollBar;
       finally
-        if Assigned(FScroll) then
-          SetRttiValue<Boolean>(FScroll, 'FTrackChanging', FTrackChanging);
+        SetRttiValue<Boolean>(FScroll, 'FTrackChanging', FTrackChanging);
       end;
       {$ELSE}
       UpdateScrollBar;

@@ -13,7 +13,7 @@ interface
 {$SCOPEDENUMS ON}
 
 uses
-  UI.Debug, UI.Utils, UI.Base, UI.Standard, UI.Utils.ArrayEx,
+  UI.Debug, UI.Utils, UI.Base, UI.Standard, UI.Utils.ArrayEx, UI.Ani,
   {$IFDEF MSWINDOWS}Windows, {$ENDIF}
   FMX.Utils, FMX.ImgList, FMX.MultiResBitmap, FMX.ActnList, System.Rtti, FMX.Consts,
   FMX.TextLayout, FMX.Objects, System.ImageList, System.RTLConsts,
@@ -48,6 +48,7 @@ type
     function IsEmpty: Boolean;
     function IsEnabled(const Index: Integer): Boolean;
     function ItemDefaultHeight: Single;
+    procedure ItemMeasureHeight(const Index: Integer; var AHeight: Single);
     procedure Clear;
     procedure Repaint;
     procedure NotifyDataChanged;
@@ -153,6 +154,8 @@ type
     FLastColumnCount: Integer;
     FLastColumnWidth: Single;
 
+    FDownPos: TPointF;
+
     function GetVisibleRowCount: Integer;
     function GetControlFormCacle(const ItemType: Integer): TViewBase;
     procedure AddControlToCacle(const ItemType: Integer; const Value: TViewBase);
@@ -165,6 +168,7 @@ type
     procedure DrawDivider(Canvas: TCanvas);   // 画分隔线
     function ObjectAtPoint(AScreenPoint: TPointF): IControl; override;
     procedure DoChangeSize(var ANewWidth, ANewHeight: Single); override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
   protected
     procedure DoItemClick(Sender: TObject);
     procedure DoItemChildClick(Sender: TObject);
@@ -487,6 +491,7 @@ type
     function GetItemViewType(const Index: Integer): Integer; virtual;
     function IsEmpty: Boolean;
     function IsEnabled(const Index: Integer): Boolean; virtual;
+    procedure ItemMeasureHeight(const Index: Integer; var AHeight: Single); virtual;
   protected
     { IListAdapter }
     function GetCount: Integer; virtual; abstract;
@@ -599,10 +604,95 @@ type
     property ItemIndex: Integer read FItemIndex write SetItemIndex;
   end;
 
+type
+  /// <summary>
+  /// 树形列表节点数据
+  /// </summary>
+  TTreeListNode<T> = class(TObject)
+  private
+    function GetCount: Integer;
+    function GetNode(const Index: Integer): TTreeListNode<T>;
+    procedure SetNode(const Index: Integer; const Value: TTreeListNode<T>);
+    procedure SetParent(const Value: TTreeListNode<T>);
+  protected
+    FParent: TTreeListNode<T>;
+    FNodes: TList<TTreeListNode<T>>;
+    FExpanded: Boolean;
+    FLevel: Integer;
+    FData: T;
+    procedure DoNodeNotify(Sender: TObject; const Item: TTreeListNode<T>;
+      Action: System.Generics.Collections.TCollectionNotification);
+    procedure CreateNodes; virtual;
+    procedure InnerRemove(const ANode: TTreeListNode<T>);
+    procedure UpdateLevel;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Clear;
+
+    procedure Add(const ANode: TTreeListNode<T>);
+    procedure Remove(const ANode: TTreeListNode<T>);
+    procedure Insert(const Index: Integer; const ANode: TTreeListNode<T>);
+
+    function AddNode(const AData: T): Integer;
+    function InsertNode(const Index: Integer; const AData: T): Integer;
+
+    property Data: T read FData write FData;
+    property Count: Integer read GetCount;
+    property Nodes[const Index: Integer]: TTreeListNode<T> read GetNode write SetNode; default;
+    property Expanded: Boolean read FExpanded write FExpanded;
+    property Parent: TTreeListNode<T> read FParent write SetParent;
+    property Level: Integer read FLevel;
+  end;
+
+  /// <summary>
+  /// 树形列表数据适配器基类
+  /// </summary>
+  TCustomTreeListDataAdapter<T> = class(TListAdapterBase)
+  private
+    FRoot: TTreeListNode<T>;
+    FList: TList<TTreeListNode<T>>;
+    FUpdateRef: Integer;
+    function GetNodes(const Index: Integer): TTreeListNode<T>;
+    function GetNodeCount: Integer;
+    procedure AddListItem(const Parent: TTreeListNode<T>);
+  protected
+    function GetCount: Integer; override;
+    function GetItem(const Index: Integer): Pointer; override;
+    function IndexOf(const AItem: Pointer): Integer; override;
+    function GetItemViewType(const Index: Integer): Integer; override;
+    procedure ItemMeasureHeight(const Index: Integer; var AHeight: Single); override;
+
+    function GetView(const Index: Integer; ConvertView: TViewBase;
+      Parent: TViewGroup): TViewBase; override;
+
+    function GetNodeGroupView(const Index: Integer; const ANode: TTreeListNode<T>;
+      ConvertView: TViewBase; Parent: TViewGroup): TViewBase; virtual;
+    function GetNodeItemView(const Index: Integer; const ANode: TTreeListNode<T>;
+      ConvertView: TViewBase; Parent: TViewGroup): TViewBase; virtual;
+
+    function GetNodeText(const ANode: TTreeListNode<T>): string; virtual;
+
+    procedure InitList; virtual;
+    procedure DoNodeExpandChange(Sender: TObject); virtual;
+  public
+    constructor Create(); virtual;
+    destructor Destroy; override;
+    procedure NotifyDataChanged; override;
+    procedure Clear; override;
+
+    procedure BeginUpdate;
+    procedure EndUpdate;
+
+    property Root: TTreeListNode<T> read FRoot;
+    property Nodes[const Index: Integer]: TTreeListNode<T> read GetNodes;
+    property NodeCount: Integer read GetNodeCount;
+  end;
+
 implementation
 
 uses
-  UI.ListView.Header, UI.ListView.Footer;
+  UI.ListView.Header, UI.ListView.Footer, UI.ListView.TreeGroup;
 
 { TListViewEx }
 
@@ -1014,16 +1104,21 @@ begin
     FContentViews.FOffset := -1;
     FContentViews.FLastOffset := -1;
     FContentViews.FLastH := 0;
+
     if Length(FItemsPoints) > 0 then
       FillChar(FItemsPoints[0], SizeOf(TListItemPoint) * Length(FItemsPoints), 0);
+
     InvalidateContentSize;
+
+    // 恢复位置
     if (FContentViews.FFirstRowIndex > -1) then begin
       if FContentViews.FFirstRowIndex > High(FItemsPoints) then
         FContentViews.FFirstRowIndex := High(FItemsPoints);
-      Offset := FScroll.Value - FContentViews.FLastPosition;
-      FScroll.Value := (FAdapter.ItemDefaultHeight + GetDividerHeight) * FContentViews.FFirstRowIndex + Offset;
-      FContentViews.FLastPosition := FScroll.Value - Offset;
+      Offset := FScroll.ValueD - FContentViews.FLastPosition;
+      FScroll.ValueD := (FAdapter.ItemDefaultHeight + GetDividerHeight) * FContentViews.FFirstRowIndex + Offset;
+      FContentViews.FLastPosition := FScroll.ValueD - Offset;
     end;
+
     DoUpdateScrollingLimits(True);
   finally
     FContentViews.FCount := FCount;
@@ -1047,7 +1142,6 @@ begin
 //      FContentViews.Realign;
 //    end;
 //  end;
-
   Resize;
 end;
 
@@ -1234,6 +1328,7 @@ begin
     List := FCacleViews[ItemType];
   end;
   Value.Visible := False;
+  Value.OnClick := nil;
   List.Add(Value)
 end;
 
@@ -1809,12 +1904,13 @@ begin
           raise Exception.Create('View is null.');
 
         // 触发用户修改行高的事件
+        FAdapter.ItemMeasureHeight(I, AH);
         if Assigned(FOnItemMeasureHeight) then
           FOnItemMeasureHeight(ListView, I, AH);
 
         // 如果行高更改了，则后续需要调整滚动区的大小，这里记录一下变化大小
         if LColumnCount <= 1 then begin
-          if H <> AH then begin
+          if Item.H <> AH then begin
             if AH <= 0 then begin
               AdjustH := AdjustH - H
             end else begin
@@ -1867,8 +1963,8 @@ begin
         if Control <> ItemView then begin
           {$IFDEF Debug}
           {$IFDEF MSWINDOWS}
-          OutputDebugString(PChar(Format('增加列表视图 Index: %d (ViewCount: %d)',
-            [I, FViews.Count])));
+          OutputDebugString(PChar(Format('增加列表视图 Index: %d, %s. (ViewCount: %d)',
+            [I, ItemView.ClassName, FViews.Count])));
           {$ENDIF}
           {$IFDEF ANDROID}
           //LogD(Format('增加列表视图 Index: %d (ViewCount: %d)', [I, FViews.Count]));
@@ -1904,7 +2000,10 @@ begin
         // 记录列表项与索引号的对应关系和事件与视图对应关系到字典中
         FNewOnClick := DoItemClick;
         if Assigned(View) then begin
-          View.ViewState := [];
+          if TViewState.Checked in View.ViewState then
+            View.ViewState := [TViewState.Checked]
+          else
+            View.ViewState := [];
           FItemViews.AddOrSetValue(View, I);
           if Assigned(View.OnClick) and (not EqulsMethod(FNewOnClick, View.OnClick)) then
             FItemClick.AddOrSetValue(View, View.OnClick);
@@ -1927,6 +2026,7 @@ begin
           AH := ItemView.Height;
 
         // 触发用户修改行高的事件
+        FAdapter.ItemMeasureHeight(I, AH);
         if Assigned(FOnItemMeasureHeight) then
           FOnItemMeasureHeight(ListView, I, AH);
 
@@ -2249,8 +2349,9 @@ begin
       ItemViewType := FAdapter.GetItemViewType(ItemView.Key);
       if ItemViewType = ListViewType_Remove then // 如果返回状态是删除，则清掉
         RemoveObject(ItemView.Value)
-      else
+      else begin
         AddControlToCacle(ItemViewType, ItemView.Value);
+      end;
     end;
   end;
   FViews.Clear;
@@ -2293,6 +2394,13 @@ begin
     end else
       (FHeader as TControl).Visible := False;
   end;
+end;
+
+procedure TListViewContent.MouseDown(Button: TMouseButton; Shift: TShiftState;
+  X, Y: Single);
+begin
+  FDownPos := PointF(X, Y);
+  inherited;
 end;
 
 function TListViewContent.ObjectAtPoint(AScreenPoint: TPointF): IControl;
@@ -2369,6 +2477,10 @@ end;
 function TListAdapterBase.ItemDefaultHeight: Single;
 begin
   Result := 50;
+end;
+
+procedure TListAdapterBase.ItemMeasureHeight(const Index: Integer; var AHeight: Single);
+begin
 end;
 
 procedure TListAdapterBase.NotifyDataChanged;
@@ -2794,6 +2906,340 @@ end;
 procedure TStringsListSingleAdapter.SetItemIndex(const Value: Integer);
 begin
   FItemIndex := Value;
+end;
+
+{ TTreeListNode<T> }
+
+procedure TTreeListNode<T>.Add(const ANode: TTreeListNode<T>);
+begin
+  if not Assigned(ANode) then
+    Exit;
+  if not Assigned(FNodes) then CreateNodes;
+  if FNodes.IndexOf(ANode) < 0 then begin
+    ANode.Parent := Self;
+    FNodes.Add(ANode);
+  end;
+end;
+
+function TTreeListNode<T>.AddNode(const AData: T): Integer;
+var
+  Item: TTreeListNode<T>;
+begin
+  if not Assigned(FNodes) then CreateNodes;
+  Item := TTreeListNode<T>.Create;
+  Item.FData := AData;
+  Item.FParent := Self;
+  Item.UpdateLevel;
+  Result := FNodes.Add(Item);
+end;
+
+procedure TTreeListNode<T>.Clear;
+begin
+  if Assigned(FNodes) then
+    FNodes.Clear;
+end;
+
+constructor TTreeListNode<T>.Create;
+begin
+  FNodes := nil;
+  FExpanded := False;
+end;
+
+procedure TTreeListNode<T>.CreateNodes;
+begin
+  if not Assigned(FNodes) then begin
+    FNodes := TList<TTreeListNode<T>>.Create;
+    FNodes.OnNotify := DoNodeNotify;
+  end;
+end;
+
+destructor TTreeListNode<T>.Destroy;
+begin
+  if Assigned(FNodes) then
+    Parent := nil;
+  FreeAndNil(FNodes);
+  inherited;
+end;
+
+procedure TTreeListNode<T>.DoNodeNotify(Sender: TObject;
+  const Item: TTreeListNode<T>; Action: System.Generics.Collections.TCollectionNotification);
+begin
+  if Action = System.Generics.Collections.TCollectionNotification.cnRemoved then
+    if Assigned(Item) then Item.DisposeOf;
+end;
+
+function TTreeListNode<T>.GetCount: Integer;
+begin
+  if Assigned(FNodes) then
+    Result := FNodes.Count
+  else
+    Result := 0;
+end;
+
+function TTreeListNode<T>.GetNode(const Index: Integer): TTreeListNode<T>;
+begin
+  if Assigned(FNodes) and (Index >= 0) and (Index < FNodes.Count) then
+    Result := FNodes.Items[Index]
+  else
+    Result := nil;
+end;
+
+procedure TTreeListNode<T>.Insert(const Index: Integer;
+  const ANode: TTreeListNode<T>);
+begin
+  if not Assigned(ANode) then Exit;
+  if not Assigned(FNodes) then CreateNodes;
+  ANode.Parent := Self;
+  if (Index < 0) or (Index >= FNodes.Count) then
+    FNodes.Add(ANode)
+  else
+    FNodes.Insert(Index, ANode);
+end;
+
+function TTreeListNode<T>.InsertNode(const Index: Integer; const AData: T): Integer;
+var
+  Item: TTreeListNode<T>;
+begin
+  if not Assigned(FNodes) then CreateNodes;
+  Item := TTreeListNode<T>.Create;
+  Item.FData := AData;
+  Item.FParent := Self;
+  if (Index < 0) or (Index >= FNodes.Count) then
+    Result := FNodes.Add(Item)
+  else begin
+    FNodes.Insert(Index, Item);
+    Result := Index;
+  end;
+  Item.UpdateLevel;
+end;
+
+procedure TTreeListNode<T>.Remove(const ANode: TTreeListNode<T>);
+begin
+  if not Assigned(FNodes) then Exit;
+  FNodes.Remove(ANode);
+end;
+
+procedure TTreeListNode<T>.InnerRemove(const ANode: TTreeListNode<T>);
+begin
+  if not Assigned(FNodes) then Exit;
+  FNodes.OnNotify := nil;
+  FNodes.Remove(ANode);
+  FNodes.OnNotify := DoNodeNotify;
+end;
+
+procedure TTreeListNode<T>.SetNode(const Index: Integer;
+  const Value: TTreeListNode<T>);
+begin
+  if not Assigned(FNodes) then Exit;
+  if (Index < 0) or (Index >= FNodes.Count) then Exit;
+  FNodes.Items[Index] := Value;
+end;
+
+procedure TTreeListNode<T>.SetParent(const Value: TTreeListNode<T>);
+begin
+  if FParent <> Value then begin
+    if Assigned(FParent) then
+      FParent.InnerRemove(Self);
+    FParent := Value;
+    if Assigned(FParent) then begin
+      FParent.Add(Self);
+      UpdateLevel;
+    end else
+      FLevel := -1;
+  end;
+end;
+
+procedure TTreeListNode<T>.UpdateLevel;
+var
+  I: Integer;
+  P: TTreeListNode<T>;
+begin
+  I := -1;
+  P := FParent;
+  while P <> nil do begin
+    Inc(I);
+    P := P.FParent;
+  end;
+  FLevel := I;
+end;
+
+{ TCustomTreeListDataAdapter<T> }
+
+procedure TCustomTreeListDataAdapter<T>.AddListItem(
+  const Parent: TTreeListNode<T>);
+var
+  I: Integer;
+begin
+  for I := 0 to Parent.Count - 1 do begin
+    FList.Add(Parent.Nodes[I]);
+    if Parent.Nodes[I].Expanded then
+      AddListItem(Parent.Nodes[I]);
+  end;
+end;
+
+procedure TCustomTreeListDataAdapter<T>.BeginUpdate;
+begin
+  Inc(FUpdateRef);
+end;
+
+procedure TCustomTreeListDataAdapter<T>.Clear;
+begin
+  inherited Clear;
+  if Assigned(FRoot) then
+    FRoot.Clear;
+  if Assigned(FList) then
+    FList.Clear;
+end;
+
+constructor TCustomTreeListDataAdapter<T>.Create();
+begin
+  FRoot := TTreeListNode<T>.Create;
+  FList := TList<TTreeListNode<T>>.Create;
+end;
+
+destructor TCustomTreeListDataAdapter<T>.Destroy;
+begin
+  FreeAndNil(FList);
+  FreeAndNil(FRoot);
+  inherited;
+end;
+
+procedure TCustomTreeListDataAdapter<T>.DoNodeExpandChange(Sender: TObject);
+var
+  B: Boolean;
+begin
+  B := not FList.Items[TControl(Sender).Tag].Expanded;
+  FList.Items[TControl(Sender).Tag].Expanded := B;
+  ListView.FContentViews.HideViews;
+  NotifyDataChanged;
+end;
+
+procedure TCustomTreeListDataAdapter<T>.EndUpdate;
+begin
+  Dec(FUpdateRef);
+  if FUpdateRef < 0 then
+    FUpdateRef := 0;
+  if FUpdateRef = 0 then
+    InitList;
+end;
+
+function TCustomTreeListDataAdapter<T>.GetCount: Integer;
+begin
+  Result := FList.Count;
+end;
+
+function TCustomTreeListDataAdapter<T>.GetItem(const Index: Integer): Pointer;
+begin
+  Result := FList.Items[Index];
+end;
+
+function TCustomTreeListDataAdapter<T>.GetItemViewType(
+  const Index: Integer): Integer;
+begin
+  Result := FList.Items[Index].Level;
+end;
+
+function TCustomTreeListDataAdapter<T>.GetNodeCount: Integer;
+begin
+  Result := FRoot.Count;
+end;
+
+function TCustomTreeListDataAdapter<T>.GetNodeGroupView(const Index: Integer;
+  const ANode: TTreeListNode<T>; ConvertView: TViewBase;
+  Parent: TViewGroup): TViewBase;
+var
+  ViewItem: TListViewTreeGroup;
+begin
+  if (ConvertView = nil) or (not (TControl(ConvertView) is TListViewTreeGroup)) then begin
+    ViewItem := TListViewTreeGroup.Create(Parent);
+    ViewItem.Parent := Parent;
+    ViewItem.Width := Parent.Width;
+    ViewItem.Height := TListTextItem.C_MinHeight;
+    ViewItem.HitTest := False;
+    ViewItem.CanFocus := False;
+  end else
+    ViewItem := TControl(ConvertView) as TListViewTreeGroup;
+  ViewItem.BeginUpdate;
+  ViewItem.TextView.Tag := Index;  // 使用 Tag 记录索引号
+  ViewItem.TextView.OnClick := DoNodeExpandChange;
+  ViewItem.TextView.Text := GetNodeText(ANode);
+  ViewItem.TextView.Checked := ANode.Expanded;
+  ViewItem.EndUpdate;
+  Result := TViewBase(ViewItem);
+end;
+
+function TCustomTreeListDataAdapter<T>.GetNodeItemView(const Index: Integer;
+  const ANode: TTreeListNode<T>; ConvertView: TViewBase;
+  Parent: TViewGroup): TViewBase;
+var
+  ViewItem: TListTextItem;
+begin
+  if (ConvertView = nil) or (not (ConvertView is TListTextItem)) then begin
+    ViewItem := TListTextItem.Create(Parent);
+    ViewItem.Parent := Parent;
+    ViewItem.Width := Parent.Width;
+    ViewItem.Height := TListTextItem.C_MinHeight;
+    ViewItem.HeightSize := TViewSize.CustomSize;
+    ViewItem.MinHeight := TListTextItem.C_MinHeight;
+    ViewItem.TextSettings.Font.Size := TListTextItem.C_FontSize;
+    ViewItem.TextSettings.WordWrap := True;
+    ViewItem.Gravity := TLayoutGravity.CenterVertical;
+    ViewItem.Padding.Rect := RectF(8, 8, 8, 8);
+    ViewItem.CanFocus := False;
+  end else
+    ViewItem := ConvertView as TListTextItem;
+  ViewItem.Text := GetNodeText(ANode);
+  Result := ViewItem;
+end;
+
+function TCustomTreeListDataAdapter<T>.GetNodes(
+  const Index: Integer): TTreeListNode<T>;
+begin
+  Result := FList.Items[Index];
+end;
+
+function TCustomTreeListDataAdapter<T>.GetNodeText(
+  const ANode: TTreeListNode<T>): string;
+begin
+  Result := ANode.ToString();
+end;
+
+function TCustomTreeListDataAdapter<T>.GetView(const Index: Integer;
+  ConvertView: TViewBase; Parent: TViewGroup): TViewBase;
+var
+  ViewItem: TListTextItem;
+  Node: TTreeListNode<T>;
+begin
+  Node := Nodes[Index];
+  if (Node.Level = 0) or (Node.Count > 1) then
+    Result := GetNodeGroupView(Index, Node, ConvertView, Parent)
+  else
+    Result := GetNodeItemView(Index, Node, ConvertView, Parent)
+end;
+
+function TCustomTreeListDataAdapter<T>.IndexOf(const AItem: Pointer): Integer;
+begin
+  Result := FList.IndexOf(AItem);
+end;
+
+procedure TCustomTreeListDataAdapter<T>.InitList;
+begin
+  FList.Clear;
+  AddListItem(FRoot);
+end;
+
+procedure TCustomTreeListDataAdapter<T>.ItemMeasureHeight(const Index: Integer; var AHeight: Single);
+begin
+  if FList.Items[Index].Level = 0 then
+    AHeight := 36
+end;
+
+procedure TCustomTreeListDataAdapter<T>.NotifyDataChanged;
+begin
+  InitList;
+  inherited NotifyDataChanged;
+  if Assigned(ListView) then
+    ListView.Invalidate;
 end;
 
 end.
