@@ -101,6 +101,9 @@ const
   COLOR_ButtonTextPressColor = $FF101010;
   {$ENDIF}
 
+  COLOR_ListItemPressedColor = $ffd9d9d9;
+  COLOR_LIstItemDividerColor = $afe3e4e5;
+
   COLOR_TitleSpaceColor = $ffe7e7e7;
   SIZE_TitleSpaceHeight = 1;
 
@@ -160,6 +163,10 @@ type
     FTitleSpaceHeight: Single;
     FTitleSpaceColor: TAlphaColor;
     FMaxWidth: Integer;
+
+    FListItemPressedColor: TAlphaColor;
+    FListItemDividerColor: TAlphaColor;
+
     procedure SetButtonColor(const Value: TButtonViewColor);
     procedure SetButtonBorder(const Value: TViewBorder);
     procedure SetButtonTextColor(const Value: TTextColor);
@@ -188,6 +195,11 @@ type
     property ProcessBackgroundColor: TAlphaColor read FProcessBackgroundColor write FProcessBackgroundColor default COLOR_ProcessBackgroundColor;
     // 等待消息框消息文字颜色
     property ProcessTextColor: TAlphaColor read FProcessTextColor write FProcessTextColor default COLOR_ProcessTextColor;
+
+    // 列表框默认列表项按下时背景颜色
+    property ListItemPressedColor: TAlphaColor read FListItemPressedColor write FListItemPressedColor default COLOR_ListItemPressedColor;
+    // 列表框默认行列分隔线颜色
+    property ListItemDividerColor: TAlphaColor read FListItemDividerColor write FListItemDividerColor default COLOR_ListItemDividerColor;
 
     // 标题栏文本重力
     property TitleGravity: TLayoutGravity read FTitleGravity write FTitleGravity default Title_Gravity;
@@ -2312,6 +2324,8 @@ begin
   //FListView.ControlType := TControlType.Platform;
   FListView.WidthSize := TViewSize.FillParent;
   FListView.HeightSize := TViewSize.WrapContent;
+  FListView.Background.ItemPressed.Color := StyleMgr.ListItemPressedColor;
+  FListView.Divider := StyleMgr.ListItemDividerColor;
 end;
 
 procedure TDialogView.InitMessage(StyleMgr: TDialogStyleManager);
@@ -2555,6 +2569,9 @@ begin
 
   FTitleSpaceHeight := SIZE_TitleSpaceHeight;
   FTitleSpaceColor := COLOR_TitleSpaceColor;
+
+  FListItemPressedColor := COLOR_ListItemPressedColor;
+  FListItemDividerColor := COLOR_LIstItemDividerColor;
 
   if Assigned(Owner) and (not (csDesigning in ComponentState)) then begin
     if DefaultStyleManager <> nil then begin

@@ -165,6 +165,7 @@ type
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TFrameView = class(FMX.Forms.TFrame)
   private
+    FDefaultAni: TFrameAniType;
     FParams: TFrameParams;
     FPrivateState: TFrameState;
     FBackColor: TAlphaColor;
@@ -739,6 +740,7 @@ begin
     Width := 200;
     Height := 400;
   end;
+  FDefaultAni := TFrameAniType(-1);
   FBackColor := FDefaultBackColor;
   FUseDefaultBackColor := True;
   FNeedDoCreate := True;
@@ -870,7 +872,10 @@ end;
 
 procedure TFrameView.Finish;
 begin
-  Finish(TFrameAniType.DefaultAni);
+  if Ord(FDefaultAni) <> -1 then
+    Finish(FDefaultAni)
+  else
+    Finish(TFrameAniType.DefaultAni);
 end;
 
 function TFrameView.GetData: TValue;
@@ -1054,6 +1059,7 @@ procedure TFrameView.InternalShow(TriggerOnShow: Boolean;
 begin
   if FShowing then Exit;  
   FShowing := True;
+  FDefaultAni := Ani;
   if Title <> '' then begin
     Application.Title := Title;
     if Assigned(Parent) and (Parent is TCustomForm) then
