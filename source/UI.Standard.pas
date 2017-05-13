@@ -366,11 +366,10 @@ type
     procedure SetTextSettings(const Value: UI.Base.TTextSettings);
     function GetDrawable: TDrawableIcon;
     procedure SetDrawable(const Value: TDrawableIcon);
-    function GetDrawableWidth(): Integer;
-    function GetDrawableHeight(): Integer;
     procedure SetTextHint(const Value: string);
     function GetTextLength: Integer;
     procedure SetGroupIndex(const Value: Integer);
+    function GetNeedSize: TSizeF;
   protected
     procedure Loaded; override;
     procedure DblClick; override;
@@ -383,6 +382,8 @@ type
     procedure SetGravity(const Value: TLayoutGravity); override;
     procedure DoLayoutChanged(Sender: TObject); override;
     procedure ActionChange(Sender: TBasicAction; CheckDefaults: Boolean); override;
+    function GetDrawableWidth(): Integer;
+    function GetDrawableHeight(): Integer;
     function GetDefaultSize: TSizeF; override;
     function GetData: TValue; override;
     procedure SetData(const Value: TValue); override;
@@ -417,6 +418,7 @@ type
     procedure AfterConstruction; override;
     procedure Change;
     property Length: Integer read GetTextLength;
+    property NeedSize: TSizeF read GetNeedSize;
   published
     property Gravity stored False;
     property AutoSize: Boolean read GetAutoSize write SetAutoSize default False;
@@ -1230,6 +1232,16 @@ begin
     Result := FDrawable.SizeWidth
   else
     Result := 0;
+end;
+
+function TTextView.GetNeedSize: TSizeF;
+begin
+  if not (csDestroying in ComponentState) and Assigned(Scene) then begin
+    if not TextSettings.CalcTextObjectSize($FFFF, Scene.GetSceneScale, nil, Result) then
+      Result := TSizeF.Create(0, 0)
+  end else begin
+    Result := TSizeF.Create(0, 0);
+  end;
 end;
 
 function TTextView.GetText: string;

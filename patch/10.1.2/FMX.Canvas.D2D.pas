@@ -9,6 +9,9 @@
 
 unit FMX.Canvas.D2D;
 
+// 修复 win平台控件有虚线残影问题
+// by YangYxd
+
 {.$DEFINE DXDEBUG}
 {.$DEFINE D2DEBUG}
 
@@ -1339,13 +1342,8 @@ begin
     if Result then
     begin
       FTarget.BeginDraw;
-      if AClipRects <> nil then begin
-        {$IFDEF MSWINDOWS}
+      if AClipRects <> nil then
         SetClipRects(AClipRects^);
-        {$ELSE}
-        SetClipRects(AClipRects^);
-        {$ENDIF}
-      end;
     end;
   end;
 end;
@@ -1469,9 +1467,8 @@ begin
     for I := 0 to High(ARects) do
     begin
       R := ARects[I];
-      {$IFDEF MSWINDOWS}
-      R.Left := R.Left - 0.5;
-      {$ENDIF}
+      //InflateRect(R, 0.0001, 0.0001);
+      R.Left := R.Left - 0.001; // yangyxd
       if not IsScaleInteger then
         R := AlignToPixel(R);
       SharedFactory.CreateRectangleGeometry(D2Rect(R), ID2D1RectangleGeometry(Geoms[I]));
@@ -1578,7 +1575,7 @@ begin
     TBrushKind.Solid:
       if (not FMetaBrush.Valid) or (FMetaBrush.Color <> ABrush.Color) then
       begin
-        FTarget.CreateSolidColorBrush(D2Color(ABrush.Color, 1), nil, ID2D1SolidColorBrush(FBrush));
+        FTarget.CreateSolidColorBrush(D2Color(ABrush.Color, AOpacity), nil, ID2D1SolidColorBrush(FBrush));
         FMetaBrush.Color := ABrush.Color;
       end;
 

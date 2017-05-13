@@ -563,6 +563,8 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
 
 
 begin
+  if not Assigned(Self) or (csDestroying in ComponentState) then
+    Exit;
   try
     case Ani of
       TFrameAniType.DefaultAni:

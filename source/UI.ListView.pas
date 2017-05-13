@@ -269,6 +269,8 @@ type
     FEnablePullLoad: Boolean;
     FCount: Integer;
 
+    FScrollbarWidth: Single;
+
     FOnDrawViewBackgroud: TOnDrawViewBackgroud;
     FOnItemMeasureHeight: TOnItemMeasureHeight;
     FOnItemClick: TOnItemClick;
@@ -301,6 +303,8 @@ type
     function GetRowCount: Integer;
     function GetColumnDivider: Boolean;
     procedure SetColumnDivider(const Value: Boolean);
+    procedure SetScrollbarWidth(const Value: Single);
+    function IsStoredScrollbarWidth: Boolean;
   protected
     function CreateScroll: TScrollBar; override;
     function GetRealDrawState: TViewState; override;
@@ -373,6 +377,7 @@ type
     property Adapter: IListAdapter read FAdapter write SetAdapter;
     property ItemPosition[Index: Integer]: TListItemPoint read GetItemPosition;
     property ItemViews[Index: Integer]: TControl read GetItemViews;
+    property ContentViews: TListViewContent read FContentViews;
 
     /// <summary>
     /// 当前显示的首行索引号
@@ -428,6 +433,7 @@ type
     property DividerHeight: Single read FDividerHeight write SetDividerHeight stored IsStoredDividerHeight;
 
     property ScrollStretchGlowColor;
+    property ScrollbarWidth: Single read FScrollbarWidth write SetScrollbarWidth stored IsStoredScrollbarWidth;
     property OnScrollChange;
 
     property OnDrawBackgroud: TOnDrawViewBackgroud read FOnDrawViewBackgroud
@@ -769,6 +775,7 @@ begin
   CreateCoentsView();
   FAllowItemChildClick := True;
   FDivider := CDefaultDividerColor;
+  FScrollbarWidth := 0;
   FDividerHeight := -1;
   FLocalDividerHeight := -1;
   SetLength(FItemsPoints, 0);
@@ -806,6 +813,10 @@ begin
   {$ELSE}
   Result := TSmallScrollBar.Create(Self);
   {$ENDIF}
+  if FScrollbarWidth > 0 then begin
+    SetRttiValue(Result, 'MinClipWidth', FScrollbarWidth);
+    SetRttiValue(Result, 'MinClipHeight', FScrollbarWidth);
+  end;
 end;
 
 destructor TListViewEx.Destroy;
@@ -1083,6 +1094,11 @@ begin
   Result := FDividerHeight <> -1;
 end;
 
+function TListViewEx.IsStoredScrollbarWidth: Boolean;
+begin
+  Result := FScrollbarWidth > 0;
+end;
+
 procedure TListViewEx.Loaded;
 begin
   inherited Loaded;
@@ -1303,6 +1319,17 @@ begin
       end else
         FContentViews.InitHeader;
     end;
+  end;
+end;
+
+procedure TListViewEx.SetScrollbarWidth(const Value: Single);
+begin
+  if FScrollbarWidth <> Value then begin
+    FScrollbarWidth := Value;
+    FreeAndNil(FScroll);
+    InitScrollbar;
+    if Assigned(FScroll) then
+      UpdateScrollBar;
   end;
 end;
 

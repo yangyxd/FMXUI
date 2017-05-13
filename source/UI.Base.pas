@@ -820,7 +820,10 @@ type
   TTextSettings = class(TTextSettingsBase)
   private
     FColor: TViewColor;
+    FOpacity: Single;
     procedure SetColor(const Value: TViewColor);
+    function IsStoreOpacity: Boolean;
+    procedure SetOpacity(const Value: Single);
   protected
     function GetStateColor(const State: TViewState): TAlphaColor; override;
   public
@@ -834,6 +837,7 @@ type
     property Trimming;
     property WordWrap;
     property Gravity;
+    property Opacity: Single read FOpacity write SetOpacity stored IsStoreOpacity;
   end;
 
   /// <summary>
@@ -3364,7 +3368,7 @@ begin
   inherited DoMouseEnter;
   if (csDesigning in ComponentState) or FInVisible then Exit;
   IncViewState(TViewState.Hovered);
-  if CanRePaintBk(Self, TViewState.Hovered) then Repaint;
+  if CanRePaintBk(Self, TViewState.Hovered) then Invalidate;
 end;
 
 procedure TView.DoMouseLeave;
@@ -3372,7 +3376,10 @@ begin
   inherited DoMouseLeave;
   DecViewState(TViewState.Hovered);
   if (csDesigning in ComponentState) or FInVisible then Exit;
-  if CanRePaintBk(Self, TViewState.Hovered) then Repaint;
+  if CanRePaintBk(Self, FDrawState) then begin
+    FInvaliding := False;
+    Invalidate;
+  end;
 end;
 
 procedure TView.DoMouseUp(Button: TMouseButton; Shift: TShiftState; X,
@@ -3382,7 +3389,7 @@ begin
     DecViewState(TViewState.Pressed);
     if (csDesigning in ComponentState) or FInVisible then
       Exit;
-    if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
+    if CanRePaintBk(Self, FDrawState) then Repaint;
   end;
 end;
 
@@ -3757,7 +3764,7 @@ begin
   if State = TViewState.None then Exit;
   if (csDestroying in ComponentState) or (csDesigning in ComponentState) then Exit;
   for I := 0 to Controls.Count - 1 do begin
-    if (State = TViewState.Pressed) and (Controls.Items[I].HitTest) then
+    if (State = TViewState.Pressed) or (Controls.Items[I].HitTest) then // yangyxd (and)
       Continue;
     if Supports(Controls.Items[I], IView, View) then
       View.IncViewState(State);
@@ -5923,6 +5930,7 @@ begin
   inherited Create(AOwner);
   FColor := TTextColor.Create();
   FColor.OnChanged := DoColorChanged;
+  FOpacity := 1;
 end;
 
 destructor TTextSettings.Destroy;
@@ -5934,11 +5942,26 @@ end;
 function TTextSettings.GetStateColor(const State: TViewState): TAlphaColor;
 begin
   Result := FColor.GetStateColor(State);
+  if FOpacity < 1 then
+    TColorRec(Result).A := Round(TColorRec(Result).A * FOpacity);
+end;
+
+function TTextSettings.IsStoreOpacity: Boolean;
+begin
+  Result := FOpacity < 1;
 end;
 
 procedure TTextSettings.SetColor(const Value: TViewColor);
 begin
   FColor.Assign(Value);
+end;
+
+procedure TTextSettings.SetOpacity(const Value: Single);
+begin
+  if FOpacity <> Value then begin
+    FOpacity := Value;
+    DoColorChanged(Self);
+  end;
 end;
 
 { TViewImageLink }

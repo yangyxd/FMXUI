@@ -43,6 +43,7 @@ type
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single; DoClick: Boolean = True); override;
   published
     property CaptureDragForm: Boolean read FCaptureDragForm write FCaptureDragForm;
+    property SizeWH: Single read FSizeWH write FSizeWH;
   end;
 
 implementation
@@ -80,7 +81,7 @@ procedure TSizeForm.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
   inherited;
-  if (BorderStyle = TFmxFormBorderStyle.None) then begin
+  if (BorderStyle = TFmxFormBorderStyle.None) and (WindowState = TWindowState.wsNormal) then begin
     if (csDesigning in ComponentState) then Exit;
     if (Button = TMouseButton.mbLeft) and (Shift = [ssLeft]) then begin
       if FullScreen then
@@ -192,14 +193,14 @@ function TSizeForm.ObjectAtPoint(AScreenPoint: TPointF): IControl;
 
   function Innder(const P: TPointF): IControl;
   begin
-    if PointInDragBorder(P.X, P.Y) then
+    if (P.X < 0) or (P.Y < 0) or PointInDragBorder(P.X, P.Y) then
       Result := nil
     else
       Result := inherited;
   end;
 
 begin
-  if (BorderStyle = TFmxFormBorderStyle.None) then
+  if (BorderStyle = TFmxFormBorderStyle.None) and (WindowState = TWindowState.wsNormal) and (FSizeWH > 1) then
     Result := Innder(ScreenToClient(AScreenPoint))
   else
     Result := inherited;
@@ -207,7 +208,7 @@ end;
 
 function TSizeForm.PointInDragBorder(const X, Y: Single): Boolean;
 begin
-  Result := (X < FSizeWH) or (X >= Width - FSizeWH) or (Y < FSizeWH) or (Y >= Height - FSizeWH);
+  Result := (FSizeWH > 1) and ((X < FSizeWH) or (X >= Width - FSizeWH) or (Y < FSizeWH) or (Y >= Height - FSizeWH));
 end;
 
 procedure TSizeForm.UpdateCurror(const AResizeMode: TResizeMode);
