@@ -342,6 +342,7 @@ type
   TDialog = class(TComponent, IDialog)
   private
     FAnimate: TFrameAniType;
+    FMask: Boolean;
     FOnCancelListener: TOnDialogListener;
     FOnCancelListenerA: TOnDialogListenerA;
     FOnShowListener: TOnDialogListener;
@@ -412,7 +413,7 @@ type
       const ViewClass: TControlClass;
       XOffset: Single = 0; YOffset: Single = 0;
       Position: TDialogViewPosition = TDialogViewPosition.Bottom;
-      Cancelable: Boolean = True; Ani: TFrameAniType = TFrameAniType.None): TDialog; overload;
+      Cancelable: Boolean = True; Ani: TFrameAniType = TFrameAniType.None; Mask: Boolean = True): TDialog; overload;
     /// <summary>
     /// 显示对话框
     /// <param name="Target">定位控件</param>
@@ -426,7 +427,7 @@ type
       const View: TControl; AViewAutoFree: Boolean = True;
       XOffset: Single = 0; YOffset: Single = 0;
       Position: TDialogViewPosition = TDialogViewPosition.Bottom;
-      Cancelable: Boolean = True; Ani: TFrameAniType = TFrameAniType.None): TDialog; overload;
+      Cancelable: Boolean = True; Ani: TFrameAniType = TFrameAniType.None; Mask: Boolean = True): TDialog; overload;
 
     /// <summary>
     /// 在一个目标控件身上查找与其绑定在一起的对象框
@@ -830,9 +831,15 @@ function GetDefaultStyleMgr: TDialogStyleManager;
 
 implementation
 
+uses
+  UI.Frame;
+
 var
   DefaultStyleManager: TDialogStyleManager = nil;
   DialogRef: Integer = 0;
+
+type
+  TFrameViewTmp = class(TFrameView);
 
 function GetDefaultStyleMgr: TDialogStyleManager;
 begin
@@ -1255,6 +1262,7 @@ var
   var
     NewValue: TAlphaColor;
   begin
+    if not FMask then Exit;
     if not Assigned(FViewRoot) then Exit;
     if IsIn then begin
       if (FViewRoot.Background.ItemDefault.Color and $FF000000 = 0) then
@@ -1368,7 +1376,7 @@ begin
   // 淡入淡出背景
   DoFadeInOutBackgroyund();
   // 如果图层完全不可见，设置动画时会出错
-  if (not Assigned(AniView)) or
+  if (not Assigned(AniView)) or (not FMask) or
     ((AniView is TView) and (TView(AniView).Background.ItemDefault.Color and $FF000000 = 0)) then begin
     if Assigned(AEvent) then
       AEvent(Self);
@@ -1435,6 +1443,7 @@ begin
   FCancelable := True;
   FCanceled := False;
   FAnimate := TFrameAniType.FadeInOut;
+  FMask := True;
 end;
 
 destructor TDialog.Destroy;
@@ -1654,17 +1663,17 @@ end;
 
 class function TDialog.ShowView(const AOwner: TComponent; const Target: TControl;
   const ViewClass: TControlClass; XOffset: Single; YOffset: Single;
-  Position: TDialogViewPosition; Cancelable: Boolean; Ani: TFrameAniType): TDialog;
+  Position: TDialogViewPosition; Cancelable: Boolean; Ani: TFrameAniType; Mask: Boolean): TDialog;
 var
   AView: TControl;
 begin
   AView := ViewClass.Create(AOwner);
-  Result := ShowView(AOwner, Target, AView, True, XOffset, YOffset, Position, Cancelable, Ani);
+  Result := ShowView(AOwner, Target, AView, True, XOffset, YOffset, Position, Cancelable, Ani, Mask);
 end;
 
 class function TDialog.ShowView(const AOwner: TComponent; const Target, View: TControl;
   AViewAutoFree: Boolean; XOffset: Single; YOffset: Single;
-  Position: TDialogViewPosition; Cancelable: Boolean; Ani: TFrameAniType): TDialog;
+  Position: TDialogViewPosition; Cancelable: Boolean; Ani: TFrameAniType; Mask: Boolean): TDialog;
 var
   Dialog: TDialog;
   X, Y, PW, PH: Single;
@@ -1678,6 +1687,8 @@ begin
   Dialog.FViewRoot := TDialogView.Create(AOwner);
   Dialog.FViewRoot.Dialog := Dialog;
   Dialog.FViewRoot.BeginUpdate;
+  //Dialog.FViewRoot.FDisableAlign := True;
+
   Dialog.FViewRoot.OnClick := Dialog.DoRootClick;
   Dialog.FViewRoot.Parent := Dialog.GetFirstParent;
   if Dialog.FViewRoot.Parent = nil then begin
@@ -1782,10 +1793,15 @@ begin
   end;
 
   View.Position.Point := TPointF.Create(X, Y);
+  if View is TFrameView then
+    TFrameViewTmp(View).DoShow();
 
   Dialog.FAnimate := Ani;
+  Dialog.FMask := Mask;
   Dialog.Cancelable := Cancelable;
-  Dialog.SetBackColor(GetDefaultStyleMgr.FDialogMaskColor);
+  if Mask then
+    Dialog.SetBackColor(GetDefaultStyleMgr.FDialogMaskColor);
+  //Dialog.FViewRoot.FDisableAlign := True;
   Dialog.InitOK;
   Dialog.AnimatePlay(Dialog.FAnimate, True, nil);
   Result := Dialog;

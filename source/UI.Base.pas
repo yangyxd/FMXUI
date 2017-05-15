@@ -29,7 +29,7 @@ uses
   Androidapi.JNI.Os,
   FMX.Helpers.Android,
   {$ENDIF}
-  FMX.BehaviorManager, FMX.StdActns,
+  FMX.BehaviorManager, FMX.StdActns, FMX.Menus,
   FMX.Utils, FMX.ImgList, FMX.MultiResBitmap, FMX.ActnList, System.Rtti, FMX.Consts,
   FMX.TextLayout, FMX.Objects, System.ImageList, System.RTLConsts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, System.Math,
@@ -47,6 +47,7 @@ type
   TView = class;
   TViewGroup = class;
 
+  TDrawableBase = class;
   TDrawable = class;
   TDrawableIcon = class;
   TViewColor = class;
@@ -113,14 +114,34 @@ type
     property Bitmap: TPatch9Bitmap read GetBitmap write SetBitmap stored IsPatch9BitmapStored;
   end;
 
-  TViewImagesBrush = class(TBrush)
+  TCustomActionEx = class(FMX.Menus.TMenuItem);
+
+  TViewImagesBrush = class(TBrush, IInterface, IGlyph, IInterfaceComponentReference)
   private
-    FImageIndex: Integer;
-    procedure SetImageIndex(const Value: Integer);
+    FImageIndex: TImageIndex;
+    [Weak] FOwner: TObject;
+  protected
+    { IInterface }
+    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+    { IInterfaceComponentReference }
+    function GetComponent: TComponent;
+    {IGlyph}
+    function GetImageIndex: TImageIndex;
+    procedure SetImageIndex(const Value: TImageIndex);
+    procedure SetImages(const Value: TCustomImageList);
+    procedure ImagesChanged; virtual;
+    function GetImageList: TBaseImageList; inline;
+    procedure SetImageList(const Value: TBaseImageList);
+    function IGlyph.GetImages = GetImageList;
+    procedure IGlyph.SetImages = SetImageList;
   public
     constructor Create(const ADefaultKind: TBrushKind; const ADefaultColor: TAlphaColor);
+    property Owner: TObject read FOwner write FOwner;
+    property Images: TBaseImageList read GetImageList write SetImageList;
   published
-    property ImageIndex: Integer read FImageIndex write SetImageIndex default -1;
+    property ImageIndex: TImageIndex read FImageIndex write SetImageIndex default -1;
   end;
 
   /// <summary>
@@ -358,7 +379,7 @@ type
     function GetImages: TCustomImageList;
     function GetIsEmpty: Boolean;
     procedure SetBrush(const Value: TBrush);
-    function GetImageIndexEx: Integer;
+    function GetImageIndexEx: TImageIndex;
   protected
     { IInterfaceComponentReference }
     function GetComponent: TComponent;
@@ -381,7 +402,7 @@ type
       const XRadius, YRadius: Single; const ACorners: TCorners;
       const AOpacity: Single = 1; const ACornerType: TCornerType = TCornerType.Round); virtual;
     property IsEmpty: Boolean read GetIsEmpty;
-    property ImageIndex: Integer read GetImageIndexEx;
+    property ImageIndex: TImageIndex read GetImageIndexEx;
   published
     property Images: TCustomImageList read GetImages write SetImages;
     property Brush: TBrush read GetBrush write SetBrush;
@@ -1512,6 +1533,18 @@ type
     property ForceColumnSize: Boolean read FForceColumnSize write SetForceColumnSize default False;
   end;
 
+type
+  /// <summary>
+  /// 多窗口共用的 ImageList
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TShareImageList = class(TImageList)
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    class function GetShareImageList: TList<TShareImageList>;
+  end;
+
 function ViewStateToString(const State: TViewStates): string;
 function ComponentStateToString(const State: TComponentState): string;
 
@@ -1540,6 +1573,9 @@ var
   {$IFDEF ANDROID}
   FAudioManager: JAudioManager = nil;
   {$ENDIF}
+
+var
+  FShareImageList: TList<TShareImageList>;
 
 function ComponentStateToString(const State: TComponentState): string;
 
@@ -2476,6 +2512,7 @@ begin
     Value := TViewImagesBrush.Create(TBrushKind(FDefaultKind), FDefaultColor)
   else
     Value := TViewImagesBrush.Create(TBrushKind.None, TAlphaColorRec.Null);
+  TViewImagesBrush(Value).FOwner := Self;
   Value.OnChanged := DoChange;
 end;
 
@@ -3368,7 +3405,7 @@ begin
   inherited DoMouseEnter;
   if (csDesigning in ComponentState) or FInVisible then Exit;
   IncViewState(TViewState.Hovered);
-  if CanRePaintBk(Self, TViewState.Hovered) then Invalidate;
+  if CanRePaintBk(Self, TViewState.Hovered) then Repaint;
 end;
 
 procedure TView.DoMouseLeave;
@@ -3378,7 +3415,7 @@ begin
   if (csDesigning in ComponentState) or FInVisible then Exit;
   if CanRePaintBk(Self, FDrawState) then begin
     FInvaliding := False;
-    Invalidate;
+    Repaint;
   end;
 end;
 
@@ -3389,7 +3426,7 @@ begin
     DecViewState(TViewState.Pressed);
     if (csDesigning in ComponentState) or FInVisible then
       Exit;
-    if CanRePaintBk(Self, FDrawState) then Repaint;
+    if CanRePaintBk(Self, TViewState.Pressed) then Repaint;
   end;
 end;
 
@@ -3764,10 +3801,15 @@ begin
   if State = TViewState.None then Exit;
   if (csDestroying in ComponentState) or (csDesigning in ComponentState) then Exit;
   for I := 0 to Controls.Count - 1 do begin
-    if (State = TViewState.Pressed) or (Controls.Items[I].HitTest) then // yangyxd (and)
+    if (State = TViewState.Pressed) and Controls.Items[I].HitTest then
       Continue;
-    if Supports(Controls.Items[I], IView, View) then
+    if Supports(Controls.Items[I], IView, View) then begin
+      if (State = TViewState.Hovered) and (Assigned(View.Background)) and Assigned(View.Background.FHovered) then begin
+        if View.Background.FHovered.Kind <> TBrushKind.None then
+          Continue;
+      end;
       View.IncViewState(State);
+    end;
   end;
 end;
 
@@ -4837,7 +4879,7 @@ var
   V: Single;
 begin
   //if IsUpdating or (csDestroying in ComponentState) then
-  if (csDestroying in ComponentState) then
+  if (csDestroying in ComponentState) or (csLoading in ComponentState) then
     Exit;
   if not Assigned(ParentView) then begin
     P := ParentControl;
@@ -4861,7 +4903,7 @@ begin
           AWidth := Padding.Left + Padding.Right;
       end;
     end else begin
-      IsASW := ((WidthSize = TViewSize.WrapContent)) and (FOrientation = TOrientation.Vertical);
+      IsASW := ((WidthSize = TViewSize.WrapContent) and (FOrientation = TOrientation.Vertical));
       if IsASW then
         AWidth := 0;
     end;
@@ -4885,7 +4927,7 @@ begin
 
     // 如果有需要自动大小的，则将子控件大小加起来
     if IsAW or IsAH or IsASW or IsASH then begin
-      for I := 0 to ChildrenCount - 1 do begin
+      for I := 0 to ControlsCount - 1 do begin
         Control := Controls[I];
         if not Control.Visible then Continue;
         {$IFDEF MSWINDOWS}
@@ -6399,13 +6441,76 @@ begin
   FImageIndex := -1;
 end;
 
-procedure TViewImagesBrush.SetImageIndex(const Value: Integer);
+function TViewImagesBrush.GetComponent: TComponent;
+var
+  LI: IInterfaceComponentReference;
+begin
+  if Assigned(FOwner) and (Supports(FOwner, IInterfaceComponentReference, LI)) then
+    Result := LI.GetComponent
+  else
+    Result := nil;
+end;
+
+function TViewImagesBrush.GetImageIndex: TImageIndex;
+begin
+  Result := FImageIndex;
+end;
+
+function TViewImagesBrush.GetImageList: TBaseImageList;
+var
+  LI: IGlyph;
+begin
+  if Assigned(FOwner) and (Supports(FOwner, IGlyph, LI)) then
+    Result := LI.Images
+  else
+    Result := nil;
+end;
+
+procedure TViewImagesBrush.ImagesChanged;
+begin
+  if Assigned(OnChanged) then
+    OnChanged(Self);
+end;
+
+function TViewImagesBrush.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then Result := S_OK
+  else Result := E_NOINTERFACE
+end;
+
+procedure TViewImagesBrush.SetImageIndex(const Value: TImageIndex);
 begin
   if FImageIndex <> Value then begin
     FImageIndex := Value;
     if Assigned(OnChanged) then
       OnChanged(Self);
   end;
+end;
+
+procedure TViewImagesBrush.SetImageList(const Value: TBaseImageList);
+var
+  LI: IGlyph;
+begin
+  if Assigned(FOwner) and (Supports(FOwner, IGlyph, LI)) then
+    LI.Images := Value;
+end;
+
+procedure TViewImagesBrush.SetImages(const Value: TCustomImageList);
+var
+  LI: IGlyph;
+begin
+  if Assigned(FOwner) and (Supports(FOwner, IGlyph, LI)) then
+    LI.Images := Value;
+end;
+
+function TViewImagesBrush._AddRef: Integer;
+begin
+  Result := -1;
+end;
+
+function TViewImagesBrush._Release: Integer;
+begin
+  Result := -1;
 end;
 
 { TScrollCalculations }
@@ -7169,6 +7274,7 @@ begin
   if Assigned(Value) then
     FreeAndNil(Value);
   Value := TViewImagesBrush.Create(TBrushKind.None, TAlphaColorRec.Null);
+  TViewImagesBrush(Value).FOwner := Self;
   Value.OnChanged := DoChange;
 end;
 
@@ -7233,7 +7339,7 @@ begin
   Result := FImageLink.ImageIndex;
 end;
 
-function TDrawableBrush.GetImageIndexEx: Integer;
+function TDrawableBrush.GetImageIndexEx: TImageIndex;
 begin
   Result := FImageLink.ImageIndex;
 end;
@@ -7291,8 +7397,28 @@ begin
   FImageLink.Images := Value;
 end;
 
+{ TShareImageList }
+
+constructor TShareImageList.Create(AOwner: TComponent);
+begin
+  inherited;
+  if Assigned(Self) and (FShareImageList.IndexOf(Self) < 0) then
+    FShareImageList.Add(Self);
+end;
+
+destructor TShareImageList.Destroy;
+begin
+  FShareImageList.Remove(Self);
+  inherited;
+end;
+
+class function TShareImageList.GetShareImageList: TList<TShareImageList>;
+begin
+  Result := FShareImageList;
+end;
 
 initialization
+  FShareImageList := TList<TShareImageList>.Create;
   {$IFDEF ANDROID}
   TView.InitAudioManager();
   DoInitFrameStatusHeight();
@@ -7303,5 +7429,6 @@ finalization
   {$IFDEF ANDROID}
   FAudioManager := nil;
   {$ENDIF}
+  FreeAndNil(FShareImageList);
 
 end.

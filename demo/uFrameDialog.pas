@@ -16,7 +16,6 @@ type
     VertScrollBox1: TVertScrollBox;
     LinearLayout2: TLinearLayout;
     ButtonView1: TButtonView;
-    ImageList1: TImageList;
     ButtonView2: TButtonView;
     ButtonView3: TButtonView;
     ButtonView4: TButtonView;

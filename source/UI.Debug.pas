@@ -25,7 +25,7 @@ uses
 
 {$IFDEF UseUDP}
 const
-  UdpSvrAddr = '192.168.1.16';
+  UdpSvrAddr = '127.0.0.1';
   UdpSvrPort = 6699;
 {$ENDIF}
 
@@ -332,9 +332,13 @@ var
 begin
   Msg := Format(sLineLogFmt, [FormatDateTime(sLogTimeFmt, Now), SevToStr[sev], text{$IFDEF MSWINDOWS}, GetCurrentThreadId{$ENDIF}]);
   Lock;
-  prepare;
-  udp.Send(Faddr, FPort, Msg);
-  UnLock;
+  try
+    prepare;
+    if udp.Active then
+      udp.Send(Faddr, FPort, Msg);
+  finally
+    UnLock;
+  end;
 end;
 
 procedure TRemoteDebugTrace.SetBufferSize(Value: Integer);
@@ -347,9 +351,13 @@ var
 begin
   Msg := Format(sLineLogFmt, [FormatDateTime(sLogTimeFmt, Now), SevToStr[sev], text{$IFDEF MSWINDOWS}, GetCurrentThreadId{$ENDIF}]);
   Lock;
-  prepare;
-  udp.Send(FAddr, FPort, Msg);
-  UnLock;
+  try
+    prepare;
+    if udp.Active then
+      udp.Send(FAddr, FPort, Msg);
+  finally
+    UnLock;
+  end;
 end;
 {$ENDIF}
 

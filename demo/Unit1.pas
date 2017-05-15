@@ -7,11 +7,12 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, UI.Base,
   FMX.Controls.Presentation, FMX.StdCtrls, UI.Standard, UI.Toast, FMX.Layouts,
-  UI.ListView, UI.Dialog;
+  UI.ListView, UI.Dialog, System.ImageList, FMX.ImgList;
 
 type
   TForm1 = class(TForm)
     ToastManager1: TToastManager;
+    ShareImageList1: TShareImageList;
     procedure FormShow(Sender: TObject);
     procedure FormCreate(Sender: TObject);
   private

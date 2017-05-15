@@ -13,6 +13,7 @@ type
     TextView17: TTextView;
     tvTitle: TTextView;
     View1: TView;
+    RelativeLayout1: TRelativeLayout;
     ButtonView1: TButtonView;
     ButtonView2: TButtonView;
     procedure TextView17Click(Sender: TObject);

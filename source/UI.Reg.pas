@@ -18,18 +18,25 @@ procedure Register;
 implementation
 
 uses
+  UI.Debug,
+  System.SysUtils, System.Actions,
   UI.Base, UI.Standard, UI.Edit, UI.Dialog,
   UI.ListView,
-  UI.ListViewEx,
+  // UI.ListViewEx,
   UI.Toast,
   UI.Design.Bounds,
+  UI.Frame,
   {$IFDEF MSWINDOWS}
   Windows, Registry,
   {$ENDIF}
   ComponentDesigner, DesignIntf, DesignEditors,
   DesignerTypes, PropertyCategories, VCLEditors,
   System.Classes, System.Types, System.TypInfo, System.UITypes,
-  System.Generics.Collections,
+  System.Generics.Collections, System.RTLConsts,
+
+  ActionEditors, FMX.ActnList, FMX.ImgList,
+  Vcl.ComCtrls, Vcl.Graphics, FMX.Graphics,
+
   FMX.Ani, FMX.Types, FMX.Styles, FMX.Controls, FMX.StdCtrls, FMX.Edit;
 
 resourcestring
@@ -55,6 +62,49 @@ type
     function GetAttributes: TPropertyAttributes; override;
   end;
 
+//  TImageIndexExProperty = class(TIntegerProperty, ICustomPropertyDrawing,
+//    ICustomPropertyListDrawing, ICustomPropertyDrawing80)
+//  private
+//    LI: IGlyph;
+//  public
+//    function GetAttributes: TPropertyAttributes; override;
+//    procedure GetProperties(Proc: TGetPropProc); override;
+//    function GetValue: string; override;
+//    procedure GetValues(Proc: TGetStrProc); override;
+//    procedure SetValue(const Value: string); override;
+//    { ICustomPropertyListDrawing }
+//    procedure ListMeasureHeight(const Value: string; ACanvas: TCanvas;
+//      var AHeight: Integer);
+//    procedure ListMeasureWidth(const Value: string; ACanvas: TCanvas;
+//      var AWidth: Integer);
+//    procedure ListDrawValue(const Value: string; ACanvas: TCanvas;
+//      const ARect: TRect; ASelected: Boolean);
+//    { ICustomPropertyDrawing }
+//    procedure PropDrawName(ACanvas: TCanvas; const ARect: TRect;
+//      ASelected: Boolean);
+//    procedure PropDrawValue(ACanvas: TCanvas; const ARect: TRect;
+//      ASelected: Boolean);
+//    { ICustomPropertyDrawing80 }
+//    function PropDrawNameRect(const ARect: TRect): TRect;
+//    function PropDrawValueRect(const ARect: TRect): TRect;
+//    { IProperty160 }
+//    procedure SetPropertyPath(const Value: string);
+//  end;
+
+  TLayoutComponentProperty = class(TComponentProperty)
+  protected
+  public
+    procedure GetValues(Proc: TGetStrProc); override;
+  end;
+
+  TShareImageListProperty = class(TComponentProperty)
+  public
+    function GetValue: string; override;
+    procedure GetValues(Proc: TGetStrProc); override;
+    procedure SetValue(const Value: string); override;
+  end;
+
+
 {$IFDEF MSWINDOWS}
 // 设置环境变量
 procedure SetEnvPath(const sName, sValue: string);
@@ -79,7 +129,7 @@ end;
 
 procedure Register;
 begin
-  RegisterComponents(PageName, [TView, TLinearLayout, TRelativeLayout, TGridsLayout]);
+  RegisterComponents(PageName, [TView, TViewGroup, TLinearLayout, TRelativeLayout, TGridsLayout]);
 
   RegisterComponents(PageName, [TImageView]);
   RegisterComponents(PageName, [TTextView]);
@@ -90,19 +140,28 @@ begin
   RegisterComponents(PageName, [TMultiPathView]);
 
   RegisterComponents(PageName, [TEditView]);
-  RegisterComponents(PageName, [TListExView]);
   RegisterComponents(PageName, [TListViewEx]);
 
   RegisterComponents(PageName, [TDialogStyleManager]);
   RegisterComponents(PageName, [TToastManager]);
 
   RegisterComponents(PageName, [TDrawableBrush]);
+  RegisterComponents(PageName, [TShareImageList]);
 
   RegisterComponentEditor(TView, TViewControlEditor);
   RegisterPropertyEditor(TypeInfo(TPatchBounds), TPersistent, '', TPatchBoundsProperty);
+  RegisterPropertyEditor(TypeInfo(TControl), TViewLayout, '', TLayoutComponentProperty);
+
+  RegisterPropertyEditor(TypeInfo(TCustomImageList), TPersistent, '', TShareImageListProperty);
+
+  //RegisterPropertyEditor(TypeInfo(TImageIndex), TViewImagesBrush, '', TAlphaColorProperty);
+  //RegisterSelectionEditor(TView, TLayoutFilter);
   //RegisterComponentEditor(TCustomButton, TViewControlEditor);
   //RegisterComponentEditor(TCustomEdit, TViewControlEditor);
-  //RegisterPropertyEditor(TypeInfo(TImageIndex), TView, '', TImageIndexProperty);
+  //RegisterPropertyEditor(TypeInfo(WideString), TADOTable, 'TableName', TTableNameProperty);
+  //RegisterPropertyEditor(TypeInfo(TBrushKind), TStrokeBrush, '', TBrushKindProperty);
+  //RegisterComponentEditor(TCustomBindingsList, TBindCompListEditor);
+  //RegisterSelectionEditor(TBaseLinkingBindSource, TBindCompFactorySelectionEditor);
 
   RegisterPropertiesInCategory(sFMXUICategoryName, [
       { TView }
@@ -346,8 +405,8 @@ var
   Dialog: TBoundsDesigner;
 begin
   Component := GetComponent(0);
-  if not (Component is TPatch9Bitmap) then 
-    Exit;  
+  if not (Component is TPatch9Bitmap) then
+    Exit;
   Dialog := TBoundsDesigner.Create(nil);
   try
     Dialog.Caption := '9宫格绘图编辑器';
@@ -364,6 +423,88 @@ end;
 function TPatchBoundsProperty.GetAttributes: TPropertyAttributes;
 begin
   Result := [paMultiSelect, paSubProperties, paReadOnly, paDialog];
+end;
+
+{ TLayoutComponentProperty }
+
+procedure TLayoutComponentProperty.GetValues(Proc: TGetStrProc);
+var
+  I, J: Integer;
+  P: TComponent;
+  Item: TFmxObject;
+  IsSel: Boolean;
+  Selects: IDesignerSelections;
+begin
+  if Assigned(Designer.CurrentParent) then
+    P := Designer.CurrentParent;
+    Selects := GetSelections;
+    for I := 0 to TControl(P).ChildrenCount - 1 do begin
+      Item := TControl(P).Children.Items[I];
+      if (Item is TControl) and (Item.Name <> '') then begin
+        IsSel := False;
+        if Assigned(Selects) and (Selects.Count > 0) then begin
+          for j := 0 to Selects.Count - 1 do
+            if Item = Selects.Items[J] then begin
+              IsSel := True;
+              Break;
+            end;
+        end;
+        if not IsSel then
+          Proc(Item.Name);
+      end;
+    end;
+end;
+
+{ TShareImageListProperty }
+
+function TShareImageListProperty.GetValue: string;
+begin
+  Result := Designer.GetComponentName(GetComponentReference);
+end;
+
+procedure TShareImageListProperty.GetValues(Proc: TGetStrProc);
+var
+  I: Integer;
+  AList: TList<TShareImageList>;
+begin
+  Designer.GetComponentNames(GetTypeData(GetPropType), Proc);
+  AList := TShareImageList.GetShareImageList;
+  if Assigned(AList) then begin
+    for I := 0 to AList.Count - 1 do
+      if Assigned(AList[I].Owner) then
+        Proc(AList[I].Owner.ClassName + ':' + AList[I].Name);
+  end;
+end;
+
+procedure TShareImageListProperty.SetValue(const Value: string);
+var
+  Component: TComponent;
+  I: Integer;
+  AList: TList<TShareImageList>;
+  V: string;
+begin
+  AList := TShareImageList.GetShareImageList;
+  Component := nil;
+  if Value <> '' then begin
+    if Assigned(AList) and (Pos(':', Value) > 0) then begin
+      for I := 0 to AList.Count - 1 do begin
+        if Assigned(AList[I].Owner) then
+          V := LowerCase(AList[I].Owner.ClassName + ':' + AList[I].Name)
+        else
+          V := '';
+        if V = LowerCase(Value) then begin
+          Component := AList[I];
+          Break;
+        end;
+      end;
+    end;
+
+    if Component = nil then
+      Component := Designer.GetComponent(Value);
+    if not (Component is GetTypeData(GetPropType)^.ClassType) then
+      raise EDesignPropertyError.CreateRes(@SInvalidPropertyValue);
+  end;
+  SetOrdValue(LongInt(Component));
 end;
 
 initialization

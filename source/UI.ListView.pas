@@ -576,6 +576,26 @@ type
   end;
 
   /// <summary>
+  /// 带图标的字符串列表适配器
+  /// </summary>
+  TStringsListIconAdapter = class(TStringsListAdapter)
+  private
+    FImages: TCustomImageList;
+    FIconSize: TSize;
+    FPadding: Integer;
+    FPosition: TDrawablePosition;
+  protected
+    function GetItemImageIndex(const Index: Integer): Integer; virtual;
+    function GetView(const Index: Integer; ConvertView: TViewBase; Parent: TViewGroup): TViewBase; override;
+    procedure DoInitData; override;
+  public
+    property Images: TCustomImageList read FImages write FImages;
+    property IconSize: TSize read FIconSize write FIconSize;
+    property Padding: Integer read FPadding write FPadding;
+    property Position: TDrawablePosition read FPosition write FPosition;
+  end;
+
+  /// <summary>
   /// 多选列表适配器
   /// </summary>
   TStringsListCheckAdapter = class(TStringsListAdapter)
@@ -3267,6 +3287,54 @@ begin
   inherited NotifyDataChanged;
   if Assigned(ListView) then
     ListView.Invalidate;
+end;
+
+{ TStringsListIconAdapter }
+
+procedure TStringsListIconAdapter.DoInitData;
+begin
+  inherited;
+  FIconSize.Width := 16;
+  FIconSize.Height := 16;
+  FPadding := 8;
+end;
+
+function TStringsListIconAdapter.GetItemImageIndex(
+  const Index: Integer): Integer;
+begin
+  Result := Index;
+end;
+
+function TStringsListIconAdapter.GetView(const Index: Integer;
+  ConvertView: TViewBase; Parent: TViewGroup): TViewBase;
+var
+  ViewItem: TListTextItem;
+begin
+  if (ConvertView = nil) or (not (ConvertView is TListTextItem)) then begin
+    ViewItem := TListTextItem.Create(Parent);
+    ViewItem.Parent := Parent;
+    ViewItem.Width := Parent.Width;
+    ViewItem.MinHeight := TListTextItem.C_MinHeight;
+    ViewItem.TextSettings.Font.Size := TListTextItem.C_FontSize;
+    ViewItem.TextSettings.WordWrap := True;
+    ViewItem.Gravity := TLayoutGravity.CenterVertical;
+    ViewItem.Padding.Rect := RectF(8, 8, 8, 8);
+    if Assigned(FImages) then begin
+      ViewItem.Drawable.Images := FImages;
+      ViewItem.Drawable.Position := FPosition;
+      ViewItem.Drawable.SizeWidth := FIconSize.Width;
+      ViewItem.Drawable.SizeHeight := FIconSize.Height;
+      ViewItem.Drawable.Padding := FPadding;
+    end;
+    ViewItem.CanFocus := False;
+  end else
+    ViewItem := ConvertView as TListTextItem;
+  if Assigned(FImages) then
+  ViewItem.HeightSize := TViewSize.WrapContent;
+  ViewItem.Text := Items[Index];
+  if Assigned(FImages) then
+    TViewImagesBrush(ViewItem.Drawable.ItemDefault).ImageIndex := GetItemImageIndex(Index);
+  Result := ViewItem;
 end;
 
 end.
