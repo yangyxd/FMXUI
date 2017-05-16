@@ -640,6 +640,7 @@ type
     function GetNode(const Index: Integer): TTreeListNode<T>;
     procedure SetNode(const Index: Integer; const Value: TTreeListNode<T>);
     procedure SetParent(const Value: TTreeListNode<T>);
+    function GetParentIndex: Integer;
   protected
     FParent: TTreeListNode<T>;
     FNodes: TList<TTreeListNode<T>>;
@@ -660,8 +661,8 @@ type
     procedure Remove(const ANode: TTreeListNode<T>);
     procedure Insert(const Index: Integer; const ANode: TTreeListNode<T>);
 
-    function AddNode(const AData: T): Integer;
-    function InsertNode(const Index: Integer; const AData: T): Integer;
+    function AddNode(const AData: T): TTreeListNode<T>;
+    function InsertNode(const Index: Integer; const AData: T): TTreeListNode<T>;
 
     property Data: T read FData write FData;
     property Count: Integer read GetCount;
@@ -669,6 +670,7 @@ type
     property Expanded: Boolean read FExpanded write FExpanded;
     property Parent: TTreeListNode<T> read FParent write SetParent;
     property Level: Integer read FLevel;
+    property Index: Integer read GetParentIndex;
   end;
 
   /// <summary>
@@ -1296,7 +1298,7 @@ begin
   if FDividerHeight <> Value then begin
     FDividerHeight := Value;
     if not (csLoading in ComponentState) then begin     
-      FLocalDividerHeight := GetDividerHeight;
+      FLocalDividerHeight := FDividerHeight;
       RealignContent;
       Invalidate;
     end;
@@ -2968,16 +2970,14 @@ begin
   end;
 end;
 
-function TTreeListNode<T>.AddNode(const AData: T): Integer;
-var
-  Item: TTreeListNode<T>;
+function TTreeListNode<T>.AddNode(const AData: T): TTreeListNode<T>;
 begin
   if not Assigned(FNodes) then CreateNodes;
-  Item := TTreeListNode<T>.Create;
-  Item.FData := AData;
-  Item.FParent := Self;
-  Item.UpdateLevel;
-  Result := FNodes.Add(Item);
+  Result := TTreeListNode<T>.Create;
+  Result.FData := AData;
+  Result.FParent := Self;
+  Result.UpdateLevel;
+  FNodes.Add(Result);
 end;
 
 procedure TTreeListNode<T>.Clear;
@@ -3031,6 +3031,14 @@ begin
     Result := nil;
 end;
 
+function TTreeListNode<T>.GetParentIndex: Integer;
+begin
+  if Assigned(FParent) then
+    Result := FParent.FNodes.IndexOf(Self)
+  else
+    Result := -1;
+end;
+
 procedure TTreeListNode<T>.Insert(const Index: Integer;
   const ANode: TTreeListNode<T>);
 begin
@@ -3043,21 +3051,18 @@ begin
     FNodes.Insert(Index, ANode);
 end;
 
-function TTreeListNode<T>.InsertNode(const Index: Integer; const AData: T): Integer;
-var
-  Item: TTreeListNode<T>;
+function TTreeListNode<T>.InsertNode(const Index: Integer; const AData: T): TTreeListNode<T>;
 begin
   if not Assigned(FNodes) then CreateNodes;
-  Item := TTreeListNode<T>.Create;
-  Item.FData := AData;
-  Item.FParent := Self;
+  Result := TTreeListNode<T>.Create;
+  Result.FData := AData;
+  Result.FParent := Self;
   if (Index < 0) or (Index >= FNodes.Count) then
-    Result := FNodes.Add(Item)
+    FNodes.Add(Result)
   else begin
-    FNodes.Insert(Index, Item);
-    Result := Index;
+    FNodes.Insert(Index, Result);
   end;
-  Item.UpdateLevel;
+  Result.UpdateLevel;
 end;
 
 procedure TTreeListNode<T>.Remove(const ANode: TTreeListNode<T>);

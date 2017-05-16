@@ -60,14 +60,14 @@ type
     function GetPointer(const Key: string): Pointer;
     function GetBoolean(const Key: string; const DefaultValue: Boolean = False): Boolean;
 
-    procedure Put(const Key: string; const Value: string); overload; inline;
-    procedure Put(const Key: string; const Value: Integer); overload; inline;
-    procedure Put(const Key: string; const Value: Cardinal); overload; inline;
-    procedure Put(const Key: string; const Value: Int64); overload; inline;
-    procedure Put(const Key: string; const Value: Double); overload; inline;
-    procedure Put(const Key: string; const Value: NativeUInt); overload; inline;
-    procedure Put(const Key: string; const Value: Boolean); overload; inline;
-    procedure PutDateTime(const Key: string; const Value: TDateTime); inline;
+    function Put(const Key: string; const Value: string): TFrameStateData; overload; inline;
+    function Put(const Key: string; const Value: Integer): TFrameStateData; overload; inline;
+    function Put(const Key: string; const Value: Cardinal): TFrameStateData; overload; inline;
+    function Put(const Key: string; const Value: Int64): TFrameStateData; overload; inline;
+    function Put(const Key: string; const Value: Double): TFrameStateData; overload; inline;
+    function Put(const Key: string; const Value: NativeUInt): TFrameStateData; overload; inline;
+    function Put(const Key: string; const Value: Boolean): TFrameStateData; overload; inline;
+    function PutDateTime(const Key: string; const Value: TDateTime): TFrameStateData; inline;
   end;
 
   TFrameParamsHelper = class helper for TFrameParams
@@ -81,14 +81,14 @@ type
     function GetPointer(const Key: string): Pointer;
     function GetBoolean(const Key: string; const DefaultValue: Boolean = False): Boolean;
 
-    procedure Put(const Key: string; const Value: string); overload;
-    procedure Put(const Key: string; const Value: Integer); overload;
-    procedure Put(const Key: string; const Value: Cardinal); overload;
-    procedure Put(const Key: string; const Value: Int64); overload;
-    procedure Put(const Key: string; const Value: Double); overload;
-    procedure Put(const Key: string; const Value: NativeUInt); overload;
-    procedure Put(const Key: string; const Value: Boolean); overload;
-    procedure PutDateTime(const Key: string; const Value: TDateTime);
+    function Put(const Key: string; const Value: string): TFrameParams; overload;
+    function Put(const Key: string; const Value: Integer): TFrameParams; overload;
+    function Put(const Key: string; const Value: Cardinal): TFrameParams; overload;
+    function Put(const Key: string; const Value: Int64): TFrameParams; overload;
+    function Put(const Key: string; const Value: Double): TFrameParams; overload;
+    function Put(const Key: string; const Value: NativeUInt): TFrameParams; overload;
+    function Put(const Key: string; const Value: Boolean): TFrameParams; overload;
+    function PutDateTime(const Key: string; const Value: TDateTime): TFrameParams;
   end;
 
   /// <summary>
@@ -215,6 +215,10 @@ type
     /// Frame 隐藏显示时触发 (尽量使用 DoFinish )
     /// </summary>
     procedure DoHide(); virtual;
+    /// <summary>
+    /// 检测当前Frame是否允许关闭
+    /// </summary>
+    function DoCanFinish(): Boolean; virtual;
     /// <summary>
     /// Frame 需要关闭时，在关闭之前触发
     /// </summary>
@@ -721,10 +725,10 @@ begin
 
       Result := Create(Parent);
       Result.Name := '';
+      Result.TagObject := Params;
       Result.Parent := Parent;
       Result.Align := TAlignLayout.Client;
       Result.FLastView := nil;
-      Result.TagObject := Params;
     except
       if Assigned(Params) then
         Params.Free;
@@ -815,6 +819,11 @@ begin
   inherited;
 end;
 
+function TFrameView.DoCanFinish: Boolean;
+begin
+  Result := True;
+end;
+
 procedure TFrameView.DoCreate;
 begin
 end;
@@ -874,6 +883,8 @@ end;
 
 procedure TFrameView.Finish;
 begin
+  if not DoCanFinish then
+    Exit;
   if Ord(FDefaultAni) <> -1 then
     Finish(FDefaultAni)
   else
@@ -1804,44 +1815,52 @@ begin
     Result := '';
 end;
 
-procedure TFrameStateDataHelper.Put(const Key: string; const Value: Cardinal);
+function TFrameStateDataHelper.Put(const Key: string; const Value: Cardinal): TFrameStateData;
 begin
+  Result := Self;
   AddOrSetValue(Key, GetDataValue(fdt_Long, Value));
 end;
 
-procedure TFrameStateDataHelper.Put(const Key: string; const Value: Integer);
+function TFrameStateDataHelper.Put(const Key: string; const Value: Integer): TFrameStateData;
 begin
+  Result := Self;
   AddOrSetValue(Key, GetDataValue(fdt_Integer, Value));
 end;
 
-procedure TFrameStateDataHelper.Put(const Key, Value: string);
+function TFrameStateDataHelper.Put(const Key, Value: string): TFrameStateData;
 begin
+  Result := Self;
   AddOrSetValue(Key, GetDataValue(fdt_String, Value));
 end;
 
-procedure TFrameStateDataHelper.Put(const Key: string; const Value: NativeUInt);
+function TFrameStateDataHelper.Put(const Key: string; const Value: NativeUInt): TFrameStateData;
 begin
+  Result := Self;
   AddOrSetValue(Key, GetDataValue(fdt_Number, Value));
 end;
 
-procedure TFrameStateDataHelper.Put(const Key: string; const Value: Boolean);
+function TFrameStateDataHelper.Put(const Key: string; const Value: Boolean): TFrameStateData;
 begin
+  Result := Self;
   AddOrSetValue(Key, GetDataValue(fdt_Boolean, Value));
 end;
 
-procedure TFrameStateDataHelper.Put(const Key: string; const Value: Int64);
+function TFrameStateDataHelper.Put(const Key: string; const Value: Int64): TFrameStateData;
 begin
+  Result := Self;
   AddOrSetValue(Key, GetDataValue(fdt_Int64, Value));
 end;
 
-procedure TFrameStateDataHelper.Put(const Key: string; const Value: Double);
+function TFrameStateDataHelper.Put(const Key: string; const Value: Double): TFrameStateData;
 begin
+  Result := Self;
   AddOrSetValue(Key, GetDataValue(fdt_Float, Value));
 end;
 
-procedure TFrameStateDataHelper.PutDateTime(const Key: string;
-  const Value: TDateTime);
+function TFrameStateDataHelper.PutDateTime(const Key: string;
+  const Value: TDateTime): TFrameStateData;
 begin
+  Result := Self;
   AddOrSetValue(Key, GetDataValue(fdt_DateTime, Value));
 end;
 
@@ -1926,44 +1945,52 @@ begin
     Result := '';
 end;
 
-procedure TFrameParamsHelper.Put(const Key: string; const Value: Integer);
+function TFrameParamsHelper.Put(const Key: string; const Value: Integer): TFrameParams;
 begin
+  Result := Self;
   AddOrSetValue(Key, Value);
 end;
 
-procedure TFrameParamsHelper.Put(const Key, Value: string);
+function TFrameParamsHelper.Put(const Key, Value: string): TFrameParams;
 begin
+  Result := Self;
   AddOrSetValue(Key, Value);
 end;
 
-procedure TFrameParamsHelper.Put(const Key: string; const Value: Cardinal);
+function TFrameParamsHelper.Put(const Key: string; const Value: Cardinal): TFrameParams;
 begin
+  Result := Self;
   AddOrSetValue(Key, Value);
 end;
 
-procedure TFrameParamsHelper.Put(const Key: string; const Value: NativeUInt);
+function TFrameParamsHelper.Put(const Key: string; const Value: NativeUInt): TFrameParams;
 begin
+  Result := Self;
   AddOrSetValue(Key, Value);
 end;
 
-procedure TFrameParamsHelper.Put(const Key: string; const Value: Boolean);
+function TFrameParamsHelper.Put(const Key: string; const Value: Boolean): TFrameParams;
 begin
+  Result := Self;
   AddOrSetValue(Key, Value);
 end;
 
-procedure TFrameParamsHelper.Put(const Key: string; const Value: Int64);
+function TFrameParamsHelper.Put(const Key: string; const Value: Int64): TFrameParams;
 begin
+  Result := Self;
   AddOrSetValue(Key, Value);
 end;
 
-procedure TFrameParamsHelper.Put(const Key: string; const Value: Double);
+function TFrameParamsHelper.Put(const Key: string; const Value: Double): TFrameParams;
 begin
+  Result := Self;
   AddOrSetValue(Key, Value);
 end;
 
-procedure TFrameParamsHelper.PutDateTime(const Key: string;
-  const Value: TDateTime);
+function TFrameParamsHelper.PutDateTime(const Key: string;
+  const Value: TDateTime): TFrameParams;
 begin
+  Result := Self;
   AddOrSetValue(Key, Value);
 end;
 
