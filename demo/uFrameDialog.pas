@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
   UI.Frame, UI.Base, FMX.Controls.Presentation, UI.Standard, FMX.Layouts,
-  System.ImageList, FMX.ImgList;
+  System.ImageList, FMX.ImgList, FMX.Menus, UI.ListView;
 
 type
   TFrmaeDialog = class(TFrame)
@@ -16,6 +16,7 @@ type
     VertScrollBox1: TVertScrollBox;
     LinearLayout2: TLinearLayout;
     ButtonView1: TButtonView;
+    ImageList1: TImageList;
     ButtonView2: TButtonView;
     ButtonView3: TButtonView;
     ButtonView4: TButtonView;
@@ -27,6 +28,8 @@ type
     ButtonView11: TButtonView;
     ButtonView10: TButtonView;
     ButtonView12: TButtonView;
+    PopupMenu1: TPopupMenu;
+    MenuItem1: TMenuItem;
     procedure SpeedButton1Click(Sender: TObject);
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);

@@ -41,7 +41,6 @@ contains
   UI.Dialog in 'UI.Dialog.pas',
   UI.Edit in 'UI.Edit.pas',
   UI.Frame in 'UI.Frame.pas',
-  UI.ListViewEx in 'UI.ListViewEx.pas',
   UI.Reg in 'UI.Reg.pas',
   UI.Standard in 'UI.Standard.pas',
   UI.Toast.Android in 'UI.Toast.Android.pas',

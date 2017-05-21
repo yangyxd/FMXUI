@@ -78,10 +78,31 @@ begin
 end;
 
 procedure TCustomListview.DoCreate;
+var
+  LV: TTextView;
 begin
   inherited;
   FList := TList<TDataItem>.Create();
   FAdapter := TCustomListDataAdapter.Create(FList);
+
+  LV := TTextView.Create(Self);
+  LV.Name := '';
+  LV.Text := 'HeaderView';
+  LV.Gravity := TLayoutGravity.Center;
+  LV.Background.ItemDefault.Color := $ef33ccff;
+  LV.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+  LV.Height := 36;
+  ListView.AddHeaderView(LV);
+
+  LV := TTextView.Create(Self);
+  LV.Name := '';
+  LV.Text := 'FooterView';
+  LV.Gravity := TLayoutGravity.Center;
+  LV.Background.ItemDefault.Color := $ef009966;
+  LV.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+  LV.Height := 42;
+  ListView.AddFooterView(LV);
+
   ListView.Adapter := FAdapter;
   AddItems(20);
 end;
@@ -105,6 +126,8 @@ begin
     procedure (Sender: TObject)
     begin
       AddItems(20);
+      if FList.Count > 50 then
+        ListView.EnablePullLoad := False;
       ListView.PullLoadComplete;
     end
   );
@@ -118,6 +141,7 @@ begin
     begin
       FList.Clear;
       AddItems(20);
+      ListView.EnablePullLoad := True;
       ListView.PullRefreshComplete;
     end
   );

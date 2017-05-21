@@ -2028,3 +2028,4 @@ finalization
   FreeAndNil(FPublicState);
 
 end.
+

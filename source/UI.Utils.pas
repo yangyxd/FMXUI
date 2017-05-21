@@ -82,6 +82,9 @@ function GetRectF(const R: TRectD): TRectF;
 // 计算角度(0~360)
 function GetAngle(const CX, CY, X, Y: Single): Single;
 
+// 判断两个方法是否相等
+function EqulsMethod(const A, B: TNotifyEvent): Boolean;
+
 implementation
 
 uses
@@ -234,6 +237,11 @@ begin
     Result := 180 + (90 - Result) // 左上角
   else
     Result := 270 + Result // 右上角
+end;
+
+function EqulsMethod(const A, B: TNotifyEvent): Boolean;
+begin
+  Result := TMethod(A) = TMethod(B);
 end;
 
 function GetPPI(Context: TFmxObject): Single;

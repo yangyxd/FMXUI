@@ -38,7 +38,7 @@ begin
     .SetItems(['None', 'Matrix', 'Center', 'CenterCrop', 'CenterInside', 'FitCenter', 'FitStart', 'FitEnd'],
       procedure (Dialog: IDialog; Which: Integer) begin
         ImageView1.ScaleType := TImageScaleType(Which);
-        ButtonView2.Text := 'ScaleType: ' + GetEnumName(Typeinfo(TImageScaleType), Which);
+        ButtonView1.Text := 'ScaleType: ' + GetEnumName(Typeinfo(TImageScaleType), Which);
       end
     )
     .Show();

@@ -74,6 +74,7 @@ object FrameListViewGroup: TFrameListViewGroup
     Size.PlatformDefault = False
     TabOrder = 1
     Divider = xAFE3E4E5
+    ScrollSmallChangeFraction = 200.000000000000000000
     EnablePullRefresh = False
     EnablePullLoad = False
   end

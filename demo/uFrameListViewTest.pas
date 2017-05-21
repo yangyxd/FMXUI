@@ -42,7 +42,7 @@ begin
   inherited;
 
   Adapter := TStringsListCheckAdapter.Create(nil);
-  Adapter.SetArrayLength(10000);
+  Adapter.SetArrayLength(30);
   for I := 0 to Adapter.Count - 1 do
     Adapter.Items[I] := Format('列表项列表项列表项列表项列表项列表项列表项列表项列表项列表项项列表项列表项项列表项列表项列表项 %d', [I]);
   ListViewEx1.Adapter := Adapter;

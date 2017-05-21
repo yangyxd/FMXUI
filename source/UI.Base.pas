@@ -1116,6 +1116,7 @@ type
     function GetHScrollBar: TScrollBar; virtual;
     function GetContentBounds: TRectD; virtual;
     function CanAnimation: Boolean; virtual;
+    function GetScrollSmallChangeFraction: Single; virtual;
   protected
     {$IFDEF ANDROID}
     class procedure InitAudioManager();
@@ -1141,8 +1142,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    function PointInObject(X, Y: Single): Boolean; override;
 
+    function PointInObject(X, Y: Single): Boolean; override;
     procedure PlaySoundEffect(ASoundConstant: Integer);
     procedure PlayClickEffect(); virtual;
 
@@ -3617,6 +3618,11 @@ begin
     Result := 1;
 end;
 
+function TView.GetScrollSmallChangeFraction: Single;
+begin
+  Result := SmallChangeFraction;
+end;
+
 class function TView.GetStatusHeight: Single;
 begin
   Result := StatusHeight;
@@ -4405,7 +4411,7 @@ begin
     finally
       AScroll.ValueRange.EndUpdate;
     end;
-    AScroll.SmallChange := AScroll.ViewportSizeD / SmallChangeFraction;
+    AScroll.SmallChange := AScroll.ViewportSizeD / GetScrollSmallChangeFraction;
   end;
 end;
 
@@ -4422,7 +4428,7 @@ begin
     finally
       AScroll.ValueRange.EndUpdate;
     end;
-    AScroll.SmallChange := AScroll.ViewportSizeD / SmallChangeFraction;
+    AScroll.SmallChange := AScroll.ViewportSizeD / GetScrollSmallChangeFraction;
   end;
 end;
 

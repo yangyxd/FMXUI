@@ -11,7 +11,7 @@ unit UI.Standard;
 interface
 
 uses
-  UI.Base, UI.Utils,
+  UI.Base, UI.Utils, UI.Ani,
   {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
   {$IF CompilerVersion > 30.0}
   FMX.AcceleratorKey,
@@ -249,11 +249,19 @@ type
     FInInternalAlign: Boolean;
     FShowScrollBars: Boolean;
     FCachedAutoShowing: Boolean;
+    FDragScroll: Boolean;
     function GetViewportPosition: TPointD;
     procedure SetViewportPosition(const Value: TPointD);
     procedure SetShowScrollBars(const Value: Boolean);
     function GetScrollValue: Single;
     function IsStoredScrollStretchGlowColor: Boolean; virtual;
+    procedure SetScrollSmallChangeFraction(const Value: Single);
+    function IsStoredScrollSmallChangeFraction: Boolean;
+    procedure SetDragScroll(const Value: Boolean);
+    function GetHScrollBarValue: Double;
+    function GetVScrollBarValue: Double;
+    procedure SetHScrollBarValue(const Value: Double);
+    procedure SetVScrollBarValue(const Value: Double);
   protected
     FScrolling: Boolean;
     FSystemInfoSrv: IFMXSystemInformationService;
@@ -277,6 +285,7 @@ type
     function GetMaxScrollViewPos: Integer;
     procedure ScrollStretchChanged; virtual;
     procedure UpdateScrollStretchStrength(const NewValue: Single);
+
   protected
     FScroll: TScrollBar;
     FContentBounds: PRectD;
@@ -286,6 +295,7 @@ type
     FScrollStretchStrength: Single;
     FScrollTrackPressed: Boolean;
     FScrollingStretchGlowColor: TAlphaColor;
+    FScrollSmallChangeFraction: Single;
 
     procedure Resize; override;
     procedure DoRealign; override;
@@ -300,6 +310,7 @@ type
     function GetVScrollBar: TScrollBar; override;
     function GetHScrollBar: TScrollBar; override;
     function GetContentBounds: TRectD; override;
+    function GetScrollSmallChangeFraction: Single;  override;
 
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
@@ -309,6 +320,8 @@ type
     procedure InvalidateContentSize(); virtual;
     procedure RealignContent;
     procedure InternalAlign; override;
+
+    procedure AniVScrollTo(const AOffset: Single; AFinish: TNotifyEventA = nil);
 
     procedure Adjust(var ContentLayoutRect: TRectD); virtual;
 
@@ -323,25 +336,31 @@ type
     procedure DoScrollVisibleChange; virtual;
     procedure DoUpdateAniCalculations(const AAniCalculations: TScrollCalculations); virtual;
     procedure UpdateAniCalculations;
-    procedure DoUpdateScrollingLimits(NeedUpdateScroll: Boolean = False); virtual;
-    procedure UpdateScrollBar;
+    procedure DoUpdateScrollingLimits(NeedUpdateScroll: Boolean = False; const ValueOffset: Double = 0); virtual;
+    procedure UpdateScrollBar(const ValueOffset: Double = 0);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure ScrollBy(const Dx, Dy: Double);
     procedure ScrollTo(const Dx, Dy: Double);
-    function VScrollBarValue: Double;
-    function HScrollBarValue: Double;
+    property VScrollBarValue: Double read GetVScrollBarValue write SetVScrollBarValue;
+    property HScrollBarValue: Double read GetHScrollBarValue write SetHScrollBarValue;
     // 获取滚动条所在位置的百分比
     property ScrollValue: Single read GetScrollValue;
     // 是否可以滚动
     property CanScroll: Boolean read FCanScroll;
+    /// <summary>
+    /// 是否启用鼠标拖动滚动功能 （在非移动平台上设置有效）
+    /// </summary>
+    property DragScroll: Boolean read FDragScroll write SetDragScroll default False;
     // 是否显示滚动条
     property ShowScrollBars: Boolean read FShowScrollBars write SetShowScrollBars default True;
     // 视口位置
     property ViewportPosition: TPointD read GetViewportPosition write SetViewportPosition;
     // 滚动伸展区颜色
     property ScrollStretchGlowColor: TAlphaColor read FScrollingStretchGlowColor write FScrollingStretchGlowColor stored IsStoredScrollStretchGlowColor;
+    // 滚动条最小改变值
+    property ScrollSmallChangeFraction: Single read GetScrollSmallChangeFraction write SetScrollSmallChangeFraction stored IsStoredScrollSmallChangeFraction;
     property OnScrollChange: TNotifyEvent read FOnScrollChange write FOnScrollChange;
   published
   end;
@@ -1531,6 +1550,15 @@ begin
     FAniCalculations.Shown := False;
 end;
 
+procedure TScrollView.AniVScrollTo(const AOffset: Single;
+  AFinish: TNotifyEventA);
+begin
+  if (AOffset = 0) or (not Assigned(FAniCalculations)) then
+    Exit;
+  TFrameAnimator.AnimateFloat(Self, 'VScrollBarValue', VScrollBarValue - AOffset, AFinish);
+  //TFrameAnimator.AnimateFloat(FAniCalculations, ViewportPosition.Y);
+end;
+
 function TScrollView.CanAnimation: Boolean;
 begin
   Result := FCanAnimation;
@@ -1564,6 +1592,8 @@ begin
   inherited Create(AOwner);
   FContentBounds := nil;
   FShowScrollBars := True;
+  FDragScroll := False;
+  FScrollSmallChangeFraction := TView.SmallChangeFraction;
   FScrollingStretchGlowColor := GetColorFromStyle('glow', DefaultScrollingStretchGlowColor);
   SupportsPlatformService(IFMXSystemInformationService, FSystemInfoSrv);
   SupportsPlatformService(IFMXListingService, FListingService);
@@ -1645,12 +1675,18 @@ end;
 
 procedure TScrollView.DoUpdateAniCalculations(const AAniCalculations: TScrollCalculations);
 begin
-  FCanAnimation := TScrollingBehaviour.Animation in GetScrollingBehaviours;
-  AAniCalculations.Animation := FCanAnimation;
-  if TScrollingBehaviour.TouchTracking in GetScrollingBehaviours then
-    AAniCalculations.TouchTracking := [ttVertical, ttHorizontal]
-  else
-    AAniCalculations.TouchTracking := [];
+  if FDragScroll then begin
+    FCanAnimation := True;
+    AAniCalculations.Animation := FCanAnimation;
+    AAniCalculations.TouchTracking := [ttVertical, ttHorizontal];
+  end else begin
+    FCanAnimation := (TScrollingBehaviour.Animation in GetScrollingBehaviours);
+    AAniCalculations.Animation := FCanAnimation;
+    if TScrollingBehaviour.TouchTracking in GetScrollingBehaviours then
+      AAniCalculations.TouchTracking := [ttVertical, ttHorizontal]
+    else
+      AAniCalculations.TouchTracking := [];
+  end;
   AAniCalculations.BoundsAnimation := True; //TScrollingBehaviour.BoundsAnimation in GetScrollingBehaviours;
   AAniCalculations.AutoShowing := TScrollingBehaviour.AutoShowing in GetScrollingBehaviours;
   if FScrollbar = TViewScroll.Vertical then
@@ -1659,7 +1695,7 @@ begin
     AAniCalculations.TouchTracking := AAniCalculations.TouchTracking - [ttVertical];
 end;
 
-procedure TScrollView.DoUpdateScrollingLimits(NeedUpdateScroll: Boolean);
+procedure TScrollView.DoUpdateScrollingLimits(NeedUpdateScroll: Boolean; const ValueOffset: Double);
 
   {$IFNDEF NEXTGEN}
   function GetScrollBar(): TScrollBar;
@@ -1696,12 +1732,12 @@ begin
       FTrackChanging := GetRttiValue<Boolean>(FScroll, 'FTrackChanging');
       SetRttiValue<Boolean>(FScroll, 'FTrackChanging', False); // 临时将此变量设为False，否则为忽略本次调整
       try
-        UpdateScrollBar;
+        UpdateScrollBar(ValueOffset);
       finally
         SetRttiValue<Boolean>(FScroll, 'FTrackChanging', FTrackChanging);
       end;
       {$ELSE}
-      UpdateScrollBar;
+      UpdateScrollBar(ValueOffset);
       {$ENDIF}
     end;
   end;
@@ -1749,6 +1785,14 @@ begin
     Result := nil;
 end;
 
+function TScrollView.GetHScrollBarValue: Double;
+begin
+  if (FAniCalculations <> nil) and Assigned(FScroll) and (FScroll.Visible) then
+    Result := ViewportPosition.X
+  else
+    Result := 0;
+end;
+
 function TScrollView.GetMaxScrollViewPos: Integer;
 begin
   Result := Max(Round(FAniCalculations.MaxTarget.Point.Y), 0);
@@ -1771,6 +1815,11 @@ begin
     else
       Result := [];
   end;
+end;
+
+function TScrollView.GetScrollSmallChangeFraction: Single;
+begin
+  Result := FScrollSmallChangeFraction;
 end;
 
 function TScrollView.GetScrollValue: Single;
@@ -1796,6 +1845,14 @@ begin
     Result := nil;
 end;
 
+function TScrollView.GetVScrollBarValue: Double;
+begin
+  if (FAniCalculations <> nil) and Assigned(FScroll) and (FScroll.Visible) then begin
+    Result := ViewportPosition.Y; // / (FScroll.Max - FScroll.ViewportSize) * FScroll.Max
+  end else
+    Result := 0;
+end;
+
 function TScrollView.HasPhysicsStretchyScrolling: Boolean;
 begin
   Result := HasTouchTracking and HasStretchyScrolling;
@@ -1816,14 +1873,6 @@ function TScrollView.HasTouchTracking: Boolean;
 begin
   Result := (FAniCalculations <> nil) or ((FSystemInfoSrv <> nil) and
     (TScrollingBehaviour.TouchTracking in FSystemInfoSrv.GetScrollingBehaviour));
-end;
-
-function TScrollView.HScrollBarValue: Double;
-begin
-  if (FAniCalculations <> nil) and Assigned(FScroll) and (FScroll.Visible) then
-    Result := ViewportPosition.X
-  else
-    Result := 0;
 end;
 
 procedure TScrollView.HScrollChange(Sender: TObject);
@@ -1857,7 +1906,7 @@ begin
         FScroll.OnChange := VScrollChange;
         FScroll.Locked := True;
         FScroll.Align := TAlignLayout.Right;
-        FScroll.SmallChange := SmallChangeFraction;
+        FScroll.SmallChange := GetScrollSmallChangeFraction;
         FScroll.Parent := Self;
         FScroll.Visible := False;
         FScroll.Stored := False;
@@ -1872,7 +1921,7 @@ begin
         FScroll.OnChange := HScrollChange;
         FScroll.Locked := True;
         FScroll.Align := TAlignLayout.Bottom;
-        FScroll.SmallChange := SmallChangeFraction;
+        FScroll.SmallChange := GetScrollSmallChangeFraction;
         FScroll.Parent := Self;
         FScroll.Visible := False;
         FScroll.Stored := False;
@@ -1945,6 +1994,11 @@ end;
 function TScrollView.IsRunningOnDesktop: Boolean;
 begin
   Result := TOSVersion.Platform in [pfWindows, pfMacOS, pfLinux];
+end;
+
+function TScrollView.IsStoredScrollSmallChangeFraction: Boolean;
+begin
+  Result := FScrollSmallChangeFraction <> TView.SmallChangeFraction;
 end;
 
 function TScrollView.IsStoredScrollStretchGlowColor: Boolean;
@@ -2107,6 +2161,36 @@ begin
     HScrollBar.ValueD := Dx;
 end;
 
+procedure TScrollView.SetDragScroll(const Value: Boolean);
+begin
+  if FDragScroll <> Value then begin
+    FDragScroll := Value;
+    if not (csDesigning in ComponentState) then begin
+      if FScrollbar = TViewScroll.None then
+        FreeScrollbar
+      else
+        InitScrollbar;
+      RealignContent;
+    end;
+  end;
+end;
+
+procedure TScrollView.SetHScrollBarValue(const Value: Double);
+var
+  V: TPointD;
+begin
+  if (FAniCalculations <> nil) and Assigned(FScroll) and (FScroll.Visible) then begin
+    V := ViewportPosition;
+    V.X := Value;
+    ViewportPosition := V;
+  end;
+end;
+
+procedure TScrollView.SetScrollSmallChangeFraction(const Value: Single);
+begin
+  FScrollSmallChangeFraction := Value;
+end;
+
 procedure TScrollView.SetShowScrollBars(const Value: Boolean);
 begin
   if FShowScrollBars <> Value then
@@ -2128,6 +2212,17 @@ begin
   FAniCalculations.ViewportPosition := TPointD.Create(Round(X * LScale) / LScale, Round(Y * LScale) / LScale);
 end;
 
+procedure TScrollView.SetVScrollBarValue(const Value: Double);
+var
+  V: TPointD;
+begin
+  if (FAniCalculations <> nil) and Assigned(FScroll) and (FScroll.Visible) then begin
+    V := ViewportPosition;
+    V.Y := Value;
+    ViewportPosition := V;
+  end;
+end;
+
 procedure TScrollView.UpdateAniCalculations;
 begin
   if not (csDestroying in ComponentState) then
@@ -2143,7 +2238,7 @@ begin
   end;
 end;
 
-procedure TScrollView.UpdateScrollBar;
+procedure TScrollView.UpdateScrollBar(const ValueOffset: Double);
 var
   LViewportPosition: TPointD;
   R: TRectF;
@@ -2156,6 +2251,7 @@ begin
     {$ELSE}
     FCanScroll := FContentBounds.Height > R.Height;
     {$ENDIF}
+    LViewportPosition.Y := LViewportPosition.Y + ValueOffset;
     if (LViewportPosition.Y > FContentBounds.Height - FScroll.ViewportSizeD) and
       (LViewportPosition.Y > FAniCalculations.MaxTarget.Point.Y) then
       LViewportPosition.Y := FAniCalculations.MaxTarget.Point.Y;
@@ -2166,6 +2262,7 @@ begin
     {$ELSE}
     FCanScroll := FContentBounds.Width > R.Width;
     {$ENDIF}
+    LViewportPosition.X := LViewportPosition.X + ValueOffset;
     if (LViewportPosition.X > FContentBounds.Width - FScroll.ViewportSizeD) and
       (LViewportPosition.X > FAniCalculations.MaxTarget.Point.X) then
       LViewportPosition.X := FAniCalculations.MaxTarget.Point.X;
@@ -2186,14 +2283,6 @@ begin
     FScrollStretchStrength := NewValue;
     ScrollStretchChanged;
   end;
-end;
-
-function TScrollView.VScrollBarValue: Double;
-begin
-  if (FAniCalculations <> nil) and Assigned(FScroll) and (FScroll.Visible) then begin
-    Result := ViewportPosition.Y; // / (FScroll.Max - FScroll.ViewportSize) * FScroll.Max
-  end else
-    Result := 0;
 end;
 
 procedure TScrollView.VScrollChange(Sender: TObject);

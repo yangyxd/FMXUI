@@ -144,7 +144,6 @@
         <DCCReference Include="UI.Dialog.pas"/>
         <DCCReference Include="UI.Edit.pas"/>
         <DCCReference Include="UI.Frame.pas"/>
-        <DCCReference Include="UI.ListViewEx.pas"/>
         <DCCReference Include="UI.Reg.pas"/>
         <DCCReference Include="UI.Standard.pas"/>
         <DCCReference Include="UI.Toast.Android.pas"/>

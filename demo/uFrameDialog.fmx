@@ -86,7 +86,7 @@ object FrmaeDialog: TFrmaeDialog
         OnClick = ButtonView1Click
         Text = #25991#26412#23545#35805#26694
         TextSettings.Gravity = Center
-        Drawable.Images = Form1.ShareImageList1
+        Drawable.Images = ImageList1
         Drawable.ItemDefault.ImageIndex = 0
       end
       object ButtonView10: TButtonView
@@ -109,7 +109,7 @@ object FrmaeDialog: TFrmaeDialog
         OnClick = ButtonView10Click
         Text = #26631#39064#25991#26412#23545#35805#26694
         TextSettings.Gravity = Center
-        Drawable.Images = Form1.ShareImageList1
+        Drawable.Images = ImageList1
         Drawable.ItemDefault.ImageIndex = 0
       end
       object ButtonView2: TButtonView
@@ -132,7 +132,7 @@ object FrmaeDialog: TFrmaeDialog
         OnClick = ButtonView2Click
         Text = #24102#25353#38062#30340#25991#26412#23545#35805#26694
         TextSettings.Gravity = Center
-        Drawable.Images = Form1.ShareImageList1
+        Drawable.Images = ImageList1
         Drawable.ItemDefault.ImageIndex = 1
       end
       object ButtonView3: TButtonView
@@ -155,7 +155,7 @@ object FrmaeDialog: TFrmaeDialog
         OnClick = ButtonView3Click
         Text = #24102#26631#39064#26639#30340#23545#35805#26694
         TextSettings.Gravity = Center
-        Drawable.Images = Form1.ShareImageList1
+        Drawable.Images = ImageList1
         Drawable.ItemDefault.ImageIndex = 2
       end
       object ButtonView4: TButtonView
@@ -179,8 +179,10 @@ object FrmaeDialog: TFrmaeDialog
         OnClick = ButtonView4Click
         Text = #21015#34920#23545#35805#26694
         TextSettings.Gravity = Center
-        Drawable.Images = Form1.ShareImageList1
+        Drawable.Images = ImageList1
         Drawable.ItemDefault.ImageIndex = 3
+        Drawable.ItemEnabled.Bitmap.WrapMode = Tile
+        Drawable.ItemEnabled.Kind = Bitmap
       end
       object ButtonView5: TButtonView
         Background.Border.Color.Pressed = claSilver
@@ -202,7 +204,7 @@ object FrmaeDialog: TFrmaeDialog
         OnClick = ButtonView5Click
         Text = #21333#36873#21015#34920#23545#35805#26694
         TextSettings.Gravity = Center
-        Drawable.Images = Form1.ShareImageList1
+        Drawable.Images = ImageList1
         Drawable.ItemDefault.ImageIndex = 4
       end
       object ButtonView6: TButtonView
@@ -228,7 +230,7 @@ object FrmaeDialog: TFrmaeDialog
         OnClick = ButtonView6Click
         Text = #22810#36873#21015#34920#23545#35805#26694
         TextSettings.Gravity = Center
-        Drawable.Images = Form1.ShareImageList1
+        Drawable.Images = ImageList1
         Drawable.ItemDefault.ImageIndex = 5
       end
       object ButtonView11: TButtonView
@@ -251,7 +253,7 @@ object FrmaeDialog: TFrmaeDialog
         OnClick = ButtonView11Click
         Text = #21333#36873#21015#34920#23545#35805#26694
         TextSettings.Gravity = Center
-        Drawable.Images = Form1.ShareImageList1
+        Drawable.Images = ImageList1
         Drawable.ItemDefault.ImageIndex = 4
       end
       object ButtonView7: TButtonView
@@ -275,8 +277,10 @@ object FrmaeDialog: TFrmaeDialog
         OnClick = ButtonView7Click
         Text = #31561#24453#23545#35805#26694
         TextSettings.Gravity = Center
-        Drawable.Images = Form1.ShareImageList1
+        Drawable.Images = ImageList1
+        Drawable.ItemDefault.Kind = Solid
         Drawable.ItemDefault.ImageIndex = 6
+        Drawable.ItemActivated.Kind = Solid
       end
       object ButtonView8: TButtonView
         Background.Border.Color.Pressed = claSilver
@@ -298,7 +302,7 @@ object FrmaeDialog: TFrmaeDialog
         OnClick = ButtonView8Click
         Text = #31561#24453#23545#35805#26694' ('#20801#35768#21462#28040')'
         TextSettings.Gravity = Center
-        Drawable.Images = Form1.ShareImageList1
+        Drawable.Images = ImageList1
         Drawable.ItemDefault.ImageIndex = 6
       end
       object ButtonView12: TButtonView
@@ -321,7 +325,7 @@ object FrmaeDialog: TFrmaeDialog
         OnClick = ButtonView12Click
         Text = #33258#23450#20041'View'#23545#35805#26694
         TextSettings.Gravity = Center
-        Drawable.Images = Form1.ShareImageList1
+        Drawable.Images = ImageList1
         Drawable.ItemDefault.ImageIndex = 6
       end
       object ButtonView9: TButtonView
@@ -345,9 +349,228 @@ object FrmaeDialog: TFrmaeDialog
         OnClick = ButtonView9Click
         Text = 'ListView '#27979#35797
         TextSettings.Gravity = Center
-        Drawable.Images = Form1.ShareImageList1
+        Drawable.Images = ImageList1
         Drawable.ItemDefault.ImageIndex = 6
       end
     end
+  end
+  object PopupMenu1: TPopupMenu
+    Images = ImageList1
+    Left = 144
+    Top = 304
+    object MenuItem1: TMenuItem
+      Text = 'MenuItem1'
+    end
+  end
+  object ImageList1: TImageList
+    Source = <
+      item
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 16
+            Height = 16
+            PNG = {
+              89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+              61000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              016E49444154384FA553BB4EC340101CDB38340809892F41104011020A241E72
+              1A68E003E00BF8010A2410A24883A0A1818282062ADE2D4A4D41054834544879
+              384409B6D9F5DDFA4E912B32D2786F7CB37B7BCE06FDC2D13145F138BA82E306
+              5AE62389AFAB5B5E592B53A0789224DB0B4014EB1716121DD9ECD2E3E01EA86E
+              3A696EFAE093374A6ED0A1E45A4725243A4BD61C073D60D807621297CFAA1337
+              7551DB9F21F0D5025ABF8ABBE38A21AD997B13C0CE18F0D600DE9B2A87535501
+              42B34B246383E23E99BBD40D93F5E1A4D175D275EA529015900D36B723C5F527
+              A03265F4DAA3F2D4C82BC80AF0DD2BD3C6BCFA001C958C2EDF290F33B703DE90
+              FB33B9A35E6D539015E0BB06748A249CCE004B37469FCD9AEF14E61590AFBD72
+              6BDA3E9F0316A988E88B798AE4F9A1B5202BC02FC56817E1D958B6B4FC1A826C
+              903E86F247980D3C739EC5013A76E45B0D12EFA7E0516E8F023E6D16347D9A3C
+              5917ACF5CB6BCF280BFEF367EA13C01F6469DCCC89DD57A50000000049454E44
+              AE426082}
+            FileName = 'D:\My Documents\Documents\'#25105#30340#30456#20876'\ICO'#22270#26631'\png\soft\backward.png'
+          end>
+        Name = 'backward'
+      end
+      item
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 16
+            Height = 16
+            PNG = {
+              89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+              61000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              010749444154384F63A014304269869F2DD2FFA14CA2007BCD53B05E3001D2CC
+              E653C6C020A00AE212061F6E33FCDAD205360461809A32580E27083DC8C0B037
+              8381E1DD7530F7D7ADBB600398C03C10F8F61E3B066904D167FA18189C6720C4
+              A10061C0F74FA838FE128406019B36A00193206CEB16843810200CF8F1198133
+              1E20C49E1C656050F641B055FC206C284018F0F32B0343C15B08860190D8BFBF
+              D8D9508030E0CF4F28030980C4FEFFC3CE8602840120D00A8C14102601A01A00
+              03C886C83B30303C3A84605F5D0E61430176034000D990C5F60C0C162510F686
+              28080D05B80D80019841CEDD0C0CF3CD216C2440D800180019F4EC1494830070
+              77929B9928040C0C00C95B78182B78E1740000000049454E44AE426082}
+            FileName = 'D:\My Documents\Documents\'#25105#30340#30456#20876'\ICO'#22270#26631'\png\soft\listen.png'
+          end>
+        Name = 'listen'
+      end
+      item
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 16
+            Height = 16
+            PNG = {
+              89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+              61000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              01B949444154384FAD533D2F0541143D3BFB9EF8783612224144A3A2109D4AA1
+              2192F74AD1F8888246452F11BF820441A5E5E75049B43E9EF53EF0769D73676D
+              7C759CE4ECCCDCB9F7CC9D7B67F15704D968682D2DED3BE7D6354FD2F4323C3D
+              AD987D79F9C20541D9EC4972109E9D6D682EE402E9CA4A8ACD55A0A31D287592
+              5DC0F69EDFDCDD02E21A506F00CF75E0F81CC1C989C53A7D2C786D51534AD25E
+              2800C510989F0166A7FD5AF60F2E547C0C1132BDC360A13289B6228C722E3058
+              E3EB0B33290111F9F2CAF59B1FC5C101EC94A229E7FA7AD7D04A78D116F026D2
+              A9C654E3676064981CF26BD9B52F3FF953C445D19C33832967EA4D9DC09375E7
+              C7273F6A6D76917EF2573DD2943590DA534C073A359A9E75910E3933BB283FF9
+              2B2BC225D5EA116E6E6964CA72D4468D9556B53FA8B5ECDA97DF0333BBBB4712
+              C747D60AEBF3E444193DDD40370B56640143364815679A96A5D2D6C90AE6B592
+              AB2B7B272620585BC6C7804EBE03BD0575C45124F105B3AB280B5DE1FA3A7F07
+              B9806022A3A3BE8D219967907548F8142C7C11107211B54D6F41908004BF050B
+              3F040413E9EFE7038A320BF14BB0F0AB80F0E5C7FAF603FD23807723A4F35961
+              E9E1280000000049454E44AE426082}
+            FileName = 'D:\My Documents\Documents\'#25105#30340#30456#20876'\ICO'#22270#26631'\png\soft\heart.png'
+          end>
+        Name = 'heart'
+      end
+      item
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 16
+            Height = 16
+            PNG = {
+              89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+              61000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              007449444154384FED91D109C0200C44D34CE152ED064EE706ED4AE2146ACB41
+              2A09D642A19F3E08E14272094A135A241B42083B33AF22A9D67A78EF3791EF60
+              38C6786AA0519716034B6E60B3738E4A292DA0F5459ACE00E49CBB18F168A0B7
+              DF31A233C083A594CC3034EAD262F8FF17265F21BA00E45565E03C7694900000
+              000049454E44AE426082}
+            FileName = 'D:\My Documents\Documents\'#25105#30340#30456#20876'\ICO'#22270#26631'\png\soft\offline.png'
+          end>
+        Name = 'offline'
+      end
+      item
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 16
+            Height = 16
+            PNG = {
+              89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+              61000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              00BA49444154384FCD93D10902410C4437621F5A85D88436602B721F672D36A0
+              4DA85D087ED8811EA2712646E1207701FDF1C1DCEE6536D965C9965F111FCBAE
+              1E6D4464C6B9AA6EA7D5716E06E8F38CFD6AACDA9C5B620C5A76799EEAC99753
+              A8CC63FEC0AA3C6EB180DE9B4E8F78012E0A044499107BE45580BB44CA3CE027
+              B8C6CA3CE027402052E681BF29105C129579C02F118148990786F645631CD6B5
+              F5397FD9F793456556AFF7A6D5DB0E1F10E31C3DF4215AFF25A53C01C1806269
+              145CCD680000000049454E44AE426082}
+            FileName = 'D:\My Documents\Documents\'#25105#30340#30456#20876'\ICO'#22270#26631'\png\soft\blog.png'
+          end>
+        Name = 'blog'
+      end
+      item
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 16
+            Height = 16
+            PNG = {
+              89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+              61000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              00F649444154384F6364800293197F0E313131DB42B978C1BF7F7F0F9FC960B1
+              03B1C1068034B7FA30DB8A7230308801313F1B50D17F0686F7BF18185E7C6760
+              78F68D81E12590FE0CE47332FD611062F9CDD07F900D6C080BC80090CDC75F31
+              30C8F13030E8083030B0303130FCFEC7C0F0E82B03C385B70C0C67DE30305C7E
+              0F3408C89762FBC3E020F20BA88713EC5AA052CA00C50680C3C06CD67FA08F49
+              07A7D21819E106347B3130901288130F73820D807B01148817DE41147FFDC3C0
+              F0E93724104FBD6660D8F0908161D64D0686DE2B0C0CF36EFC6138F302681214
+              8C06E2A0094450EE02F34800303DE0300001F2B233030300BDD898FFDF85CF70
+              0000000049454E44AE426082}
+            FileName = 'D:\My Documents\Documents\'#25105#30340#30456#20876'\ICO'#22270#26631'\png\soft\base.png'
+          end>
+        Name = 'base'
+      end
+      item
+        MultiResBitmap.LoadSize = 2
+        MultiResBitmap = <
+          item
+            Width = 16
+            Height = 16
+            PNG = {
+              89504E470D0A1A0A0000000D49484452000000100000001008060000001FF3FF
+              61000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
+              019549444154384FA551BF2F4361143D181A44186C6D450C5691583B18D858EB
+              6F3031182C068BC13F529B68D241231D3A891844C420AAA90E12F55B5BAF7DED
+              E79CF7BEBEFE501627B9B9DFB9E7DCFBEEF7BD01F420B38D0453DC675D3858DC
+              C39A3D07E81A70BC0513998959F613C55C16CBFBDD3D01521B48A436618AC975
+              53CE9F18D3748C31AE97C555972E9F6DF1306833EA2EE2D3B3318426C21809CF
+              73B7215619CCE2AA4B97CFEFF0110C705D7B300DA0E1F8198C2EDEE1B3680FF0
+              751E2A40ED89F1CCF3BB9FC55597DCF259F419C0A68F1C50BE033E19CAE2AA4B
+              FE6D40B3099C9F66F1787BC9861BE0F58AC1B332B9EAD2E5EB4430A00599AE33
+              8740A5E86FC02CAE7A3F04FFB4B07B61A24B93C0780818634486AD4214ABDC82
+              0FF9E6E03E5DC2D4CE5CD0E76DC0E6A3E8C228FF252FE830BE7A9E5A5C75EAF2
+              C96F95E00A2BA8F3723256EA5CBD66CB16E2AA4B974F7E8BF61B18C3AFD050A6
+              59EBBE30046571D5A5CBD781D68064294F43836295267DF1EC014817FC2CAE3A
+              75CF47BFD745743EA2EE15ACF607927CC4557BFE2F806F489CE9FE01B7074300
+              00000049454E44AE426082}
+            FileName = 'D:\My Documents\Documents\'#25105#30340#30456#20876'\ICO'#22270#26631'\png\soft\female.png'
+          end>
+        Name = 'female'
+      end>
+    Destination = <
+      item
+        Layers = <
+          item
+            Name = 'backward'
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'listen'
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'heart'
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'offline'
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'blog'
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'base'
+          end>
+      end
+      item
+        Layers = <
+          item
+            Name = 'female'
+          end>
+      end>
+    Left = 80
+    Top = 328
   end
 end
