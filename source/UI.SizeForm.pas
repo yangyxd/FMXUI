@@ -51,6 +51,8 @@ implementation
 function TSizeForm.CalcResizeMode(const X, Y: Single): TResizeMode;
 begin
   Result := TResizeMode.Normal;
+  if (X < 0) and (Y < 0) then
+    Exit;
   if (X > FSizeWH) and (X <= Width - FSizeWH) then begin
     if (Y < FSizeWH) then
       Result := TResizeMode.Top
@@ -171,7 +173,8 @@ begin
         UpdateCurror(CalcResizeMode(X, Y))
       else
         Cursor := crArrow;
-    end;
+    end else if Cursor <> crDefault then
+      Cursor := crDefault;
   end;
 end;
 

@@ -244,25 +244,29 @@ type
     DefaultScrollingStretchGlowColor: TAlphaColor = $FFC0C0C0;
   private
     FOnScrollChange: TNotifyEvent;
-    FCanScroll: Boolean;
     FCanAnimation: Boolean;
     FInInternalAlign: Boolean;
-    FShowScrollBars: Boolean;
     FCachedAutoShowing: Boolean;
     FDragScroll: Boolean;
+    FScrollbarWidth: Single;
     function GetViewportPosition: TPointD;
     procedure SetViewportPosition(const Value: TPointD);
     procedure SetShowScrollBars(const Value: Boolean);
-    function GetScrollValue: Single;
+    function GetScrollValueV: Single;
+    function GetScrollValueH: Single;
     function IsStoredScrollStretchGlowColor: Boolean; virtual;
     procedure SetScrollSmallChangeFraction(const Value: Single);
-    function IsStoredScrollSmallChangeFraction: Boolean;
     procedure SetDragScroll(const Value: Boolean);
     function GetHScrollBarValue: Double;
     function GetVScrollBarValue: Double;
     procedure SetHScrollBarValue(const Value: Double);
     procedure SetVScrollBarValue(const Value: Double);
+    function IsStoredScrollbarWidth: Boolean;
+    procedure SetScrollbarWidth(const Value: Single);
   protected
+    FCanScrollV: Boolean;
+    FCanScrollH: Boolean;
+    FShowScrollBars: Boolean;
     FScrolling: Boolean;
     FSystemInfoSrv: IFMXSystemInformationService;
     FListingService: IFMXListingService;
@@ -287,7 +291,8 @@ type
     procedure UpdateScrollStretchStrength(const NewValue: Single);
 
   protected
-    FScroll: TScrollBar;
+    FScrollV: TScrollBar;
+    FScrollH: TScrollBar;
     FContentBounds: PRectD;
     FAniCalculations: TScrollCalculations;
     FLastViewportPosition: TPointD;
@@ -302,7 +307,11 @@ type
     procedure DoInVisibleChange; override;
     function IsOpaque: Boolean; virtual;
 
+    function AllowInitScrollbar: Boolean; virtual;
+
     function CreateScroll: TScrollBar; virtual;
+    procedure MakScrollBar(SType: TViewScroll; var Obj: TScrollBar);
+    procedure UpdateScrollWidth(const AScroll: TScrollBar); virtual;
     procedure InitScrollbar; override;
     procedure FreeScrollbar; override;
     procedure HScrollChange(Sender: TObject); virtual;
@@ -318,7 +327,7 @@ type
     procedure DoMouseLeave; override;
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); override;
     procedure InvalidateContentSize(); virtual;
-    procedure RealignContent;
+    procedure RealignContent; virtual;
     procedure InternalAlign; override;
 
     procedure AniVScrollTo(const AOffset: Single; AFinish: TNotifyEventA = nil);
@@ -337,7 +346,9 @@ type
     procedure DoUpdateAniCalculations(const AAniCalculations: TScrollCalculations); virtual;
     procedure UpdateAniCalculations;
     procedure DoUpdateScrollingLimits(NeedUpdateScroll: Boolean = False; const ValueOffset: Double = 0); virtual;
-    procedure UpdateScrollBar(const ValueOffset: Double = 0);
+    procedure UpdateScrollBar(AScroll: TScrollBar; AScrollBar: TViewScroll; const ValueOffset: Double = 0); virtual;
+
+    function IsStoredScrollSmallChangeFraction: Boolean; virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -346,9 +357,13 @@ type
     property VScrollBarValue: Double read GetVScrollBarValue write SetVScrollBarValue;
     property HScrollBarValue: Double read GetHScrollBarValue write SetHScrollBarValue;
     // 获取滚动条所在位置的百分比
-    property ScrollValue: Single read GetScrollValue;
-    // 是否可以滚动
-    property CanScroll: Boolean read FCanScroll;
+    property ScrollValueV: Single read GetScrollValueV;
+    // 获取滚动条所在位置的百分比
+    property ScrollValueH: Single read GetScrollValueH;
+    // 是否可以垂直滚动
+    property CanVScroll: Boolean read FCanScrollV;
+    // 是否可以水平滚动
+    property CanHScroll: Boolean read FCanScrollH;
     /// <summary>
     /// 是否启用鼠标拖动滚动功能 （在非移动平台上设置有效）
     /// </summary>
@@ -357,6 +372,8 @@ type
     property ShowScrollBars: Boolean read FShowScrollBars write SetShowScrollBars default True;
     // 视口位置
     property ViewportPosition: TPointD read GetViewportPosition write SetViewportPosition;
+    // 滚动条宽度
+    property ScrollbarWidth: Single read FScrollbarWidth write SetScrollbarWidth stored IsStoredScrollbarWidth;
     // 滚动伸展区颜色
     property ScrollStretchGlowColor: TAlphaColor read FScrollingStretchGlowColor write FScrollingStretchGlowColor stored IsStoredScrollStretchGlowColor;
     // 滚动条最小改变值
@@ -374,7 +391,6 @@ type
     FDrawable: TDrawableIcon;
     FOnDrawText: TOnDrawText;
     FOnTextChange: TNotifyEvent;
-    FOnDrawViewBackgroud: TOnDrawViewBackgroud;
     FInFitSize: Boolean;
     FGroupIndex: Integer;
 
@@ -453,8 +469,6 @@ type
     property DisableMouseWheel;
     property OnTextChange: TNotifyEvent read FOnTextChange write FOnTextChange;
     property OnDrawText: TOnDrawText read FOnDrawText write FOnDrawText;
-    property OnDrawBackgroud: TOnDrawViewBackgroud read FOnDrawViewBackgroud
-      write FOnDrawViewBackgroud;
   end;
 
 type
@@ -709,29 +723,47 @@ type
   /// </summary>
   TPathViewItem = class(TCollectionItem)
   private
+    [Weak] FOwner: TControl;
     FOnChange: TNotifyEvent;
     FPath: TPathData;
     FStyle: TPathViewStyles;
     FVisible: Boolean;
+    FScaleX: Single;
+    FScaleY: Single;
+    FWidth: Single;
+    FHeight: Single;
+    FGravity: TLayoutGravity;
     FDisplayName: string;
+    FPathData: string;
     function GetPath: TPathData;
     procedure SetPath(const Value: TPathData);
     procedure SetVisible(const Value: Boolean);
     function GetStyle: TPathViewStyles;
     procedure SetStyle(const Value: TPathViewStyles);
+    procedure SetScaleX(const Value: Single);
+    procedure SetScaleY(const Value: Single);
+    function IsStoreScaleX: Boolean;
+    function IsStoreScaleY: Boolean;
+    procedure SetPathData(const Value: string);
+    procedure SetGravity(const Value: TLayoutGravity);
+    procedure SetOwner(const Value: TControl);
   protected
     procedure DoChanged(Sender: TObject);
     function GetDisplayName: string; override;
     procedure SetDisplayName(const Value: string); override;
+    procedure UpdateSize();
   public
     constructor Create(Collection: TCollection); override;
     destructor Destroy; override;
-    property OnChange: TNotifyEvent read FOnChange write FOnChange;
-  published
+    procedure ApplayScale;
     /// <summary>
     /// 路径
     /// </summary>
     property Path: TPathData read GetPath write SetPath;
+    property Owner: TControl read FOwner write SetOwner;
+    property OnChange: TNotifyEvent read FOnChange write FOnChange;
+  published
+    property PathData: string read FPathData write SetPathData;
     /// <summary>
     /// 是否可视
     /// </summary>
@@ -740,6 +772,18 @@ type
     /// 样式
     /// </summary>
     property Style: TPathViewStyles read GetStyle write SetStyle;
+    /// <summary>
+    /// 缩放
+    /// </summary>
+    property ScaleX: Single read FScaleX write SetScaleX stored IsStoreScaleX;
+    property ScaleY: Single read FScaleY write SetScaleY stored IsStoreScaleY;
+
+    property SizeWidth: Single read FWidth;
+    property SizeHeight: Single read FHeight;
+    /// <summary>
+    /// 位置
+    /// </summary>
+    property Gravity: TLayoutGravity read FGravity write SetGravity default TLayoutGravity.None;
   end;
 
   /// <summary>
@@ -747,17 +791,21 @@ type
   /// </summary>
   TPathViewCollection = class(TCollection)
   protected
-    [Weak] FOwner: TPersistent;
+    [Weak] FOwner: TControl;
+    FOnChange: TNotifyEvent;
     function GetItem(Index: Integer): TPathViewItem;
     procedure SetItem(Index: Integer; const Value: TPathViewItem);
     procedure DoItemChanged(ASender: TObject);
     procedure Update(Item: TCollectionItem); override;
     function GetOwner: TPersistent; override;
+    procedure DoChange(Sender: TObject);
+    procedure DoParentSizeChange();
   public
     constructor Create(AOwner: TControl; ItemClass: TCollectionItemClass);
     function Add: TPathViewItem; reintroduce;
     function FindItemID(ID: Integer): TPathViewItem; reintroduce;
     property Items[Index: Integer]: TPathViewItem read GetItem write SetItem; default;
+    property OnChange: TNotifyEvent read FOnChange write FOnChange;
   end;
 
   TOnPathViewItemClick = procedure (Sender: TObject; Index: Integer) of object;
@@ -777,10 +825,12 @@ type
     FPaths: TPathViewCollection;
     procedure PaintBackground; override;
     procedure Click; override;
+    procedure Resize; override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
+    procedure DoPathChange(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -991,8 +1041,6 @@ end;
 
 procedure TTextView.DoDrawBackground(var R: TRectF);
 begin
-  if Assigned(FOnDrawViewBackgroud) then
-    FOnDrawViewBackgroud(Self, Canvas, R, DrawState);
 end;
 
 function TTextView.DoGetUpdateRect: TRectF;
@@ -1062,27 +1110,31 @@ begin
   if FText.Text = '' then
     FText.Draw(Canvas, FTextHint, R, GetAbsoluteOpacity, TViewState(8))
   else begin
-    if Assigned(FScroll) and (FScroll.Visible) then begin
-      case FScrollbar of
-        TViewScroll.None: SR := R;
-        TViewScroll.Horizontal:
-          begin
+    case FScrollbar of
+      TViewScroll.Horizontal:
+        begin
+          if Assigned(FScrollH) and (FScrollH.Visible) then begin
             SR := GetRectF(FContentBounds^);
             SR.Top := R.Top;
             // windows平台显示滚动条，其它平台会自动隐藏
-            SR.Bottom := R.Bottom{$IFDEF MSWINDOWS} - FScroll.Height{$ENDIF};
-            OffsetRect(SR, -(ScrollValue * (SR.Width - R.Width)), 0);
-          end;
-        TViewScroll.Vertical:
-          begin
+            SR.Bottom := R.Bottom{$IFDEF MSWINDOWS} - FScrollH.Height{$ENDIF};
+            OffsetRect(SR, -(ScrollValueH * (SR.Width - R.Width)), 0);
+          end else
+            SR := R;
+        end;
+      TViewScroll.Vertical:
+        begin
+          if Assigned(FScrollV) and (FScrollV.Visible) then begin
             SR := GetRectF(FContentBounds^);
             SR.Left := R.Left;
-            SR.Right := R.Right{$IFDEF MSWINDOWS} - FScroll.Width{$ENDIF};
-            OffsetRect(SR, 0, -(ScrollValue * (SR.Height - R.Height)));
-          end;
-      end;
-    end else
-      SR := R;
+            SR.Right := R.Right{$IFDEF MSWINDOWS} - FScrollV.Width{$ENDIF};
+            OffsetRect(SR, 0, -(ScrollValueV * (SR.Height - R.Height)));
+          end else
+            SR := R;
+        end;
+      else
+        SR := R;
+    end;
     if Assigned(FOnDrawText) then
       FOnDrawText(Self, Canvas, FText, SR)
     else
@@ -1107,14 +1159,14 @@ begin
       if (IconS > 0) and (FDrawable.Position in [TDrawablePosition.Left, TDrawablePosition.Right]) then
         V := V - IconS - FDrawable.Padding;
       {$IFDEF MSWINDOWS}
-      if (FScrollbar = TViewScroll.Vertical) and (FScroll <> nil) and (FScroll.Visible) then
-        V := V - FScroll.Width;
+      if (FScrollbar = TViewScroll.Vertical) and (FScrollV <> nil) and (FScrollV.Visible) then
+        V := V - FScrollV.Width;
       {$ENDIF}
     end else
       V := 0;
 
     // 计算文本区域大小
-    if not FText.CalcTextObjectSize(V, Scene.GetSceneScale, nil, ASize) then Exit;
+    if not FText.CalcTextObjectSize(FText.Text, V, Scene.GetSceneScale, nil, ASize) then Exit;
     if ASize.Width < GetDrawableWidth then
       ASize.Width := GetDrawableWidth;
     if ASize.Height < GetDrawableHeight then
@@ -1153,8 +1205,8 @@ begin
       if (V > 0) and (FDrawable.Position in [TDrawablePosition.Top, TDrawablePosition.Bottom]) then
         VH := VH + V + FDrawable.Padding;
 
-      if (FScrollbar = TViewScroll.Horizontal) and (FScroll <> nil) and (FScroll.Visible) then
-        VH := VH + FScroll.Height;
+      if (FScrollbar = TViewScroll.Horizontal) and (FScrollV <> nil) and (FScrollV.Visible) then
+        VH := VH + FScrollV.Height;
 
       if FContentBounds = nil then
         New(FContentBounds);
@@ -1256,7 +1308,7 @@ end;
 function TTextView.GetNeedSize: TSizeF;
 begin
   if not (csDestroying in ComponentState) and Assigned(Scene) then begin
-    if not TextSettings.CalcTextObjectSize($FFFF, Scene.GetSceneScale, nil, Result) then
+    if not TextSettings.CalcTextObjectSize(TextSettings.Text, $FFFF, Scene.GetSceneScale, nil, Result) then
       Result := TSizeF.Create(0, 0)
   end else begin
     Result := TSizeF.Create(0, 0);
@@ -1304,10 +1356,7 @@ begin
   if AbsoluteInVisible then
     Exit;
   R := RectF(0, 0, Width, Height);
-  if Assigned(FOnDrawViewBackgroud) then
-    DoDrawBackground(R)
-  else
-    inherited PaintBackground;
+  inherited PaintBackground;
   DoPaintBackground(R);
 end;
 
@@ -1411,10 +1460,7 @@ end;
 
 function TStyleView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
 begin
-  if Assigned(FOnDrawViewBackgroud) then
-    Result := True
-  else
-    Result := inherited CanRePaintBk(View, State);
+  Result := inherited CanRePaintBk(View, State);
 end;
 
 { TButtonView }
@@ -1498,6 +1544,11 @@ begin
     ContentLayoutRect := TRectD.Empty;
 end;
 
+function TScrollView.AllowInitScrollbar: Boolean;
+begin
+  Result := not (csDesigning in ComponentState);
+end;
+
 procedure TScrollView.AniCalcChange(Sender: TObject);
 var
   NewViewPos, MaxScrollViewPos: Single;
@@ -1521,14 +1572,17 @@ procedure TScrollView.AniMouseDown(const Touch: Boolean; const X, Y: Single);
     FThumb: TThumb;
   begin
     Result := False;
-    FTrack := GetRttiObject(FScroll, 'FTrack') as TCustomTrack;
+    FTrack := GetRttiObject(FScrollV, 'FTrack') as TCustomTrack;
     if not Assigned(FTrack) then Exit;
     FThumb := GetRttiObject(FTrack, 'FThumb') as TThumb;
     Result := Assigned(FThumb) and (FThumb.Pressed);
   end;
 
 begin
-  FScrollTrackPressed := FScroll.Pressed or GetScrollPressed;
+  if Assigned(FScrollV) then
+    FScrollTrackPressed := FScrollV.Pressed or GetScrollPressed
+  else
+    FScrollTrackPressed := False;
   FAniCalculations.Averaging := Touch;
   FAniCalculations.MouseDown(X, Y);
 end;
@@ -1568,7 +1622,7 @@ procedure TScrollView.CMGesture(var EventInfo: TGestureEventInfo);
 var
   LP: TPointF;
 begin
-  if (FCanScroll) and ((EventInfo.GestureID = igiPan)) then
+  if (FCanScrollV or FCanScrollH) and ((EventInfo.GestureID = igiPan)) then
   begin
     if FInVisible or (FAniCalculations = nil) then
       Exit;
@@ -1590,6 +1644,7 @@ end;
 constructor TScrollView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
+  FScrollbarWidth := 0;
   FContentBounds := nil;
   FShowScrollBars := True;
   FDragScroll := False;
@@ -1626,19 +1681,19 @@ var
   V: Boolean;
 begin
   inherited DoInVisibleChange;
-  if Assigned(FScroll) then begin
+  if Assigned(FScrollV) then begin
     if FInVisible then
       V := False
     else
-      V := FCanScroll and FShowScrollBars;
-    if FScroll.Visible <> V then
-      FScroll.Visible := V;
+      V := FCanScrollV and FShowScrollBars;
+    if FScrollV.Visible <> V then
+      FScrollV.Visible := V;
   end;
 end;
 
 procedure TScrollView.DoMouseLeave;
 begin
-  inherited;
+  inherited DoMouseLeave;
   if FMouseEvents and Assigned(FAniCalculations) and FAniCalculations.Down then
   begin
     FAniCalculations.MouseLeave;
@@ -1652,7 +1707,7 @@ procedure TScrollView.DoRealign;
 var
   LDisablePaint, LDisableInternalAlign: Boolean;
 begin
-  LDisableInternalAlign := (not FCanScroll) or FDisableAlign or
+  LDisableInternalAlign := (not FCanScrollV) or FDisableAlign or
     (csDestroying in ComponentState) or (FUpdating > 0) or
     (csLoading in ComponentState);
   LDisablePaint := FDisablePaint;
@@ -1697,7 +1752,6 @@ end;
 
 procedure TScrollView.DoUpdateScrollingLimits(NeedUpdateScroll: Boolean; const ValueOffset: Double);
 
-  {$IFNDEF NEXTGEN}
   function GetScrollBar(): TScrollBar;
   begin
     case ScrollBars of
@@ -1707,9 +1761,10 @@ procedure TScrollView.DoUpdateScrollingLimits(NeedUpdateScroll: Boolean; const V
       Result := nil;
     end;
   end;
-  {$ENDIF}
+
 var
   Targets: array [0..1] of TAniCalculations.TTarget;
+  LScroll: TScrollBar;
   {$IFNDEF NEXTGEN}
   FTrackChanging: Boolean;
   {$ENDIF}
@@ -1719,25 +1774,37 @@ begin
     Targets[0].TargetType := TAniCalculations.TTargetType.Min;
     Targets[0].Point := TPointD.Create(0, 0);
     Targets[1].TargetType := TAniCalculations.TTargetType.Max;
-    Targets[1].Point := TPointD.Create(0, Padding.Top + Max(FContentBounds.Height - ViewRect.Height, 0));
+    case FScrollbar of
+      TViewScroll.None:
+        Targets[1].Point := TPointD.Create(0, 0);
+      TViewScroll.Horizontal:
+        Targets[1].Point := TPointD.Create(Padding.Left + Max(FContentBounds.Width - ViewRect.Width, 0), 0);
+      TViewScroll.Vertical:
+        Targets[1].Point := TPointD.Create(0, Padding.Top + Max(FContentBounds.Height - ViewRect.Height, 0));
+    else
+      Targets[1].Point := TPointD.Create(
+        Padding.Left + Max(FContentBounds.Width - ViewRect.Width, 0),
+        Padding.Top + Max(FContentBounds.Height - ViewRect.Height, 0)
+      );
+    end;
 
     FAniCalculations.SetTargets(Targets);
 
     if NeedUpdateScroll or (not HasTouchTracking) then begin
+      LScroll := GetScrollBar;
+      if not Assigned(LScroll) then
+        Exit;
       {$IFNDEF NEXTGEN}
       // 非移动平台，在拖动滚动条后，动态更新滚动条的值
-      FScroll := GetScrollBar;
-      if not Assigned(FScroll) then
-        Exit;
-      FTrackChanging := GetRttiValue<Boolean>(FScroll, 'FTrackChanging');
-      SetRttiValue<Boolean>(FScroll, 'FTrackChanging', False); // 临时将此变量设为False，否则为忽略本次调整
+      FTrackChanging := GetRttiValue<Boolean>(LScroll, 'FTrackChanging');
+      SetRttiValue<Boolean>(LScroll, 'FTrackChanging', False); // 临时将此变量设为False，否则为忽略本次调整
       try
-        UpdateScrollBar(ValueOffset);
+        UpdateScrollBar(LScroll, FScrollbar, ValueOffset);
       finally
-        SetRttiValue<Boolean>(FScroll, 'FTrackChanging', FTrackChanging);
+        SetRttiValue<Boolean>(LScroll, 'FTrackChanging', FTrackChanging);
       end;
       {$ELSE}
-      UpdateScrollBar(ValueOffset);
+      UpdateScrollBar(LScroll, FScrollbar, ValueOffset);
       {$ENDIF}
     end;
   end;
@@ -1746,9 +1813,13 @@ end;
 procedure TScrollView.FreeScrollbar;
 begin
   AutoCapture := False;
-  if Assigned(FScroll) then begin
-    RemoveComponent(FScroll);
-    FreeAndNil(FScroll);
+  if Assigned(FScrollV) then begin
+    RemoveComponent(FScrollV);
+    FreeAndNil(FScrollV);
+  end;
+  if Assigned(FScrollH) then begin
+    RemoveComponent(FScrollH);
+    FreeAndNil(FScrollH);
   end;
 end;
 
@@ -1779,15 +1850,12 @@ end;
 
 function TScrollView.GetHScrollBar: TScrollBar;
 begin
-  if FScrollbar = TViewScroll.Horizontal then
-    Result := FScroll
-  else
-    Result := nil;
+  Result := FScrollH;
 end;
 
 function TScrollView.GetHScrollBarValue: Double;
 begin
-  if (FAniCalculations <> nil) and Assigned(FScroll) and (FScroll.Visible) then
+  if (FAniCalculations <> nil) and Assigned(FScrollH) and (FCanScrollH) then
     Result := ViewportPosition.X
   else
     Result := 0;
@@ -1822,32 +1890,38 @@ begin
   Result := FScrollSmallChangeFraction;
 end;
 
-function TScrollView.GetScrollValue: Single;
+function TScrollView.GetScrollValueH: Single;
 begin
-  Result := (FScroll.ValueD - FScroll.MinD) / (FScroll.MaxD - FScroll.MinD - FScroll.ViewportSizeD);
+  Result := (FScrollH.ValueD - FScrollH.MinD) / (FScrollH.MaxD - FScrollH.MinD - FScrollH.ViewportSizeD);
+end;
+
+function TScrollView.GetScrollValueV: Single;
+begin
+  Result := (FScrollV.ValueD - FScrollV.MinD) / (FScrollV.MaxD - FScrollV.MinD - FScrollV.ViewportSizeD);
 end;
 
 function TScrollView.GetViewportPosition: TPointD;
 var
-  LScale, X, Y: Double;
+  LScale: Double;
 begin
   LScale := GetSceneScale;
-  X := Round(FAniCalculations.ViewportPosition.X * LScale) / LScale;
-  Y := Round(FAniCalculations.ViewportPosition.Y * LScale) / LScale;
-  Result := TPointD.Create(X, Y);
+  if LScale = 1 then begin
+    Result.X := FAniCalculations.ViewportPosition.X;
+    Result.Y := FAniCalculations.ViewportPosition.Y;
+  end else begin
+    Result.X := Round(FAniCalculations.ViewportPosition.X * LScale) / LScale;
+    Result.Y := Round(FAniCalculations.ViewportPosition.Y * LScale) / LScale;
+  end;
 end;
 
 function TScrollView.GetVScrollBar: TScrollBar;
 begin
-  if FScrollbar = TViewScroll.Vertical then
-    Result := FScroll
-  else
-    Result := nil;
+  Result := FScrollV;
 end;
 
 function TScrollView.GetVScrollBarValue: Double;
 begin
-  if (FAniCalculations <> nil) and Assigned(FScroll) and (FScroll.Visible) then begin
+  if (FAniCalculations <> nil) and Assigned(FScrollV) and (FCanScrollV) then begin
     Result := ViewportPosition.Y; // / (FScroll.Max - FScroll.ViewportSize) * FScroll.Max
   end else
     Result := 0;
@@ -1890,42 +1964,19 @@ end;
 
 procedure TScrollView.InitScrollbar;
 begin
-  if (csDesigning in ComponentState) then
+  if not AllowInitScrollbar() then
     Exit;
   if (FContentBounds = nil) and (FScrollbar <> TViewScroll.None) then begin
     New(FContentBounds);
     FContentBounds^ := TRectD.Empty;
   end;
   case FScrollbar of
-    TViewScroll.Vertical:
+    TViewScroll.Vertical: MakScrollBar(FScrollbar, FScrollV);
+    TViewScroll.Horizontal: MakScrollBar(FScrollbar, FScrollH);
+    TViewScroll.Both:
       begin
-        if Assigned(FScroll) and (FScroll.Orientation = TOrientation.Horizontal) then
-          Exit;
-        FScroll := CreateScroll();
-        FScroll.Orientation := TOrientation.Vertical;
-        FScroll.OnChange := VScrollChange;
-        FScroll.Locked := True;
-        FScroll.Align := TAlignLayout.Right;
-        FScroll.SmallChange := GetScrollSmallChangeFraction;
-        FScroll.Parent := Self;
-        FScroll.Visible := False;
-        FScroll.Stored := False;
-        FScroll.Margins.Rect := TRectF.Create(0, 0, 0, 0);
-      end;
-    TViewScroll.Horizontal:
-      begin
-        if Assigned(FScroll) and (FScroll.Orientation = TOrientation.Vertical) then
-          Exit;
-        FScroll := CreateScroll();
-        FScroll.Orientation := TOrientation.Horizontal;
-        FScroll.OnChange := HScrollChange;
-        FScroll.Locked := True;
-        FScroll.Align := TAlignLayout.Bottom;
-        FScroll.SmallChange := GetScrollSmallChangeFraction;
-        FScroll.Parent := Self;
-        FScroll.Visible := False;
-        FScroll.Stored := False;
-        FScroll.Margins.Rect := TRectF.Create(0, 0, 0, 0);
+        MakScrollBar(TViewScroll.Vertical, FScrollV);
+        MakScrollBar(TViewScroll.Horizontal, FScrollH);
       end;
   end;
   UpdateAniCalculations;
@@ -1949,8 +2000,7 @@ begin
   begin
     FInInternalAlign := True;
     try
-      if (FAniCalculations <> nil) and not Released then
-      begin
+      if not Released then begin
         if (FCachedAutoShowing <> FAniCalculations.AutoShowing) and not FAniCalculations.AutoShowing then
           InvalidateContentSize;
         FCachedAutoShowing := FAniCalculations.AutoShowing;
@@ -1958,7 +2008,10 @@ begin
       if (not FAniCalculations.Down) and FAniCalculations.LowVelocity then
         FAniCalculations.Shown := False;
       Adjust(ContentLayoutRect);
-      FScroll.Opacity := AniCalculations.Opacity{$IFNDEF MSWINDOWS} - 0.1{$ENDIF};
+      if Assigned(FScrollV) and (FScrollV.Visible) then
+        FScrollV.Opacity := AniCalculations.Opacity{$IFNDEF MSWINDOWS} - 0.1{$ENDIF};
+      if Assigned(FScrollH) and (FScrollH.Visible) then
+        FScrollH.Opacity := AniCalculations.Opacity{$IFNDEF MSWINDOWS} - 0.1{$ENDIF};
       LViewportPosition := ViewportPosition;
       if FLastViewportPosition = LViewportPosition then
         Exit;
@@ -1996,6 +2049,11 @@ begin
   Result := TOSVersion.Platform in [pfWindows, pfMacOS, pfLinux];
 end;
 
+function TScrollView.IsStoredScrollbarWidth: Boolean;
+begin
+  Result := FScrollbarWidth > 0;
+end;
+
 function TScrollView.IsStoredScrollSmallChangeFraction: Boolean;
 begin
   Result := FScrollSmallChangeFraction <> TView.SmallChangeFraction;
@@ -2006,12 +2064,40 @@ begin
   Result := FScrollingStretchGlowColor <> DefaultScrollingStretchGlowColor;
 end;
 
+procedure TScrollView.MakScrollBar(SType: TViewScroll; var Obj: TScrollBar);
+var
+  O: TOrientation;
+begin
+  if SType = TViewScroll.Vertical then
+    O := TOrientation.Vertical
+  else
+    O := TOrientation.Horizontal;
+  if Assigned(Obj) and (Obj.Orientation = O) then
+    Exit;
+  Obj := CreateScroll();
+  UpdateScrollWidth(Obj);
+  Obj.Orientation := O;
+  Obj.Locked := True;
+  if SType = TViewScroll.Vertical then begin
+    Obj.Align := TAlignLayout.Right;
+    Obj.OnChange := VScrollChange;
+  end else begin
+    Obj.Align := TAlignLayout.Bottom;
+    Obj.OnChange := HScrollChange;
+  end;
+  Obj.SmallChange := GetScrollSmallChangeFraction;
+  Obj.Parent := Self;
+  Obj.Visible := False;
+  Obj.Stored := False;
+  Obj.Margins.Rect := TRectF.Create(0, 0, 0, 0);
+end;
+
 procedure TScrollView.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
   FMouseEvents := True;
   inherited;
-  if Assigned(FAniCalculations) and (Button = TMouseButton.mbLeft) then
+  if Assigned(FAniCalculations) and (Button = TMouseButton.mbLeft) and (FDragScroll) then
   begin
     AniMouseDown(ssTouch in Shift, X, Y);
   end;
@@ -2021,7 +2107,7 @@ procedure TScrollView.MouseMove(Shift: TShiftState; X, Y: Single);
 begin
   FMouseEvents := True;
   inherited;
-  if Assigned(FAniCalculations) and FAniCalculations.Down then
+  if Assigned(FAniCalculations) and FAniCalculations.Down and (FDragScroll) then
   begin
     AniMouseMove(ssTouch in Shift, X, Y);
   end;
@@ -2032,7 +2118,7 @@ procedure TScrollView.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
 begin
   FMouseEvents := True;
   inherited;
-  if Assigned(FAniCalculations) and (Button = TMouseButton.mbLeft) then
+  if Assigned(FAniCalculations) and (Button = TMouseButton.mbLeft) and (FDragScroll) then
   begin
     AniMouseUp(ssTouch in Shift, X, Y);
   end;
@@ -2044,9 +2130,8 @@ var
   Offset: Single;
 begin
   inherited;
-  if (not (Handled or FDisableMouseWheel)) and (FCanScroll) and (not FInVisible) then
-  begin
-    if FScrollbar = TViewScroll.Vertical then begin
+  if (not (Handled or FDisableMouseWheel)) and (not FInVisible) then begin
+    if (FCanScrollV and (not (ssShift in Shift))) then begin
       FAniCalculations.Shown := True;
       if VScrollBar <> nil then begin
         Offset := VScrollBar.SmallChange
@@ -2055,7 +2140,7 @@ begin
       Offset := Offset * -1 * (WheelDelta / 120);
       FAniCalculations.MouseWheel(0, Offset);
       Handled := True;
-    end else begin
+    end else if FCanScrollH then begin
       FAniCalculations.Shown := True;
       if HScrollBar <> nil then
         Offset := HScrollBar.SmallChange
@@ -2117,17 +2202,35 @@ end;
 procedure TScrollView.RealignContent;
 begin
   case FScrollbar of
-    TViewScroll.None: FCanScroll := False;
+    TViewScroll.None:
+      begin
+        FCanScrollV := False;
+        FCanScrollH := False;
+      end;
     {$IFDEF NEXTGEN}
-    TViewScroll.Horizontal, TViewScroll.Vertical: FCanScroll := True;
+    TViewScroll.Horizontal: FCanScrollH := True;
+    TViewScroll.Vertical: FCanScrollV := True;
     {$ELSE}
-    TViewScroll.Horizontal: FCanScroll := FContentBounds.Width > ViewRect.Width;
-    TViewScroll.Vertical: FCanScroll := FContentBounds.Height > ViewRect.Height;
+    TViewScroll.Horizontal: FCanScrollH := DragScroll or (FContentBounds.Width > ViewRect.Width);
+    TViewScroll.Vertical: FCanScrollV := DragScroll or (FContentBounds.Height > ViewRect.Height);
     {$ENDIF}
+    TViewScroll.Both:
+      begin
+        {$IFDEF NEXTGEN}
+          FCanScrollV := True;
+          FCanScrollH := True;
+        {$ELSE}
+          FCanScrollH := DragScroll or (FContentBounds.Width > ViewRect.Width);
+          FCanScrollV := DragScroll or (FContentBounds.Height > ViewRect.Height);
+        {$ENDIF}
+      end;
   end;
-  if Assigned(FScroll) then begin
+  if Assigned(FScrollV) or Assigned(FScrollH) then begin
     InvalidateContentSize;
-    UpdateScrollBar;
+    if Assigned(FScrollV) then
+      UpdateScrollBar(FScrollV, TViewScroll.Vertical);
+    if Assigned(FScrollH) then
+      UpdateScrollBar(FScrollH, TViewScroll.Horizontal);
     DoUpdateScrollingLimits;
   end;
 end;
@@ -2135,7 +2238,7 @@ end;
 procedure TScrollView.Resize;
 begin
   inherited Resize;
-  if (FScroll <> nil) and (FContentBounds <> nil) then
+  if (FScrollV <> nil) and (FContentBounds <> nil) then
     DoUpdateScrollingLimits;
 end;
 
@@ -2179,10 +2282,23 @@ procedure TScrollView.SetHScrollBarValue(const Value: Double);
 var
   V: TPointD;
 begin
-  if (FAniCalculations <> nil) and Assigned(FScroll) and (FScroll.Visible) then begin
+  if (FAniCalculations <> nil) and Assigned(FScrollH) and (FCanScrollH) then begin
     V := ViewportPosition;
     V.X := Value;
     ViewportPosition := V;
+  end;
+end;
+
+procedure TScrollView.SetScrollbarWidth(const Value: Single);
+begin
+  if FScrollbarWidth <> Value then begin
+    FScrollbarWidth := Value;
+    FreeScrollbar;
+    InitScrollbar;
+    if Assigned(FScrollV) then
+      UpdateScrollBar(FScrollV, FScrollbar);
+    if Assigned(FScrollH) then
+      UpdateScrollBar(FScrollH, FScrollbar);
   end;
 end;
 
@@ -2216,7 +2332,7 @@ procedure TScrollView.SetVScrollBarValue(const Value: Double);
 var
   V: TPointD;
 begin
-  if (FAniCalculations <> nil) and Assigned(FScroll) and (FScroll.Visible) then begin
+  if (FAniCalculations <> nil) and Assigned(FScrollV) and (FCanScrollV) then begin
     V := ViewportPosition;
     V.Y := Value;
     ViewportPosition := V;
@@ -2238,41 +2354,48 @@ begin
   end;
 end;
 
-procedure TScrollView.UpdateScrollBar(const ValueOffset: Double);
+procedure TScrollView.UpdateScrollBar(AScroll: TScrollBar; AScrollBar: TViewScroll; const ValueOffset: Double);
 var
   LViewportPosition: TPointD;
   R: TRectF;
 begin
+  if not Assigned(AScroll) then Exit;
   LViewportPosition := ViewportPosition;
   R := ViewRect;
-  if FScrollbar = TViewScroll.Vertical then begin
+  if AScrollBar = TViewScroll.Vertical then begin
     {$IFDEF NEXTGEN}
-    FCanScroll := True; // 移动平台始终能滚动
+    FCanScrollV := True; // 移动平台始终能滚动
     {$ELSE}
-    FCanScroll := FContentBounds.Height > R.Height;
+    FCanScrollV := FContentBounds.Height > R.Height;
     {$ENDIF}
     LViewportPosition.Y := LViewportPosition.Y + ValueOffset;
-    if (LViewportPosition.Y > FContentBounds.Height - FScroll.ViewportSizeD) and
+    if (LViewportPosition.Y > FContentBounds.Height - AScroll.ViewportSizeD) and
       (LViewportPosition.Y > FAniCalculations.MaxTarget.Point.Y) then
       LViewportPosition.Y := FAniCalculations.MaxTarget.Point.Y;
     UpdateVScrollBar(LViewportPosition.Y, R.Height);
-  end else if FScrollbar = TViewScroll.Horizontal then begin
+    if (Assigned(AScroll)) and (AScroll.Visible <> FCanScrollV) then begin
+      AScroll.Visible := FCanScrollV and FShowScrollBars and (not FInVisible);
+      DoScrollVisibleChange;
+    end;
+  end else if AScrollBar = TViewScroll.Horizontal then begin
     {$IFDEF NEXTGEN}
-    FCanScroll := True; // 移动平台始终能滚动
+    FCanScrollH := True; // 移动平台始终能滚动
     {$ELSE}
-    FCanScroll := FContentBounds.Width > R.Width;
+    FCanScrollH := FContentBounds.Width > R.Width;
     {$ENDIF}
     LViewportPosition.X := LViewportPosition.X + ValueOffset;
-    if (LViewportPosition.X > FContentBounds.Width - FScroll.ViewportSizeD) and
+    if (LViewportPosition.X > FContentBounds.Width - AScroll.ViewportSizeD) and
       (LViewportPosition.X > FAniCalculations.MaxTarget.Point.X) then
       LViewportPosition.X := FAniCalculations.MaxTarget.Point.X;
     UpdateHScrollBar(LViewportPosition.X, R.Width);
+    if (Assigned(AScroll)) and (AScroll.Visible <> FCanScrollH) then begin
+      AScroll.Visible := FCanScrollH and FShowScrollBars and (not FInVisible);
+      DoScrollVisibleChange;
+    end;
   end else begin
-    FCanScroll := False;
-  end;
-  if FScroll.Visible <> FCanScroll then begin
-    FScroll.Visible := FCanScroll and FShowScrollBars and (not FInVisible);
-    DoScrollVisibleChange;
+    FCanScrollV := False;
+    FCanScrollH := False;
+    if Assigned(AScroll) then AScroll.Visible := False;
   end;
 end;
 
@@ -2282,6 +2405,21 @@ begin
   begin
     FScrollStretchStrength := NewValue;
     ScrollStretchChanged;
+  end;
+end;
+
+procedure TScrollView.UpdateScrollWidth(const AScroll: TScrollBar);
+begin
+  if ScrollbarWidth > 0 then begin
+    AScroll.Width := ScrollbarWidth;
+    AScroll.Height := ScrollbarWidth;
+  end else begin
+    {$IFDEF MSWINDOWS}
+    if not DragScroll then begin
+      AScroll.Width := 16;
+      AScroll.Height := 16;
+    end;
+    {$ENDIF}
   end;
 end;
 
@@ -2823,7 +2961,7 @@ begin
     case FStyle of
       TBadgeStyle.NumberText, TBadgeStyle.NewText, TBadgeStyle.HotText:
         begin
-          FText.CalcTextObjectSize(0, Scene.GetSceneScale, nil, P);
+          FText.CalcTextObjectSize(FText.Text, 0, Scene.GetSceneScale, nil, P);
           P.Width := P.Width + Padding.Left + Padding.Right;
           P.Height := P.Height + Padding.Top + Padding.Bottom;
           if Assigned(FBackground) then begin
@@ -3460,12 +3598,73 @@ end;
 
 { TPathViewItem }
 
+procedure TPathViewItem.ApplayScale;
+var
+  XOffset: Single;
+  YOffset: Single;
+  W, H: Single;
+begin
+  FPath.Data := FPathData;
+  FPath.Scale(FScaleX, FScaleY);
+  UpdateSize();
+  if not Assigned(FOwner) then
+    Exit;
+
+  XOffset := 0;
+  YOffset := 0;
+  W := FOwner.Width;
+  H := FOwner.Height;
+
+  case FGravity of
+    TLayoutGravity.LeftBottom:
+      begin
+        YOffset := H - FHeight;
+      end;
+    TLayoutGravity.RightTop:
+      begin
+        XOffset := W - FWidth;
+      end;
+    TLayoutGravity.RightBottom:
+      begin
+        XOffset := W - FWidth;
+        YOffset := H - FHeight;
+      end;
+    TLayoutGravity.CenterVertical:
+      begin
+        YOffset := (H - FHeight) * 0.5;
+      end;
+    TLayoutGravity.CenterHorizontal:
+      begin
+        XOffset := (W - FWidth) * 0.5;
+      end;
+    TLayoutGravity.CenterHBottom:
+      begin
+        XOffset := (W - FWidth) * 0.5;
+        YOffset := H - FHeight;
+      end;
+    TLayoutGravity.CenterVRight:
+      begin
+        XOffset := W - FWidth;
+        YOffset := (H - FHeight) * 0.5;
+      end;
+    TLayoutGravity.Center:
+      begin
+        XOffset := (W - FWidth) * 0.5;
+        YOffset := (H - FHeight) * 0.5;
+      end;
+  end;
+
+  if (XOffset <> 0) or (YOffset <> 0) then
+    FPath.Translate(XOffset, YOffset);
+end;
+
 constructor TPathViewItem.Create(Collection: TCollection);
 begin
   inherited;
   FVisible := True;
+  FScaleX := 1;
+  FScaleY := 1;
   FPath := TPathData.Create;
-  FPath.OnChanged := DoChanged;
 end;
 
 destructor TPathViewItem.Destroy;
@@ -3500,6 +3699,16 @@ begin
   Result := FStyle;
 end;
 
+function TPathViewItem.IsStoreScaleX: Boolean;
+begin
+  Result := FScaleX <> 1;
+end;
+
+function TPathViewItem.IsStoreScaleY: Boolean;
+begin
+  Result := FScaleY <> 1;
+end;
+
 procedure TPathViewItem.SetDisplayName(const Value: string);
 begin
   if FDisplayName <> Value then begin
@@ -3508,9 +3717,55 @@ begin
   end;
 end;
 
+procedure TPathViewItem.SetGravity(const Value: TLayoutGravity);
+begin
+  if FGravity <> Value then begin
+    FGravity := Value;
+    ApplayScale;
+    DoChanged(Self);
+  end;
+end;
+
+procedure TPathViewItem.SetOwner(const Value: TControl);
+begin
+  if FOwner <> Value then begin
+    FOwner := Value;
+    ApplayScale;
+  end;
+end;
+
 procedure TPathViewItem.SetPath(const Value: TPathData);
 begin
   FPath.Assign(Value);
+  DoChanged(Self);
+end;
+
+procedure TPathViewItem.SetPathData(const Value: string);
+begin
+  if FPathData <> Value then begin
+    FPathData := Value;
+    FPath.Data := FPathData;
+    ApplayScale();
+    DoChanged(Self);
+  end;
+end;
+
+procedure TPathViewItem.SetScaleX(const Value: Single);
+begin
+  if FScaleX <> Value then begin
+    FScaleX := Value;
+    ApplayScale;
+    DoChanged(Self);
+  end;
+end;
+
+procedure TPathViewItem.SetScaleY(const Value: Single);
+begin
+  if FScaleY <> Value then begin
+    FScaleY := Value;
+    ApplayScale;
+    DoChanged(Self);
+  end;
 end;
 
 procedure TPathViewItem.SetStyle(const Value: TPathViewStyles);
@@ -3529,11 +3784,32 @@ begin
   end;
 end;
 
+procedure TPathViewItem.UpdateSize;
+var
+  I: Integer;
+  MW, MH: Single;
+begin
+  MW := 0;
+  MH := 0;
+  for I := 0 to FPath.Count - 1 do begin
+    with FPath.Points[I] do begin
+      if Kind = TPathPointKind.Close then
+        Continue;
+      MW := Max(Point.X, MW);
+      MH := Max(Point.Y, MH);
+    end;
+  end;
+  FWidth := MW;
+  FHeight := MH;
+end;
+
 { TPathViewCollection }
 
 function TPathViewCollection.Add: TPathViewItem;
 begin
   Result := inherited Add as TPathViewItem;
+  Result.Owner := FOwner;
+  Result.OnChange := DoChange;
 end;
 
 constructor TPathViewCollection.Create(AOwner: TControl;
@@ -3543,9 +3819,28 @@ begin
   FOwner := AOwner;
 end;
 
+procedure TPathViewCollection.DoChange(Sender: TObject);
+begin
+  if Assigned(FOnChange) then
+    FOnChange(Self);
+end;
+
 procedure TPathViewCollection.DoItemChanged(ASender: TObject);
 begin
   Changed;
+  DoChange(Self);
+end;
+
+procedure TPathViewCollection.DoParentSizeChange;
+var
+  I: Integer;
+  Item: TPathViewItem;
+begin
+  for I := 0 to Count - 1 do begin
+    Item := Items[I];
+    if Assigned(Item) and (Item.Gravity <> TLayoutGravity.None) then
+      Item.ApplayScale;
+  end;
 end;
 
 function TPathViewCollection.FindItemID(ID: Integer): TPathViewItem;
@@ -3556,6 +3851,10 @@ end;
 function TPathViewCollection.GetItem(Index: Integer): TPathViewItem;
 begin
   Result := inherited GetItem(Index) as TPathViewItem;
+  if Assigned(Result) then begin
+    Result.Owner := FOwner;
+    Result.OnChange := DoChange;
+  end;
 end;
 
 function TPathViewCollection.GetOwner: TPersistent;
@@ -3572,7 +3871,7 @@ end;
 procedure TPathViewCollection.Update(Item: TCollectionItem);
 begin
   inherited;
-  (FOwner as TControl).Repaint;
+  DoChange(Self);
 end;
 
 { TCustomMultiPathView }
@@ -3601,6 +3900,7 @@ constructor TCustomMultiPathView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FPaths := TPathViewCollection.Create(Self, TPathViewItem);
+  FPaths.OnChange := DoPathChange;
   FHoverIndex := -1;
   FActiveIndex := -1;
   FPressedIndex := -1;
@@ -3611,6 +3911,11 @@ destructor TCustomMultiPathView.Destroy;
 begin
   FreeAndNil(FPaths);
   inherited;
+end;
+
+procedure TCustomMultiPathView.DoPathChange(Sender: TObject);
+begin
+  Invalidate;
 end;
 
 function TCustomMultiPathView.GetPathCount: Integer;
@@ -3745,6 +4050,13 @@ begin
     {$ENDIF}
   end else
     Result := inherited PointInObject(X, Y);
+end;
+
+procedure TCustomMultiPathView.Resize;
+begin
+  if Assigned(FPaths) and (not (csDestroying in ComponentState)) then
+    FPaths.DoParentSizeChange;
+  inherited Resize;
 end;
 
 procedure TCustomMultiPathView.SetActiveIndex(const Value: Integer);

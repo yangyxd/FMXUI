@@ -89,6 +89,9 @@ type
 
 implementation
 
+var
+  FAsyncRef: Integer = 0; // 异步任务计数器
+
 { TAsync }
 
 procedure TAsync.ComNeeded(AInitFlags: Cardinal);
@@ -209,6 +212,7 @@ end;
 
 procedure TAsync.Start;
 begin
+  AtomicIncrement(FAsyncRef);
   Execute;
 end;
 
@@ -232,8 +236,28 @@ begin
     finally
       FAsync.DisposeOf;
       FAsync := nil;
+      AtomicDecrement(FAsyncRef);
     end;
   end;
 end;
+
+// 等待所有线程关闭
+procedure WaitAsyncFinish(const ATimeout: Cardinal = 5000);
+var
+  T: Cardinal;
+begin
+  T := TThread.GetTickCount;
+  while AtomicDecrement(FAsyncRef) >= 0 do begin
+    AtomicIncrement(FAsyncRef);
+    Sleep(20);
+    if TThread.GetTickCount - T > ATimeout then
+      Break;
+  end;
+end;
+
+initialization
+
+finalization
+  WaitAsyncFinish();
 
 end.

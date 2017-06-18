@@ -305,7 +305,6 @@ type
     FEnablePullLoad: Boolean;
     FCount: Integer;
 
-    FScrollbarWidth: Single;
     FMaxListItemBottom: Double;
 
     {$IFNDEF NEXTGEN}
@@ -344,8 +343,6 @@ type
     function GetRowCount: Integer;
     function GetColumnDivider: Boolean;
     procedure SetColumnDivider(const Value: Boolean);
-    procedure SetScrollbarWidth(const Value: Single);
-    function IsStoredScrollbarWidth: Boolean;
   protected
     function CreateScroll: TScrollBar; override;
     function GetRealDrawState: TViewState; override;
@@ -358,12 +355,11 @@ type
     procedure DoRealign; override;
     procedure DoInVisibleChange; override;
     procedure DoScrollVisibleChange; override;
-    procedure DoChangeSize(var ANewWidth, ANewHeight: Single); override;
 
     procedure DoPullLoad(Sender: TObject);
     procedure DoColumnCountChange(const AColumnCount: Integer);
 
-    procedure CMGesture(var EventInfo: TGestureEventInfo); override;
+    //procedure CMGesture(var EventInfo: TGestureEventInfo); override;
     procedure AniMouseUp(const Touch: Boolean; const X, Y: Single); override;
   protected
     procedure Resize; override;
@@ -487,9 +483,11 @@ type
     /// </summary>
     property DividerHeight: Single read FDividerHeight write SetDividerHeight stored IsStoredDividerHeight;
 
+    property ShowScrollBars;
+    property ScrollbarWidth;
+    //property ScrollBars default TViewScroll.Vertical;
     property ScrollSmallChangeFraction;
     property ScrollStretchGlowColor;
-    property ScrollbarWidth: Single read FScrollbarWidth write SetScrollbarWidth stored IsStoredScrollbarWidth;
     property OnScrollChange;
 
     property OnDrawBackgroud: TOnDrawViewBackgroud read FOnDrawViewBackgroud
@@ -584,6 +582,8 @@ type
     FList: TList<T>;
     FListNeedFree: Boolean;
     function GetCount: Integer; override;
+    function GetItem(const Index: Integer): Pointer; override;
+    function IndexOf(const AItem: Pointer): Integer; override;
   public
     constructor Create(const AItems: TList<T>); overload;
     destructor Destroy; override;
@@ -603,6 +603,7 @@ type
     FFlags: Integer;
     FList: TStrings;
     FArray: TArrayEx<string>;
+    FDefaultItemHeight: Single;
     function GetItemValue(const Index: Integer): string;
     procedure SetItemValue(const Index: Integer; const Value: string);
     procedure SetArray(const Value: TArray<string>);
@@ -611,6 +612,9 @@ type
     function GetArray: TArray<string>;
   protected
     FListNeedFree: Boolean;
+    FWordWrap: Boolean;
+    FFontSize: Single;
+    FItemIndex: Integer;
     { IListAdapter }
     function GetCount: Integer; override;
     function GetItem(const Index: Integer): Pointer; override;
@@ -630,6 +634,10 @@ type
     property Items[const Index: Integer]: string read GetItemValue write SetItemValue; default;
     property Strings: TStrings read GetList write SetList;
     property StringArray: TArray<string> read GetArray write SetArray;
+    property DefaultItemHeight: Single read FDefaultItemHeight write FDefaultItemHeight;
+    property WordWrap: Boolean read FWordWrap write FWordWrap;
+    property FontSize: Single read FFontSize write FFontSize;
+    property ItemIndex: Integer read FItemIndex write FItemIndex;
   end;
 
   /// <summary>
@@ -676,15 +684,10 @@ type
   /// 单选列表适配器
   /// </summary>
   TStringsListSingleAdapter = class(TStringsListAdapter)
-  private
-    FItemIndex: Integer;
-    procedure SetItemIndex(const Value: Integer);
   protected
     procedure DoInitData; override;
     procedure DoItemIndexChange(Sender: TObject);
     function GetView(const Index: Integer; ConvertView: TViewBase; Parent: TViewGroup): TViewBase; override;
-  public
-    property ItemIndex: Integer read FItemIndex write SetItemIndex;
   end;
 
 type
@@ -867,14 +870,14 @@ begin
   {$ENDIF}
 end;
 
-procedure TListViewEx.CMGesture(var EventInfo: TGestureEventInfo);
-begin
-  if Assigned(FContentViews) then begin
-    if FContentViews.FState in [TListViewState.PullDownFinish, TListViewState.PullUpFinish] then
-      Exit;  
-  end;
-  inherited CMGesture(EventInfo);
-end;
+//procedure TListViewEx.CMGesture(var EventInfo: TGestureEventInfo);
+//begin
+//  if Assigned(FContentViews) then begin
+//    if FContentViews.FState in [TListViewState.PullDownFinish, TListViewState.PullUpFinish] then
+//      Exit;
+//  end;
+//  inherited CMGesture(EventInfo);
+//end;
 
 constructor TListViewEx.Create(AOwner: TComponent);
 begin
@@ -883,7 +886,6 @@ begin
   CreateCoentsView();
   FAllowItemChildClick := True;
   FDivider := CDefaultDividerColor;
-  FScrollbarWidth := 0;
   FDividerHeight := -1;
   FLocalDividerHeight := -1;
   SetLength(FItemsPoints, 0);
@@ -893,7 +895,9 @@ begin
   ClipChildren := True;
   with Background.ItemPressed do begin
     Color := CDefaultBKPressedColor;
-    Kind := TViewBrushKind.Solid; 
+    Kind := TViewBrushKind.Solid;
+    DefaultColor := Color;
+    DefaultKind := TBrushKind.Solid;
   end;
   HitTest := True;
 end;
@@ -924,21 +928,12 @@ begin
   {$ELSE}
   Result := TSmallScrollBar.Create(Self);
   {$ENDIF}
-  if FScrollbarWidth > 0 then begin
-    SetRttiValue(Result, 'MinClipWidth', FScrollbarWidth);
-    SetRttiValue(Result, 'MinClipHeight', FScrollbarWidth);
-  end;
 end;
 
 destructor TListViewEx.Destroy;
 begin
   FAdapter := nil;
   inherited Destroy;
-end;
-
-procedure TListViewEx.DoChangeSize(var ANewWidth, ANewHeight: Single);
-begin
-  inherited DoChangeSize(ANewWidth, ANewHeight);
 end;
 
 procedure TListViewEx.DoColumnCountChange(const AColumnCount: Integer);
@@ -1020,8 +1015,8 @@ begin
     end;
 
     {$IFDEF MSWINDOWS}
-    if Assigned(FScroll) and (FScroll.Visible) then
-      W := Width - Padding.Right - Padding.Left{$IFDEF MSWINDOWS} - FScroll.Width{$ENDIF}
+    if Assigned(FScrollV) and (FScrollV.Visible) then
+      W := Width - Padding.Right - Padding.Left{$IFDEF MSWINDOWS} - FScrollV.Width{$ENDIF}
     else
       W := Width - Padding.Right - Padding.Left;
     {$ELSE}
@@ -1297,11 +1292,6 @@ begin
   Result := FDividerHeight <> -1;
 end;
 
-function TListViewEx.IsStoredScrollbarWidth: Boolean;
-begin
-  Result := FScrollbarWidth > 0;
-end;
-
 procedure TListViewEx.Loaded;
 begin
   inherited Loaded;
@@ -1472,7 +1462,7 @@ begin
   inherited Resize;
 
   if Assigned(FAdapter) then begin
-    UpdateScrollBar;
+    UpdateScrollBar(FScrollV, FScrollbar);
     FContentViews.DoRealign;
     FLastHeight := Height;
     FLastWidth := Width;
@@ -1540,6 +1530,8 @@ procedure TListViewEx.SetDividerHeight(const Value: Single);
 begin
   if FDividerHeight <> Value then begin
     FDividerHeight := Value;
+    if csDesigning in ComponentState then
+      Exit;
     if not (csLoading in ComponentState) then begin     
       FLocalDividerHeight := FDividerHeight;
       RealignContent;
@@ -1584,17 +1576,6 @@ begin
       end else
         FContentViews.InitHeader;
     end;
-  end;
-end;
-
-procedure TListViewEx.SetScrollbarWidth(const Value: Single);
-begin
-  if FScrollbarWidth <> Value then begin
-    FScrollbarWidth := Value;
-    FreeAndNil(FScroll);
-    InitScrollbar;
-    if Assigned(FScroll) then
-      UpdateScrollBar;
   end;
 end;
 
@@ -3087,6 +3068,11 @@ begin
     Result := 0;
 end;
 
+function TListAdapter<T>.GetItem(const Index: Integer): Pointer;
+begin
+  Result := nil;
+end;
+
 function TListAdapter<T>.GetItems: TList<T>;
 begin
   if FList = nil then begin
@@ -3094,6 +3080,11 @@ begin
     FListNeedFree := True;
   end;
   Result := FList;
+end;
+
+function TListAdapter<T>.IndexOf(const AItem: Pointer): Integer;
+begin
+  Result := -1;
 end;
 
 procedure TListAdapter<T>.Insert(const Index: Integer; const Value: T);
@@ -3147,12 +3138,16 @@ end;
 
 constructor TStringsListAdapter.Create(const AItems: TArray<string>);
 begin
+  FWordWrap := True;
+  FFontSize := TListTextItem.C_FontSize;
   SetArray(AItems);
   DoInitData;
 end;
 
 constructor TStringsListAdapter.Create(const AItems: TStrings);
 begin
+  FWordWrap := True;
+  FFontSize := TListTextItem.C_FontSize;
   if AItems <> nil then
     SetList(AItems);
   DoInitData;
@@ -3225,9 +3220,9 @@ begin
     ViewItem := TListTextItem.Create(Parent);
     ViewItem.Parent := Parent;
     ViewItem.Width := Parent.Width;
-    ViewItem.MinHeight := TListTextItem.C_MinHeight;
-    ViewItem.TextSettings.Font.Size := TListTextItem.C_FontSize;
-    ViewItem.TextSettings.WordWrap := True;
+    ViewItem.MinHeight := ItemDefaultHeight;
+    ViewItem.TextSettings.Font.Size := FFontSize;
+    ViewItem.TextSettings.WordWrap := FWordWrap;
     ViewItem.Gravity := TLayoutGravity.CenterVertical;
     ViewItem.Padding.Rect := RectF(8, 8, 8, 8);
     ViewItem.CanFocus := False;
@@ -3253,7 +3248,10 @@ end;
 
 function TStringsListAdapter.ItemDefaultHeight: Single;
 begin
-  Result := TListTextItem.C_MinHeight;
+  if FDefaultItemHeight = 0 then
+    Result := TListTextItem.C_MinHeight
+  else
+    Result := FDefaultItemHeight;
 end;
 
 procedure TStringsListAdapter.SetArray(const Value: TArray<string>);
@@ -3329,15 +3327,15 @@ begin
     ViewItem.Parent := Parent;
     ViewItem.BeginUpdate;
     ViewItem.WidthSize := TViewSize.FillParent;
-    ViewItem.MinHeight := TListTextItem.C_MinHeight;
+    ViewItem.MinHeight := ItemDefaultHeight;
     ViewItem.Gravity := TLayoutGravity.CenterVertical;
     ViewItem.Width := Parent.Width;
 
     ViewItem.TextView1 := TTextView.Create(ViewItem);
     ViewItem.TextView1.WidthSize := TViewSize.FillParent;
     ViewItem.TextView1.HeightSize := TViewSize.WrapContent;
-    ViewItem.TextView1.TextSettings.Font.Size := TListTextItem.C_FontSize;
-    ViewItem.TextView1.TextSettings.WordWrap := True;
+    ViewItem.TextView1.TextSettings.Font.Size := FFontSize;
+    ViewItem.TextView1.TextSettings.WordWrap := FWordWrap;
     //ViewItem.TextView1.TextSettings.Trimming := TTextTrimming.Character;
     ViewItem.TextView1.Gravity := TLayoutGravity.CenterVertical;
     ViewItem.TextView1.Margins.Rect := RectF(0, 0, 4, 0);
@@ -3415,15 +3413,15 @@ begin
     ViewItem.Parent := Parent;
     ViewItem.BeginUpdate;
     ViewItem.WidthSize := TViewSize.FillParent;
-    ViewItem.MinHeight := TListTextItem.C_MinHeight;
+    ViewItem.MinHeight := ItemDefaultHeight;
     ViewItem.Gravity := TLayoutGravity.CenterVertical;
     ViewItem.Width := Parent.Width;
 
     ViewItem.TextView1 := TTextView.Create(ViewItem);
     ViewItem.TextView1.WidthSize := TViewSize.FillParent;
     ViewItem.TextView1.HeightSize := TViewSize.WrapContent;
-    ViewItem.TextView1.TextSettings.Font.Size := TListTextItem.C_FontSize;
-    ViewItem.TextView1.TextSettings.WordWrap := True;
+    ViewItem.TextView1.TextSettings.Font.Size := FFontSize;
+    ViewItem.TextView1.TextSettings.WordWrap := FWordWrap;
     ViewItem.TextView1.Gravity := TLayoutGravity.CenterVertical;
     ViewItem.TextView1.Margins.Rect := RectF(0, 0, 4, 0);
     ViewItem.TextView1.Padding.Rect := RectF(8, 8, 8, 8);
@@ -3452,11 +3450,6 @@ begin
   ViewItem.Height := ViewItem.TextView1.Height;
   ViewItem.EndUpdate;
   Result := TViewBase(ViewItem);
-end;
-
-procedure TStringsListSingleAdapter.SetItemIndex(const Value: Integer);
-begin
-  FItemIndex := Value;
 end;
 
 { TTreeListNode<T> }
@@ -3732,9 +3725,9 @@ begin
     ViewItem := TListTextItem.Create(Parent);
     ViewItem.Parent := Parent;
     ViewItem.Width := Parent.Width;
-    ViewItem.Height := TListTextItem.C_MinHeight;
+    ViewItem.MinHeight := ItemDefaultHeight;
+    ViewItem.Height := ViewItem.MinHeight;
     ViewItem.HeightSize := TViewSize.CustomSize;
-    ViewItem.MinHeight := TListTextItem.C_MinHeight;
     ViewItem.TextSettings.Font.Size := TListTextItem.C_FontSize;
     ViewItem.TextSettings.WordWrap := True;
     ViewItem.Gravity := TLayoutGravity.CenterVertical;
@@ -3821,9 +3814,9 @@ begin
     ViewItem := TListTextItem.Create(Parent);
     ViewItem.Parent := Parent;
     ViewItem.Width := Parent.Width;
-    ViewItem.MinHeight := TListTextItem.C_MinHeight;
-    ViewItem.TextSettings.Font.Size := TListTextItem.C_FontSize;
-    ViewItem.TextSettings.WordWrap := True;
+    ViewItem.MinHeight := ItemDefaultHeight;
+    ViewItem.TextSettings.Font.Size := FFontSize;
+    ViewItem.TextSettings.WordWrap := FWordWrap;
     ViewItem.Gravity := TLayoutGravity.CenterVertical;
     ViewItem.Padding.Rect := RectF(8, 8, 8, 8);
     if Assigned(FImages) then begin
@@ -3852,3 +3845,4 @@ begin
 end;
 
 end.
+

@@ -31,8 +31,7 @@ requires
   rtl,
   fmx,
   DesignIDE,
-  IndySystem,
-  IndyCore;
+  dbrtl;
 
 contains
   UI.Async in 'UI.Async.pas',
@@ -54,7 +53,11 @@ contains
   UI.MsgEngine in 'UI.MsgEngine.pas',
   UI.Utils in 'UI.Utils.pas',
   UI.Ani in 'UI.Ani.pas',
-  UI.ListView.TreeGroup in 'UI.ListView.TreeGroup.pas' {ListViewTreeGroup: TFrame};
+  UI.ListView.TreeGroup in 'UI.ListView.TreeGroup.pas' {ListViewTreeGroup: TFrame},
+  UI.Grid in 'UI.Grid.pas',
+  UI.Grid.Res in 'UI.Grid.Res.pas' {GridRes: TFrame},
+  UI.Design.GridColumns in 'UI.Design.GridColumns.pas' {GridColumnsDesigner};
 
 end.
+
 

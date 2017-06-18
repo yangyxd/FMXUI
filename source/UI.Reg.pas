@@ -20,11 +20,14 @@ implementation
 uses
   UI.Debug,
   System.SysUtils, System.Actions,
-  UI.Base, UI.Standard, UI.Edit, UI.Dialog,
+  UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.Grid,
   UI.ListView,
   // UI.ListViewEx,
   UI.Toast,
+
   UI.Design.Bounds,
+  UI.Design.GridColumns,
+
   UI.Frame,
   {$IFDEF MSWINDOWS}
   Windows, Registry,
@@ -55,6 +58,14 @@ type
   end;
 
   TPatchBoundsProperty = class(TClassProperty)
+  private
+  protected
+    procedure Edit; override;
+  public
+    function GetAttributes: TPropertyAttributes; override;
+  end;
+
+  TGridColumnsSettingsProperty = class(TClassProperty)
   private
   protected
     procedure Edit; override;
@@ -142,6 +153,10 @@ begin
   RegisterComponents(PageName, [TEditView]);
   RegisterComponents(PageName, [TListViewEx]);
 
+  RegisterComponents(PageName, [TGridView]);
+  RegisterComponents(PageName, [TDBGridView]);
+  RegisterComponents(PageName, [TStringGridView]);
+
   RegisterComponents(PageName, [TDialogStyleManager]);
   RegisterComponents(PageName, [TToastManager]);
 
@@ -150,6 +165,7 @@ begin
 
   RegisterComponentEditor(TView, TViewControlEditor);
   RegisterPropertyEditor(TypeInfo(TPatchBounds), TPersistent, '', TPatchBoundsProperty);
+  RegisterPropertyEditor(TypeInfo(TGridColumnsSetting), TGridBase, '', TGridColumnsSettingsProperty);
   RegisterPropertyEditor(TypeInfo(TControl), TViewLayout, '', TLayoutComponentProperty);
 
   RegisterPropertyEditor(TypeInfo(TCustomImageList), TPersistent, '', TShareImageListProperty);
@@ -189,6 +205,12 @@ begin
       'OnClick',
       'OnPaint',
       'OnResize',
+      { TScrollView }
+      'ShowScrollBars',
+      'DragScroll',
+      'ScrollSmallChangeFraction',
+      'ScrollStretchGlowColor',
+      'ScrollbarWidth',
       { TGridsLayout }
       'ColumnCount',
       'ColumnWidth',
@@ -205,7 +227,6 @@ begin
       { TListViewEx}
       'AllowItemClickEx',
       'DividerHeight',
-      'ScrollStretchGlowColor',
       'EnablePullRefresh',
       'EnablePullLoad',
       'OnPullRefresh',
@@ -263,6 +284,32 @@ begin
       { TMultiPathView }
       'Paths',
       'ActiveIndex',
+      { GridView }
+      'RowHeight',
+      'DrawableCells',
+      'Options',
+      'FixedSettings',
+      'MinRowCount',
+      'DataSource',
+      'ShowCheck',
+      'ColCount',
+      'RowCount',
+      'ShowColIndex',
+      'ColumnsSettings',
+
+      'OnTitleClick',
+      'OnColumnMoved',
+      'OnFixedCellClick',
+      'OnCellClick',
+      'OnCellEnter',
+      'OnCellLeave',
+      'OnCellCheck',
+      'OnCellEditDone',
+      'OnItemIndexChange',
+      'OnRowSelChange',
+      'OnDrawFixedColText',
+      'OnDrawFixedCellsText',
+      'OnDrawCells',
       { Text }
       'Text',
       'TextHint',
@@ -316,7 +363,7 @@ begin
   AddEnumElementAliases(TypeInfo(TViewBrushKind),
     ['None', 'Solid', 'Gradient', 'Bitmap', 'Resource', 'Patch9Bitmap']);
   AddEnumElementAliases(TypeInfo(TViewScroll),
-    ['None', 'Horizontal', 'Vertical']);
+    ['None', 'Horizontal', 'Vertical', 'Both']);
   AddEnumElementAliases(TypeInfo(TViewStretchMode),
     ['None', 'SpacingWidth', 'ColumnWidth', 'SpacingWidthUniform']);
   AddEnumElementAliases(TypeInfo(TProgressKind),
@@ -327,6 +374,8 @@ begin
     ['EmptyText', 'NumberText', 'NewText', 'HotText', 'Icon']);
   AddEnumElementAliases(TypeInfo(TRingViewStyle),
     ['Rectangle', 'Circle', 'Ellipse']);
+  AddEnumElementAliases(TypeInfo(TGridDataType),
+    ['PlanText', 'CheckBox', 'RadioButton', 'Image', 'ProgressBar', 'CustomDraw']);
 end;
 
 procedure UnregisterAliases;
@@ -342,6 +391,7 @@ begin
   RemoveEnumElementAliases(TypeInfo(TImageScaleType));
   RemoveEnumElementAliases(TypeInfo(TBadgeStyle));
   RemoveEnumElementAliases(TypeInfo(TRingViewStyle));
+  RemoveEnumElementAliases(TypeInfo(TGridDataType));
 end;
 
 { TViewControlEditor }
@@ -435,7 +485,7 @@ var
   IsSel: Boolean;
   Selects: IDesignerSelections;
 begin
-  if Assigned(Designer.CurrentParent) then
+  if Assigned(Designer.CurrentParent) then begin
     P := Designer.CurrentParent;
     Selects := GetSelections;
     for I := 0 to TControl(P).ChildrenCount - 1 do begin
@@ -453,6 +503,7 @@ begin
           Proc(Item.Name);
       end;
     end;
+  end;
 end;
 
 { TShareImageListProperty }
@@ -507,9 +558,35 @@ begin
   SetOrdValue(LongInt(Component));
 end;
 
+{ TGridColumnsSettingsProperty }
+
+procedure TGridColumnsSettingsProperty.Edit;
+var
+  Component: TObject;
+  Dialog: TGridColumnsDesigner;
+begin
+  Component := GetComponent(0);
+  if not (Component is TGridView) then
+    Exit;
+  Dialog := TGridColumnsDesigner.Create(nil);
+  try
+    Dialog.Caption := 'GridView ÁÐÉè¼ÆÆ÷';
+    Dialog.Columns := TGridView(Component).Columns;
+    if Dialog.ShowModal = mrOK then
+      TGridView(Component).Columns.Assign(Dialog.Columns);
+  finally
+    Dialog.Free;
+  end;
+end;
+
+function TGridColumnsSettingsProperty.GetAttributes: TPropertyAttributes;
+begin
+  Result := [paMultiSelect, paSubProperties, paReadOnly, paDialog];
+end;
+
 initialization
   RegisterAliases;
-  RegisterFmxClasses([TView, TLinearLayout, TRelativeLayout,
+  RegisterFmxClasses([TView, TLinearLayout, TRelativeLayout, TGridView,
     TTextView, TButtonView, TEditView, TAlertDialog, TDialogStyleManager]);
 
 finalization

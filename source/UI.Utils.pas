@@ -10,6 +10,8 @@ unit UI.Utils;
 
 interface
 
+{.$DEFINE HASHClash} // 统计Hash冲突
+
 uses
   {$IFDEF MSWINDOWS}Windows, ShellAPI, {$ENDIF}
   {$IFDEF ANDROID}
@@ -36,6 +38,7 @@ uses
   System.NetEncoding,
   FMX.MediaLibrary,
   System.Character,
+  System.SyncObjs,
   System.Classes, System.Types, System.UITypes, System.SysUtils, System.Math.Vectors,
   FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls, FMX.InertialMovement;
 
@@ -73,6 +76,9 @@ function OpenURL(const URL: string): Boolean;
 // 调用移动平台的分享功能
 procedure Share(const AControl: TControl; const Title, Msg: string);
 
+// 统计字符串字符数
+function CharCount(const S: string): Integer;
+
 function RectD(const Left, Top, Right, Bottom: Double): TRectD; overload;
 function RectD(const R: TRectF): TRectD; overload;
 function RectSF(const Left, Top, Width, Height: Single): TRectF;
@@ -85,10 +91,102 @@ function GetAngle(const CX, CY, X, Y: Single): Single;
 // 判断两个方法是否相等
 function EqulsMethod(const A, B: TNotifyEvent): Boolean;
 
+type
+  {$if CompilerVersion < 23}
+  NativeUInt = Cardinal;
+  NativeInt = Integer;
+  {$ifend}
+  Number = NativeInt;
+  NumberU = NativeUInt;
+  /// 桶内元素的哈希值列表
+  THashType = UInt64;
+
+  PPIntHashItem = ^PIntHashItem;
+  PIntHashItem = ^TIntHashItem;
+  TIntHashItem = record
+    Next: PIntHashItem;
+    Key: THashType;
+    case Value: Int64 of
+      0: (AsNumber: Number);
+      1: (AsDouble: Double);
+      2: (AsInt64: Int64);
+      3: (AsPointer: Pointer);
+  end;
+
+  /// <summary>删除哈希表一个元素的通知</summary>
+  /// <param name="ATable">哈希表对象</param>
+  /// <param name="AHash">要删除的对象的哈希值</param>
+  /// <param name="AData">要删除的对象数据指针</param>
+  TYXDIntHashItemFreeNotify = procedure (Item: PIntHashItem) of object;
+
+  TIntHash = class
+  private
+    FCount: Integer;
+    FOnFreeItem: TYXDIntHashItemFreeNotify;
+    function GetBucketsCount: Integer;
+    function GetValueItem(const Key: THashType): Number;
+    procedure SetValueItem(const Key: THashType; const Value: Number);
+    function GetItem(const Key: THashType): TIntHashItem;
+  protected
+    FMaxClash: Integer;
+    FLenBuckets: NativeUInt;
+  public
+    Buckets: array of PIntHashItem;
+    constructor Create(Size: Cardinal = 331);
+    destructor Destroy; override;
+
+    function Find(const Key: THashType): PPIntHashItem;
+
+    procedure Add(const Key: THashType; const Value: Number); overload;
+    procedure Add(const Key: THashType; const Value: Double); overload;
+    procedure Add(const Key: THashType; const Value: Int64); overload;
+    procedure Add(const Key: THashType; const Value: Pointer); overload;
+    procedure Add(const Key: THashType; const Value: TObject); overload;
+
+    procedure AddOrUpdate(const Key: THashType; const Value: Number); overload;
+    procedure AddOrUpdate(const Key: THashType; const Value: Double); overload;
+    procedure AddOrUpdate(const Key: THashType; const Value: Int64); overload;
+    procedure AddOrUpdate(const Key: THashType; const Value: Pointer); overload;
+    procedure AddOrUpdate(const Key: THashType; const Value: TObject); overload;
+
+    function Modify(const Key: THashType; const Value: Number): Boolean; overload;
+    function Modify(const Key: THashType; const Value: Double): Boolean; overload;
+    function Modify(const Key: THashType; const Value: Int64): Boolean; overload;
+    function Modify(const Key: THashType; const Value: Pointer): Boolean; overload;
+    function Modify(const Key: THashType; const Value: TObject): Boolean; overload;
+
+    function TryGetValue(const Key: THashType; out Data: TObject): Boolean; overload;
+    function TryGetValue(const Key: THashType; out Data: Pointer): Boolean; overload;
+    function TryGetValue(const Key: THashType; out Data: Int64): Boolean; overload;
+    function TryGetValue(const Key: THashType; out Data: Double): Boolean; overload;
+    function TryGetValue(const Key: THashType; out Data: Number): Boolean; overload;
+
+    function ValueOf(const Key: THashType; const DefaultValue: Number = -1): Number;
+
+    function GetInt(const Key: THashType; const DefaultValue: Number = -1): Number;
+    function GetInt64(const Key: THashType; const DefaultValue: Int64 = -1): Int64;
+    function GetFolat(const Key: THashType; const DefaultValue: Double = -1): Double;
+    function GetPointer(const Key: THashType): Pointer;
+    function GetObject(const Key: THashType): TObject;
+
+    procedure Clear;
+
+    function Remove(const Key: THashType): Boolean;
+    function Exists(const Key: THashType): Boolean;
+    function ContainsKey(const Key: THashType): Boolean;
+
+    property Values[const Key: THashType]: Number read GetValueItem write SetValueItem;
+    property Items[const Key: THashType]: TIntHashItem read GetItem; default;
+
+    property Count: Integer read FCount;
+    property BucketsCount: Integer read GetBucketsCount;
+    property OnFreeItem: TYXDIntHashItemFreeNotify read FOnFreeItem write FOnFreeItem;
+  end;
+
 implementation
 
 uses
-  {$IFNDEF MSWINDOWS}System.Diagnostics, {$ENDIF}SyncObjs, Math;
+  {$IFNDEF MSWINDOWS}System.Diagnostics, {$ENDIF} Math;
 
 {$IFDEF MSWINDOWS}
 type
@@ -478,6 +576,464 @@ begin
   {$ELSE}
   ExecShare();
   {$ENDIF}
+end;
+
+function CharCount(const S: string): Integer;
+var
+  p, pe: PWord;
+  ALen: Integer;
+
+  procedure CountChar;
+  begin
+    if (p^ > $D800) and (p^ < $DFFF) then begin
+      Inc(p);
+      if (p^ >= $DC00) and (p^ < $DFFF) then begin
+        Inc(p);
+        Inc(Result);
+      end else
+        Result := -1;
+    end else begin
+      Inc(Result);
+      Inc(p);
+    end;
+  end;
+
+begin
+  Result := 0;
+  p := PWord(S);
+  ALen := Length(S);
+  pe := PWord(IntPtr(p) + (ALen shl 1));
+  while IntPtr(p) < IntPtr(pe) do
+    CountChar;
+end;
+
+{ TIntHash }
+
+procedure TIntHash.Add(const Key: THashType; const Value: Number);
+var
+  Hash: Integer;
+  Bucket: PIntHashItem;
+begin
+  Hash := Key mod Cardinal(Length(Buckets));
+  New(Bucket);
+  Bucket^.Key := Key;
+  Bucket^.AsNumber := Value;
+  Bucket^.Next := Buckets[Hash];
+  Buckets[Hash] := Bucket;
+  Inc(FCount);
+end;
+
+procedure TIntHash.Add(const Key: THashType; const Value: Double);
+var
+  Hash: Integer;
+  Bucket: PIntHashItem;
+begin
+  Hash := Key mod Cardinal(Length(Buckets));
+  New(Bucket);
+  Bucket^.Key := Key;
+  Bucket^.AsDouble := Value;
+  Bucket^.Next := Buckets[Hash];
+  Buckets[Hash] := Bucket;
+  Inc(FCount);
+end;
+
+procedure TIntHash.Add(const Key: THashType; const Value: Int64);
+var
+  Hash: Integer;
+  Bucket: PIntHashItem;
+begin
+  Hash := Key mod Cardinal(Length(Buckets));
+  New(Bucket);
+  Bucket^.Key := Key;
+  Bucket^.AsInt64 := Value;
+  Bucket^.Next := Buckets[Hash];
+  Buckets[Hash] := Bucket;
+  Inc(FCount);
+end;
+
+procedure TIntHash.Add(const Key: THashType; const Value: Pointer);
+var
+  Hash: Integer;
+  Bucket: PIntHashItem;
+begin
+  Hash := Key mod Cardinal(Length(Buckets));
+  New(Bucket);
+  Bucket^.Key := Key;
+  Bucket^.AsPointer := Value;
+  Bucket^.Next := Buckets[Hash];
+  Buckets[Hash] := Bucket;
+  Inc(FCount);
+end;
+
+procedure TIntHash.Add(const Key: THashType; const Value: TObject);
+var
+  Hash: Integer;
+  Bucket: PIntHashItem;
+begin
+  Hash := Key mod Cardinal(Length(Buckets));
+  New(Bucket);
+  Bucket^.Key := Key;
+  Bucket^.AsPointer := Value;
+  Bucket^.Next := Buckets[Hash];
+  Buckets[Hash] := Bucket;
+  Inc(FCount);
+end;
+
+procedure TIntHash.AddOrUpdate(const Key: THashType; const Value: Pointer);
+begin
+  if not Modify(Key, Value) then
+    Add(Key, Value);
+end;
+
+procedure TIntHash.AddOrUpdate(const Key: THashType; const Value: TObject);
+begin
+  if not Modify(Key, Value) then
+    Add(Key, Value);
+end;
+
+procedure TIntHash.AddOrUpdate(const Key: THashType; const  Value: Number);
+begin
+  if not Modify(Key, Value) then
+    Add(Key, Value);
+end;
+
+procedure TIntHash.AddOrUpdate(const Key: THashType; const Value: Int64);
+begin
+  if not Modify(Key, Value) then
+    Add(Key, Value);
+end;
+
+procedure TIntHash.AddOrUpdate(const Key: THashType; const Value: Double);
+begin
+  if not Modify(Key, Value) then
+    Add(Key, Value);
+end;
+
+procedure TIntHash.Clear;
+var
+  I: Integer;
+  P, N: PIntHashItem;
+begin
+  for I := 0 to Length(Buckets) - 1 do begin
+    P := Buckets[I];
+    if P <> nil then begin
+      while P <> nil do begin
+        N := P^.Next;
+        if Assigned(FOnFreeItem) then
+          FOnFreeItem(P);
+        Dispose(P);
+        P := N;
+      end;
+      Buckets[I] := nil;
+    end;
+  end;
+end;
+
+function TIntHash.ContainsKey(const Key: THashType): Boolean;
+begin
+  Result := Find(Key)^ <> nil;
+end;
+
+constructor TIntHash.Create(Size: Cardinal);
+begin
+  inherited Create;
+  SetLength(Buckets, Size);
+  FLenBuckets := Size;
+  FCount := 0;
+end;
+
+destructor TIntHash.Destroy;
+begin
+  Clear;
+  inherited Destroy;
+end;
+
+function TIntHash.Exists(const Key: THashType): Boolean;
+begin
+  Result := Find(Key)^ <> nil;
+end;
+
+function TIntHash.Find(const Key: THashType): PPIntHashItem;
+{$IFDEF HASHClash}
+var
+  J: Integer;
+{$ENDIF}
+begin
+  {$IFDEF WIN64}
+  {$ELSE}
+  {$ENDIF}
+  Result := @Buckets[Key mod FLenBuckets];
+  //Result := @Buckets[(Cardinal(Key) xor Cardinal(Key shr 32)) mod Cardinal(Length(Buckets))];
+  {$IFDEF HASHClash}J := 0; {$ENDIF}
+  while (Result^ <> nil) and (Result^.Key <> Key) do begin
+    Result := @Result^.Next;
+    {$IFDEF HASHClash}
+    Inc(J);
+    {$ENDIF}
+  end;
+  {$IFDEF HASHClash}
+  if J > FMaxClash then begin
+    FMaxClash := J;
+    OutputDebugString(PChar(Format('Max Hash Clash: %d, Key: %s', [J, InttoHex(Key, 8)])));
+  end;
+  {$ENDIF}
+end;
+
+function TIntHash.GetBucketsCount: Integer;
+begin
+  Result := Length(Buckets);
+end;
+
+function TIntHash.GetFolat(const Key: THashType;
+  const DefaultValue: Double): Double;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then
+    Result := P^.AsDouble
+  else
+    Result := DefaultValue;
+end;
+
+function TIntHash.GetInt(const Key: THashType;
+  const DefaultValue: Number): Number;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then
+    Result := P^.AsNumber
+  else
+    Result := DefaultValue;
+end;
+
+function TIntHash.GetInt64(const Key: THashType;
+  const DefaultValue: Int64): Int64;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then
+    Result := P^.AsInt64
+  else
+    Result := DefaultValue;
+end;
+
+function TIntHash.GetItem(const Key: THashType): TIntHashItem;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then
+    Result := P^
+  else
+    FillChar(Result, SizeOf(Result), 0);
+end;
+
+function TIntHash.GetObject(const Key: THashType): TObject;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then
+    Result := P^.AsPointer
+  else
+    Result := nil;
+end;
+
+function TIntHash.GetPointer(const Key: THashType): Pointer;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then
+    Result := P^.AsPointer
+  else
+    Result := nil;
+end;
+
+function TIntHash.GetValueItem(const Key: THashType): Number;
+begin
+  Result := ValueOf(Key);
+end;
+
+function TIntHash.Modify(const Key: THashType; const Value: TObject): Boolean;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then
+  begin
+    Result := True;
+    if Assigned(FOnFreeItem) then
+      FOnFreeItem(P);
+    P^.AsPointer := Value;
+  end else
+    Result := False;
+end;
+
+function TIntHash.Modify(const Key: THashType; const Value: Pointer): Boolean;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then
+  begin
+    Result := True;
+    if Assigned(FOnFreeItem) then
+      FOnFreeItem(P);
+    P^.AsPointer := Value;
+  end else
+    Result := False;
+end;
+
+function TIntHash.Modify(const Key: THashType; const Value: Int64): Boolean;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then
+  begin
+    Result := True;
+    if Assigned(FOnFreeItem) then
+      FOnFreeItem(P);
+    P^.AsInt64 := Value;
+  end else
+    Result := False;
+end;
+
+function TIntHash.Modify(const Key: THashType; const Value: Double): Boolean;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then
+  begin
+    Result := True;
+    if Assigned(FOnFreeItem) then
+      FOnFreeItem(P);
+    P^.AsDouble := Value;
+  end else
+    Result := False;
+end;
+
+function TIntHash.Modify(const Key: THashType; const Value: Number): Boolean;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then
+  begin
+    Result := True;
+    if Assigned(FOnFreeItem) then
+      FOnFreeItem(P);
+    P^.AsNumber := Value;
+  end else
+    Result := False;
+end;
+
+function TIntHash.Remove(const Key: THashType): Boolean;
+var
+  P: PIntHashItem;
+  Prev: PPIntHashItem;
+begin
+  Result := False;
+  Prev := Find(Key);
+  P := Prev^;
+  if P <> nil then begin
+    Result := True;
+    Prev^ := P^.Next;
+    if Assigned(FOnFreeItem) then
+      FOnFreeItem(P);
+    Dispose(P);
+  end;
+end;
+
+procedure TIntHash.SetValueItem(const Key: THashType; const Value: Number);
+begin
+  AddOrUpdate(Key, Value);
+end;
+
+function TIntHash.TryGetValue(const Key: THashType; out Data: Number): Boolean;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then begin
+    Result := True;
+    Data := P^.AsNumber
+  end else begin
+    Result := False;
+    Data := 0;
+  end;
+end;
+
+function TIntHash.TryGetValue(const Key: THashType; out Data: Pointer): Boolean;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then begin
+    Result := True;
+    Data := P^.AsPointer
+  end else begin
+    Result := False;
+    Data := nil;
+  end;
+end;
+
+function TIntHash.TryGetValue(const Key: THashType; out Data: TObject): Boolean;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then begin
+    Result := True;
+    Data := P^.AsPointer
+  end else begin
+    Result := False;
+    Data := nil;
+  end;
+end;
+
+function TIntHash.TryGetValue(const Key: THashType; out Data: Double): Boolean;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then begin
+    Result := True;
+    Data := P^.AsDouble
+  end else begin
+    Result := False;
+    Data := 0;
+  end;
+end;
+
+function TIntHash.TryGetValue(const Key: THashType; out Data: Int64): Boolean;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then begin
+    Result := True;
+    Data := P^.AsInt64
+  end else begin
+    Result := False;
+    Data := 0;
+  end;
+end;
+
+function TIntHash.ValueOf(const Key: THashType; const DefaultValue: Number): Number;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then
+    Result := P^.Value
+  else
+    Result := DefaultValue;
 end;
 
 initialization

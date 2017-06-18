@@ -1420,6 +1420,14 @@ begin
     Exit;
   State := Canvas.SaveState;
   try
+    { Draw selection }
+    if IsFocused and Model.HasSelection then
+    begin
+      DrawSelection;
+      { left picker -> | selected text | <- right picker }
+      if HaveSelectionPickers then
+        DrawLeftAndRightSelectionSide;
+    end;
     { draw text }
     Canvas.IntersectClipRect(ARect);
     Canvas.Fill.Color := FText.Color.GetStateColor(DrawState);
@@ -1450,14 +1458,6 @@ begin
       FTextService.DrawSingleLine(Canvas,
         R, FFirstVisibleChar, FText.Font,
         AbsoluteOpacity, FillTextFlags, FText.HorzAlign, FText.VertAlign);
-    end;
-    { Draw selection }
-    if IsFocused and Model.HasSelection then
-    begin
-      DrawSelection;
-      { left picker -> | selected text | <- right picker }
-      if HaveSelectionPickers then
-        DrawLeftAndRightSelectionSide;
     end;
     //Spell highlighting
     if Model.CheckSpelling and (FSpellService <> nil) and not FTextService.HasMarkedText and not Text.IsEmpty then

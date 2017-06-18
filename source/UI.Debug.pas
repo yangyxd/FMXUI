@@ -12,11 +12,11 @@ unit UI.Debug;
 
 interface
 
-{$DEFINE UseUDP}
+{.$DEFINE UseUDP}
 
 uses
   {$IFDEF UseUDP}
-  IdBaseComponent, IdComponent, IdUDPBase, IdUDPClient,
+  iocp,
   {$ENDIF}
   {$IFDEF MSWINDOWS}
   Windows,
@@ -109,7 +109,7 @@ type
   // 输出远程调试信息
   TRemoteDebugTrace = class(TInterfacedObject, ITrace)
   private
-    udp: TIdUDPClient;
+    udp: TIocpUdpSocket;
     FAddr: string;
     FPort: Word;
   protected
@@ -124,6 +124,27 @@ type
     procedure SetBufferSize(Value: Integer);
     property RemoteAddr: string read FAddr write FAddr;
     property RemotePort: Word read FPort write FPort;
+  end;
+  {$ENDIF}
+
+  {$IFDEF OuputFileLog}
+  TFileTrace = class(TInterfacedObject, ITrace)
+  private
+    FFile: TFileStream;
+    FLastDate: Int64;
+    procedure InitFile;
+    procedure FillWrite;
+    procedure ToFileEnd; inline;
+  protected
+    class function GetFileName: string;
+    class function GetFilePath: string;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Write(sev: TTraceSeverity; const text: string);
+    procedure Writeln(sev: TTraceSeverity; const text: string);
+    function ReadAll: string;
+    procedure SetBufferSize(Value: Integer);
   end;
   {$ENDIF}
 
@@ -161,7 +182,7 @@ begin
   Trace := TDebugTrace.Create;
   {$ELSE} {$IFDEF OuputFileLog}
   Trace := TFileTrace.Create;
-  FThread := TFileRealWriteThd.Create(False);
+  //FThread := TFileRealWriteThd.Create(False);
   {$ENDIF} {$ENDIF}
 end;
 
@@ -299,7 +320,7 @@ end;
 {$IFDEF UseUDP}
 constructor TRemoteDebugTrace.Create;
 begin
-  udp := TIdUDPClient.Create(nil);
+  udp := TIocpUdpSocket.Create(nil);
   FAddr := UdpSvrAddr;
   FPort := UdpSvrPort;
 end;
@@ -333,9 +354,7 @@ begin
   Msg := Format(sLineLogFmt, [FormatDateTime(sLogTimeFmt, Now), SevToStr[sev], text{$IFDEF MSWINDOWS}, GetCurrentThreadId{$ENDIF}]);
   Lock;
   try
-    prepare;
-    if udp.Active then
-      udp.Send(Faddr, FPort, Msg);
+    udp.Send(AnsiString(Msg), Faddr, FPort);//, Msg);
   finally
     UnLock;
   end;
@@ -352,13 +371,114 @@ begin
   Msg := Format(sLineLogFmt, [FormatDateTime(sLogTimeFmt, Now), SevToStr[sev], text{$IFDEF MSWINDOWS}, GetCurrentThreadId{$ENDIF}]);
   Lock;
   try
-    prepare;
-    if udp.Active then
-      udp.Send(FAddr, FPort, Msg);
+    udp.Send(AnsiString(Msg), FAddr, FPort); //, Msg);
   finally
     UnLock;
   end;
 end;
+{$ENDIF}
+
+{ TFileTrace }
+
+{$IFDEF OuputFileLog}
+constructor TFileTrace.Create;
+begin
+  FFile := nil;
+  InitFile;
+end;
+
+destructor TFileTrace.Destroy;
+begin
+  FreeAndNil(FFile);
+  inherited;
+end;
+
+function GetExeFileName: string;
+begin
+  Result := ExtractFileName(ParamStr(0));
+  Delete(Result, Length(Result) - 4, 4);
+end;
+
+class function TFileTrace.GetFileName: string;
+var
+  Path: string;
+begin
+  Path := ExtractFilePath(ParamStr(0)) + GetExeFileName + sLogDir;
+  if not DirectoryExists(Path) then
+    CreateDir(Path);
+  Result := Path + FormatDateTime(sLogFileNameFmt, Now) + sLogFileExtName;
+end;
+
+class function TFileTrace.GetFilePath: string;
+begin
+  Result := ExtractFilePath(ParamStr(0)) + GetExeFileName + sLogDir;
+end;
+
+procedure TFileTrace.FillWrite;
+begin
+end;
+
+procedure TFileTrace.InitFile;
+var
+  FHandle: THandle;
+begin
+  if (FFile <> nil) then
+    FreeAndNil(FFile);
+  if not FileExists(GetFileName) then begin
+    FHandle := FileCreate(GetFileName);
+    CloseHandle(FHandle);
+  end;
+  FFile := TFileStream.Create(GetFileName, fmOpenReadWrite or fmShareDenyNone);
+  FLastDate := Trunc(Now);
+end;
+
+function TFileTrace.ReadAll: string;
+begin
+  Lock;
+  if Trunc(Now) - FLastDate <> 0 then
+    InitFile;
+  if FFile.Size > 0 then begin
+    SetLength(Result, FFile.Size);
+    FFile.Position := 0;
+    FFile.Read(Result[1], FFile.Size);
+  end else Result := '';
+  UnLock;
+end;
+
+procedure TFileTrace.ToFileEnd;
+begin
+  if Trunc(Now) - FLastDate <> 0 then
+    InitFile
+  else if (FFile.Position <> FFile.Size) then
+    FFile.Position := FFile.Size;
+end;
+
+procedure TFileTrace.Write(sev: TTraceSeverity; const text: string);
+var
+  Msg: string;
+begin
+  Msg := Format(sLineLogFmt, [FormatDateTime(sLogTimeFmt, Now), SevToStr[sev], text, GetCurrentThreadId]);
+  Lock;
+  ToFileEnd;
+  FFile.Write(Msg[1], Length(Msg){$IFDEF UNICODE} shl 1{$ENDIF});
+  UnLock;
+end;
+
+procedure TFileTrace.Writeln(sev: TTraceSeverity; const text: string);
+var
+  Msg: string;
+begin
+  Msg := Format(sLineLogFmt, [FormatDateTime(sLogTimeFmt, Now), SevToStr[sev], text, GetCurrentThreadId]);
+  Lock;
+  ToFileEnd;
+  FFile.Write(Msg[1], Length(Msg){$IFDEF UNICODE} shl 1{$ENDIF});
+  UnLock;
+end;
+
+procedure TFileTrace.SetBufferSize(Value: Integer);
+begin
+end;
+
 {$ENDIF}
 
 initialization

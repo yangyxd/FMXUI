@@ -63,7 +63,7 @@ type
   /// 视图状态
   /// </summary>
   TViewState = (None {正常}, Pressed {按下}, Focused {取得焦点}, Hovered {悬停},
-    Selected{选中}, Checked{复选}, Enabled{禁用}, Activated{激活});
+    Selected{选中}, Checked{复选}, Enabled{禁用}, Activated{激活}, Custom {自定义});
   TViewStates = set of TViewState;
 
   /// <summary>
@@ -73,11 +73,24 @@ type
   /// <summary>
   /// 滚动条
   /// </summary>
-  TViewScroll = (None, Horizontal, Vertical);
+  TViewScroll = (None, Horizontal, Vertical, Both);
 
   TViewBrushKind = (None, Solid, Gradient, Bitmap, Resource, Patch9Bitmap);
 
   TPatchBounds = class(TBounds);
+
+  TRectFHelper = record Helper for TRectF
+  public
+    procedure Clear; inline;
+  end;
+
+  TControlHelper = class Helper for TControl
+  public
+    // 为指定控件设置焦点
+    function SetFocusObject(V: TControl): Boolean;
+    // 进入下一个焦点控件
+    procedure FocusToNext();
+  end;
 
   /// <summary>
   /// 9 宫格位图
@@ -154,7 +167,6 @@ type
   /// </summary>
   TDrawableBase = class(TPersistent)
   private
-    [Weak] FView: IView;
     FOnChanged: TNotifyEvent;
 
     FDefaultColor: TAlphaColor;
@@ -175,6 +187,7 @@ type
     function IsStoredCorners: Boolean;
     procedure SetCornerType(const Value: TCornerType);
   protected
+    [Weak] FView: IView;
     FDefault: TBrush;
     FPressed: TBrush;
     FFocused: TBrush;
@@ -380,6 +393,7 @@ type
     function GetIsEmpty: Boolean;
     procedure SetBrush(const Value: TBrush);
     function GetImageIndexEx: TImageIndex;
+    procedure SetImageIndexEx(const Value: TImageIndex);
   protected
     { IInterfaceComponentReference }
     function GetComponent: TComponent;
@@ -402,7 +416,7 @@ type
       const XRadius, YRadius: Single; const ACorners: TCorners;
       const AOpacity: Single = 1; const ACornerType: TCornerType = TCornerType.Round); virtual;
     property IsEmpty: Boolean read GetIsEmpty;
-    property ImageIndex: TImageIndex read GetImageIndexEx;
+    property ImageIndex: TImageIndex read GetImageIndexEx write SetImageIndexEx;
   published
     property Images: TCustomImageList read GetImages write SetImages;
     property Brush: TBrush read GetBrush write SetBrush;
@@ -795,13 +809,17 @@ type
     procedure DoFontChanged(Sender: TObject);
     procedure DoColorChanged(Sender: TObject);
     function GetStateColor(const State: TViewState): TAlphaColor; virtual; abstract;
+    function IsStoredGravity: Boolean; virtual;
   public
     constructor Create(AOwner: TComponent);
     destructor Destroy; override;
     procedure Change;
 
-    function CalcTextObjectSize(const MaxWidth, SceneScale: Single;
+    function CalcTextObjectSize(const AText: string; const MaxWidth, SceneScale: Single;
       const Margins: TBounds; var Size: TSizeF): Boolean;
+
+    function CalcTextWidth(const AText: string; SceneScale: Single): Single;
+    function CalcTextHeight(const AText: string; SceneScale: Single): Single;
 
     procedure FillText(const Canvas: TCanvas; const ARect: TRectF; const AText: string; const AOpacity: Single;
       const Flags: TFillTextFlags; const ATextAlign: TTextAlign;
@@ -811,6 +829,8 @@ type
         const Opacity: Single; State: TViewState); overload;
     procedure Draw(const Canvas: TCanvas; const AText: string; const R: TRectF;
         const Opacity: Single; State: TViewState); overload;
+    procedure Draw(const Canvas: TCanvas; const AText: string; const R: TRectF;
+        const Opacity: Single; State: TViewState; AGravity: TLayoutGravity); overload;
 
     property IsColorChange: Boolean read FIsColorChange;
     property IsSizeChange: Boolean read FIsSizeChange;
@@ -832,7 +852,7 @@ type
     property PrefixStyle: TPrefixStyle read FPrefixStyle write SetPrefixStyle default TPrefixStyle.NoPrefix;
     property Trimming: TTextTrimming read FTrimming write SetTrimming default TTextTrimming.None;
     property WordWrap: Boolean read GetWordWrap write SetWordWrap default False;
-    property Gravity: TLayoutGravity read GetGravity write SetGravity default TLayoutGravity.None;
+    property Gravity: TLayoutGravity read GetGravity write SetGravity stored IsStoredGravity;
   end;
 
   /// <summary>
@@ -981,12 +1001,10 @@ type
     function GetOpacity: Single;
     function GetParentControl: TControl;
     function GetPosition: TPosition;
-    function GetViewRect: TRectF;
     function GetInVisible: Boolean;
     procedure SetInVisible(const Value: Boolean);
     procedure SetTempMaxHeight(const Value: Single);
     procedure SetTempMaxWidth(const Value: Single);
-    function GetViewRectD: TRectD;
     function GetIsChecked: Boolean;
     procedure SetIsChecked(const Value: Boolean);
     function GetHeightSize: TViewSize;
@@ -995,6 +1013,8 @@ type
     procedure SetCaptureDragForm(const Value: Boolean);
     function GetParentForm: TCustomForm;
   protected
+    function GetViewRect: TRectF;
+    function GetViewRectD: TRectD;
     function GetMaxHeight: Single; override;
     function GetMaxWidth: Single; override;
     function GetMinHeight: Single; override;
@@ -1644,6 +1664,7 @@ begin
   if TViewState.Checked in State then Write(P, 'Checked,');
   if TViewState.Enabled in State then Write(P, 'Enabled,');
   if TViewState.Activated in State then Write(P, 'Activated,');
+  if TViewState.Custom in State then Write(P, 'Custom,');
   if (P - P1) > 0 then
     SetLength(Result, P - P1 - 1)
   else
@@ -3978,7 +3999,7 @@ procedure TView.DoSetScrollBarValue(Scroll: TScrollBar; const Value, ViewportSiz
 begin
   //Scroll.ValueRange.Min := Min(Value, ContentBounds.Top);
   //Scroll.ValueRange.Max := Max(Value + ViewportSize, ContentBounds.Bottom);
-  if FScrollbar = TViewScroll.Vertical then begin
+  if Scroll.Height > Scroll.Width then begin
     Scroll.ValueRange.Min := Min(Value, ContentBounds.Top);
     Scroll.ValueRange.Max := Max(Value + ViewportSize, ContentBounds.Bottom);
   end else begin
@@ -4041,8 +4062,8 @@ end;
 
 procedure TView.Paint;
 begin
-  inherited Paint;
   if not FDrawing then begin
+    inherited Paint;
     if FIsFocused then begin
       Include(FViewState, TViewState.Focused);
       FDrawState := GetRealDrawState;
@@ -5596,8 +5617,17 @@ end;
 
 { TTextSettingsBase }
 
-function TTextSettingsBase.CalcTextObjectSize(const MaxWidth, SceneScale: Single;
-  const Margins: TBounds; var Size: TSizeF): Boolean;
+function TTextSettingsBase.CalcTextHeight(const AText: string;
+  SceneScale: Single): Single;
+var
+  S: TSizeF;
+begin
+  CalcTextObjectSize(AText, $FFFFFF, SceneScale, nil, S);
+  Result := S.Height;
+end;
+
+function TTextSettingsBase.CalcTextObjectSize(const AText: string;
+  const MaxWidth, SceneScale: Single; const Margins: TBounds; var Size: TSizeF): Boolean;
 const
   FakeText = 'P|y'; // Do not localize
 
@@ -5624,9 +5654,9 @@ begin
 
     Layout := FLayout;
     if FPrefixStyle = TPrefixStyle.HidePrefix then
-      LText := DelAmp(FText)
+      LText := DelAmp(AText)
     else
-      LText := FText;
+      LText := AText;
 
     Layout.BeginUpdate;
     Layout.TopLeft := TPointF.Zero;
@@ -5674,6 +5704,14 @@ begin
 
     Result := True;
   end;
+end;
+
+function TTextSettingsBase.CalcTextWidth(const AText: string; SceneScale: Single): Single;
+var
+  S: TSizeF;
+begin
+  CalcTextObjectSize(AText, $FFFFFF, SceneScale, nil, S);
+  Result := S.Width;
 end;
 
 procedure TTextSettingsBase.Change;
@@ -5748,13 +5786,20 @@ end;
 
 procedure TTextSettingsBase.Draw(const Canvas: TCanvas; const AText: string;
   const R: TRectF; const Opacity: Single; State: TViewState);
+begin
+  if AText <> '' then
+    Draw(Canvas, AText, R, Opacity, State, FGravity);
+end;
+
+procedure TTextSettingsBase.Draw(const Canvas: TCanvas; const AText: string;
+  const R: TRectF; const Opacity: Single; State: TViewState; AGravity: TLayoutGravity);
 var
   V, H: TTextAlign;
 begin
   if AText <> '' then begin
     V := TTextAlign.Leading;
     H := TTextAlign.Leading;
-    case FGravity of
+    case AGravity of
       TLayoutGravity.LeftBottom: V := TTextAlign.Trailing;
       TLayoutGravity.RightTop: H := TTextAlign.Trailing;
       TLayoutGravity.RightBottom:
@@ -5788,32 +5833,31 @@ procedure TTextSettingsBase.Draw(const Canvas: TCanvas; const R: TRectF;
   const Opacity: Single; State: TViewState);
 begin
   if FPrefixStyle = TPrefixStyle.HidePrefix then
-    Draw(Canvas, DelAmp(FText), R, Opacity, State)
+    Draw(Canvas, DelAmp(FText), R, Opacity, State, FGravity)
   else
-    Draw(Canvas, FText, R, Opacity, State);
+    Draw(Canvas, FText, R, Opacity, State, FGravity);
 end;
 
 procedure TTextSettingsBase.FillText(const Canvas: TCanvas; const ARect: TRectF;
   const AText: string; const AOpacity: Single;
   const Flags: TFillTextFlags; const ATextAlign, AVTextAlign: TTextAlign;
   State: TViewState);
-var
-  Layout: TTextLayout;
 begin
-  Layout := FLayout;
-  Layout.BeginUpdate;
-  Layout.TopLeft := ARect.TopLeft;
-  Layout.MaxSize := PointF(ARect.Width, ARect.Height);
-  Layout.Text := AText;
-  Layout.WordWrap := WordWrap;
-  Layout.Opacity := AOpacity;
-  Layout.HorizontalAlign := ATextAlign;
-  Layout.VerticalAlign := AVTextAlign;
-  Layout.Color := GetStateColor(State);
-  Layout.Trimming := FTrimming;
-  Layout.RightToLeft := TFillTextFlag.RightToLeft in Flags;
-  Layout.EndUpdate;
-  Layout.RenderLayout(Canvas);
+  with FLayout do begin
+    BeginUpdate;
+    TopLeft := ARect.TopLeft;
+    MaxSize := PointF(ARect.Width, ARect.Height);
+    Text := AText;
+    WordWrap := Self.WordWrap;
+    Opacity := AOpacity;
+    HorizontalAlign := ATextAlign;
+    VerticalAlign := AVTextAlign;
+    Color := GetStateColor(State);
+    Trimming := FTrimming;
+    RightToLeft := TFillTextFlag.RightToLeft in Flags;
+    EndUpdate;
+    RenderLayout(Canvas);
+  end;
 end;
 
 function TTextSettingsBase.GetFillTextFlags: TFillTextFlags;
@@ -5867,6 +5911,11 @@ end;
 function TTextSettingsBase.GetWordWrap: Boolean;
 begin
   Result := FLayout.WordWrap;
+end;
+
+function TTextSettingsBase.IsStoredGravity: Boolean;
+begin
+  Result := FGravity <> TLayoutGravity.None;
 end;
 
 procedure TTextSettingsBase.SetAutoSize(const Value: Boolean);
@@ -7347,7 +7396,7 @@ end;
 
 function TDrawableBrush.GetImageIndexEx: TImageIndex;
 begin
-  Result := FImageLink.ImageIndex;
+  Result := TViewImagesBrush(Brush).ImageIndex;
 end;
 
 function TDrawableBrush.GetImageList: TBaseImageList;
@@ -7392,6 +7441,11 @@ begin
   FImageLink.ImageIndex := Value;
 end;
 
+procedure TDrawableBrush.SetImageIndexEx(const Value: TImageIndex);
+begin
+  TViewImagesBrush(Brush).ImageIndex := Value;
+end;
+
 procedure TDrawableBrush.SetImageList(const Value: TBaseImageList);
 begin
   ValidateInheritance(Value, TCustomImageList);
@@ -7421,6 +7475,60 @@ end;
 class function TShareImageList.GetShareImageList: TList<TShareImageList>;
 begin
   Result := FShareImageList;
+end;
+
+{ TRectFHelper }
+
+procedure TRectFHelper.Clear;
+begin
+  Left := 0;
+  Top := 0;
+  Right := 0;
+  Bottom := 0;
+end;
+
+{ TControlHelper }
+
+procedure TControlHelper.FocusToNext;
+var
+  I, J, K, M: Integer;
+  Item: TControl;
+begin
+  if not Assigned(Self) then
+    Exit;
+  K := $FFFFFF;
+  J := -1;
+  M := TabOrder;
+  for I := 0 to ParentControl.ControlsCount - 1 do begin
+    Item := ParentControl.Controls[I];
+    if (not Assigned(Item)) or (not Item.Visible) or (not Item.Enabled) or (not Item.CanFocus) then
+      Continue;
+    if (Item.TabOrder < K) and (Item.TabOrder > M) then begin
+      K := Item.TabOrder;
+      J := I;
+    end;
+  end;
+  if J >= 0 then
+    ParentControl.Controls[J].SetFocus;
+end;
+
+function TControlHelper.SetFocusObject(V: TControl): Boolean;
+var
+  Item: TControl;
+  I: Integer;
+begin
+  Result := False;
+  for I := 0 to V.ControlsCount - 1 do begin
+    Item := V.Controls[I];
+    if Item.Visible and (Item.Enabled) and Item.CanFocus then begin
+      Item.SetFocus;
+      Result := True;
+      Break;
+    end else if Item.ControlsCount > 0 then begin
+      if SetFocusObject(Item) then
+        Break;
+    end;
+  end;
 end;
 
 initialization

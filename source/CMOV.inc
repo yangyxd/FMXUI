@@ -17,5 +17,5 @@
 {$ENDIF}
 
 {$IFDEF MSWINDOWS}
-{$DEFINE UseUDP}  // 是否使用远程输出日志
+{.$DEFINE UseUDP}  // 是否使用远程输出日志
 {$ENDIF}

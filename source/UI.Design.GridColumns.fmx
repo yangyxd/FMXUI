@@ -1,0 +1,482 @@
+object GridColumnsDesigner: TGridColumnsDesigner
+  Left = 0
+  Top = 0
+  Caption = 'GridColumnsDesigner'
+  ClientHeight = 423
+  ClientWidth = 862
+  Position = OwnerFormCenter
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  DesignerMasterStyle = 0
+  object Layout1: TLayout
+    Align = Bottom
+    Position.Y = 387.000000000000000000
+    Size.Width = 862.000000000000000000
+    Size.Height = 36.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 6
+    object Button2: TButton
+      Anchors = [akTop, akRight]
+      Cancel = True
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 632.000000000000000000
+      Position.Y = 6.000000000000000000
+      Size.Width = 96.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 5
+      Text = #21462#28040
+      OnClick = Button2Click
+    end
+    object btnOk: TButton
+      Anchors = [akTop, akRight]
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 748.000000000000000000
+      Position.Y = 6.000000000000000000
+      Size.Width = 104.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      Text = #30830#23450
+      OnClick = btnOkClick
+    end
+    object Button1: TButton
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 9.000000000000000000
+      Position.Y = 6.000000000000000000
+      Size.Width = 86.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 4
+      Text = #19978#19968#39033
+    end
+    object Button3: TButton
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 106.000000000000000000
+      Position.Y = 6.000000000000000000
+      Size.Width = 86.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 3
+      Text = #19979#19968#39033
+    end
+    object tvIndex: TLabel
+      StyledSettings = [Family, Size, Style]
+      Position.X = 213.000000000000000000
+      Position.Y = 11.000000000000000000
+      Size.Width = 388.000000000000000000
+      Size.Height = 21.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.FontColor = claChocolate
+      Text = 'ColIndex: 0  RowIndex: 0'
+    end
+  end
+  object Layout3: TLayout
+    Align = Bottom
+    Position.Y = 286.500000000000000000
+    Size.Width = 862.000000000000000000
+    Size.Height = 100.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    object Label1: TLabel
+      AutoSize = True
+      StyledSettings = [Family, Size, FontColor]
+      Position.X = 8.000000000000000000
+      Position.Y = 12.000000000000000000
+      Size.Width = 49.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      Text = 'Gravity:'
+    end
+    object Label2: TLabel
+      AutoSize = True
+      Position.X = 758.000000000000000000
+      Position.Y = 12.000000000000000000
+      Size.Width = 52.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Opacity:'
+    end
+    object edtOpacity: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 4
+      MaxLength = 5
+      Position.X = 806.000000000000000000
+      Position.Y = 10.000000000000000000
+      Hint = #36879#26126#24230#65306'0 ~ 1 '#20043#38388
+      Size.Width = 44.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object Label3: TLabel
+      AutoSize = True
+      Position.X = 645.000000000000000000
+      Position.Y = 44.000000000000000000
+      Size.Width = 84.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'RowsPan:'
+    end
+    object edtRowsPan: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 13
+      Position.X = 700.000000000000000000
+      Position.Y = 42.000000000000000000
+      Size.Width = 44.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object Label4: TLabel
+      AutoSize = True
+      Position.X = 347.000000000000000000
+      Position.Y = 44.000000000000000000
+      Size.Width = 57.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Bottom:'
+    end
+    object edtPaddingBottom: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 8
+      Position.X = 398.000000000000000000
+      Position.Y = 42.000000000000000000
+      Size.Width = 57.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object cbGravity: TComboBox
+      DropDownCount = 16
+      Items.Strings = (
+        'None'
+        'LeftTop'
+        'LeftBottom'
+        'RightTop'
+        'RightBottom'
+        'CenterVertical'
+        'CenterHorizontal'
+        'CenterHBottom'
+        'CenterVRight'
+        'Center')
+      ItemIndex = 0
+      Position.X = 58.000000000000000000
+      Position.Y = 9.000000000000000000
+      Size.Width = 114.000000000000000000
+      Size.Height = 24.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+    end
+    object cbDataType: TComboBox
+      Items.Strings = (
+        'PlanText'
+        'CheckBox'
+        'RadioButton'
+        'Image'
+        'ProgressBar'
+        'CustomDraw')
+      ItemIndex = 0
+      Position.X = 242.000000000000000000
+      Position.Y = 9.000000000000000000
+      Size.Width = 114.000000000000000000
+      Size.Height = 24.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+    end
+    object Label5: TLabel
+      AutoSize = True
+      StyledSettings = [Family, Size, FontColor]
+      Position.X = 180.000000000000000000
+      Position.Y = 12.000000000000000000
+      Size.Width = 66.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      Text = 'DataType:'
+    end
+    object Label6: TLabel
+      AutoSize = True
+      Position.X = 754.000000000000000000
+      Position.Y = 44.000000000000000000
+      Size.Width = 84.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'ColsPan:'
+    end
+    object edtColsPan: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 14
+      Position.X = 807.000000000000000000
+      Position.Y = 42.000000000000000000
+      Size.Width = 43.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object Label7: TLabel
+      AutoSize = True
+      Position.X = 6.000000000000000000
+      Position.Y = 44.000000000000000000
+      Size.Width = 123.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Padding:   Left:'
+    end
+    object edtPaddingLeft: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 5
+      Position.X = 94.000000000000000000
+      Position.Y = 42.000000000000000000
+      Size.Width = 44.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object Label8: TLabel
+      AutoSize = True
+      Position.X = 150.000000000000000000
+      Position.Y = 44.000000000000000000
+      Size.Width = 84.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Top:'
+    end
+    object edtPaddingTop: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 6
+      Position.X = 181.000000000000000000
+      Position.Y = 42.000000000000000000
+      Size.Width = 57.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object Label9: TLabel
+      AutoSize = True
+      Position.X = 245.000000000000000000
+      Position.Y = 44.000000000000000000
+      Size.Width = 84.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Right:'
+    end
+    object edtPaddingRight: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 7
+      Position.X = 284.000000000000000000
+      Position.Y = 42.000000000000000000
+      Size.Width = 57.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object Label10: TLabel
+      AutoSize = True
+      Position.X = 467.000000000000000000
+      Position.Y = 43.000000000000000000
+      Size.Width = 57.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Tag:'
+    end
+    object edtTag: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 9
+      Position.X = 497.000000000000000000
+      Position.Y = 41.000000000000000000
+      Size.Width = 57.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object ckLocked: TCheckBox
+      Position.X = 7.000000000000000000
+      Position.Y = 72.000000000000000000
+      Size.Width = 96.000000000000000000
+      Size.Height = 19.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 15
+      Text = 'Locked'
+    end
+    object ckDataFilter: TCheckBox
+      Position.X = 80.000000000000000000
+      Position.Y = 72.000000000000000000
+      Size.Width = 96.000000000000000000
+      Size.Height = 19.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 16
+      Text = 'DataFilter'
+    end
+    object ckReadOnly: TCheckBox
+      Position.X = 161.000000000000000000
+      Position.Y = 73.000000000000000000
+      Size.Width = 96.000000000000000000
+      Size.Height = 19.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 17
+      Text = 'ReadOnly'
+    end
+    object ckVisible: TCheckBox
+      Position.X = 244.000000000000000000
+      Position.Y = 73.000000000000000000
+      Size.Width = 96.000000000000000000
+      Size.Height = 19.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 18
+      Text = 'Visible'
+    end
+    object ckEnabled: TCheckBox
+      Position.X = 309.000000000000000000
+      Position.Y = 73.000000000000000000
+      Size.Width = 96.000000000000000000
+      Size.Height = 19.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 19
+      Text = 'Enabled'
+    end
+    object ckWordWrap: TCheckBox
+      Position.X = 383.000000000000000000
+      Position.Y = 73.000000000000000000
+      Size.Width = 96.000000000000000000
+      Size.Height = 19.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 20
+      Text = 'WordWrap'
+    end
+    object Label11: TLabel
+      AutoSize = True
+      StyledSettings = [Family, Size, FontColor]
+      Position.X = 366.000000000000000000
+      Position.Y = 12.000000000000000000
+      Size.Width = 57.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      Text = 'Title:'
+    end
+    object edtTitle: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 3
+      ReturnKeyType = Next
+      MaxLength = 255
+      Position.X = 403.000000000000000000
+      Position.Y = 10.000000000000000000
+      Size.Width = 150.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object Label12: TLabel
+      AutoSize = True
+      StyledSettings = [Family, Size, FontColor]
+      Position.X = 635.000000000000000000
+      Position.Y = 74.000000000000000000
+      Size.Width = 84.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      Text = 'RowCount:'
+    end
+    object edtRowCount: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 11
+      KeyboardType = NumberPad
+      MaxLength = 5
+      Position.X = 700.000000000000000000
+      Position.Y = 72.000000000000000000
+      Size.Width = 44.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      OnKeyDown = edtRowCountKeyDown
+    end
+    object tvColCount: TLabel
+      AutoSize = True
+      StyledSettings = [Family, Size, FontColor]
+      Position.X = 748.000000000000000000
+      Position.Y = 74.000000000000000000
+      Size.Width = 84.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      Text = 'ColCount:'
+    end
+    object edtColCount: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 12
+      MaxLength = 5
+      Position.X = 807.000000000000000000
+      Position.Y = 72.000000000000000000
+      Size.Width = 43.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object edtFieldName: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 2
+      ReturnKeyType = Next
+      MaxLength = 255
+      Position.X = 595.000000000000000000
+      Position.Y = 10.000000000000000000
+      Size.Width = 150.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object tvField: TLabel
+      AutoSize = True
+      StyledSettings = [Family, Size, FontColor]
+      Position.X = 558.000000000000000000
+      Position.Y = 12.000000000000000000
+      Size.Width = 57.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      Text = 'Field:'
+    end
+    object edtFixedColCount: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 10
+      MaxLength = 5
+      Position.X = 583.000000000000000000
+      Position.Y = 71.000000000000000000
+      Size.Width = 43.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object tvFixedColCount: TLabel
+      AutoSize = True
+      StyledSettings = [Family, Size, FontColor]
+      Position.X = 493.000000000000000000
+      Position.Y = 75.000000000000000000
+      Size.Width = 105.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      Text = 'FixedColCount:'
+    end
+  end
+  object GridView: TStringGridView
+    Align = Client
+    Background.ItemPressed.Color = xFFD9D9D9
+    Background.ItemPressed.Kind = Solid
+    Gravity = None
+    Size.Width = 862.000000000000000000
+    Size.Height = 286.500000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 4
+    ScrollBars = Both
+    ReadOnly = False
+    Options = [gvEditing, gvColLines, gvRowLines, gvTwoColor, gvShowSelection, gvCancelOnExit, gvEscCancelEdit, gvColumnBestWidth, gvColumnResize]
+    FixedSettings.RowHeight = 20.000000000000000000
+    FixedSettings.ColWidth = 50.000000000000000000
+    FixedSettings.TextRowIndex = #34892#21495
+    OnTitleClick = GridViewTitleClick
+    OnFixedCellClick = GridViewFixedCellClick
+    ColCount = 0
+    RowCount = 9
+  end
+  object Line1: TLine
+    Align = Bottom
+    LineType = Diagonal
+    Position.Y = 386.500000000000000000
+    Size.Width = 862.000000000000000000
+    Size.Height = 0.500000000000000000
+    Size.PlatformDefault = False
+    Stroke.Color = claGray
+  end
+end

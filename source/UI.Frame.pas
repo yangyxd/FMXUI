@@ -421,6 +421,7 @@ type
 
 type
   TFrame = class(TFrameView);
+  TFrameClass = type of TFrame;
 
 const
   CS_Title = 'cs_p_title';
@@ -2003,22 +2004,24 @@ var
   Ctrl: TControl;
   I: Integer;
 begin
-  if Root <> nil then begin
-    for I := 0 to Self.ChildrenCount - 1 do begin
-      Item := Children.Items[I];
-      if (Item is TControl) then begin
-        Ctrl := Item as TControl;
-        if (Ctrl.Visible) and (Ctrl.CanFocus) then begin
-          LControl := Root.NewFocusedControl(Ctrl);
-          if LControl <> nil then begin
-            Root.SetFocused(LControl);
-            Break;
-          end;
+  for I := 0 to Self.ChildrenCount - 1 do begin
+    Item := Children.Items[I];
+    if (Item is TControl) then begin
+      Ctrl := Item as TControl;
+      if (Ctrl.Visible) and (Ctrl.Enabled) and (Ctrl.CanFocus) then begin
+        LControl := Root.NewFocusedControl(Ctrl);
+        if LControl <> nil then begin
+          Root.SetFocused(LControl);
+          Break;
         end;
+      end else if Ctrl.ControlsCount > 0 then begin
+        if Ctrl.SetFocusObject(Ctrl) then
+          Break;
       end;
     end;
   end;
 end;
+
 
 initialization
   FPublicState := TFrameState.Create(nil, True);

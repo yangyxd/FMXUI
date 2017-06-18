@@ -289,6 +289,7 @@ type
   TOnDialogClickListenerA = reference to procedure (Dialog: IDialog; Which: Integer);
   TOnDialogListener = procedure (Dialog: IDialog) of object;
   TOnDialogListenerA = reference to procedure (Dialog: IDialog);
+  TOnDialogInitListAdapterA = reference to procedure (Dialog: IDialog; Builder: TDialogBuilder; var Adapter: IListAdapter);
 
   /// <summary>
   /// 对话框视图 (不要直接使用它)
@@ -308,9 +309,11 @@ type
     FButtonNeutral: TButtonView;
     FListView: TListViewEx;
     FAnilndictor: TAniIndicator;
+    FIsDownPopup: Boolean;
   protected
     procedure AfterDialogKey(var Key: Word; Shift: TShiftState); override;
     procedure Resize; override;
+    procedure DoRealign; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -337,7 +340,7 @@ type
   end;
 
   TControlClass = type of TControl;
-  TDialogViewPosition = (Top, Bottom, Left, Right, Center, LeftFill, RightFill);
+  TDialogViewPosition = (Top, Bottom, LeftBottom, RightBottom, Left, Right, Center, LeftFill, RightFill);
 
   TDialog = class(TComponent, IDialog)
   private
@@ -354,6 +357,7 @@ type
     function GetView: TControl;
     function GetRootView: TDialogView;
     function GetIsDismiss: Boolean;
+    function GetAniView: TControl;
   protected
     FViewRoot: TDialogView;
 
@@ -365,6 +369,8 @@ type
     FAllowDismiss: Boolean;  // 需要释放
 
     FTempValue: Single;      // 临时变量
+
+    FIsDowPopup: Boolean;    // 是否是下拉弹出方式
 
     procedure SetCancelable(const Value: Boolean);
     function GetCancelable: Boolean;
@@ -392,6 +398,7 @@ type
     /// </summary>
     procedure AnimatePlay(Ani: TFrameAniType; IsIn: Boolean; AEvent: TNotifyEventA);
 
+    property AniView: TControl read GetAniView;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -516,6 +523,8 @@ type
     procedure InitListPopView();
     procedure InitDefaultPopView();
 
+    procedure InitDownPopupView();
+    procedure AdjustDownPopupPosition();
   protected
     procedure DoButtonClick(Sender: TObject);
     procedure DoListItemClick(Sender: TObject; ItemIndex: Integer; const ItemView: TControl);
@@ -571,7 +580,15 @@ type
     FMaskVisible: Boolean;
     FCheckedItem: Integer;
     FTag: Integer;
+    
     FWidth: Single;
+    FMaxHeight: Single;
+    FListItemDefaultHeight: Single;
+
+    [Weak] FTarget: TControl;
+    FTargetOffsetX, FTargetOffsetY: Single;
+    FTargetGravity: TLayoutGravity;
+    FWordWrap: Boolean;
 
     FCheckedItems: TArray<Boolean>;
 
@@ -598,6 +615,9 @@ type
     FOnItemSelectedListenerA: TOnDialogItemSelectedListenerA;
     FOnClickListener: TOnDialogClickListener;
     FOnClickListenerA: TOnDialogClickListenerA;
+
+    FOnInitListAdapterA: TOnDialogInitListAdapterA;
+
     function GetCheckedCount: Integer;
   public
     constructor Create(AOwner: TComponent); virtual;
@@ -637,6 +657,18 @@ type
     /// 设置图标
     /// </summary>
     function SetIcon(AIcon: TDrawableBase): TDialogBuilder; overload;
+
+    /// <summary>
+    /// 设置将对话框作为下拉弹出菜单时的标靶和偏移 （Target非空时，对话框以下拉弹出菜单样式显示）
+    /// </summary>
+    function SetDownPopup(ATarget: TControl; const XOffset, YOffset: Single;
+      Gravity: TLayoutGravity = TLayoutGravity.LeftBottom;
+      MaskVisible: Boolean = False): TDialogBuilder;
+
+    /// <summary>
+    /// 设置是否自动换行（列表项）
+    /// </summary>
+    function SetWordWrap(V: Boolean): TDialogBuilder;
 
     /// <summary>
     /// 设置确认按钮
@@ -716,6 +748,11 @@ type
     function SetClickButtonDismiss(V: Boolean): TDialogBuilder;
 
     /// <summary>
+    /// 设置自定义列表数据适配器
+    /// </summary>
+    function SetOnInitListAdapterA(AListener: TOnDialogInitListAdapterA): TDialogBuilder;
+
+    /// <summary>
     /// 设置 Mask 层是否可视
     /// </summary>
     function SetMaskVisible(V: Boolean): TDialogBuilder;
@@ -726,9 +763,19 @@ type
     function SetRootBackColor(const V: TAlphaColor): TDialogBuilder;
 
     /// <summary>
-    /// 设置最大宽度
+    /// 设置宽度
     /// </summary>
     function SetWidth(const V: Single): TDialogBuilder;
+
+    /// <summary>
+    /// 设置最大高度
+    /// </summary>
+    function SetMaxHeight(const V: Single): TDialogBuilder;
+
+    /// <summary>
+    /// 设置列表项对话框默认行高
+    /// </summary>
+    function SetListItemDefaultHeight(const V: Single): TDialogBuilder;
 
     /// <summary>
     /// 设置附加的数据
@@ -758,6 +805,8 @@ type
     property CheckedItem: Integer read FCheckedItem; 
     property CheckedItems: TArray<Boolean> read FCheckedItems;
     property CheckedCount: Integer read GetCheckedCount;
+
+    property Target: TControl read FTarget;
 
     property DataObject: TObject read FDataObject write FDataObject;
     property Data: TValue read FData write FData;
@@ -861,6 +910,7 @@ begin
   FUseRootBackColor := False;
   FRootBackColor := TAlphaColorRec.Null;
   FIcon := nil;
+  FWordWrap := True;
 end;
 
 function TDialogBuilder.CreateDialog: IDialog;
@@ -935,6 +985,17 @@ function TDialogBuilder.SetData(const V: TValue): TDialogBuilder;
 begin
   Result := Self;
   FData := V; 
+end;
+
+function TDialogBuilder.SetDownPopup(ATarget: TControl; const XOffset,
+  YOffset: Single; Gravity: TLayoutGravity; MaskVisible: Boolean): TDialogBuilder;
+begin
+  Result := Self;
+  FTarget := ATarget;
+  FTargetOffsetX := XOffset;
+  FTargetOffsetY := YOffset;
+  FTargetGravity := Gravity;
+  FMaskVisible := MaskVisible;
 end;
 
 function TDialogBuilder.SetSingleChoiceItems(AItems: TStrings;
@@ -1035,16 +1096,35 @@ begin
   Result := Self;
 end;
 
+function TDialogBuilder.SetListItemDefaultHeight(
+  const V: Single): TDialogBuilder;
+begin
+  Result := Self;
+  FListItemDefaultHeight := V;
+end;
+
 function TDialogBuilder.SetMaskVisible(V: Boolean): TDialogBuilder;
 begin
   Result := Self;
   FMaskVisible := V;
 end;
 
+function TDialogBuilder.SetMaxHeight(const V: Single): TDialogBuilder;
+begin
+  Result := Self;
+  FMaxHeight := V;
+end;
+
 function TDialogBuilder.SetWidth(const V: Single): TDialogBuilder;
 begin
   Result := Self;
   FWidth := V;
+end;
+
+function TDialogBuilder.SetWordWrap(V: Boolean): TDialogBuilder;
+begin
+  FWordWrap := V;
+  Result := Self;
 end;
 
 function TDialogBuilder.SetMessage(const AMessage: string): TDialogBuilder;
@@ -1125,6 +1205,13 @@ function TDialogBuilder.SetOnCancelListener(
 begin
   Result := Self;
   FOnCancelListenerA := AListener;
+end;
+
+function TDialogBuilder.SetOnInitListAdapterA(
+  AListener: TOnDialogInitListAdapterA): TDialogBuilder;
+begin
+  Result := Self;
+  FOnInitListAdapterA := AListener;
 end;
 
 function TDialogBuilder.SetOnItemSelectedListener(
@@ -1364,14 +1451,7 @@ var
 
 begin
   if not Assigned(FViewRoot) then Exit;
-  if Assigned(FViewRoot.FLayBubble) then
-    AniView := FViewRoot.FLayBubble
-  else begin
-    if FViewRoot.ChildrenCount = 1 then
-      AniView := FViewRoot.Controls[0]
-    else
-      AniView := nil;
-  end;
+  AniView := GetAniView;
 
   // 淡入淡出背景
   DoFadeInOutBackgroyund();
@@ -1463,6 +1543,7 @@ end;
 
 procedure TDialog.Dismiss;
 var
+  LTarget: TControl;
   LParent: TFmxObject;
 begin
   if not Assigned(Self) then
@@ -1482,12 +1563,23 @@ begin
     FOnDismissListener(Self);
     FOnDismissListener := nil;
   end;
+
+  if Assigned(GetBuilder()) then
+    LTarget := GetBuilder.FTarget
+  else
+    LTarget := nil;
   DoFreeBuilder();
+
   if (FViewRoot <> nil) and Assigned(FViewRoot.Parent) then begin
+    {$IFDEF MSWINDOWS}
+    FViewRoot.ParentForm.ReleaseCapture;
+    {$ENDIF}
     LParent := FViewRoot.Parent;
     FViewRoot.Parent.RemoveObject(FViewRoot);
     FreeAndNil(FViewRoot);
-    if LParent <> nil then begin
+    if LTarget <> nil then
+      LTarget.SetFocusObject(LTarget)
+    else if LParent <> nil then begin
       if LParent is TControl then
         TControl(LParent).SetFocus
       else if LParent is TCustomForm then
@@ -1503,6 +1595,8 @@ begin
 end;
 
 procedure TDialog.DoAsyncDismiss;
+var
+  AniView: TControl;
 begin
   if Assigned(Self) and Assigned(Owner) then begin
     if FEventing then begin
@@ -1515,12 +1609,24 @@ begin
 //      else if FViewRoot.ControlsCount = 1 then // ShowView 时会是这种情况
 //        FViewRoot.Controls[0].Visible := False;
     end;
-    AnimatePlay(FAnimate, False,
-      procedure (Sendet: TObject)
-      begin
+    if FAnimate = TFrameAniType.None then begin
+      AniView := GetAniView;
+      if Assigned(AniView) then begin
+        TFrameAnimator.DelayExecute(AniView,
+          procedure (Sender: TObject)
+          begin
+            Dismiss;
+          end,
+        0.1);
+      end else
         Dismiss;
-      end
-    );
+    end else
+      AnimatePlay(FAnimate, False,
+        procedure (Sendet: TObject)
+        begin
+          Dismiss;
+        end
+      );
   end;
 end;
 
@@ -1532,6 +1638,18 @@ procedure TDialog.DoRootClick(Sender: TObject);
 begin
   if FCancelable then
     Cancel;
+end;
+
+function TDialog.GetAniView: TControl;
+begin
+  if Assigned(FViewRoot.FLayBubble) then
+    Result := FViewRoot.FLayBubble
+  else begin
+    if FViewRoot.ChildrenCount = 1 then
+      Result := FViewRoot.Controls[0]
+    else
+      Result := nil;
+  end;
 end;
 
 function TDialog.GetBuilder: TDialogBuilder;
@@ -1723,6 +1841,16 @@ begin
           X := (PW - View.Width) / 2 + P.X + XOffset;
           Y := P.Y + PH + YOffset;
         end;
+      LeftBottom:
+        begin
+          X := P.X + XOffset;
+          Y := P.Y + PH + YOffset;
+        end;
+      RightBottom:
+        begin
+          X := PW - P.X + XOffset;
+          Y := P.Y + PH + YOffset;
+        end;
       Left:
         begin
           X := P.X - View.Width - XOffset;
@@ -1809,28 +1937,90 @@ end;
 
 { TCustomAlertDialog }
 
+procedure TCustomAlertDialog.AdjustDownPopupPosition;
+var
+  P: TPointF;
+  PW, PH, W, H, X, Y, OX, OY: Single;
+begin
+  P := TPointF.Zero;
+  P := FBuilder.FTarget.LocalToAbsolute(P);
+
+  W := FBuilder.FTarget.Width;
+  H := FBuilder.FTarget.Height;
+
+  PW := FViewRoot.Width;
+  PH := FViewRoot.Height;
+
+  X := P.X;
+  Y := P.Y;
+
+  OX := FBuilder.FTargetOffsetX;
+  OY := FBuilder.FTargetOffsetY;
+
+  case FBuilder.FTargetGravity of
+    TLayoutGravity.LeftTop:
+      begin
+        X := X + OX;
+        Y := Y + OY;
+      end;
+    TLayoutGravity.LeftBottom:
+      begin
+        X := X + OX;
+        Y := Y + H + OY;
+      end;
+    TLayoutGravity.RightTop: ;
+    TLayoutGravity.RightBottom: ;
+    TLayoutGravity.CenterVertical: ;
+    TLayoutGravity.CenterHorizontal: ;
+    TLayoutGravity.CenterHBottom: ;
+    TLayoutGravity.CenterVRight: ;
+    TLayoutGravity.Center: ;
+  end;
+
+  FViewRoot.FLayBubble.Position.Point := PointF(X, Y);
+
+  H := PH - Y - FViewRoot.FLayBubble.Margins.Bottom;
+  if (H < FViewRoot.FLayBubble.MaxHeight) or (FViewRoot.FLayBubble.MaxHeight = 0) then
+    FViewRoot.FLayBubble.MaxHeight := H;
+end;
+
 procedure TCustomAlertDialog.Apply(const ABuilder: TDialogBuilder);
 begin
   AtomicIncrement(DialogRef);
   FBuilder := ABuilder;
   if ABuilder = nil then Exit;
-  if ABuilder.View <> nil then
-    // 附加 View 的对话框
-    InitExtPopView()
-  else if ABuilder.FIsSingleChoice then
-    // 单选对话框
-    InitSinglePopView()
-  else if ABuilder.FIsMultiChoice then
-    // 多选对话框
-    InitMultiPopView()
-  else if (Length(ABuilder.FItemArray) > 0) or
-    (Assigned(ABuilder.Items) and (ABuilder.Items.Count > 0)) then
-    // 列表框
-    InitListPopView()
-  else
-    // 基本对话框
-    InitDefaultPopView();
+
+  FIsDowPopup := False;
+  
+  if Assigned(FBuilder.FTarget) then begin
+
+    FIsDowPopup := True;
+    InitDownPopupView();
+
+  end else begin
+
+    if ABuilder.View <> nil then
+      // 附加 View 的对话框
+      InitExtPopView()
+    else if ABuilder.FIsSingleChoice then
+      // 单选对话框
+      InitSinglePopView()
+    else if ABuilder.FIsMultiChoice then
+      // 多选对话框
+      InitMultiPopView()
+    else if (Length(ABuilder.FItemArray) > 0) or
+      (Assigned(ABuilder.Items) and (ABuilder.Items.Count > 0)) then
+      // 列表框
+      InitListPopView()
+    else
+      // 基本对话框
+      InitDefaultPopView();
+
+  end;
+
   InitOK();
+  
+  FViewRoot.FIsDownPopup := FIsDowPopup;    
 end;
 
 procedure TCustomAlertDialog.DoApplyTitle;
@@ -1996,7 +2186,9 @@ begin
     FViewRoot.FLayBubble.AdjustViewBounds := True;
   end else
     FViewRoot.FLayBubble.WidthSize := TViewSize.FillParent;
-
+    
+  if FBuilder.FMaxHeight > 0 then
+    FViewRoot.FLayBubble.MaxHeight := FBuilder.FMaxHeight;
 
   // 初始化消息区
   if (Builder.FIcon <> nil) or (Builder.FMessage <> '') then begin
@@ -2110,9 +2302,166 @@ begin
     SetBackColor(StyleManager.FDialogMaskColor);
 end;
 
+procedure TCustomAlertDialog.InitDownPopupView;
+var
+  Sytle: TDialogStyleManager;
+  BtnCount: Integer;
+  BodyMH: Single;
+begin
+  Inc(DialogRef);
+  Sytle := FBuilder.FStyleManager;
+  if Sytle = nil then
+    Sytle := GetDefaultStyleMgr;
+
+  // 初始化基础
+  FViewRoot := TDialogView.Create(Owner);
+  FViewRoot.Name := '';
+  FViewRoot.Dialog := Self;
+  FViewRoot.BeginUpdate;
+  FViewRoot.OnClick := DoRootClick;
+  FViewRoot.Parent := GetFirstParent;
+  if FViewRoot.Parent = nil then begin
+    Dismiss;
+    Exit;
+  end;
+  FViewRoot.Clickable := True;
+  FViewRoot.Align := TAlignLayout.Client;
+  FViewRoot.Index := FViewRoot.Parent.ChildrenCount - 1;
+  FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+  FViewRoot.InitView(Sytle);
+
+//  FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+//  FViewRoot.Background.ItemDefault.Color := $7f33cc33;
+  
+//  FViewRoot.FLayBubble.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+//  FViewRoot.FLayBubble.Background.ItemDefault.Color := $7f33ccff;
+
+  FViewRoot.FLayBubble.Layout.CenterInParent := False;
+
+  if Builder.FWidth > 0 then begin
+    FViewRoot.FLayBubble.WidthSize := TViewSize.CustomSize;
+    FViewRoot.FLayBubble.Size.Width := Builder.FWidth;
+    FViewRoot.FLayBubble.MaxWidth := Builder.FWidth;
+    FViewRoot.FLayBubble.AdjustViewBounds := True;
+  end else if Assigned(FBuilder.FTarget) then begin
+    FViewRoot.FLayBubble.WidthSize := TViewSize.CustomSize;
+    FViewRoot.FLayBubble.Size.Width := FBuilder.FTarget.Width;
+    FViewRoot.FLayBubble.MaxWidth := FBuilder.FTarget.Width;
+    FViewRoot.FLayBubble.AdjustViewBounds := True;
+  end else
+    FViewRoot.FLayBubble.WidthSize := TViewSize.FillParent;
+
+  FViewRoot.FLayBubble.Paddings := '1';
+  with TDrawableBorder(FViewRoot.FLayBubble.Background).Border do begin
+    Style := TViewBorderStyle.RectBorder;
+    Color.Default := Sytle.ListItemPressedColor;
+  end;
+
+  if FBuilder.FMaxHeight > 0 then
+    FViewRoot.FLayBubble.MaxHeight := FBuilder.FMaxHeight;
+
+  AdjustDownPopupPosition();
+
+  // 初始化消息区
+  if (Builder.FIcon <> nil) or (Builder.FMessage <> '') then begin
+    FViewRoot.InitMessage(Sytle);
+    FViewRoot.FMsgMessage.Text := Builder.FMessage;
+    if Assigned(Builder.FIcon) then begin
+      if Builder.FIcon is TDrawableBase then
+        FViewRoot.FMsgMessage.Drawable.Assign(TDrawableBase(Builder.FIcon))
+      else if Builder.FIcon is TBrush then
+        FViewRoot.FMsgMessage.Drawable.ItemDefault.Assign(TBrush(Builder.FIcon))
+      else if Builder.FIcon is TBrushBitmap then begin
+        FViewRoot.FMsgMessage.Drawable.ItemDefault.Bitmap.Assign(TBrushBitmap(Builder.FIcon));
+        FViewRoot.FMsgMessage.Drawable.ItemDefault.Kind := TBrushKind.Bitmap;
+      end;
+    end;
+  end else
+    FViewRoot.FMsgBody.Visible := False;
+
+  // 初始化列表
+  if (Length(Builder.FItemArray) > 0) or
+    ((Assigned(Builder.FItems)) and (Builder.FItems.Count > 0)) then begin
+    FViewRoot.InitList(Sytle);
+  end;
+
+  // 初始化按钮
+  BtnCount := 0;
+  FViewRoot.FLayBubble.Background.Corners := [];
+  FViewRoot.InitButton(Sytle);
+  if Builder.PositiveButtonText = '' then
+    FViewRoot.FButtonPositive.Visible := False
+  else begin
+    FViewRoot.FButtonPositive.Text := Builder.PositiveButtonText;
+    FViewRoot.FButtonPositive.OnClick := DoButtonClick;
+    Inc(BtnCount);
+  end;
+  if Builder.NegativeButtonText = '' then
+    FViewRoot.FButtonNegative.Visible := False
+  else begin
+    FViewRoot.FButtonNegative.Text := Builder.NegativeButtonText;
+    FViewRoot.FButtonNegative.OnClick := DoButtonClick;
+    Inc(BtnCount);
+  end;
+  if Builder.NeutralButtonText = '' then begin
+    FViewRoot.FButtonNeutral.Visible := False;
+  end else begin
+    FViewRoot.FButtonNeutral.Text := Builder.NeutralButtonText;
+    FViewRoot.FButtonNeutral.OnClick := DoButtonClick;
+    Inc(BtnCount);
+  end;
+  if (BtnCount = 0) and (FViewRoot.FButtonLayout <> nil) then begin
+    FViewRoot.FButtonLayout.Visible := False;
+  end;
+
+  // 设置 Body 最大高度
+  if Assigned(FViewRoot.FMsgBody) then begin
+    BodyMH := FViewRoot.FLayBubble.MaxHeight;
+    if BtnCount > 0 then
+      BodyMH := BodyMH - FViewRoot.FButtonLayout.Height;
+    if Assigned(FViewRoot.FTitleView) and (FViewRoot.FTitleView.Visible) then
+      BodyMH := BodyMH - FViewRoot.FTitleView.Height;
+    FViewRoot.FMsgBody.MaxHeight := BodyMH;
+
+    if Assigned(FViewRoot.FListView) then begin
+      if Assigned(FViewRoot.FMsgMessage) and (FViewRoot.FMsgMessage.Visible) then
+        FViewRoot.FListView.MaxHeight := BodyMH - FViewRoot.FMsgMessage.Height
+      else
+        FViewRoot.FListView.MaxHeight := BodyMH;
+    end;
+  end;   
+
+  if Assigned(FViewRoot.FTitleSpace) then begin
+    if FViewRoot.FTitleView.Visible = False then
+      FViewRoot.FTitleSpace.Visible := False
+    else if (BtnCount = 0) and
+      (FViewRoot.FMsgBody.Visible = False) and
+      ((not Assigned(FViewRoot.FListView)) or (FViewRoot.FListView.Visible = False)) then
+      FViewRoot.FTitleSpace.Visible := False;
+  end;
+
+  if Builder.FMaskVisible then
+    SetBackColor(Sytle.FDialogMaskColor);    
+
+  if FBuilder.View <> nil then
+    // 附加 View 的对话框
+    InitExtPopView()
+  else if FBuilder.FIsSingleChoice then
+    // 单选对话框
+    InitSinglePopView()
+  else if FBuilder.FIsMultiChoice then
+    // 多选对话框
+    InitMultiPopView()
+  else if (Length(FBuilder.FItemArray) > 0) or
+    (Assigned(FBuilder.Items) and (FBuilder.Items.Count > 0)) then
+    // 列表框
+    InitListPopView(); 
+end;
+
 procedure TCustomAlertDialog.InitExtPopView;
 begin
-  InitDefaultPopView;
+  if not FIsDowPopup then    
+    InitDefaultPopView;
   FViewRoot.FMsgBody.Visible := True;
   if Assigned(FViewRoot.FMsgMessage) then
     FViewRoot.FMsgMessage.Visible := False;
@@ -2123,35 +2472,51 @@ begin
     Align := TAlignLayout.Client;
   end;
   FViewRoot.FMsgBody.Height := Builder.View.Height;
+  if Builder.View is TFrameView then
+    TFrameViewTmp(Builder.View).DoShow();
 end;
 
 procedure TCustomAlertDialog.InitList(const ListView: TListViewEx; IsMulti: Boolean);
 var
   Adapter: IListAdapter;
 begin
-  if Length(FBuilder.FItemArray) > 0 then begin
-    if IsMulti then begin
-      Adapter := TStringsListCheckAdapter.Create(Builder.FItemArray);
-      TStringsListCheckAdapter(Adapter).Checks := FBuilder.FCheckedItems;
-    end else if FBuilder.IsSingleChoice then begin
-      Adapter := TStringsListSingleAdapter.Create(Builder.FItemArray);
-      if (Builder.FCheckedItem >= 0) and (Builder.FCheckedItem < Adapter.Count) then
-        TStringsListSingleAdapter(Adapter).ItemIndex := Builder.FCheckedItem;
-    end else begin
-      Adapter := TStringsListAdapter.Create(Builder.FItemArray);
-    end;
-  end else if Assigned(FBuilder.FItems) and (FBuilder.FItems.Count > 0) then begin
-    if IsMulti then begin
-      Adapter := TStringsListCheckAdapter.Create(FBuilder.FItems);
-      TStringsListCheckAdapter(Adapter).Checks := FBuilder.FCheckedItems;
-    end else if FBuilder.IsSingleChoice then begin
-      Adapter := TStringsListSingleAdapter.Create(FBuilder.FItems);
-      if (Builder.FCheckedItem >= 0) and (Builder.FCheckedItem < Adapter.Count) then
-        TStringsListSingleAdapter(Adapter).ItemIndex := Builder.FCheckedItem;
-    end else begin
-      Adapter := TStringsListAdapter.Create(FBuilder.FItems);
-    end;
+  Adapter := nil;
+  if Assigned(FBuilder.FOnInitListAdapterA) then begin
+    FBuilder.FOnInitListAdapterA(Self, FBuilder, Adapter);
   end;
+
+  if not Assigned(Adapter) then begin
+
+    if Length(FBuilder.FItemArray) > 0 then begin
+      if IsMulti then begin
+        Adapter := TStringsListCheckAdapter.Create(Builder.FItemArray);
+        TStringsListCheckAdapter(Adapter).Checks := FBuilder.FCheckedItems;
+      end else if FBuilder.IsSingleChoice then begin
+        Adapter := TStringsListSingleAdapter.Create(Builder.FItemArray);
+        if (Builder.FCheckedItem >= 0) and (Builder.FCheckedItem < Adapter.Count) then
+          TStringsListSingleAdapter(Adapter).ItemIndex := Builder.FCheckedItem;
+      end else begin
+        Adapter := TStringsListAdapter.Create(Builder.FItemArray);
+      end;
+    end else if Assigned(FBuilder.FItems) and (FBuilder.FItems.Count > 0) then begin
+      if IsMulti then begin
+        Adapter := TStringsListCheckAdapter.Create(FBuilder.FItems);
+        TStringsListCheckAdapter(Adapter).Checks := FBuilder.FCheckedItems;
+      end else if FBuilder.IsSingleChoice then begin
+        Adapter := TStringsListSingleAdapter.Create(FBuilder.FItems);
+        if (Builder.FCheckedItem >= 0) and (Builder.FCheckedItem < Adapter.Count) then
+          TStringsListSingleAdapter(Adapter).ItemIndex := Builder.FCheckedItem;
+      end else begin
+        Adapter := TStringsListAdapter.Create(FBuilder.FItems);
+      end;
+    end;
+
+    if FBuilder.FListItemDefaultHeight > 0 then
+      TStringsListAdapter(Adapter).DefaultItemHeight := FBuilder.FListItemDefaultHeight;
+    TStringsListAdapter(Adapter).WordWrap := FBuilder.FWordWrap;
+
+  end;
+
   ListView.Adapter := Adapter;
   ListView.Height := ListView.ContentBounds.Height;
 end;
@@ -2160,7 +2525,8 @@ procedure TCustomAlertDialog.InitListPopView;
 var
   ListView: TListViewEx;
 begin
-  InitDefaultPopView;
+  if not FIsDowPopup then 
+    InitDefaultPopView;
   FViewRoot.FMsgBody.Visible := True;
   if Assigned(FViewRoot.FMsgMessage) then begin
     if FBuilder.Message = '' then
@@ -2177,7 +2543,8 @@ procedure TCustomAlertDialog.InitMultiPopView;
 var
   ListView: TListViewEx;
 begin
-  InitDefaultPopView;
+  if not FIsDowPopup then 
+    InitDefaultPopView;
   FViewRoot.FMsgBody.Visible := True;
   if Assigned(FViewRoot.FMsgMessage) then begin
     if FBuilder.Message = '' then
@@ -2197,7 +2564,8 @@ procedure TCustomAlertDialog.InitSinglePopView;
 var
   ListView: TListViewEx;
 begin
-  InitDefaultPopView;
+  if not FIsDowPopup then 
+    InitDefaultPopView;
   FViewRoot.FMsgBody.Visible := True;
   if Assigned(FViewRoot.FMsgMessage) then begin
     if FBuilder.Message = '' then
@@ -2229,15 +2597,23 @@ begin
     FViewRoot.SetTitle(Value);
 end;
 
+type
+  TMyControl = class(TControl);
 
 { TDialogView }
 
 procedure TDialogView.AfterDialogKey(var Key: Word; Shift: TShiftState);
 begin
   // 如果按下了返回键，且允许取消对话框，则关闭对话框
-  if Assigned(Dialog) and (Dialog.Cancelable) and (Key in [vkEscape, vkHardwareBack]) then
+  if Assigned(Dialog) and (Dialog.Cancelable) and (Key in [vkEscape, vkHardwareBack]) then begin
     Dialog.Cancel;
-  Key := 0;
+    Key := 0;
+  end else if Assigned(FDialog) then begin
+    if Assigned(FDialog.Builder) and Assigned(FDialog.Builder.View) then
+      TMyControl(FDialog.Builder.View).KeyDown(Key, Char(Key), Shift)
+    else if (ControlsCount = 1) then
+      TMyControl(Controls[0]).KeyDown(Key, Char(Key), Shift)
+  end;
 end;
 
 constructor TDialogView.Create(AOwner: TComponent);
@@ -2259,6 +2635,13 @@ begin
   FAnilndictor := nil;
   FTitleSpace := nil;
   inherited Destroy;
+end;
+
+procedure TDialogView.DoRealign;
+begin
+  inherited DoRealign;
+  if (not FDisableAlign) and FIsDownPopup then 
+    TAlertDialog(FDialog).AdjustDownPopupPosition;
 end;
 
 procedure TDialogView.Hide;
