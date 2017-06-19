@@ -92,7 +92,8 @@ type
     gvDisplayZero,          // 数字列是否显示0
     gvColumnBestWidth,      // 是否允许最佳列宽，启用 gvColumnResize 时有效
     gvColumnResize,         // 列宽可拖动
-    gvColumnMove            // 允许移动列
+    gvColumnMove,           // 允许移动列
+    gvFilterSort            // 过滤功能的弹出列表是否自动排序
   );
 
   TGridOptions = set of TGridOption;
@@ -2135,8 +2136,10 @@ begin
   else
     FFilterList.Clear;
 
-  FFilterList.Add('<清除筛选>');
   DoInitFilterDataList(Item, FFilterList);
+  if gvFilterSort in FOptions then
+    TStringList(FFilterList).Sort;
+  FFilterList.Insert(0, '<清除筛选>');
 
   if FFilterList.Count > 0 then begin
 

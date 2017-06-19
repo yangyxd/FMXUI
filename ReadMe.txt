@@ -21,6 +21,10 @@ FMXUI  (YangYxd)
   TListExView ListView扩展类(Delphi官方列表框)
   TBadgeView 未读消息提示小红点
   
+  TGridView 格子视图，可通过数据适配器实现各种功能
+  TStringGridView 字符串格子视图
+  TDBGridView 数据集格子视图
+  
   TRingView 空心图形视图
   TMultiPathView 多重路径可视组件
   
