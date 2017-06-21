@@ -14,10 +14,11 @@ interface
 
 uses
   UI.Debug, UI.Utils, UI.Base, UI.Standard, UI.Utils.ArrayEx, UI.Ani, UI.Edit,
+  UI.Json,
   {$IFDEF MSWINDOWS}
   Windows,
   {$ENDIF}
-  Data.DB, Data.DBConsts,
+  Data.DB, Data.DBConsts, System.JSON,
   FMX.Utils, FMX.ImgList, FMX.MultiResBitmap, FMX.ActnList, System.Rtti, FMX.Consts,
   FMX.TextLayout, FMX.Objects, System.ImageList, System.RTLConsts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, System.Math,
@@ -106,6 +107,7 @@ type
   TGridCell = record
     Row, Col: Integer;
     procedure Clear;
+    constructor Create(const ARow, ACol: Integer);
   end;
 
   TOnGridGetCellText = procedure (Item: TGridColumnItem; const ARow: Integer; out Text: string) of object;
@@ -129,6 +131,9 @@ type
     procedure DoChange;
     property Right: Double read GetRight;
     function GetDispLayText: string; virtual;
+
+    procedure WriteData(Data: TJSONObject); virtual;
+    procedure ReadList(Data: TJSONObject); virtual;
   public
     ColIndex: Integer;          // 真实的列索引号（可能与显示的不一致）
     RowIndex: Integer;          // 真实的列行索引
@@ -182,6 +187,9 @@ type
   TGridDBColumnItem = class(TGridColumnItem)
   protected
     function GetDispLayText: string; override;
+
+    procedure WriteData(Data: TJSONObject); override;
+    procedure ReadList(Data: TJSONObject); override;
   public
     [Weak] Field: TField;
     FieldName: string;         // 字段名称
@@ -223,6 +231,10 @@ type
     procedure Clear;
 
     procedure Assign(Source: TPersistent); override;
+
+    procedure Change();
+
+    function TryGetItem(const ACol, ARow: Integer; out Item: TGridColumnItem): Boolean;
 
     /// <summary>
     /// 注册列头信息类, 在初始化之后调用
@@ -625,11 +637,13 @@ type
   private
     [Weak] FOwner: TGridBase;
     [Weak] FColumns: TGridColumns;
+  protected
+    procedure DefineProperties(Filer: TFiler); override;
+    procedure ReadCollumnsData(Reader: TReader); virtual;
+    procedure WriteCollumnsData(Writer: TWriter); virtual;
   public
     constructor Create(AOwner: TGridBase);
-
     property Columns: TGridColumns read FColumns;
-  published
     property Owner: TGridBase read FOwner;
   end;
 
@@ -808,6 +822,7 @@ type
     function GetCellsData(const ACol, ARow: Integer): string;
     procedure SetCellsData(const ACol, ARow: Integer; const Value: string);
     procedure SetFixedSetting(const Value: TGridFixedSetting);
+    procedure SetColumnsSetting(const Value: TGridColumnsSetting);
   protected
     function GetColCount: Integer;
     function GetRowCount: Integer;
@@ -821,6 +836,7 @@ type
   protected
     procedure Loaded; override;
     procedure Resize; override;
+
     procedure PaintBackground; override;
     procedure DoDrawHeaderRows(Canvas: TCanvas; var R: TRectF); virtual;  // 绘制表头
 
@@ -976,7 +992,7 @@ type
     /// <summary>
     /// 单元格列设置
     /// </summary>
-    property ColumnsSettings: TGridColumnsSetting read FColumnsSetting; // write SetColumnsSetting;
+    property ColumnsSettings: TGridColumnsSetting read FColumnsSetting write SetColumnsSetting;
 
     /// <summary>
     /// 固定单元格设置
@@ -2893,6 +2909,11 @@ procedure TGridBase.SetCellsData(const ACol, ARow: Integer;
 begin
   if Assigned(FAdapter) then
     FAdapter.Cells[ACol, ARow] := Value;
+end;
+
+procedure TGridBase.SetColumnsSetting(const Value: TGridColumnsSetting);
+begin
+  FColumnsSetting.Assign(Value);
 end;
 
 procedure TGridBase.SetDivider(const Value: TAlphaColor);
@@ -5017,6 +5038,39 @@ begin
   end;
 end;
 
+procedure TGridColumnItem.ReadList(Data: TJSONObject);
+var
+  V: Integer;
+begin
+  Data.TryGetFloat('Width', FWidth);
+
+  Data.TryGetInt('ColIndex', ColIndex);
+  Data.TryGetInt('RowIndex', RowIndex);
+  if Data.TryGetInt('Gravity', V) then
+    Gravity := TLayoutGravity(V);
+  if Data.TryGetInt('DataType', V) then
+    DataType := TGridDataType(V);
+  Data.TryGetFloat('Opacity', Opacity);
+
+  Data.TryGetFloat('PaddingLeft', Padding.Left);
+  Data.TryGetFloat('PaddingTop', Padding.Top);
+  Data.TryGetFloat('PaddingRight', Padding.Right);
+  Data.TryGetFloat('PaddingBottom', Padding.Bottom);
+
+  Data.TryGetBoolean('Locked', Locked);
+  Data.TryGetBoolean('DataFilter', DataFilter);
+  Data.TryGetBoolean('ReadOnly', ReadOnly);
+  Data.TryGetBoolean('Visible', Visible);
+  Data.TryGetBoolean('Enabled', Enabled);
+  Data.TryGetBoolean('WordWrap', WordWrap);
+
+  Data.TryGetInt('RowsPan', RowsPan);
+  Data.TryGetInt('ColsPan', ColsPan);
+  Data.TryGetInt('Tag', Tag);
+
+  Data.TryGetString('Title', Title);
+end;
+
 procedure TGridColumnItem.SetIndex(const Value: Integer);
 var
   ARow, ACol, NewCol: Integer;
@@ -5085,6 +5139,35 @@ begin
   end;
 end;
 
+procedure TGridColumnItem.WriteData(Data: TJSONObject);
+begin
+  Data.Add('Width', FWidth);
+
+  Data.Add('ColIndex', ColIndex);
+  Data.Add('RowIndex', RowIndex);
+  Data.Add('Gravity', Ord(Gravity));
+  Data.Add('DataType', Ord(DataType));
+  Data.Add('Opacity', Opacity);
+
+  Data.Add('PaddingLeft', Padding.Left, True);
+  Data.Add('PaddingTop', Padding.Top, True);
+  Data.Add('PaddingRight', Padding.Right, True);
+  Data.Add('PaddingBottom', Padding.Bottom, True);
+
+  Data.Add('Locked', Locked, True);
+  Data.Add('DataFilter', DataFilter, True);
+  Data.Add('ReadOnly', ReadOnly, True);
+  Data.Add('Visible', Visible, True);
+  Data.Add('Enabled', Enabled, True);
+  Data.Add('WordWrap', WordWrap, True);
+
+  Data.Add('RowsPan', RowsPan, True);
+  Data.Add('ColsPan', ColsPan, True);
+  Data.Add('Tag', Tag, True);
+
+  Data.Add('Title', Title, True);
+end;
+
 { TGridColumns }
 
 procedure TGridColumns.Assign(Source: TPersistent);
@@ -5115,6 +5198,11 @@ begin
     end;
   end else
     inherited;
+end;
+
+procedure TGridColumns.Change;
+begin
+  DoChange;
 end;
 
 procedure TGridColumns.Clear;
@@ -5417,6 +5505,12 @@ begin
   end;
 end;
 
+function TGridColumns.TryGetItem(const ACol, ARow: Integer;
+  out Item: TGridColumnItem): Boolean;
+begin
+  Result := FData.TryGetValue(TGridBase.GetKey(ACol, ARow), TObject(Item));
+end;
+
 { TGridTextSettings }
 
 constructor TGridTextSettings.Create(AOwner: TComponent);
@@ -5520,6 +5614,12 @@ procedure TGridCell.Clear;
 begin
   Row := -1;
   Col := -1;
+end;
+
+constructor TGridCell.Create(const ARow, ACol: Integer);
+begin
+  Row := ARow;
+  Col := ACol;
 end;
 
 { TStringGridAdapter }
@@ -5664,6 +5764,18 @@ begin
     Result := Field.DisplayLabel
   else
     Result := FieldName;
+end;
+
+procedure TGridDBColumnItem.ReadList(Data: TJSONObject);
+begin
+  inherited ReadList(Data);
+  Data.TryGetString('FieldName', FieldName);
+end;
+
+procedure TGridDBColumnItem.WriteData(Data: TJSONObject);
+begin
+  inherited WriteData(Data);
+  Data.Add('FieldName', FieldName, True);
 end;
 
 { TDBGridView }
@@ -6351,6 +6463,79 @@ end;
 constructor TGridColumnsSetting.Create(AOwner: TGridBase);
 begin
   FOwner := AOwner;
+end;
+
+procedure TGridColumnsSetting.DefineProperties(Filer: TFiler);
+begin
+  inherited;
+  Filer.DefineProperty('ColumnsData', ReadCollumnsData, WriteCollumnsData, Assigned(FColumns));
+end;
+
+procedure TGridColumnsSetting.ReadCollumnsData(Reader: TReader);
+var
+  List, DataItem: TJSONObject;
+  Item: TGridColumnItem;
+  I, J: Integer;
+  KeyStr: string;
+begin
+  List := TJSONObject.Create;
+  try
+    if Assigned(FColumns) then begin
+      try
+        List.Parse(Reader.ReadString);
+      except
+        Exit;
+      end;
+      with FColumns do begin
+        if List.Exist('RowsCount') then
+          RowsCount := List.I['RowsCount'];
+        if List.Exist('ColsCount') then
+          ColsCount := List.I['ColsCount'];
+        for I := 0 to RowsCount - 1 do begin
+          for J := 0 to ColsCount - 1 do begin
+            KeyStr := Format('Item_%d_%d', [J, I]);
+            DataItem := List.O[KeyStr];
+            if not Assigned(DataItem) then
+              Continue;
+            Item := FColumns.Items[J, I];
+            Item.ReadList(DataItem);
+          end;
+        end;
+      end;
+    end;
+  finally
+    FreeAndNil(List);
+  end;
+end;
+
+procedure TGridColumnsSetting.WriteCollumnsData(Writer: TWriter);
+var
+  List, DataItem: TJSONobject;
+  I, J: Integer;
+  Key: Int64;
+  Item: TGridColumnItem;
+begin
+  List := TJSONObject.Create;
+  try
+    if Assigned(FColumns) then begin
+      List.Add('RowsCount', FColumns.RowsCount);
+      List.Add('ColsCount', FColumns.ColsCount);
+
+      for I := 0 to FColumns.RowsCount - 1 do begin
+        for J := 0 to FColumns.ColsCount - 1 do begin
+          Key := TGridBase.GetKey(J, I);
+          if FColumns.FData.TryGetValue(Key, TObject(Item)) then begin
+            DataItem := List.AddJsonObject(Format('Item_%d_%d', [J, I]));
+            Item.WriteData(DataItem);
+          end;
+        end;
+      end;
+
+    end;
+    Writer.WriteString(List.ToJSON);
+  finally
+    FreeAndNil(List);
+  end;
 end;
 
 { TGridFilterDownListAdapter }

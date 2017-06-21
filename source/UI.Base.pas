@@ -1566,6 +1566,7 @@ type
     class function GetShareImageList: TList<TShareImageList>;
   end;
 
+
 function ViewStateToString(const State: TViewStates): string;
 function ComponentStateToString(const State: TComponentState): string;
 
