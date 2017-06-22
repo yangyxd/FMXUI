@@ -44,17 +44,6 @@ type
   );
 
   /// <summary>
-  /// 固定列信息
-  /// </summary>
-  TGridFixedColumnItem = record
-    Width: Single;              // 列宽度
-    RowsPan: Integer;           // 行跨度, -1时，表示跨过FixedRows设定的行, 大于1时表示跨过指定的行
-    Tag: NativeInt;             // 附加数据
-    Title: string;              // 列标题
-  end;
-  PGridFixedColumnItem = ^TGridFixedColumnItem;
-
-  /// <summary>
   /// 单元格格式
   /// </summary>
   TGridCellSettings = class(TPersistent)
@@ -133,7 +122,7 @@ type
     function GetDispLayText: string; virtual;
 
     procedure WriteData(Data: TJSONObject); virtual;
-    procedure ReadList(Data: TJSONObject); virtual;
+    procedure ReadData(Data: TJSONObject); virtual;
   public
     ColIndex: Integer;          // 真实的列索引号（可能与显示的不一致）
     RowIndex: Integer;          // 真实的列行索引
@@ -185,16 +174,23 @@ type
   /// DBGrid 列头信息
   /// </summary>
   TGridDBColumnItem = class(TGridColumnItem)
+  private
+    function GetAbsoluteFieldName: string;
   protected
     function GetDispLayText: string; override;
 
     procedure WriteData(Data: TJSONObject); override;
-    procedure ReadList(Data: TJSONObject); override;
+    procedure ReadData(Data: TJSONObject); override;
+
   public
     [Weak] Field: TField;
     FieldName: string;         // 字段名称
     FieldType: TFieldType;     // 字段类型
     destructor Destroy; override;
+
+    procedure Assign(Source: TPersistent); override;
+
+    property AbsoluteFieldName: string read GetAbsoluteFieldName;
   end;
 
   /// <summary>
@@ -247,6 +243,8 @@ type
     property Items[const ACol, ARow: Integer]: TGridColumnItem read GetItem write SetItem; default;
 
     property GridView: TGridBase read FGridView;
+
+    property ColumnClass: TGridColumnItemClass read FColumnClass;
   published
     property ColsCount: Integer read FMaxCols write SetMaxCols default 1;
     property RowsCount: Integer read FMaxRows write SetMaxRows default 1;
@@ -312,7 +310,7 @@ type
     /// <summary>
     /// 获取固定列信息
     /// </summary>
-    function GetFixedColData(const ACol: Integer): TGridFixedColumnItem;
+    function GetFixedColData(const ACol: Integer): TGridColumnItem;
 
     /// <summary>
     /// 获取指定格子的内容
@@ -322,6 +320,15 @@ type
     /// 设置指定格子的内容
     /// </summary>
     procedure SetCells(const ACol, ARow: Integer; const Value: string);
+
+    /// <summary>
+    /// 获取固定列指定格子的内容
+    /// </summary>
+    function GetFixedCells(const ACol, ARow: Integer): string;
+    /// <summary>
+    /// 设置固定列指定格子的内容
+    /// </summary>
+    procedure SetFixedCells(const ACol, ARow: Integer; const Value: string);
 
     /// <summary>
     /// 设置游标位置
@@ -390,6 +397,10 @@ type
     /// 获取指定格子的高度
     /// </summary>
     property CellHeight[const ACol, ARow: Integer]: Single read GetCellHeight;
+    /// <summary>
+    /// 固定列单元格数据内容
+    /// </summary>
+    property FixedCells[const ACol, ARow: Integer]: string read GetFixedCells write SetFixedCells;
     /// <summary>
     /// 列头信息
     /// </summary>
@@ -495,7 +506,7 @@ type
   /// 绘制左边固定单元格文本
   /// </summary>
   TOnDrawFixedCellsText = procedure (Sender: TObject; Canvas: TCanvas; const ACol, ARow: Integer;
-    const Item: TGridFixedColumnItem; const R: TRectF) of object;
+    const Item: TGridColumnItem; const R: TRectF; const Text: string) of object;
 
   /// <summary>
   /// 绘制单元格
@@ -721,11 +732,11 @@ type
     CDefaultFixedColWidth = 50;          // 默认固定单元格列宽
     CDefaultFixedRowHeight = 20;         // 默认固定单元格行高
     CDefaultEmptyRows = 1;               // 为空时显示几个空行？
-    CDefaultFixedColPadding = 2;         // 默认固定单元格Padding
     CDefaultTextRowIndex = '行号';       // 默认行号文本
     CDefaultAnchorWidth = 6;             // 默认列头图标宽度
     CDefaultAnchorHeight = 12;           // 默认列头图标高度
     CDefaultFilterIconWH = 12;           // 默认过滤图标宽度
+    CDefaultPadding = 3;                 // 默认Padding大小
 
     CDefaultOptions = [gvEditing, gvRowIndex, gvColLines, gvRowLines, gvTwoColor, gvCancelOnExit, gvEscCancelEdit];
   private
@@ -759,8 +770,6 @@ type
     FFixedDefaultColWidth: Single;  // 固定单元格默认列宽
 
     FText: TGridTextSettings; // 单元格字体
-    FTextRowIndex: string;    // 行号列标题
-
     FFilterList: TStrings;
 
     FFixedMergeMap: TIntHash;
@@ -823,6 +832,8 @@ type
     procedure SetCellsData(const ACol, ARow: Integer; const Value: string);
     procedure SetFixedSetting(const Value: TGridFixedSetting);
     procedure SetColumnsSetting(const Value: TGridColumnsSetting);
+    function GetFixedColsumn(const ACol: Integer): TGridColumnItem;
+    function GetTextRowIndex: string;
   protected
     function GetColCount: Integer;
     function GetRowCount: Integer;
@@ -845,10 +856,10 @@ type
       const R: TRectF; const AOpacity: Single); virtual;
     procedure DoDrawFixedColBackground(Canvas: TCanvas; const R: TRectF; const AOpacity: Single); virtual;
     procedure DoDrawFixedRowText(Canvas: TCanvas; const Row: Integer;
-      const R: TRectF; const AOpacity: Single); virtual;
-    procedure DoDrawFixedRowIndexText(Canvas: TCanvas; const R: TRectF; const AOpacity: Single); virtual;
+      const R: TRectF; const AOpacity: Single; const ItemList: TArray<TGridColumnItem>); virtual;
     procedure DoDrawFixedCellsText(Canvas: TCanvas; const ACol, ARow: Integer;
-      const Item: TGridFixedColumnItem; const R: TRectF; const AOpacity: Single); virtual;
+      const Item: TGridColumnItem; const R: TRectF; const AOpacity: Single;
+      const Text: string); virtual;
 
     procedure CreateCoentsView();
     procedure HScrollChange(Sender: TObject); override;
@@ -866,6 +877,9 @@ type
     function IsStoredDividerHeight: Boolean; virtual;
     function IsStoredScrollSmallChangeFraction: Boolean; override;
     function IsStoredRowHeight: Boolean; virtual;
+
+    function GetNeedSaveColumns: Boolean; virtual;
+    procedure SetNeedSaveColumns(const Value: Boolean); virtual;
   protected
     function AllowInitScrollbar: Boolean; override;
     function CreateEditor: TEditView; virtual;
@@ -938,6 +952,8 @@ type
 
     property Cells[const ACol, ARow: Integer]: string read GetCellsData write SetCellsData;
 
+    property FixedColsumn[const ACol: Integer]: TGridColumnItem read GetFixedColsumn;
+
     // 指示器当前行
     property SelectionAnchor: Integer read FSelectionAnchor write SetSelectionAnchor;
     // 当前选中行
@@ -978,6 +994,11 @@ type
 
     property ScrollSmallChangeFraction;
     property ScrollStretchGlowColor;
+
+    /// <summary>
+    /// 是否需要存储列头数据
+    /// </summary>
+    property NeedSaveColumns: Boolean read GetNeedSaveColumns write SetNeedSaveColumns;
 
     /// <summary>
     /// 表格选项
@@ -1039,7 +1060,7 @@ type
     /// <summary>
     /// 行号列标题
     /// </summary>
-    property FixedTextRowIndex: string read FTextRowIndex write SetTextRowIndex;
+    property FixedTextRowIndex: string read GetTextRowIndex write SetTextRowIndex;
 
     /// <summary>
     /// 是否全局只读
@@ -1249,6 +1270,9 @@ type
 
     procedure DoFilterDataChange(Item: TGridColumnItem); override;
     procedure DoInitFilterDataList(Item: TGridColumnItem; List: TStrings); override;
+  protected
+    function GetNeedSaveColumns: Boolean; override;
+    procedure SetNeedSaveColumns(const Value: Boolean); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1331,10 +1355,13 @@ type
     function GetRowCount: Integer; virtual; abstract;
     procedure SetRowCount(const Value: Integer); virtual; abstract;
 
-    function GetFixedColData(const ACol: Integer): TGridFixedColumnItem; virtual;
+    function GetFixedColData(const ACol: Integer): TGridColumnItem; virtual;
 
     function GetCells(const ACol, ARow: Integer): string; virtual;
     procedure SetCells(const ACol, ARow: Integer; const Value: string); virtual;
+
+    function GetFixedCells(const ACol, ARow: Integer): string; virtual;
+    procedure SetFixedCells(const ACol, ARow: Integer; const Value: string); virtual;
 
     function GetCellChecked(const ACol, ARow: Integer): Boolean; virtual;
     procedure SetCellChecked(const ACol, ARow: Integer; const Value: Boolean); virtual;
@@ -1496,7 +1523,7 @@ function TGridBase.CanRePaintBk(const View: IView; State: TViewState): Boolean;
 begin
   Result := ((State = TViewState.None) and (not AniCalculations.Animation)) or
     ((State = TViewState.Pressed) and (Assigned(FFixedBrush.FPressed))) or
-    ((FDownFixedRowIndex <> -1) or (FDownFixedColIndex <> -1));
+    ((FDownFixedRowIndex <> -2) or (FDownFixedColIndex <> -2));
 end;
 
 procedure TGridBase.Clear;
@@ -1519,8 +1546,9 @@ begin
     end else begin
       if (FMovePos.X >= FContentViews.Left) then
         Exit;
-      if (FDownFixedRowIndex <> -1) or (FDownFixedColIndex <> -1) then begin
-        SelectionAnchor := FDownFixedRowIndex;
+      if (FDownFixedRowIndex <> -2) or (FDownFixedColIndex <> -2) then begin
+        if FDownFixedRowIndex >= 0 then
+          SelectionAnchor := FDownFixedRowIndex;
         DoClickFixedCell(FDownFixedColIndex, FDownFixedRowIndex);
       end;
     end;
@@ -1542,7 +1570,6 @@ begin
 
   FScrollSmallChangeFraction := CDefaultFixedRowHeight;
 
-  FTextRowIndex := CDefaultTextRowIndex;
   FOptions := CDefaultOptions;
 
   FDrawBuffer := TBitmap.Create;
@@ -1580,8 +1607,8 @@ begin
   FLocalDividerHeight := -1;
   SetLength(FItemsPoints, 0);
 
-  FDownFixedRowIndex := -1;
-  FDownFixedColIndex := -1;
+  FDownFixedRowIndex := -2;
+  FDownFixedColIndex := -2;
 
   FSelectionAnchor := 0;
 
@@ -1658,8 +1685,7 @@ begin
     Color := TAlphaColorRec.White;
     Kind := TViewBrushKind.Solid;
   end;
-  Result.Padding.Rect := RectF(CDefaultFixedColPadding,CDefaultFixedColPadding,
-    CDefaultFixedColPadding,CDefaultFixedColPadding);
+  Result.Padding.Rect := RectF(CDefaultPadding, CDefaultPadding, CDefaultPadding, CDefaultPadding);
   Result.Caret.Color := TAlphaColorRec.Black;
   Result.SelectionFill.Color := $3f0000ff;
   Result.Parent := FContentViews;
@@ -1742,18 +1768,14 @@ begin
 end;
 
 procedure TGridBase.DoDrawFixedCellsText(Canvas: TCanvas; const ACol,
-  ARow: Integer; const Item: TGridFixedColumnItem; const R: TRectF;
-  const AOpacity: Single);
-var
-  VR: TRectF;
+  ARow: Integer; const Item: TGridColumnItem; const R: TRectF;
+  const AOpacity: Single; const Text: string);
 begin
-  if (ACol = 0) and (ARow < FCount) and (gvRowIndex in FOptions) then begin
-    VR := RectF(R.Left + CDefaultFixedColPadding, R.Top + CDefaultFixedColPadding,
-        R.Right - CDefaultFixedColPadding, R.Bottom - CDefaultFixedColPadding);
-    if gvIndicator in FOptions then
-      VR.Right := VR.Right - CDefaultAnchorWidth;
-    // 画行号
-    FFixedText.Draw(Canvas, Item.Title, VR, AOpacity, DrawState);
+  if Text <> '' then begin
+    if (ACol < 0) and (gvIndicator in FOptions) then
+      FFixedText.Draw(Canvas, Text, RectF(R.Left, R.Top, R.Right - CDefaultAnchorWidth, R.Bottom), AOpacity, DrawState)
+    else
+      FFixedText.Draw(Canvas, Text, R, AOpacity, DrawState);
   end;
 end;
 
@@ -1772,53 +1794,35 @@ end;
 procedure TGridBase.DoDrawFixedColText(Canvas: TCanvas; Item: TGridColumnItem;
   const R: TRectF; const AOpacity: Single);
 begin     
-  if Assigned(FOnDrawFixedColText) then
-    FOnDrawFixedColText(Self, Canvas, Item, R)
-  else 
-    FFixedText.Draw(Canvas, Item.DispLayText, R, AOpacity, DrawState, FFixedText.Gravity);
-end;
-
-procedure TGridBase.DoDrawFixedRowIndexText(Canvas: TCanvas; const R: TRectF;
-  const AOpacity: Single);
-var
-  Item: TGridFixedColumnItem;
-begin
-  FillChar(Item, SizeOf(Item), 0);
-  Item.Width := FixedIndicatorWidth;
-  Item.Title := FTextRowIndex;
-  if Assigned(FOnDrawFixedCellsText) then
-    FOnDrawFixedCellsText(Self, Canvas, 0, -1, Item, R)
-  else
-    DoDrawFixedCellsText(Canvas, 0, -1, Item, R, AOpacity);
+  FFixedText.Draw(Canvas, Item.DispLayText, R, AOpacity * Item.Opacity, DrawState, FFixedText.Gravity);
 end;
 
 procedure TGridBase.DoDrawFixedRowText(Canvas: TCanvas; const Row: Integer;
-  const R: TRectF; const AOpacity: Single);
+  const R: TRectF; const AOpacity: Single; const ItemList: TArray<TGridColumnItem>);
 var
-  I: Integer;
-  Item: TGridFixedColumnItem;
+  I, J: Integer;
+  Item: TGridColumnItem;
   L, DH: Single;
   VR: TRectF;
-  LFixedCols: Integer;
+  LText: string;
 begin
-  if not Assigned(FAdapter) then begin
-    FillChar(Item, SizeOf(Item), 0);
-    Item.Width := FFixedDefaultColWidth;
-  end;
   L := R.Left;
   DH := GetDividerHeight;
   
-  LFixedCols := FFixedCols;
-  if (gvIndicator in FOptions) or (gvRowIndex in FOptions) then
-    Inc(LFixedCols);
+  if (gvIndicator in FOptions) or (gvRowIndex in FOptions) then begin
+    J := -1;
+  end else
+    J := 0;
     
-  for I := 0 to LFixedCols - 1 do begin
-    if (I = 0) and (LFixedCols > FFixedCols) then begin
-      Item.Width := FixedIndicatorWidth;
-      if gvDisplayZero in FOptions then        
-        Item.Title := IntToStr(Row)
+  for I := J to FFixedCols - 1 do begin
+    Item := ItemList[I + 1];
+
+    if Item.IsLeftTop then begin
+
+      if gvDisplayZero in FOptions then
+        LText := IntToStr(Row)
       else
-        Item.Title := IntToStr(Row + 1);
+        LText := IntToStr(Row + 1);
 
       // 画当前行的小三角
       if (Row = FSelectionAnchor) and (gvIndicator in FOptions) then begin
@@ -1831,18 +1835,20 @@ begin
       end;
 
     end else if Assigned(FAdapter) then
-      Item := FAdapter.GetFixedColData(I)
-    else begin
-      Item.Width := FFixedDefaultColWidth;
-      Item.Title := '';
-    end;
+      LText := FAdapter.FixedCells[I, Row]
+    else
+      LText := '';
+
     VR := RectF(L, R.Top, L + Item.Width, R.Bottom);
     if (I = FDownFixedColIndex) and (Row = FDownFixedRowIndex) then
       DoDrawFixedColBackground(Canvas, VR, AOpacity);
     if Assigned(FOnDrawFixedCellsText) then
-      FOnDrawFixedCellsText(Self, Canvas, I, Row, Item, VR)
-    else
-      DoDrawFixedCellsText(Canvas, I, Row, Item, VR, AOpacity);
+      FOnDrawFixedCellsText(Self, Canvas, I, Row, Item, VR, LText)
+    else begin
+      VR := RectF(VR.Left + Item.Padding.Left, VR.Top + Item.Padding.Top,
+        VR.Right - Item.Padding.Right, VR.Bottom - Item.Padding.Bottom);
+      DoDrawFixedCellsText(Canvas, I, Row, Item, VR, AOpacity, LText);
+    end;
     L := L + Item.Width + DH;
   end;  
 end;
@@ -1852,13 +1858,14 @@ var
   H, W, LH, LW, MH, MW: Double;
   DH, V, LV: Double;
   XOffset: Double;
-  I, J, K, M, N, LI, LFixedCols: Integer;
+  I, J, K, M, N, LI: Integer;
   Item: TGridColumnItem;
   LDrawLine: Boolean;
   LR, VR: TRectF;
   LOpacity: Single;
   LState: TGridFixedHeaderState;
   PH: PSingle;
+  ItemList: TArray<TGridColumnItem>;
 begin
   DH := GetDividerHeight;
   if (FFixedRowHeight <= 0) and (DH <= 0) then
@@ -1892,6 +1899,10 @@ begin
     W := FColumns.Width
   else
     W := 0;
+
+  SetLength(ItemList, FFixedCols + 1);
+  for I := 0 to FFixedCols do
+    ItemList[I] := FixedColsumn[I - 1];
 
   // 画背景
   LR := RectF(R.Left + LW, R.Top, R.Left + W + LW + XOffset, R.Top + H);
@@ -1982,7 +1993,7 @@ begin
               VR.Top := H;
               VR.Right := W + LW;
               VR.Bottom := LH + FFixedRowHeight;
-              DoDrawFixedColBackground(Canvas, VR, LOpacity);
+              DoDrawFixedColBackground(Canvas, VR, LOpacity * Item.Opacity);
             end;
           end;
           // 画过滤图标
@@ -1992,16 +2003,20 @@ begin
             VR.Right := VR.Left + CDefaultFilterIconWH;
             VR.Bottom := VR.Top + CDefaultFilterIconWH;
             FGridRes.Drawable.ImageIndex := 9;
-            FGridRes.Drawable.Draw(Canvas, VR, 0, 0, [], LOpacity);
+            FGridRes.Drawable.Draw(Canvas, VR, 0, 0, [], LOpacity * Item.Opacity);
           end;
           // 画文字
-          with Item.Padding do begin
-            VR.Left := V + LW + Left;
-            VR.Top := H + Top;
-            VR.Right := W + LW - Right;
-            VR.Bottom := LH + FFixedRowHeight - Bottom;
+          if Assigned(FOnDrawFixedColText) then begin
+            FOnDrawFixedColText(Self, Canvas, Item, RectF(V + LW, H, W + LW - DH, LH + FFixedRowHeight));
+          end else begin
+            with Item.Padding do begin
+              VR.Left := V + LW + Left;
+              VR.Top := H + Top;
+              VR.Right := W + LW - Right - DH;
+              VR.Bottom := LH + FFixedRowHeight - Bottom;
+            end;
+            DoDrawFixedColText(Canvas, Item, VR, LOpacity);
           end;
-          DoDrawFixedColText(Canvas, Item, VR, LOpacity);
 
           if LDrawLine then begin
             // 画列线
@@ -2028,7 +2043,8 @@ begin
     end;
   end;
 
-  // 画固定行
+  // 画固定列 - 行
+
   // 画背景
   LR := RectF(R.Left, H, R.Left + LW, H + FContentViews.FViewBottom);
   if Assigned(FFixedBrush.FDefault) then begin
@@ -2046,7 +2062,7 @@ begin
         LR.Top := LR.Bottom - DH;
 
         DoDrawFixedRowText(Canvas, I,
-          RectF(LR.Left, LR.Bottom - PH^ - DH, LR.Right, LR.Bottom - DH), LOpacity);
+          RectF(LR.Left, LR.Bottom - PH^ - DH, LR.Right, LR.Bottom - DH), LOpacity, ItemList);
         if LR.Top < R.Bottom then
           Canvas.FillRect(LR, 0, 0, [], LOpacity, FContentViews.FDividerBrush);
 
@@ -2063,7 +2079,7 @@ begin
         LR.Top := LR.Bottom - DH;
 
         DoDrawFixedRowText(Canvas, I,
-          RectF(LR.Left, LR.Bottom - LH - DH, LR.Right, LR.Bottom - DH), LOpacity);
+          RectF(LR.Left, LR.Bottom - LH - DH, LR.Right, LR.Bottom - DH), LOpacity, ItemList);
         if LR.Top < R.Bottom then begin
           if LR.Bottom > R.Bottom then
             LR.Bottom := R.Bottom;
@@ -2081,37 +2097,32 @@ begin
   if Assigned(FFixedBrush.FDefault) then
     Canvas.FillRect(LR, 0, 0, [], LOpacity, FFixedBrush.FDefault);
 
-  LFixedCols := FFixedCols;
-  if (gvIndicator in FOptions) or (gvRowIndex in FOptions) then
-    Inc(LFixedCols);
-  
-  if FDownFixedRowIndex = -1 then begin
-    V := LR.Left;
-    for I := 0 to LFixedCols - 1 do begin
-      if (I = 0) and (LFixedCols > FFixedCols) then
-        LV := V + FixedIndicatorWidth + DH
-      else begin
-        if Assigned(FAdapter) then
-          LV := V + FAdapter.GetFixedColData(I).Width + DH
-        else
-          LV := V + FFixedDefaultColWidth + DH;
-      end;
-        
-      if I = FDownFixedColIndex then begin
-        VR := RectF(V, LR.Top, LV - DH, LR.Bottom);
-        DoDrawFixedColBackground(Canvas, VR, LOpacity);
-        Break;
-      end else
-        V := LV;
+  if (gvIndicator in FOptions) or (gvRowIndex in FOptions) then begin
+    J := -1;
+  end else
+    J := 0;
+
+  V := LR.Left;
+  for I := J to FFixedCols - 1 do begin
+    Item := ItemList[I + 1];
+    LV := V + Item.FWidth + DH;
+
+    VR := RectF(V, LR.Top, LV - DH, LR.Bottom - DH);
+    if (I = FDownFixedColIndex) and (FDownFixedRowIndex < 0) then
+      DoDrawFixedColBackground(Canvas, VR, LOpacity);
+
+    if Assigned(FOnDrawFixedColText) then
+      FOnDrawFixedColText(Self, Canvas, Item, VR)
+    else begin
+      VR := RectF(VR.Left + Item.Padding.Left, VR.Top + Item.Padding.Top,
+        VR.Right - Item.Padding.Right, VR.Bottom - Item.Padding.Bottom);
+      DoDrawFixedCellsText(Canvas, I, -1, Item, VR, LOpacity, Item.Title);
     end;
+
+    V := LV;
   end;
 
   Canvas.FillRect(RectF(LR.Left, LR.Bottom - DH, LR.Right, LR.Bottom), 0, 0, [], LOpacity, FContentViews.FDividerBrush);
-
-  // 画 TextRowIndex
-  if (gvRowIndex in FOptions) and (FTextRowIndex <> '') then
-    DoDrawFixedRowIndexText(Canvas,
-      RectF(LR.Left, LR.Top, LR.Left + FixedIndicatorWidth + DH, LR.Bottom - DH), LOpacity);
 
   // 画垂直格子线
   if LDrawLine then begin
@@ -2120,15 +2131,9 @@ begin
 
     // 格子竖线
     V := LR.Left;
-    for I := 0 to LFixedCols - 1 do begin
-      if (I = 0) and (LFixedCols > FFixedCols) then
-        V := V + FixedIndicatorWidth + DH
-      else begin
-        if Assigned(FAdapter) then
-          V := V + FAdapter.GetFixedColData(I).Width + DH
-        else
-          V := V + FFixedDefaultColWidth + DH;
-      end;
+    for I := J to FFixedCols - 1 do begin
+      Item := FixedColsumn[I];
+      V := V + Item.FWidth + DH;
 
       VR.Left := V - DH;
       VR.Top := LR.Top;
@@ -2321,9 +2326,18 @@ begin
   Result := FLocalDividerHeight;
 end;
 
+function TGridBase.GetFixedColsumn(const ACol: Integer): TGridColumnItem;
+begin
+  if Assigned(FAdapter) then
+    Result := FAdapter.GetFixedColData(ACol)
+  else
+    Result := FColumns.Items[ACol, -1];
+end;
+
 function TGridBase.GetFixedIndicatorWidth: Single;
 var
   LCount: Integer;
+  Item: TGridColumnItem;
 begin
   if FFixedIndicatorWidthChange and Assigned(Scene) then begin
     FFixedIndicatorWidthChange := False;
@@ -2333,20 +2347,23 @@ begin
     else
       FLastFixedIndicatorWidth := 0;
 
+    Item := FixedColsumn[-1];
+
     if gvRowIndex in FOptions then begin
       LCount := RowCount;
       if LCount < 1 then LCount := CDefaultEmptyRows;
       FLastFixedIndicatorWidth := FLastFixedIndicatorWidth +
-        FFixedText.CalcTextWidth(IntToStr(LCount), Scene.GetSceneScale) + CDefaultFixedColPadding * 2;
+        FFixedText.CalcTextWidth(IntToStr(LCount), Scene.GetSceneScale) + Item.Padding.Left + Item.Padding.Right;
 
-      if FTextRowIndex <> '' then begin
+      if Item.Title <> '' then begin
         FLastFixedIndicatorWidth := Max(FLastFixedIndicatorWidth,
-          FFixedText.CalcTextWidth(FTextRowIndex, Scene.GetSceneScale) + CDefaultFixedColPadding * 2)
+          FFixedText.CalcTextWidth(Item.Title, Scene.GetSceneScale) + Item.Padding.Left + Item.Padding.Right)
       end;
     end else
-      FLastFixedIndicatorWidth := FLastFixedIndicatorWidth + CDefaultFixedColPadding * 2;
+      FLastFixedIndicatorWidth := FLastFixedIndicatorWidth + Item.Padding.Left + Item.Padding.Right;
 
     FLastFixedIndicatorWidth := Max(8, FLastFixedIndicatorWidth);
+    Item.FWidth := FLastFixedIndicatorWidth;
   end;
   Result := FLastFixedIndicatorWidth;
 end;
@@ -2358,18 +2375,17 @@ end;
 
 function TGridBase.GetFixedWidth: Single;
 var
-  I: Integer;
+  I, J: Integer;
   DividerH: Single;
 begin
   DividerH := GetDividerHeight;
-  if Assigned(FAdapter) then begin
-    Result := 0;
-    for I := 0 to FFixedCols - 1 do
-      Result := Result + DividerH + FAdapter.GetFixedColData(I).Width;
-  end else
-    Result := (DividerH + FFixedDefaultColWidth) * FFixedCols;
+  Result := 0;
   if (gvIndicator in FOptions) or (gvRowIndex in FOptions) then
-    Result := Result + FixedIndicatorWidth + DividerH;
+    J := -1
+  else
+    J := 0;
+  for I := J to FFixedCols - 1 do
+    Result := Result + DividerH + FixedColsumn[I].Width;
 end;
 
 function TGridBase.GetItemIndex: Integer;
@@ -2384,6 +2400,11 @@ class function TGridBase.GetKey(const ACol, ARow: Integer): Int64;
 begin
   TGridCell(Result).Row := ARow;
   TGridCell(Result).Col := ACol;
+end;
+
+function TGridBase.GetNeedSaveColumns: Boolean;
+begin
+  Result := True;
 end;
 
 function TGridBase.GetRealDrawState: TViewState;
@@ -2416,6 +2437,11 @@ end;
 function TGridBase.GetSelectIndex: Integer;
 begin
   Result := FContentViews.FSelectCell.Row;
+end;
+
+function TGridBase.GetTextRowIndex: string;
+begin
+  Result := FColumns.Items[-1, -1].Title;
 end;
 
 procedure TGridBase.HideEditor;
@@ -2538,21 +2564,21 @@ end;
 procedure TGridBase.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 var
-  I, J: Integer;
+  I, J, K: Integer;
   H, LH, DH: Double;
-  LFixedCols: Integer;
 begin
   inherited;
   FDownPos.X := X;
   FDownPos.Y := Y;
-  FDownFixedRowIndex := -1;
-  FDownFixedColIndex := -1;
+  FDownFixedRowIndex := -2;
+  FDownFixedColIndex := -2;
 
   // 查测是否点击到了左边的固定单元格
   if (FHotItem = nil) and (FAdjuestItem = nil) and (X < FFixedColsWidth) then begin
-    LFixedCols := FFixedCols;
     if (gvIndicator in FOptions) or (gvRowIndex in FOptions) then
-      Inc(LFixedCols);
+      K := -1
+    else
+      K := 0;
       
     DH := GetDividerHeight;
     if (Y > FColumns.Height) then begin
@@ -2562,19 +2588,13 @@ begin
 
 
       for I := FContentViews.FFirstRowIndex to FContentViews.FLastRowIndex do begin
-        LH := H + GetRowHeight(I);
-        if (Y > H) and (Y < LH) then begin
+        LH := H + GetRowHeight(I) + DH;
+        if (Y > H) and (Y <= LH) then begin
           H := Padding.Left;
-          for J := 0 to LFixedCols - 1 do begin
-            if (J = 0) and (LFixedCols > FFixedCols) then
-              LH := H + FixedIndicatorWidth
-            else begin
-              if Assigned(FAdapter) then begin
-                LH := H + Adapter.GetFixedColData(J).Width;
-              end else
-                LH := H + FFixedDefaultColWidth;
-            end;
-            if (X > H) and (X < LH) then begin
+          for J := K to FFixedCols - 1 do begin
+            LH := H + FixedColsumn[J].FWidth;
+
+            if (X > H) and (X <= LH) then begin
               FDownFixedRowIndex := I;
               FDownFixedColIndex := J;
               Break;
@@ -2583,22 +2603,15 @@ begin
           end;
           Break;
         end else
-          H := LH + DH;
+          H := LH;
       end;
 
     end else begin
 
       H := Padding.Left;
-      for J := 0 to LFixedCols - 1 do begin
-        if (J = 0) and (LFixedCols > FFixedCols) then
-          LH := H + FixedIndicatorWidth
-        else begin
-          if Assigned(FAdapter) then begin
-            LH := H + FAdapter.GetFixedColData(J).Width;
-          end else
-            LH := H + FFixedDefaultColWidth;
-        end;
-        if (X > H) and (X < LH) then begin
+      for J := K to FFixedCols - 1 do begin
+        LH := H + FixedColsumn[J].FWidth;
+        if (X > H) and (X <= LH) then begin
           FDownFixedRowIndex := -1;
           FDownFixedColIndex := J;
           Break;
@@ -2697,8 +2710,8 @@ begin
 
   inherited MouseUp(Button, Shift, X, Y);
 
-  FDownFixedRowIndex := -1;
-  FDownFixedColIndex := -1;
+  FDownFixedRowIndex := -2;
+  FDownFixedColIndex := -2;
   FAdjuestItem := nil;
   FHotItem := nil;
   Cursor := crDefault;
@@ -3005,6 +3018,10 @@ begin
   end;
 end;
 
+procedure TGridBase.SetNeedSaveColumns(const Value: Boolean);
+begin
+end;
+
 procedure TGridBase.SetOptions(const Value: TGridOptions);
 begin
   if FOptions = Value then Exit;
@@ -3072,8 +3089,8 @@ end;
 
 procedure TGridBase.SetTextRowIndex(const Value: string);
 begin
-  if FTextRowIndex <> Value then begin
-    FTextRowIndex := Value;
+  if FColumns.Items[-1, -1].Title <> Value then begin
+    FColumns.Items[-1, -1].Title := Value;
     FFixedIndicatorWidthChange := True;
     Invalidate;
   end;
@@ -3463,10 +3480,10 @@ begin
 
     // 背景
     if Assigned(FCellBrush.FPressed) and (DrawState = TViewState.Pressed) and IsFocused then begin
-      Canvas.FillRect(R, 0, 0, [], LOpacity, FCellBrush.FPressed);
+      Canvas.FillRect(R, 0, 0, [], LOpacity * Item.Opacity, FCellBrush.FPressed);
     end else if IsCellSet and (CellSet.BgColor and $FF000000 <> 0) then begin
       FTempCellBrush.Color := CellSet.BgColor;
-      Canvas.FillRect(R, 0, 0, [], LOpacity, FTempCellBrush);
+      Canvas.FillRect(R, 0, 0, [], LOpacity * Item.Opacity, FTempCellBrush);
     end;
 
     case Item.DataType of
@@ -3496,7 +3513,7 @@ begin
 
                 GridView.FText.Draw(Canvas, LText,
                   RectF(R.Left + Item.Padding.Left, R.Top + Item.Padding.Top, R.Right - Item.Padding.Right,
-                    R.Bottom - Item.Padding.Bottom), LOpacity, DrawState, LGravity
+                    R.Bottom - Item.Padding.Bottom), LOpacity * Item.Opacity, DrawState, LGravity
                 );
 
                 if B then begin
@@ -3507,7 +3524,7 @@ begin
               end else if LText <> '' then begin
                 GridView.FText.Draw(Canvas, LText,
                   RectF(R.Left + Item.Padding.Left, R.Top + Item.Padding.Top, R.Right - Item.Padding.Right,
-                    R.Bottom - Item.Padding.Bottom), LOpacity, DrawState, Item.Gravity
+                    R.Bottom - Item.Padding.Bottom), LOpacity * Item.Opacity, DrawState, Item.Gravity
                 );
               end;
             end;
@@ -3529,7 +3546,7 @@ begin
           if DrawState = TViewState.Enabled then
             FGridRes.Drawable.ImageIndex := FGridRes.Drawable.ImageIndex + 4;
           
-          FGridRes.Drawable.Draw(Canvas, GetIconDrawRect(Item, R, CSelectIconSize, CSelectIconSize), 0, 0, [], LOpacity);
+          FGridRes.Drawable.Draw(Canvas, GetIconDrawRect(Item, R, CSelectIconSize, CSelectIconSize), 0, 0, [], LOpacity * Item.Opacity);
         end;
       RadioButton:
         begin
@@ -3546,7 +3563,7 @@ begin
           if DrawState = TViewState.Enabled then
             FGridRes.Drawable.ImageIndex := FGridRes.Drawable.ImageIndex + 4;
 
-          FGridRes.Drawable.Draw(Canvas, GetIconDrawRect(Item, R, CSelectIconSize, CSelectIconSize), 0, 0, [], LOpacity);
+          FGridRes.Drawable.Draw(Canvas, GetIconDrawRect(Item, R, CSelectIconSize, CSelectIconSize), 0, 0, [], LOpacity * Item.Opacity);
         end;
       Image: ;
       ProgressBar: ;
@@ -4843,12 +4860,15 @@ begin
     Result := nil;
 end;
 
-function TGridAdapterBase.GetFixedColData(
-  const ACol: Integer): TGridFixedColumnItem;
+function TGridAdapterBase.GetFixedCells(const ACol, ARow: Integer): string;
 begin
-  Result.Title := '';
-  FillChar(Result, SizeOf(Result), 0);
-  Result.Width := TGridBase.CDefaultFixedColWidth;
+  Result := '';
+end;
+
+function TGridAdapterBase.GetFixedColData(
+  const ACol: Integer): TGridColumnItem;
+begin
+  Result := GetColumns.Items[ACol, -1];
 end;
 
 function TGridAdapterBase.GetItemIndex: Integer;
@@ -4912,6 +4932,11 @@ procedure TGridAdapterBase.SetCursor(const ARow: Integer);
 begin  
 end;
 
+procedure TGridAdapterBase.SetFixedCells(const ACol, ARow: Integer;
+  const Value: string);
+begin
+end;
+
 procedure TGridAdapterBase.SetItemDefaultHeight(const Value: Single);
 begin
   FDefaultRowHeight := Value;
@@ -4970,10 +4995,10 @@ begin
   Visible := True;
   Enabled := True;
 
-  Padding.Left := 3;
-  Padding.Top := 3;
-  Padding.Right := 3;
-  Padding.Bottom := 3;
+  Padding.Left := TGridBase.CDefaultPadding;
+  Padding.Top := TGridBase.CDefaultPadding;
+  Padding.Right := TGridBase.CDefaultPadding;
+  Padding.Bottom := TGridBase.CDefaultPadding;
 end;
 
 destructor TGridColumnItem.Destroy;
@@ -5038,9 +5063,10 @@ begin
   end;
 end;
 
-procedure TGridColumnItem.ReadList(Data: TJSONObject);
+procedure TGridColumnItem.ReadData(Data: TJSONObject);
 var
   V: Integer;
+  JA: TJSONArray;
 begin
   Data.TryGetFloat('Width', FWidth);
 
@@ -5052,10 +5078,13 @@ begin
     DataType := TGridDataType(V);
   Data.TryGetFloat('Opacity', Opacity);
 
-  Data.TryGetFloat('PaddingLeft', Padding.Left);
-  Data.TryGetFloat('PaddingTop', Padding.Top);
-  Data.TryGetFloat('PaddingRight', Padding.Right);
-  Data.TryGetFloat('PaddingBottom', Padding.Bottom);
+  JA := Data.GetJsonArray('Padding');
+  if Assigned(JA) then begin
+    Padding.Left := JA.Items[0].GetValue<Single>();
+    Padding.Top := JA.Items[1].GetValue<Single>();
+    Padding.Right := JA.Items[2].GetValue<Single>();
+    Padding.Bottom := JA.Items[3].GetValue<Single>();
+  end;
 
   Data.TryGetBoolean('Locked', Locked);
   Data.TryGetBoolean('DataFilter', DataFilter);
@@ -5140,6 +5169,8 @@ begin
 end;
 
 procedure TGridColumnItem.WriteData(Data: TJSONObject);
+var
+  JA: TJSONArray;
 begin
   Data.Add('Width', FWidth);
 
@@ -5149,10 +5180,11 @@ begin
   Data.Add('DataType', Ord(DataType));
   Data.Add('Opacity', Opacity);
 
-  Data.Add('PaddingLeft', Padding.Left, True);
-  Data.Add('PaddingTop', Padding.Top, True);
-  Data.Add('PaddingRight', Padding.Right, True);
-  Data.Add('PaddingBottom', Padding.Bottom, True);
+  JA := Data.AddJsonArray('Padding');
+  JA.Add(Padding.Left);
+  JA.Add(Padding.Top);
+  JA.Add(Padding.Right);
+  JA.Add(Padding.Bottom);
 
   Data.Add('Locked', Locked, True);
   Data.Add('DataFilter', DataFilter, True);
@@ -5185,6 +5217,18 @@ begin
       Self.FMaxRows := Src.FMaxRows;
       Self.FMaxCols := Src.FMaxCols;
       Self.FData.Clear;
+
+      if Src.FData.TryGetValue(TGridBase.GetKey(-1, -1), TObject(Item)) and Assigned(Item) then
+        Items[-1, -1].Assign(Item);
+
+      if Assigned(Src.GridView) and Assigned(GridView) then begin
+        GridView.FFixedCols := Src.GridView.FFixedCols;
+        for I := 0 to Src.GridView.FFixedCols - 1 do begin
+          if Src.FData.TryGetValue(TGridBase.GetKey(I, -1), TObject(Item)) and Assigned(Item) then
+            Items[I, -1].Assign(Item);
+        end;
+      end;
+
       for I := 0 to FMaxRows - 1 do begin
         for J := 0 to FMaxCols - 1 do begin
           Key := TGridBase.GetKey(J, I);
@@ -5208,7 +5252,13 @@ end;
 procedure TGridColumns.Clear;
 begin
   if FData.Count > 0 then
-    FData.Clear;
+    // 由于在 Row < 0 的区域存放了固定列的列头信息，不能清除，所以这里需要判断一下
+    FData.Clear(
+      function (const Key: THashType): Boolean
+      begin
+        Result := TGridCell(Key).Row >= 0;
+      end
+    );
   FMaxRows := 1;
   FMaxCols := 0;
   FLastWidth := -1;
@@ -5319,6 +5369,7 @@ begin
   if ARow < 0 then begin
     if ACol < 0 then
       Result.IsLeftTop := True;
+    Result.FWidth := TGridBase.CDefaultFixedColWidth;
     Exit;
   end;
 
@@ -5749,11 +5800,27 @@ end;
 
 { TGridDBColumnItem }
 
+procedure TGridDBColumnItem.Assign(Source: TPersistent);
+begin
+  inherited Assign(Source);
+  if Source is TGridDBColumnItem then begin
+    FieldName := TGridDBColumnItem(Source).FieldName;
+    Field := TGridDBColumnItem(Source).Field;
+  end;
+end;
+
 destructor TGridDBColumnItem.Destroy;
 begin
   Field := nil;
   FieldName := '';
   inherited;
+end;
+
+function TGridDBColumnItem.GetAbsoluteFieldName: string;
+begin
+  Result := FieldName;
+  if (Result = '') and Assigned(Field) then
+    Result := Field.FieldName;
 end;
 
 function TGridDBColumnItem.GetDispLayText: string;
@@ -5766,9 +5833,9 @@ begin
     Result := FieldName;
 end;
 
-procedure TGridDBColumnItem.ReadList(Data: TJSONObject);
+procedure TGridDBColumnItem.ReadData(Data: TJSONObject);
 begin
-  inherited ReadList(Data);
+  inherited ReadData(Data);
   Data.TryGetString('FieldName', FieldName);
 end;
 
@@ -5972,6 +6039,11 @@ begin
   Result := TDBGridAdapter(FAdapter).FMinRowCount;
 end;
 
+function TDBGridView.GetNeedSaveColumns: Boolean;
+begin
+  Result := FUseCustomColumns;
+end;
+
 function TDBGridView.GetRecordCount: Integer;
 begin
   if FDataLink.Active and Assigned(FDataLink.DataSet) then
@@ -6007,7 +6079,7 @@ begin
       Exit;
     end;
 
-    FUseCustomColumns := FUseCustomColumns or (FColumns.ColsCount > 0);
+    FUseCustomColumns := FUseCustomColumns and (FColumns.ColsCount > 0);
 
     if not FUseCustomColumns then begin
       // 如果不是自定义列头，则加载全部数据集的字段信息
@@ -6146,6 +6218,11 @@ begin
     TDBGridAdapter(FAdapter).FMinRowCount := Value;
     UpdateRowCount(FDataLink.DataSet);
   end;
+end;
+
+procedure TDBGridView.SetNeedSaveColumns(const Value: Boolean);
+begin
+  FUseCustomColumns := Value;
 end;
 
 procedure TDBGridView.SetShowCheck(const Value: Boolean);
@@ -6486,11 +6563,27 @@ begin
       except
         Exit;
       end;
+      if List.Exist('Columns') and (List.B['Columns'] = False) then
+        Exit;
+      FOwner.NeedSaveColumns := True;
       with FColumns do begin
         if List.Exist('RowsCount') then
           RowsCount := List.I['RowsCount'];
         if List.Exist('ColsCount') then
           ColsCount := List.I['ColsCount'];
+
+        if Assigned(GridView) then begin
+          J := List.I['FixedCols'];
+          for I := 0 to J - 1 do begin
+            KeyStr := Format('FixedItem_%d', [I]);
+            DataItem := List.O[KeyStr];
+            if not Assigned(DataItem) then
+               Continue;
+            Item := GridView.FixedColsumn[I];
+            Item.ReadData(DataItem);
+          end;
+        end;
+
         for I := 0 to RowsCount - 1 do begin
           for J := 0 to ColsCount - 1 do begin
             KeyStr := Format('Item_%d_%d', [J, I]);
@@ -6498,7 +6591,7 @@ begin
             if not Assigned(DataItem) then
               Continue;
             Item := FColumns.Items[J, I];
-            Item.ReadList(DataItem);
+            Item.ReadData(DataItem);
           end;
         end;
       end;
@@ -6517,9 +6610,20 @@ var
 begin
   List := TJSONObject.Create;
   try
-    if Assigned(FColumns) then begin
+    if Assigned(FColumns) and (FOwner.NeedSaveColumns) then begin
       List.Add('RowsCount', FColumns.RowsCount);
       List.Add('ColsCount', FColumns.ColsCount);
+
+      if Assigned(FColumns.GridView) and (FColumns.GridView.FFixedCols > 0) then begin
+        List.Add('FixedCols', FColumns.GridView.FFixedCols);
+        for I := 0 to FColumns.GridView.FFixedCols - 1 do begin
+          Key := TGridBase.GetKey(I, -1);
+          if FColumns.FData.TryGetValue(Key, TObject(Item)) and Assigned(Item) then begin
+            DataItem := List.AddJsonObject(Format('FixedItem_%d', [I]));
+            Item.WriteData(DataItem);
+          end;
+        end;
+      end;
 
       for I := 0 to FColumns.RowsCount - 1 do begin
         for J := 0 to FColumns.ColsCount - 1 do begin
@@ -6530,8 +6634,8 @@ begin
           end;
         end;
       end;
-
-    end;
+    end else
+      List.Add('Columns', False);
     Writer.WriteString(List.ToJSON);
   finally
     FreeAndNil(List);

@@ -176,6 +176,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.Height = 24.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
+      OnChange = cbGravityClick
       OnClick = cbGravityClick
     end
     object cbDataType: TComboBox
@@ -193,6 +194,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.Height = 24.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
+      OnChange = cbDataTypeClick
       OnClick = cbDataTypeClick
     end
     object Label5: TLabel
@@ -314,7 +316,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.PlatformDefault = False
       TabOrder = 16
       Text = 'Locked'
-      OnClick = ckLockedClick
+      OnChange = ckLockedClick
     end
     object ckDataFilter: TCheckBox
       Position.X = 80.000000000000000000
@@ -324,7 +326,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.PlatformDefault = False
       TabOrder = 17
       Text = 'DataFilter'
-      OnClick = ckDataFilterClick
+      OnChange = ckDataFilterClick
     end
     object ckReadOnly: TCheckBox
       Position.X = 161.000000000000000000
@@ -334,7 +336,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.PlatformDefault = False
       TabOrder = 18
       Text = 'ReadOnly'
-      OnClick = ckReadOnlyClick
+      OnChange = ckReadOnlyClick
     end
     object ckVisible: TCheckBox
       Position.X = 244.000000000000000000
@@ -344,7 +346,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.PlatformDefault = False
       TabOrder = 19
       Text = 'Visible'
-      OnClick = ckVisibleClick
+      OnChange = ckVisibleClick
     end
     object ckEnabled: TCheckBox
       Position.X = 309.000000000000000000
@@ -354,7 +356,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.PlatformDefault = False
       TabOrder = 20
       Text = 'Enabled'
-      OnClick = ckEnabledClick
+      OnChange = ckEnabledClick
     end
     object ckWordWrap: TCheckBox
       Position.X = 383.000000000000000000
@@ -364,7 +366,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.PlatformDefault = False
       TabOrder = 21
       Text = 'WordWrap'
-      OnClick = ckWordWrapClick
+      OnChange = ckWordWrapClick
     end
     object Label11: TLabel
       AutoSize = True
@@ -487,9 +489,9 @@ object GridColumnsDesigner: TGridColumnsDesigner
     object edtWidth: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
       TabOrder = 13
-      Position.X = 582.000000000000000000
+      Position.X = 584.000000000000000000
       Position.Y = 42.000000000000000000
-      Size.Width = 58.000000000000000000
+      Size.Width = 56.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
       OnKeyDown = edtRowCountKeyDown
@@ -497,11 +499,13 @@ object GridColumnsDesigner: TGridColumnsDesigner
     end
     object Label13: TLabel
       AutoSize = True
+      StyledSettings = [Family, Size, FontColor]
       Position.X = 541.000000000000000000
       Position.Y = 44.000000000000000000
       Size.Width = 84.000000000000000000
       Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'Width:'
     end
   end
@@ -509,6 +513,14 @@ object GridColumnsDesigner: TGridColumnsDesigner
     Align = Client
     Background.ItemPressed.Color = xFFD9D9D9
     Background.ItemPressed.Kind = Solid
+    Background.ItemSelected.Color = x01E0E0E0
+    Background.ItemSelected.Kind = Solid
+    Background.Border.Color.Default = claNull
+    Background.Border.Color.Focused = claNull
+    Background.Border.Color.Hovered = claNull
+    Background.Border.Color.Selected = x7F0000FF
+    Background.Border.Color.Checked = claNull
+    Background.Border.Color.Enabled = claNull
     Gravity = None
     Size.Width = 861.000000000000000000
     Size.Height = 286.500000000000000000
@@ -520,9 +532,11 @@ object GridColumnsDesigner: TGridColumnsDesigner
     ColumnsSettings.ColumnsData = '{"RowsCount":1,"ColsCount":0}'
     FixedSettings.RowHeight = 20.000000000000000000
     FixedSettings.ColWidth = 50.000000000000000000
+    FixedSettings.TextSettings.ColorSelect = claNull
     FixedSettings.TextRowIndex = #34892#21495
     OnTitleClick = GridViewTitleClick
     OnFixedCellClick = GridViewFixedCellClick
+    OnDrawFixedColText = GridViewDrawFixedColText
     ColCount = 0
     RowCount = 9
   end

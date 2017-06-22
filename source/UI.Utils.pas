@@ -119,6 +119,8 @@ type
   /// <param name="AData">要删除的对象数据指针</param>
   TYXDIntHashItemFreeNotify = procedure (Item: PIntHashItem) of object;
 
+  TOnCanDelete = reference to function (const Key: THashType): Boolean;
+
   TIntHash = class
   private
     FCount: Integer;
@@ -169,7 +171,8 @@ type
     function GetPointer(const Key: THashType): Pointer;
     function GetObject(const Key: THashType): TObject;
 
-    procedure Clear;
+    procedure Clear; overload;
+    procedure Clear(const CanDelete: TOnCanDelete); overload;
 
     function Remove(const Key: THashType): Boolean;
     function Exists(const Key: THashType): Boolean;
@@ -725,6 +728,38 @@ begin
         P := N;
       end;
       Buckets[I] := nil;
+    end;
+  end;
+  FCount := 0;
+end;
+
+procedure TIntHash.Clear(const CanDelete: TOnCanDelete);
+var
+  I: Integer;
+  P, N: PIntHashItem;
+begin
+  if not Assigned(CanDelete) then begin
+    Clear;
+    Exit;
+  end;
+  FCount := 0;
+  for I := 0 to Length(Buckets) - 1 do begin
+    P := Buckets[I];
+    Buckets[I] := nil;
+    if P <> nil then begin
+      while P <> nil do begin
+        N := P^.Next;
+        if CanDelete(P^.Key) then begin
+          if Assigned(FOnFreeItem) then
+            FOnFreeItem(P);
+          Dispose(P);
+        end else begin
+          P^.Next := Buckets[I];
+          Buckets[I] := P;
+          Inc(FCount);
+        end;
+        P := N;
+      end;
     end;
   end;
 end;

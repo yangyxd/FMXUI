@@ -91,6 +91,8 @@ type
     procedure btnUpClick(Sender: TObject);
     procedure btnNextClick(Sender: TObject);
     procedure edtWidthExit(Sender: TObject);
+    procedure GridViewDrawFixedColText(Sender: TObject; Canvas: TCanvas;
+      Item: TGridColumnItem; const R: TRectF);
   private
     { Private declarations }
     [Weak] SrcGridView: TGridBase;
@@ -140,7 +142,7 @@ begin
   MCol := Columns.ColsCount - 1;
   MRow := Columns.RowsCount - 1;
 
-  if (FRow < MRow) or (FCol < MRow) then begin
+  if (FRow <= MRow) or (FCol <= MRow) then begin
     if FCol < MCol then begin
       FCol := SkipPanCol(FCol);
     end else begin
@@ -157,8 +159,10 @@ end;
 
 procedure TGridColumnsDesigner.btnOkClick(Sender: TObject);
 begin
-  if Assigned(SrcGridView) and (SrcGridView is TStringGridView) then begin
-    TStringGridView(SrcGridView).ColCount := GridView.ColCount;
+  if Assigned(SrcGridView) then begin
+    if (SrcGridView is TStringGridView) then
+      TStringGridView(SrcGridView).ColCount := GridView.ColCount;
+    SrcGridView.NeedSaveColumns := True;
   end;
   ModalResult := mrOk;
 end;
@@ -207,7 +211,7 @@ end;
 
 procedure TGridColumnsDesigner.cbDataTypeClick(Sender: TObject);
 begin
-  if Assigned(CurItem) then begin
+  if Assigned(CurItem) and (not FUpdateing) then begin
     CurItem.DataType := TGridDataType(cbDataType.ItemIndex);
     DoChange();
   end;
@@ -215,7 +219,7 @@ end;
 
 procedure TGridColumnsDesigner.cbGravityClick(Sender: TObject);
 begin
-  if Assigned(CurItem) then begin
+  if Assigned(CurItem) and (not FUpdateing) then begin
     CurItem.Gravity := TLayoutGravity(cbGravity.ItemIndex);
     DoChange();
   end;
@@ -223,7 +227,7 @@ end;
 
 procedure TGridColumnsDesigner.ckDataFilterClick(Sender: TObject);
 begin
-  if Assigned(CurItem) then begin
+  if Assigned(CurItem) and (not FUpdateing) then begin
     CurItem.DataFilter := TCheckBox(Sender).IsChecked;
     DoChange();
   end;
@@ -231,7 +235,7 @@ end;
 
 procedure TGridColumnsDesigner.ckEnabledClick(Sender: TObject);
 begin
-  if Assigned(CurItem) then begin
+  if Assigned(CurItem) and (not FUpdateing) then begin
     CurItem.Enabled := TCheckBox(Sender).IsChecked;
     DoChange();
   end;
@@ -239,7 +243,7 @@ end;
 
 procedure TGridColumnsDesigner.ckLockedClick(Sender: TObject);
 begin
-  if Assigned(CurItem) then begin
+  if Assigned(CurItem) and (not FUpdateing) then begin
     CurItem.Locked := TCheckBox(Sender).IsChecked;
     DoChange();
   end;
@@ -247,7 +251,7 @@ end;
 
 procedure TGridColumnsDesigner.ckReadOnlyClick(Sender: TObject);
 begin
-  if Assigned(CurItem) then begin
+  if Assigned(CurItem) and (not FUpdateing) then begin
     CurItem.ReadOnly := TCheckBox(Sender).IsChecked;
     DoChange();
   end;
@@ -255,7 +259,7 @@ end;
 
 procedure TGridColumnsDesigner.ckVisibleClick(Sender: TObject);
 begin
-  if Assigned(CurItem) then begin
+  if Assigned(CurItem) and (not FUpdateing) then begin
     CurItem.Visible := TCheckBox(Sender).IsChecked;
     DoChange();
   end;
@@ -263,7 +267,7 @@ end;
 
 procedure TGridColumnsDesigner.ckWordWrapClick(Sender: TObject);
 begin
-  if Assigned(CurItem) then begin
+  if Assigned(CurItem) and (not FUpdateing) then begin
     CurItem.WordWrap := TCheckBox(Sender).IsChecked;
     DoChange();
   end;
@@ -380,13 +384,28 @@ begin
   Result := GridView.Columns;
 end;
 
+procedure TGridColumnsDesigner.GridViewDrawFixedColText(Sender: TObject;
+  Canvas: TCanvas; Item: TGridColumnItem; const R: TRectF);
+var
+  VR: TRectF;
+begin
+  VR.Left := R.Left + Item.Padding.Left;
+  VR.Top := R.Top + Item.Padding.Top;
+  VR.Right := R.Right - Item.Padding.Right;
+  VR.Bottom := R.Bottom - item.Padding.Bottom;
+  if Item = CurItem then begin
+    GridView.Background.DrawStateTo(Canvas, R, TViewState.Selected);
+  end;
+  GridView.FixedSettings.TextSettings.Draw(Canvas, Item.DispLayText, VR, GridView.Opacity * Item.Opacity, GridView.DrawState);
+end;
+
 procedure TGridColumnsDesigner.GridViewFixedCellClick(Sender: TObject;
   const ACol, ARow: Integer);
 begin
   FCol := ACol;
-  FRow := ARow;
+  FRow := -1;
+  CurItem := Columns.Items[FCol, FRow];
   UpdateState;
-  ShowMessage(Format('GridViewFixedCellClick. Col: %d, Row: %d', [FCol, FRow]));
 end;
 
 procedure TGridColumnsDesigner.GridViewTitleClick(Sender: TObject;
@@ -400,6 +419,9 @@ end;
 
 procedure TGridColumnsDesigner.SetColumns(const Value: TGridColumns);
 begin
+  if Value = nil then
+    Exit;
+  GridView.Columns.RegisterColumnClass(Value.ColumnClass);
   GridView.Columns.Assign(Value);
   FIsDBGrid := False;
   SrcGridView := nil;
@@ -436,6 +458,34 @@ begin
 end;
 
 procedure TGridColumnsDesigner.UpdateState;
+
+  procedure Clear();
+  begin
+    cbGravity.ItemIndex := -1;
+    cbDataType.ItemIndex := -1;
+
+    edtFieldName.Text := '';
+
+    edtOpacity.Text := '';
+    edtPaddingLeft.Text := '';
+    edtPaddingTop.Text := '';
+    edtPaddingRight.Text := '';
+    edtPaddingBottom.Text := '';
+    edtWidth.Text := '';
+
+    edtTag.Text := '';
+    edtRowsPan.Text := '';
+    edtColsPan.Text := '';
+
+
+    ckLocked.IsChecked := False;
+    ckEnabled.IsChecked := False;
+    ckDataFilter.IsChecked := False;
+    ckReadOnly.IsChecked := False;
+    ckVisible.IsChecked := False;
+    ckWordWrap.IsChecked := False;
+  end;
+
 begin
   FUpdateing := True;
 
@@ -443,47 +493,101 @@ begin
     edtRowCount.Text := IntToStr(Columns.RowsCount);
     edtColCount.Text := IntToStr(Columns.ColsCount);
 
-    btnUp.Enabled := (FRow > 0) or (FCol > 0);
-    btnNext.Enabled := (FRow < Columns.RowsCount - 1) or (FCol < Columns.ColsCount - 1);
+    if FRow < 0 then begin
+      btnUp.Enabled := False;
+      btnNext.Enabled := False;
+
+      edtRowsPan.Enabled := False;
+      edtColsPan.Enabled := False;
+
+      ckLocked.Enabled := False;
+      ckEnabled.Enabled := False;
+      ckDataFilter.Enabled := False;
+      ckReadOnly.Enabled := False;
+      ckVisible.Enabled := False;
+      ckWordWrap.Enabled := False;
+
+      Label3.Enabled := False;
+      Label6.Enabled := False;
+    end else begin
+      btnUp.Enabled := (FRow > 0) or (FCol > 0);
+      btnNext.Enabled := (FRow < Columns.RowsCount - 1) or (FCol < Columns.ColsCount - 1);
+
+      edtRowsPan.Enabled := True;
+      edtColsPan.Enabled := True;
+
+      ckLocked.Enabled := True;
+      ckEnabled.Enabled := True;
+      ckDataFilter.Enabled := True;
+      ckReadOnly.Enabled := True;
+      ckVisible.Enabled := True;
+      ckWordWrap.Enabled := True;
+      Label3.Enabled := True;
+      Label6.Enabled := True;
+    end;
+
+    edtFixedColCount.Text := IntToStr(GridView.FixedCols);
 
     if (CurItem = nil) or (FCol = CInvNo) or (FRow = CInvNo) then begin
       tvIndex.Text := '';
+      Clear();
       Exit;
     end else
       tvIndex.Text := Format('Col: %d  Row: %d', [FCol, FRow]);
 
-    cbGravity.ItemIndex := Ord(CurItem.Gravity);
-    cbDataType.ItemIndex := Ord(CurItem.DataType);
-    edtTitle.Text := CurItem.Title;
+    if FRow < 0 then begin
+      Clear();
 
-    edtFixedColCount.Text := IntToStr(GridView.FixedCols);
+      cbGravity.ItemIndex := Ord(CurItem.Gravity);
+      cbDataType.ItemIndex := Ord(CurItem.DataType);
+      edtTitle.Text := CurItem.Title;
 
-    if CurItem is TGridDBColumnItem then
-      edtFieldName.Text := TGridDBColumnItem(CurItem).FieldName
-    else
-      edtFieldName.Text := '';
+      edtFieldName.Enabled := False;
 
-    edtOpacity.Text := FloatToStr(Round(CurItem.Opacity * 10000) / 10000);
-    edtPaddingLeft.Text := FloatToStr(Round(CurItem.Padding.Left * 10000) / 10000);
-    edtPaddingTop.Text := FloatToStr(Round(CurItem.Padding.Top * 10000) / 10000);
-    edtPaddingRight.Text := FloatToStr(Round(CurItem.Padding.Right * 10000) / 10000);
-    edtPaddingBottom.Text := FloatToStr(Round(CurItem.Padding.Bottom * 10000) / 10000);
-    edtWidth.Text := FloatToStr(Round(CurItem.Width * 10000) / 10000);
+      edtOpacity.Text := FloatToStr(Round(CurItem.Opacity * 10000) / 10000);
+      edtPaddingLeft.Text := FloatToStr(Round(CurItem.Padding.Left * 10000) / 10000);
+      edtPaddingTop.Text := FloatToStr(Round(CurItem.Padding.Top * 10000) / 10000);
+      edtPaddingRight.Text := FloatToStr(Round(CurItem.Padding.Right * 10000) / 10000);
+      edtPaddingBottom.Text := FloatToStr(Round(CurItem.Padding.Bottom * 10000) / 10000);
+      edtWidth.Text := FloatToStr(Round(CurItem.Width * 10000) / 10000);
 
-    edtTag.Text := IntToStr(CurItem.Tag);
-    edtRowsPan.Text := IntToStr(CurItem.RowsPan);
-    edtColsPan.Text := IntToStr(CurItem.ColsPan);
+      edtTag.Text := IntToStr(CurItem.Tag);
+
+    end else begin
+
+      cbGravity.ItemIndex := Ord(CurItem.Gravity);
+      cbDataType.ItemIndex := Ord(CurItem.DataType);
+      edtTitle.Text := CurItem.Title;
+
+      edtFieldName.Enabled := CurItem is TGridDBColumnItem;
+      if edtFieldName.Enabled then
+        edtFieldName.Text := TGridDBColumnItem(CurItem).AbsoluteFieldName
+      else
+        edtFieldName.Text := '';
+
+      edtOpacity.Text := FloatToStr(Round(CurItem.Opacity * 10000) / 10000);
+      edtPaddingLeft.Text := FloatToStr(Round(CurItem.Padding.Left * 10000) / 10000);
+      edtPaddingTop.Text := FloatToStr(Round(CurItem.Padding.Top * 10000) / 10000);
+      edtPaddingRight.Text := FloatToStr(Round(CurItem.Padding.Right * 10000) / 10000);
+      edtPaddingBottom.Text := FloatToStr(Round(CurItem.Padding.Bottom * 10000) / 10000);
+      edtWidth.Text := FloatToStr(Round(CurItem.Width * 10000) / 10000);
+
+      edtTag.Text := IntToStr(CurItem.Tag);
+      edtRowsPan.Text := IntToStr(CurItem.RowsPan);
+      edtColsPan.Text := IntToStr(CurItem.ColsPan);
 
 
-    ckLocked.IsChecked := CurItem.Locked;
-    ckEnabled.IsChecked := CurItem.Enabled;
-    ckDataFilter.IsChecked := CurItem.DataFilter;
-    ckReadOnly.IsChecked := CurItem.ReadOnly;
-    ckVisible.IsChecked := CurItem.Visible;
-    ckWordWrap.IsChecked := CurItem.WordWrap;
+      ckLocked.IsChecked := CurItem.Locked;
+      ckEnabled.IsChecked := CurItem.Enabled;
+      ckDataFilter.IsChecked := CurItem.DataFilter;
+      ckReadOnly.IsChecked := CurItem.ReadOnly;
+      ckVisible.IsChecked := CurItem.Visible;
+      ckWordWrap.IsChecked := CurItem.WordWrap;
+    end;
 
   finally
     FUpdateing := False;
+    GridView.Invalidate;
   end;
 end;
 
