@@ -1,5 +1,5 @@
 object FrameGridView: TFrameGridView
-  Size.Width = 438.000000000000000000
+  Size.Width = 783.000000000000000000
   Size.Height = 635.000000000000000000
   Size.PlatformDefault = False
   object GridView1: TStringGridView
@@ -22,8 +22,8 @@ object FrameGridView: TFrameGridView
     Background.ItemPressed.Kind = Solid
     Gravity = None
     Margins.Top = 30.000000000000000000
-    Size.Width = 438.000000000000000000
-    Size.Height = 555.000000000000000000
+    Size.Width = 783.000000000000000000
+    Size.Height = 322.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 19
     Divider = x3FE3E4E5
@@ -31,6 +31,57 @@ object FrameGridView: TFrameGridView
     DrawableCells.ItemTwoColor.Color = x5FFDFEFF
     ReadOnly = False
     Options = [gvEditing, gvRowIndex, gvColLines, gvRowSelect, gvTwoColor, gvCancelOnExit, gvEscCancelEdit, gvColumnBestWidth, gvColumnResize]
+    ColumnsSettings.ColumnsData = 
+      '{"RowsCount":2,"ColsCount":10,"FixedCols":2,"FixedItem_0":{"Widt' +
+      'h":50,"ColIndex":0,"RowIndex":-1,"Gravity":5,"DataType":0,"Opaci' +
+      'ty":1,"Padding":[3,3,3,3],"Visible":true,"Enabled":true},"FixedI' +
+      'tem_1":{"Width":50,"ColIndex":1,"RowIndex":-1,"Gravity":5,"DataT' +
+      'ype":0,"Opacity":1,"Padding":[3,3,3,3],"Visible":true,"Enabled":' +
+      'true,"Title":"\u56FA\u5B9A\u5217"},"Item_0_0":{"Width":100,"ColI' +
+      'ndex":0,"RowIndex":0,"Gravity":5,"DataType":0,"Opacity":1,"Paddi' +
+      'ng":[3,3,3,3],"Visible":true,"Enabled":true},"Item_1_0":{"Width"' +
+      ':100,"ColIndex":1,"RowIndex":0,"Gravity":5,"DataType":0,"Opacity' +
+      '":1,"Padding":[3,3,3,3],"Visible":true,"Enabled":true,"ColsPan":' +
+      '2,"Title":"\u5408\u5E76\u5217\u5934"},"Item_2_0":{"Width":100,"C' +
+      'olIndex":2,"RowIndex":0,"Gravity":5,"DataType":0,"Opacity":1,"Pa' +
+      'dding":[3,3,3,3],"Visible":true,"Enabled":true},"Item_3_0":{"Wid' +
+      'th":100,"ColIndex":3,"RowIndex":0,"Gravity":5,"DataType":0,"Opac' +
+      'ity":1,"Padding":[3,3,3,3],"Visible":true,"Enabled":true},"Item_' +
+      '4_0":{"Width":100,"ColIndex":4,"RowIndex":0,"Gravity":5,"DataTyp' +
+      'e":0,"Opacity":1,"Padding":[3,3,3,3],"Visible":true,"Enabled":tr' +
+      'ue},"Item_5_0":{"Width":100,"ColIndex":5,"RowIndex":0,"Gravity":' +
+      '5,"DataType":0,"Opacity":1,"Padding":[3,3,3,3],"Visible":true,"E' +
+      'nabled":true},"Item_6_0":{"Width":100,"ColIndex":6,"RowIndex":0,' +
+      '"Gravity":5,"DataType":0,"Opacity":1,"Padding":[3,3,3,3],"Visibl' +
+      'e":true,"Enabled":true},"Item_7_0":{"Width":100,"ColIndex":7,"Ro' +
+      'wIndex":0,"Gravity":5,"DataType":0,"Opacity":1,"Padding":[3,3,3,' +
+      '3],"Visible":true,"Enabled":true},"Item_8_0":{"Width":100,"ColIn' +
+      'dex":8,"RowIndex":0,"Gravity":5,"DataType":0,"Opacity":1,"Paddin' +
+      'g":[3,3,3,3],"Visible":true,"Enabled":true},"Item_9_0":{"Width":' +
+      '100,"ColIndex":9,"RowIndex":0,"Gravity":5,"DataType":0,"Opacity"' +
+      ':1,"Padding":[3,3,3,3],"Visible":true,"Enabled":true},"Item_0_1"' +
+      ':{"Width":100,"ColIndex":0,"RowIndex":1,"Gravity":5,"DataType":0' +
+      ',"Opacity":1,"Padding":[3,3,3,3],"Visible":true,"Enabled":true},' +
+      '"Item_1_1":{"Width":100,"ColIndex":1,"RowIndex":1,"Gravity":5,"D' +
+      'ataType":0,"Opacity":1,"Padding":[3,3,3,3],"Visible":true,"Enabl' +
+      'ed":true,"Title":"2"},"Item_2_1":{"Width":100,"ColIndex":2,"RowI' +
+      'ndex":1,"Gravity":5,"DataType":0,"Opacity":1,"Padding":[3,3,3,3]' +
+      ',"Visible":true,"Enabled":true,"Title":"3"},"Item_3_1":{"Width":' +
+      '100,"ColIndex":3,"RowIndex":1,"Gravity":5,"DataType":0,"Opacity"' +
+      ':1,"Padding":[3,3,3,3],"Visible":true,"Enabled":true},"Item_4_1"' +
+      ':{"Width":100,"ColIndex":4,"RowIndex":1,"Gravity":5,"DataType":0' +
+      ',"Opacity":1,"Padding":[3,3,3,3],"Visible":true,"Enabled":true},' +
+      '"Item_5_1":{"Width":100,"ColIndex":5,"RowIndex":1,"Gravity":5,"D' +
+      'ataType":0,"Opacity":1,"Padding":[3,3,3,3],"Visible":true,"Enabl' +
+      'ed":true},"Item_6_1":{"Width":100,"ColIndex":6,"RowIndex":1,"Gra' +
+      'vity":5,"DataType":0,"Opacity":1,"Padding":[3,3,3,3],"Visible":t' +
+      'rue,"Enabled":true},"Item_7_1":{"Width":100,"ColIndex":7,"RowInd' +
+      'ex":1,"Gravity":5,"DataType":0,"Opacity":1,"Padding":[3,3,3,3],"' +
+      'Visible":true,"Enabled":true},"Item_8_1":{"Width":100,"ColIndex"' +
+      ':8,"RowIndex":1,"Gravity":5,"DataType":0,"Opacity":1,"Padding":[' +
+      '3,3,3,3],"Visible":true,"Enabled":true},"Item_9_1":{"Width":100,' +
+      '"ColIndex":9,"RowIndex":1,"Gravity":5,"DataType":0,"Opacity":1,"' +
+      'Padding":[3,3,3,3],"Visible":true,"Enabled":true}}'
     FixedSettings.Brush.ItemDefault.Kind = Gradient
     FixedSettings.Brush.ItemDefault.Gradient.Points = <
       item
@@ -39,22 +90,23 @@ object FrameGridView: TFrameGridView
       end
       item
         Color = xFFECE8E8
-        Offset = 0.838509321212768500
+        Offset = 0.838509321212768600
       end
       item
         Color = claWhite
         Offset = 1.000000000000000000
       end>
     FixedSettings.Brush.ItemDefault.Gradient.StartPosition.X = 1.000000000000000000
-    FixedSettings.Brush.ItemDefault.Gradient.StartPosition.Y = 0.733153879642486500
+    FixedSettings.Brush.ItemDefault.Gradient.StartPosition.Y = 0.733153879642486600
     FixedSettings.Brush.ItemDefault.Gradient.StopPosition.Y = 0.266846120357513400
     FixedSettings.ColCount = 2
     FixedSettings.RowCount = 2
     FixedSettings.RowHeight = 20.000000000000000000
     FixedSettings.ColWidth = 50.000000000000000000
     FixedSettings.TextRowIndex = #34892#21495
+    FooterStyle = None
     ColCount = 10
-    RowCount = 100
+    RowCount = 50
     ShowColIndex = True
   end
   object ButtonView1: TButtonView
@@ -110,7 +162,7 @@ object FrameGridView: TFrameGridView
     Background.ItemDefault.Color = claPurple
     Background.ItemDefault.Kind = Solid
     Gravity = None
-    Size.Width = 438.000000000000000000
+    Size.Width = 783.000000000000000000
     Size.Height = 50.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
@@ -144,7 +196,7 @@ object FrameGridView: TFrameGridView
       Background.Border.Color.Enabled = claNull
       Weight = 1.000000000000000000
       Margins.Right = 50.000000000000000000
-      Size.Width = 338.000000000000000000
+      Size.Width = 683.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       Position.X = 50.000000000000000000
@@ -160,21 +212,33 @@ object FrameGridView: TFrameGridView
     end
   end
   object DBGridView1: TDBGridView
-    Anchors = [akLeft, akBottom]
+    Align = Bottom
     Background.ItemPressed.Color = xFFD9D9D9
     Background.ItemPressed.Kind = Solid
     Gravity = None
-    Size.Width = 369.000000000000000000
-    Size.Height = 465.000000000000000000
+    Size.Width = 783.000000000000000000
+    Size.Height = 233.000000000000000000
     Size.PlatformDefault = False
-    Position.X = 40.000000000000000000
-    Position.Y = 160.000000000000000000
+    Position.Y = 402.000000000000000000
     TabOrder = 20
     ScrollBars = Both
     ReadOnly = False
+    Options = [gvEditing, gvIndicator, gvRowIndex, gvColLines, gvRowLines, gvTwoColor, gvCancelOnExit, gvEscCancelEdit, gvColumnBestWidth, gvColumnResize, gvColumnMove, gvFixedFooter]
+    ColumnsSettings.ColumnsData = 
+      '{"RowsCount":1,"ColsCount":3,"Item_0_0":{"Width":272,"ColIndex":' +
+      '0,"RowIndex":0,"Gravity":5,"DataType":0,"Opacity":1,"Padding":[3' +
+      ',3,3,3],"Locked":true,"DataFilter":true,"Visible":true,"Enabled"' +
+      ':true,"Title":"Name","FieldName":"Name"},"Item_1_0":{"Width":102' +
+      ',"ColIndex":1,"RowIndex":0,"Gravity":5,"DataType":0,"Opacity":1,' +
+      '"Padding":[3,3,3,3],"Visible":true,"Enabled":true,"Title":"Title' +
+      '","FieldName":"Title"},"Item_2_0":{"Width":200,"ColIndex":2,"Row' +
+      'Index":0,"Gravity":8,"DataType":0,"Opacity":1,"Padding":[3,3,3,3' +
+      '],"Visible":true,"Enabled":true,"Title":"Total","FieldName":"Tot' +
+      'al"}}'
     FixedSettings.RowHeight = 20.000000000000000000
     FixedSettings.ColWidth = 50.000000000000000000
     FixedSettings.TextRowIndex = #34892#21495
+    FooterStyle = DataTotal
     DataSource = DataSource1
     ShowCheck = False
   end
@@ -202,6 +266,10 @@ object FrameGridView: TFrameGridView
         Name = 'Title'
         DataType = ftString
         Size = 20
+      end
+      item
+        Name = 'Total'
+        DataType = ftFloat
       end>
     IndexDefs = <>
     FetchOptions.AssignedValues = [evMode]
@@ -219,6 +287,10 @@ object FrameGridView: TFrameGridView
     end
     object FDMemTable1Title: TStringField
       FieldName = 'Title'
+    end
+    object FDMemTable1Total: TFloatField
+      FieldName = 'Total'
+      DisplayFormat = #24635#25968
     end
   end
   object DataSource1: TDataSource

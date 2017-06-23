@@ -44,6 +44,17 @@ type
   );
 
   /// <summary>
+  /// 格子页脚样式
+  /// </summary>
+  TGridFooterStyle = (
+    None, {不处理}
+    DataTotal, {统计总数}
+    DataAverage, {求平均值}
+    DataMin, {最小值}
+    DataMax {最大值}
+  );
+
+  /// <summary>
   /// 单元格格式
   /// </summary>
   TGridCellSettings = class(TPersistent)
@@ -83,7 +94,8 @@ type
     gvColumnBestWidth,      // 是否允许最佳列宽，启用 gvColumnResize 时有效
     gvColumnResize,         // 列宽可拖动
     gvColumnMove,           // 允许移动列
-    gvFilterSort            // 过滤功能的弹出列表是否自动排序
+    gvFilterSort,           // 过滤功能的弹出列表是否自动排序
+    gvFixedFooter           // 是否显示页脚
   );
 
   TGridOptions = set of TGridOption;
@@ -186,6 +198,9 @@ type
     [Weak] Field: TField;
     FieldName: string;         // 字段名称
     FieldType: TFieldType;     // 字段类型
+
+    FooterText: string;        // 页尾数据
+
     destructor Destroy; override;
 
     procedure Assign(Source: TPersistent); override;
@@ -329,6 +344,11 @@ type
     /// 设置固定列指定格子的内容
     /// </summary>
     procedure SetFixedCells(const ACol, ARow: Integer; const Value: string);
+
+    /// <summary>
+    /// 获取页脚指定格子的内容
+    /// </summary>
+    function GetFooterCells(Item: TGridColumnItem): string;
 
     /// <summary>
     /// 设置游标位置
@@ -514,6 +534,11 @@ type
   TOnDrawCells = procedure (Sender: TObject; Canvas: TCanvas; const ACol, ARow: Integer;
     const R: TRectF; ADrawState: TViewState; Column: TGridColumnItem; var DefaultDraw: Boolean) of object;
 
+  /// <summary>
+  /// 绘制页脚单元格
+  /// </summary>
+  TOnDrawFooterCells = procedure (Sender: TObject; Canvas: TCanvas; const R: TRectF; 
+    Column: TGridColumnItem; var Text: string; var DefaultDraw: Boolean) of object;
 
   /// <summary>
   /// 格子视图内容区域
@@ -539,6 +564,8 @@ type
     FViewBottom: Double;      // 当前显示的内容底部位置
     FViewItemBottom: Double;  // 当前显示列表项的底部位置
     FViewFullBottom: Double;  // 当前显示完整的最后一行底部位置
+
+    FViewHeight: Single;      // 显示区域的高度
 
     FFirstRowIndex: Integer;  // 当前显示的第一行行号
     FLastRowIndex: Integer;   // 当前显示的最后一行行号
@@ -591,6 +618,7 @@ type
     procedure PaintBackground; override;
     procedure DoDrawHeaderRows(Canvas: TCanvas; var R: TRectF); // 画分隔线
     procedure DoDrawCell(Canvas: TCanvas; const R: TRectF; const ARow, ACol: Integer; const LOpacity: Single); virtual; // 画单元格
+    procedure DoDrawFooterCell(Canvas: TCanvas; const R: TRectF; const ACol: Integer; const LOpacity: Single); virtual; // 画底部页脚单元格
 
     procedure DoCellBrushChange(Sender: TObject);
 
@@ -666,6 +694,7 @@ type
     CDefaultFixedDividerColor = $ffc0c0c0;// 默认固定单元格行列分隔线颜色
   private
     [Weak] FOwner: TGridBase;
+    FFooterText: string;
     function GetFixedBrush: TGridViewBrush;
     function GetFixedCols: Integer;
     function GetFixedDefaultColWidth: Single;
@@ -682,6 +711,7 @@ type
     procedure SetFixedRows(const Value: Integer);
     procedure SetFixedText(const Value: TGridTextSettings);
     procedure SetTextRowIndex(const Value: string);
+    procedure SetFooterText(const Value: string);
   public
     constructor Create(AOwner: TGridBase);
   published
@@ -717,6 +747,10 @@ type
     /// 行号列标题
     /// </summary>
     property TextRowIndex: string read GetTextRowIndex write SetTextRowIndex;
+    /// <summary>
+    /// 底部页脚标题
+    /// </summary>
+    property TextFooter: string read FFooterText write SetFooterText;
   end;
 
   /// <summary>
@@ -746,6 +780,8 @@ type
 
     FColumns: TGridColumns;
     FOptions: TGridOptions;
+
+    FFooterStyle: TGridFooterStyle; // 页脚样式
 
     FReadOnly: Boolean;
     FResizeing: Boolean;           // 正在调节大小
@@ -792,6 +828,7 @@ type
     FOnDrawFixedCellsText: TOnDrawFixedCellsText;
 
     FOnDrawCells: TOnDrawCells;
+    FOnDrawFooterCells: TOnDrawFooterCells;
 
     FOnCellClickEvent: TOnCellEvent;
     FOnCellEnterEvent: TOnCellEvent;
@@ -834,6 +871,7 @@ type
     procedure SetColumnsSetting(const Value: TGridColumnsSetting);
     function GetFixedColsumn(const ACol: Integer): TGridColumnItem;
     function GetTextRowIndex: string;
+    procedure SetFooterStyle(const Value: TGridFooterStyle);
   protected
     function GetColCount: Integer;
     function GetRowCount: Integer;
@@ -963,6 +1001,11 @@ type
     /// 行号固定列宽度
     /// </summary>
     property FixedIndicatorWidth: Single read GetFixedIndicatorWidth;
+
+    /// <summary>
+    /// 页脚数据样式
+    /// </summary>
+    property FooterStyle: TGridFooterStyle read FFooterStyle write SetFooterStyle;
 
     /// <summary>
     /// 设置默认行高
@@ -1129,6 +1172,10 @@ type
     /// 绘制单元格文本
     /// </summary>
     property OnDrawCells: TOnDrawCells read FOnDrawCells write FOnDrawCells;
+    /// <summary>
+    /// 绘制页脚单元格文本
+    /// </summary>
+    property OnDrawFooterCells: TOnDrawFooterCells read FOnDrawFooterCells write FOnDrawFooterCells;
   end;
 
 type
@@ -1153,6 +1200,8 @@ type
 
     property ColumnsSettings;
     property FixedSettings;
+
+    property FooterStyle;
 
     property TextSettings;
 
@@ -1179,6 +1228,7 @@ type
     property OnDrawFixedCellsText;
 
     property OnDrawCells;
+    property OnDrawFooterCells;
   end;
 
 type
@@ -1270,6 +1320,8 @@ type
 
     procedure DoFilterDataChange(Item: TGridColumnItem); override;
     procedure DoInitFilterDataList(Item: TGridColumnItem; List: TStrings); override;
+
+    procedure DoInitFooterData; virtual;
   protected
     function GetNeedSaveColumns: Boolean; override;
     procedure SetNeedSaveColumns(const Value: Boolean); override;
@@ -1279,6 +1331,8 @@ type
 
     procedure BeginUpdate; override;
     procedure EndUpdate; override;
+
+    procedure NotifyDataChanged; override;
 
     procedure ClearColumns();
 
@@ -1359,6 +1413,8 @@ type
 
     function GetCells(const ACol, ARow: Integer): string; virtual;
     procedure SetCells(const ACol, ARow: Integer; const Value: string); virtual;
+
+    function GetFooterCells(Item: TGridColumnItem): string; virtual;
 
     function GetFixedCells(const ACol, ARow: Integer): string; virtual;
     procedure SetFixedCells(const ACol, ARow: Integer; const Value: string); virtual;
@@ -1442,6 +1498,8 @@ type
     procedure EndDrawCells(); override;
 
     procedure PostData(); virtual;
+
+    function GetFooterCells(Item: TGridColumnItem): string; override;
 
     function GetCellData(const ACol, ARow: Integer): Pointer; override;
     procedure SetCellData(const ACol, ARow: Integer; const Value: Pointer); override;
@@ -1889,11 +1947,17 @@ begin
   LV := R.Left + XOffset;
 
   MH := Height - Padding.Bottom;
+  {$IFDEF MSWINDOWS}
   if Assigned(FScrollH) and (FScrollH.Visible) then
     MH := MH - FScrollH.Height;
+  {$ENDIF}
+  if gvFixedFooter in FOptions then
+    MH := MH - FFixedRowHeight - DH * 2;
   MW := Width - Padding.Right;
+  {$IFDEF MSWINDOWS}
   if Assigned(FScrollV) and (FScrollV.Visible) then
     MW := MW - FScrollV.Width;
+  {$ENDIF}
 
   if Assigned(FColumns) then
     W := FColumns.Width
@@ -1996,23 +2060,40 @@ begin
               DoDrawFixedColBackground(Canvas, VR, LOpacity * Item.Opacity);
             end;
           end;
+
           // 画过滤图标
           if Item.DataFilter and (Item.Width > CDefaultFilterIconWH + 2) then begin
-            VR.Left := W + LW - Padding.Right - CDefaultFilterIconWH - 1;
-            VR.Top := LH + FFixedRowHeight - Padding.Bottom - CDefaultFilterIconWH - 1;
-            VR.Right := VR.Left + CDefaultFilterIconWH;
-            VR.Bottom := VR.Top + CDefaultFilterIconWH;
-            FGridRes.Drawable.ImageIndex := 9;
-            FGridRes.Drawable.Draw(Canvas, VR, 0, 0, [], LOpacity * Item.Opacity);
-          end;
+            VR.Left := W + LW - Padding.Right - CDefaultFilterIconWH - DH;
+            VR.Top := LH;
+            VR.Right := VR.Left + 1;
+            VR.Bottom := LH + FFixedRowHeight;
+            Canvas.FillRect(VR, 0, 0, [], LOpacity * 0.5, FContentViews.FDividerBrush);
+
+            VR.Left := VR.Left + 1 + 3;
+            VR.Right := VR.Left + CDefaultFilterIconWH - 6;
+            VR.Top := VR.Top + (FFixedRowHeight - 5) * 0.5;
+            VR.Bottom := VR.Top + 5;
+
+            Canvas.Fill.Color := FFixedText.Color;
+            Canvas.FillPolygon([
+                PointF(VR.Left, VR.Top),
+                PointF(VR.Right, VR.Top),
+                PointF(VR.Left + (VR.Right - VR.Left) * 0.5, VR.Bottom),
+                PointF(VR.Left, VR.Top)
+              ], LOpacity * Item.Opacity);
+
+            VR.Right := CDefaultFilterIconWH;
+          end else
+            VR.Right := 0;
+
           // 画文字
           if Assigned(FOnDrawFixedColText) then begin
-            FOnDrawFixedColText(Self, Canvas, Item, RectF(V + LW, H, W + LW - DH, LH + FFixedRowHeight));
+            FOnDrawFixedColText(Self, Canvas, Item, RectF(V + LW, H, W + LW - DH - VR.Right, LH + FFixedRowHeight));
           end else begin
             with Item.Padding do begin
               VR.Left := V + LW + Left;
               VR.Top := H + Top;
-              VR.Right := W + LW - Right - DH;
+              VR.Right := W + LW - Right - DH - VR.Right;
               VR.Bottom := LH + FFixedRowHeight - Bottom;
             end;
             DoDrawFixedColText(Canvas, Item, VR, LOpacity);
@@ -2090,10 +2171,36 @@ begin
           Break;
       end;
     end;
+  end; 
+
+  // 画 Footer
+  if gvFixedFooter in FOptions then begin
+    LR := RectF(R.Left, R.Bottom - DH * 2 - FFixedRowHeight, R.Left +  LW, R.Bottom);
+    if Assigned(FFixedBrush.FDefault) then
+      Canvas.FillRect(LR, 0, 0, [], LOpacity, FFixedBrush.FDefault);
+    if LDrawLine then begin
+      VR := LR;
+      VR.Bottom := VR.Top + DH;
+      Canvas.FillRect(VR, 0, 0, [], LOpacity, FContentViews.FDividerBrush);
+      VR.Bottom := R.Bottom;
+      VR.Top := VR.Bottom - DH;
+      Canvas.FillRect(VR, 0, 0, [], LOpacity, FContentViews.FDividerBrush);
+      VR.Left := VR.Right - DH;
+      VR.Top := LR.Top + DH;
+      Canvas.FillRect(VR, 0, 0, [], LOpacity, FContentViews.FDividerBrush);
+    end;
+    if FFixedSetting.FFooterText <> '' then begin
+      LR.Right := LR.Right - DH - CDefaultPadding;
+      LR.Top := LR.Top + DH + CDefaultPadding;
+      LR.Left := LR.Left + CDefaultPadding;
+      LR.Bottom := LR.Bottom - CDefaultPadding - DH;
+      FFixedText.Draw(Canvas, FFixedSetting.FFooterText, LR, LOpacity, DrawState);
+    end;
   end;
 
   // 画左上角
   LR := RectF(R.Left, R.Top, R.Left + LW, H);
+  Canvas.ClearRect(LR);
   if Assigned(FFixedBrush.FDefault) then
     Canvas.FillRect(LR, 0, 0, [], LOpacity, FFixedBrush.FDefault);
 
@@ -2103,11 +2210,12 @@ begin
     J := 0;
 
   V := LR.Left;
+  LH := LR.Bottom - DH;
   for I := J to FFixedCols - 1 do begin
     Item := ItemList[I + 1];
     LV := V + Item.FWidth + DH;
 
-    VR := RectF(V, LR.Top, LV - DH, LR.Bottom - DH);
+    VR := RectF(V, LR.Top, LV - DH, LH);
     if (I = FDownFixedColIndex) and (FDownFixedRowIndex < 0) then
       DoDrawFixedColBackground(Canvas, VR, LOpacity);
 
@@ -2131,6 +2239,7 @@ begin
 
     // 格子竖线
     V := LR.Left;
+    LH := Max(H, Min(R.Bottom, LR.Bottom));
     for I := J to FFixedCols - 1 do begin
       Item := FixedColsumn[I];
       V := V + Item.FWidth + DH;
@@ -2138,10 +2247,11 @@ begin
       VR.Left := V - DH;
       VR.Top := LR.Top;
       VR.Right := V;
-      VR.Bottom := Min(R.Bottom, LR.Bottom);
+      VR.Bottom := LH;
       Canvas.FillRect(VR, 0, 0, [], LOpacity, FContentViews.FDividerBrush);
     end;
-  end;
+  end;  
+  
 end;
 
 procedure TGridBase.DoEnter;
@@ -2524,6 +2634,9 @@ begin
     H := (ItemDefaultH + DividerH) * LCount;
   end;
 
+  if gvFixedFooter in FOptions then
+    H := H + ItemDefaultH + DividerH;
+
   if Assigned(FScrollV) then
     FContentBounds.Right := W + FFixedColsWidth + FScrollV.Width + CDefaultFixedColWidth
   else
@@ -2565,7 +2678,7 @@ procedure TGridBase.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 var
   I, J, K: Integer;
-  H, LH, DH: Double;
+  H, LH, DH, PH: Double;
 begin
   inherited;
   FDownPos.X := X;
@@ -2583,9 +2696,18 @@ begin
     DH := GetDividerHeight;
     if (Y > FColumns.Height) then begin
 
+      PH := Height;
+      if gvFixedFooter in FOptions then
+        PH := PH - DH - FFixedRowHeight;
+      {$IFDEF MSWINDOWS}
+      if Assigned(FScrollH) and (FScrollH.Visible) then
+        PH := PH - FScrollH.Height;
+      {$ENDIF}
+      if Y > PH then
+        Exit;
+
       H := FContentViews.FViewTop;
       Y := Y - FColumns.Height - Padding.Top;
-
 
       for I := FContentViews.FFirstRowIndex to FContentViews.FLastRowIndex do begin
         LH := H + GetRowHeight(I) + DH;
@@ -3010,6 +3132,15 @@ begin
     FFixedText.Assign(Value);
 end;
 
+procedure TGridBase.SetFooterStyle(const Value: TGridFooterStyle);
+begin
+  if FFooterStyle <> Value then begin
+    FFooterStyle := Value;
+    if gvFixedFooter in FOptions then
+      NotifyDataChanged;
+  end;
+end;
+
 procedure TGridBase.SetItemIndex(const Value: Integer);
 begin
   if Assigned(FAdapter) and (FAdapter.ItemIndex <> Value) then begin
@@ -3332,12 +3463,12 @@ begin
     case Item.DataType of
       CheckBox:
         begin
-          LV := FAdapter.CellChecked[ACell.Col, ACell.Row];
+          LV := FAdapter.CellChecked[Item.ColIndex, ACell.Row];
           V := not LV;
           if Assigned(GridView.FOnCellCheckEvent) then
             GridView.FOnCellCheckEvent(GridView, ACell, V);
           if LV <> V then begin
-            FAdapter.CellChecked[ACell.Col, ACell.Row] := V;
+            FAdapter.CellChecked[Item.ColIndex, ACell.Row] := V;
             Invalidate;
           end;
         end;
@@ -3429,10 +3560,16 @@ var
   LExistAdapter: Boolean;
   LText: string;
 begin
+  if ACol < 0 then Exit;  
+
+  Item := FColumnsList[ACol];
+  if not Assigned(Item) then
+    Exit;
+    
   LExistAdapter := Assigned(FAdapter);
   
   if (ARow = FSelectCell.Row) then begin
-    if (ACol = FSelectCell.Col) then begin
+    if (ACol = FSelectCell.Col) and (IsFocused) then begin
       if (gvRowSelect in GridView.FOptions) and not (gvEditing in GridView.FOptions) then
         DrawState := TViewState.None  // 行选择，且不允许编辑时，不突出显示当前单元格
       else
@@ -3442,23 +3579,16 @@ begin
     else
       DrawState := TViewState.None;
   end else
-    DrawState := TViewState.None;
-
-  if ACol < 0 then Exit;  
+    DrawState := TViewState.None;    
 
   B := True;
-
-  Item := FColumnsList[ACol];
-  if not Assigned(Item) then
-    Exit;
-
   if not Item.Enabled then
     DrawState := TViewState.Enabled;
 
   // 得到要显示的文本
+  LText := '';
   if (Item.DataType = PlanText) and LExistAdapter then begin
     if Assigned(Item.FOnGetCellText) then begin
-      LText := '';
       Item.FOnGetCellText(Item, ARow, LText);
     end else
       LText := FAdapter.GetCells(Item.ColIndex, ARow);
@@ -3479,7 +3609,7 @@ begin
       IsCellSet := False;
 
     // 背景
-    if Assigned(FCellBrush.FPressed) and (DrawState = TViewState.Pressed) and IsFocused then begin
+    if Assigned(FCellBrush.FPressed) and (DrawState = TViewState.Pressed) then begin
       Canvas.FillRect(R, 0, 0, [], LOpacity * Item.Opacity, FCellBrush.FPressed);
     end else if IsCellSet and (CellSet.BgColor and $FF000000 <> 0) then begin
       FTempCellBrush.Color := CellSet.BgColor;
@@ -3572,6 +3702,51 @@ begin
   end;
 end;
 
+procedure TGridViewContent.DoDrawFooterCell(Canvas: TCanvas; const R: TRectF;
+  const ACol: Integer; const LOpacity: Single);
+var
+  B: Boolean;
+  Item: TGridColumnItem;
+  LExistAdapter: Boolean;
+  LText: string;
+begin  
+  if ACol < 0 then Exit;
+  
+  Item := FColumnsList[ACol];
+  if not Assigned(Item) then
+    Exit;
+
+  if not (Item.DataType in [PlanText]) then
+    Exit;  
+    
+  LExistAdapter := Assigned(FAdapter);
+
+  B := True;
+
+  // 得到要显示的文本
+  if (Item.DataType = PlanText) and LExistAdapter then 
+    LText := FAdapter.GetFooterCells(Item)
+  else
+    LText := '';
+
+  if Assigned(GridView.FOnDrawFooterCells) then
+    GridView.FOnDrawFooterCells(GridView, Canvas, R, Item, LText, B);
+
+  // 默认绘制
+  if B then begin
+
+    if LText <> '' then begin
+      LText := StringReplace(LText, #13#10, ' ', [rfReplaceAll]);
+
+      GridView.FText.Draw(Canvas, LText,
+        RectF(R.Left + Item.Padding.Left, R.Top + Item.Padding.Top, R.Right - Item.Padding.Right,
+          R.Bottom - Item.Padding.Bottom), LOpacity * Item.Opacity, TViewState.None, Item.Gravity
+      );
+    end;
+
+  end;
+end;
+
 procedure TGridViewContent.DoDrawHeaderRows(Canvas: TCanvas; var R: TRectF);
 
   // 画单元格
@@ -3583,9 +3758,6 @@ procedure TGridViewContent.DoDrawHeaderRows(Canvas: TCanvas; var R: TRectF);
     FDividerBrush.Color := GridView.FDivider;
     X := LS.XOffset;
     LW := 0;
-
-    if LS.ExistAdapter then
-      FAdapter.SetCursor(LS.RowIndex);
 
     // 画单元格背景
     if FTwoColor and (LS.RowIndex mod 2 = 1) then begin
@@ -3599,20 +3771,49 @@ procedure TGridViewContent.DoDrawHeaderRows(Canvas: TCanvas; var R: TRectF);
         Canvas.FillRect(RectF(0, LS.Top, X + LS.ColumnWidth, LS.Bottom), 0, 0, [], LS.Opacity, FCellBrush.FSelected); 
     end;
 
-    X := LS.FirstColOffset;
-    for I := LS.FirstColIndex to LS.MaxCols - 1 do begin
-      LW := FBaseColumnsList[I].RealWidth;
-      if LW <= 0 then
-        Continue;
-      LW := X + LW + LS.DividerH;
-      // 画格子
-      if (LW > 0) and (X < LS.Width) then
-        DoDrawCell(Canvas, RectF(X + LS.FixedWidth, LS.Top, LW + LS.FixedWidth, LS.Bottom - LS.DividerH), LS.RowIndex, I, LS.Opacity);
-      if LW > LS.Width then
-        Break;
-      X := LW;
-    end;
+    if LS.RowIndex <> -2 then begin       
+ 
+      if LS.ExistAdapter then
+        FAdapter.SetCursor(LS.RowIndex);
 
+      X := LS.FirstColOffset;
+      for I := LS.FirstColIndex to LS.MaxCols - 1 do begin
+        LW := FBaseColumnsList[I].RealWidth;
+        if LW <= 0 then
+          Continue;
+        LW := X + LW + LS.DividerH;
+        // 画格子
+        if (LW > 0) and (X < LS.Width) then
+          DoDrawCell(Canvas,
+            RectF(X + LS.FixedWidth, LS.Top, LW + LS.FixedWidth - LS.DividerH, LS.Bottom - LS.DividerH),
+            LS.RowIndex, I, LS.Opacity);
+        if LW > LS.Width then
+          Break;
+        X := LW;
+      end;
+
+
+    end else begin
+
+      // footer
+      X := LS.FirstColOffset;
+      for I := LS.FirstColIndex to LS.MaxCols - 1 do begin
+        LW := FBaseColumnsList[I].RealWidth;
+        if LW <= 0 then
+          Continue;
+        LW := X + LW + LS.DividerH;
+        // 画格子
+        if (LW > 0) and (X < LS.Width) then
+          DoDrawFooterCell(Canvas,
+            RectF(X + LS.FixedWidth, LS.Top, LW + LS.FixedWidth - LS.DividerH, LS.Bottom - LS.DividerH),
+            I, LS.Opacity);
+        if LW > LS.Width then
+          Break;
+        X := LW;
+      end;
+
+    end;
+    
     // 画线
     if LS.ShowRowLine and (LS.DividerH > 0) then
       Canvas.FillRect(RectF(LS.FixedWidth, LS.Bottom - LS.DividerH, LW + LS.FixedWidth, LS.Bottom), 0, 0, [], LS.Opacity, FDividerBrush);
@@ -3661,6 +3862,16 @@ begin
   if FColumnsList.Count <> LS.MaxCols then
     Exit;
 
+  // 如果存在页脚时
+  if gvFixedFooter in GridView.FOptions then begin
+    LS.Height := LS.Height - GridView.FFixedRowHeight - LS.DividerH * 2;
+    {$IFDEF MSWINDOWS}
+    if Assigned(GridView.FScrollH) and (GridView.FScrollH.Visible) then
+      LS.Height := LS.Height - GridView.FScrollH.Height;
+    {$ENDIF}
+  end;
+  FViewHeight := LS.Height;
+
   // 算出要显示的第一列列号
   LS.FirstColIndex := 0;
   LS.FirstColOffset := 0;
@@ -3700,6 +3911,9 @@ begin
       end;
 
       LS.Top := LS.Bottom;
+
+      if LS.Top > LS.Height then
+        Break;
     end;
   finally
     if LS.ExistAdapter then
@@ -3714,6 +3928,34 @@ begin
     V := LS.XOffset;
     FDividerBrush.Color := GridView.FDivider;
 
+    for I := 0 to LS.MaxCols - 1 do begin
+      LW := FBaseColumnsList[I].RealWidth;
+      if LW <= 0 then
+        Continue;
+      LW := V + LW + LS.DividerH;
+      if (LW > 0) and (V <= R.Width) then
+        Canvas.FillRect(RectF(LW + LS.FixedWidth - LS.DividerH, LS.Top, LW + LS.FixedWidth, LS.Bottom), 0, 0, [], LS.Opacity, FDividerBrush);
+      V := LW;
+    end;
+  end;
+
+  // 画 Footer
+  if gvFixedFooter in GridView.FOptions then begin
+    LS.Top := LS.Height;
+    LS.Bottom := LS.Height + RowHeight[-2] + LS.DividerH * 2;
+    Canvas.ClearRect(RectF(0, LS.Top, LS.Width, LS.Bottom));
+
+    if LS.ShowRowLine and (LS.DividerH > 0) then
+      Canvas.FillRect(RectF(LS.FixedWidth, LS.Top, LW + LS.FixedWidth, LS.Top + LS.DividerH), 0, 0, [], LS.Opacity, FDividerBrush);
+
+    LS.RowIndex := -2;
+    LS.Top := LS.Top + LS.DividerH;
+    LS.Bottom := LS.Bottom;
+    DrawRowCell(LS);
+
+    V := LS.XOffset;
+    LS.Bottom := LS.Bottom - LS.DividerH;
+    FDividerBrush.Color := GridView.FDivider;
     for I := 0 to LS.MaxCols - 1 do begin
       LW := FBaseColumnsList[I].RealWidth;
       if LW <= 0 then
@@ -4363,6 +4605,9 @@ begin
   LS.Height := Height;
   LS.Width := Width;
 
+  // 分隔线宽度
+  LS.DividerH := GridView.GetDividerHeight;
+
   // 偏移位置 (滚动条位置)
   LS.ScrollValue := GridView.VScrollBarValue;
   // 滚动距离
@@ -4390,8 +4635,6 @@ begin
   LS.FixedCols := GridView.FFixedCols;
   // 最大列数
   LS.MaxCols := GridView.ColCount;
-  // 分隔线宽度
-  LS.DividerH := GridView.GetDividerHeight;
 
   if FColumnsList.Count <> LS.MaxCols then
     InitColumnList;
@@ -4634,6 +4877,9 @@ var
 begin
   Result.Row := -1;
   Result.Col := -1;
+
+  if (FViewHeight > 0) and (Y > FViewHeight) then
+    Exit;
   
   V := 0 - GridView.HScrollBarValue;
 
@@ -4869,6 +5115,11 @@ function TGridAdapterBase.GetFixedColData(
   const ACol: Integer): TGridColumnItem;
 begin
   Result := GetColumns.Items[ACol, -1];
+end;
+
+function TGridAdapterBase.GetFooterCells(Item: TGridColumnItem): string;
+begin
+  Result := '';
 end;
 
 function TGridAdapterBase.GetItemIndex: Integer;
@@ -5806,6 +6057,7 @@ begin
   if Source is TGridDBColumnItem then begin
     FieldName := TGridDBColumnItem(Source).FieldName;
     Field := TGridDBColumnItem(Source).Field;
+    FooterText := TGridDBColumnItem(Source).FooterText;
   end;
 end;
 
@@ -5813,6 +6065,7 @@ destructor TGridDBColumnItem.Destroy;
 begin
   Field := nil;
   FieldName := '';
+  FooterText := '';
   inherited;
 end;
 
@@ -6000,6 +6253,157 @@ begin
   end;
 end;
 
+procedure TDBGridView.DoInitFooterData;
+var
+  I, J, LCount: Integer;
+  LDataSet: TDataSet;
+  Item: TGridDBColumnItem;
+  List: TArray<TGridDBColumnItem>;
+  ListValue: TArray<Extended>;
+  ListType: TArray<Byte>;
+  B: Boolean;
+begin
+  if FFooterStyle = TGridFooterStyle.None then
+    Exit;
+  if (not Assigned(FDataLink)) or (not FDataLink.Active) or (not Assigned(FDataLink.DataSet)) then
+    Exit;
+
+  LCount := FColumns.ColsCount;
+  if LCount = 0 then
+    Exit;
+
+  LDataSet := FDataLink.DataSet;
+  if LDataSet.IsEmpty then
+    Exit;  
+
+  if FContentViews.FColumnsList.Count <> LCount then
+    FContentViews.InitColumnList;
+
+  // 取出需要统计的列，并分析出数据类型
+  J := 0;
+  SetLength(List, LCount);
+  SetLength(ListValue, LCount);
+  SetLength(ListType, LCount);
+  for I := 0 to LCount - 1 do begin
+    Item := TGridDBColumnItem(FContentViews.FColumnsList.Items[I]);
+    if Assigned(Item) and Assigned(Item.Field) then begin
+      B := False;
+      case FFooterStyle of
+        DataTotal, DataAverage:
+          B := Item.FieldType in [ftSmallint, ftInteger, ftWord, ftFloat, ftCurrency, ftBCD, ftFMTBcd, // ftAutoInc,
+            ftLongWord, ftShortint, ftByte, TFieldType.ftExtended, TFieldType.ftSingle];
+        DataMin, DataMax:
+          B := Item.FieldType in [ftSmallint, ftInteger, ftWord, ftFloat, ftCurrency, ftBCD, ftFMTBcd, // ftAutoInc,
+            ftDate, ftTime, ftDateTime, ftTimeStamp, ftOraTimeStamp,
+            ftLongWord, ftShortint, ftByte, TFieldType.ftExtended, TFieldType.ftSingle];
+      end;
+      if B then begin
+        List[J] := Item;
+        ListValue[J] := 0;
+        if Item.FieldType in [ftFloat, ftCurrency, TFieldType.ftExtended, TFieldType.ftSingle, ftBCD, ftFMTBcd] then
+          ListType[J] := 1  // 浮点数
+        else if Item.FieldType in [ftDate, ftTime, ftDateTime, ftTimeStamp, ftOraTimeStamp] then                
+          ListType[J] := 2  // 时间格式
+        else
+          ListType[J] := 0; // 整数
+        Inc(J);
+      end;
+    end;
+  end;
+  SetLength(List, J);
+
+  // 开始统计  
+  LDataSet.DisableControls;
+  try
+    LDataSet.First;
+
+    if FFooterStyle in [DataTotal, DataAverage] then begin
+    
+      while not LDataSet.Eof do begin
+        for I := 0 to High(List) do begin
+          case ListType[I] of
+            0: PInt64(@ListValue[I])^ := PInt64(@ListValue[I])^ + List[I].Field.AsLargeInt;
+            1: ListValue[I] := ListValue[I] + List[I].Field.AsExtended;
+          end;
+        end;
+        LDataSet.Next;
+      end;
+
+      LCount := LDataSet.RecordCount;
+
+      for I := 0 to High(List) do begin         
+        List[I].FooterText := '';
+        case ListType[I] of
+          0:
+            if PInt64(@ListValue[I])^ <> 0 then begin            
+              if FFooterStyle = DataTotal then
+                List[I].FooterText := IntToStr(PInt64(@ListValue[I])^)
+              else
+                List[I].FooterText := FormatFloat('#.######', PInt64(@ListValue[I])^ / LCount); 
+            end;
+          1: 
+            if ListValue[I] <> 0 then begin            
+              if FFooterStyle = DataTotal then
+                List[I].FooterText := FormatFloat('#.######', ListValue[I])
+              else
+                List[I].FooterText := FormatFloat('#.######', ListValue[I] / LCount);             
+            end;
+        end;
+      end;
+
+    end else begin
+
+      B := False;
+
+      while not LDataSet.Eof do begin
+        for I := 0 to High(List) do begin
+          if B then begin          
+            case ListType[I] of
+              0: 
+                begin
+                  if FFooterStyle = DataMax then
+                    PInt64(@ListValue[I])^ := Max(PInt64(@ListValue[I])^, List[I].Field.AsLargeInt)
+                  else
+                    PInt64(@ListValue[I])^ := Min(PInt64(@ListValue[I])^, List[I].Field.AsLargeInt)
+                end;
+              1: 
+                begin
+                  if FFooterStyle = DataMax then
+                    ListValue[I] := Max(ListValue[I], List[I].Field.AsExtended)
+                  else
+                    ListValue[I] := Min(ListValue[I], List[I].Field.AsExtended)
+                end;
+            end;
+          end else begin
+            case ListType[I] of
+              0: PInt64(@ListValue[I])^ := List[I].Field.AsLargeInt;
+              1: ListValue[I] :=List[I].Field.AsExtended;
+            end;
+            B := True;
+          end;
+        end;
+        LDataSet.Next;
+      end;
+
+      for I := 0 to High(List) do begin  
+        List[I].FooterText := '';
+        case ListType[I] of
+          0: 
+            if PInt64(@ListValue[I])^ <> 0 then
+              List[I].FooterText := IntToStr(PInt64(@ListValue[I])^);
+          1: 
+            if ListValue[I] <> 0 then 
+              List[I].FooterText := FormatFloat('#.######', ListValue[I]);
+        end;
+      end;
+            
+    end;
+
+finally
+    LDataSet.EnableControls;
+  end;
+end;
+
 procedure TDBGridView.EditingChanged;
 begin
   if gvIndicator in Options then Invalidate;
@@ -6064,7 +6468,7 @@ end;
 
 procedure TDBGridView.InitColumns(const DataSet: TDataSet);
 var
-  I, J: Integer;
+  I, J, ARow: Integer;
 begin
   if TDBGridAdapter(FAdapter).FFieldMap.Count > 0 then
     TDBGridAdapter(FAdapter).FFieldMap.Clear;
@@ -6079,6 +6483,7 @@ begin
       Exit;
     end;
 
+    ARow := FColumns.RowsCount - 1;
     FUseCustomColumns := FUseCustomColumns and (FColumns.ColsCount > 0);
 
     if not FUseCustomColumns then begin
@@ -6098,11 +6503,14 @@ begin
         J := 0;
 
       for I := 0 to DataSet.FieldCount - 1 do begin
-        with TGridDBColumnItem(FColumns[I + J, 0]) do begin
+        with TGridDBColumnItem(FColumns[I + J, ARow]) do begin
           Field := DataSet.Fields[I];
           FieldName := Field.FieldName;
           FieldType := Field.DataType;
           IsBLOB := Field.IsBlob;
+
+          FilterText := '';
+          FooterText := '';
 
           ReadOnly := Field.ReadOnly or IsBLOB;
           Visible := Field.Visible;
@@ -6126,10 +6534,11 @@ begin
 
       // 自定义列头
       for I := 0 to FColumns.ColsCount - 1 do begin
-        with TGridDBColumnItem(FColumns[I, 0]) do begin
+        with TGridDBColumnItem(FColumns[I, ARow]) do begin
 
           Field := DataSet.FindField(FieldName);
           FilterText := '';
+          FooterText := '';
 
           if Assigned(Field) then begin
             TDBGridAdapter(FAdapter).FFieldMap.Add(I, Field); 
@@ -6143,8 +6552,8 @@ begin
 
             if (DataType = TGridDataType.PlanText) and (Gravity = TLayoutGravity.None) then begin
               case FieldType of
-                ftSmallint, ftInteger, ftWord, ftFloat, ftCurrency, ftLongWord, ftShortint, ftByte, 
-                TFieldType.ftExtended, TFieldType.ftSingle, ftAutoInc, ftBCD:
+                ftSmallint, ftInteger, ftWord, ftFloat, ftCurrency, ftLongWord, ftShortint, ftByte, // ftAutoInc, 
+                TFieldType.ftExtended, TFieldType.ftSingle, ftBCD, ftFMTBcd:
                   Gravity := TLayoutGravity.CenterVRight;
               end;
             end;
@@ -6181,6 +6590,13 @@ begin
   InitColumns(FDataLink.DataSet);
   UpdateRowCount(FDataLink.DataSet);
   if Value and (gvAlwaysShowEditor in Options) then FContentViews.DoEnter;
+end;
+
+procedure TDBGridView.NotifyDataChanged;
+begin
+  inherited NotifyDataChanged;
+  if gvFixedFooter in FOptions then
+    DoInitFooterData;
 end;
 
 procedure TDBGridView.Post;
@@ -6322,6 +6738,11 @@ begin
       Result := '';
   end else
     FData.TryGetValue(TGridBase.GetKey(ACol, ARow), Result);
+end;
+
+function TDBGridAdapter.GetFooterCells(Item: TGridColumnItem): string;
+begin
+  Result := TGridDBColumnItem(Item).FooterText;
 end;
 
 function TDBGridAdapter.GetRowCount: Integer;
@@ -6528,6 +6949,14 @@ end;
 procedure TGridFixedSetting.SetFixedText(const Value: TGridTextSettings);
 begin
   FOwner.FixedTextSettings := Value;
+end;
+
+procedure TGridFixedSetting.SetFooterText(const Value: string);
+begin
+  if FFooterText <> Value then begin
+    FFooterText := Value;
+    FOwner.Invalidate;
+  end;
 end;
 
 procedure TGridFixedSetting.SetTextRowIndex(const Value: string);

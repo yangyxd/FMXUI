@@ -93,6 +93,7 @@ type
     procedure edtWidthExit(Sender: TObject);
     procedure GridViewDrawFixedColText(Sender: TObject; Canvas: TCanvas;
       Item: TGridColumnItem; const R: TRectF);
+    procedure edtFieldNameExit(Sender: TObject);
   private
     { Private declarations }
     [Weak] SrcGridView: TGridBase;
@@ -158,11 +159,20 @@ begin
 end;
 
 procedure TGridColumnsDesigner.btnOkClick(Sender: TObject);
+var
+  Item: TGridColumnItem;
+  I, J: Integer;
 begin
   if Assigned(SrcGridView) then begin
     if (SrcGridView is TStringGridView) then
       TStringGridView(SrcGridView).ColCount := GridView.ColCount;
     SrcGridView.NeedSaveColumns := True;
+  end;
+  for I := 0 to Columns.RowsCount - 1 do begin
+    for J := 0 to Columns.ColsCount - 1 do begin
+      if Columns.TryGetItem(J, I, Item) and Assigned(Item) then
+        Item.ColIndex := J;
+    end;
   end;
   ModalResult := mrOk;
 end;
@@ -288,6 +298,14 @@ procedure TGridColumnsDesigner.edtColsPanExit(Sender: TObject);
 begin
   if Assigned(CurItem) then begin
     CurItem.ColsPan := StrToIntDef(TEdit(Sender).Text, CurItem.ColsPan);
+    DoChange();
+  end;
+end;
+
+procedure TGridColumnsDesigner.edtFieldNameExit(Sender: TObject);
+begin
+  if Assigned(CurItem) and (CurItem is TGridDBColumnItem) then begin
+    TGridDBColumnItem(CurItem).FieldName := TEdit(Sender).Text;
     DoChange();
   end;
 end;

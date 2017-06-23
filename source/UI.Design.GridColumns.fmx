@@ -450,6 +450,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
       OnKeyDown = edtRowCountKeyDown
+      OnExit = edtFieldNameExit
     end
     object tvField: TLabel
       AutoSize = True
@@ -528,17 +529,17 @@ object GridColumnsDesigner: TGridColumnsDesigner
     TabOrder = 4
     ScrollBars = Both
     ReadOnly = False
-    Options = [gvEditing, gvColLines, gvRowLines, gvTwoColor, gvShowSelection, gvCancelOnExit, gvEscCancelEdit, gvColumnBestWidth, gvColumnResize]
+    Options = [gvEditing, gvColLines, gvRowLines, gvShowSelection, gvCancelOnExit, gvEscCancelEdit, gvColumnBestWidth, gvColumnResize, gvColumnMove]
     ColumnsSettings.ColumnsData = '{"RowsCount":1,"ColsCount":0}'
     FixedSettings.RowHeight = 20.000000000000000000
     FixedSettings.ColWidth = 50.000000000000000000
     FixedSettings.TextSettings.ColorSelect = claNull
     FixedSettings.TextRowIndex = #34892#21495
+    FooterStyle = None
     OnTitleClick = GridViewTitleClick
     OnFixedCellClick = GridViewFixedCellClick
     OnDrawFixedColText = GridViewDrawFixedColText
     ColCount = 0
-    RowCount = 9
   end
   object Line1: TLine
     Align = Bottom

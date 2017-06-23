@@ -27,6 +27,7 @@ type
     FDMemTable1Title: TStringField;
     DataSource1: TDataSource;
     ButtonView5: TButtonView;
+    FDMemTable1Total: TFloatField;
     procedure TextView1Click(Sender: TObject);
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
@@ -92,33 +93,16 @@ procedure TFrameGridView.DoShow;
 begin
   inherited;
 
-  GridView1.Columns[0, 0].Title := '0';
-  GridView1.Columns[0, 0].DataFilter := True;
-  GridView1.Columns[1, 0].Title := '1';
-  GridView1.Columns[2, 0].Title := '2';
-  GridView1.Columns[3, 0].Title := '3';
-  GridView1.Columns[4, 0].Title := '4';
-  GridView1.Columns[5, 0].Title := '5';
-  GridView1.Columns[5, 0].Gravity := TLayoutGravity.CenterVRight;
-  GridView1.Columns[6, 0].Title := '6';
-  GridView1.Columns[7, 0].Title := '7';
-  GridView1.Columns[8, 0].Title := '8';
-  GridView1.Columns[8, 0].Gravity := TLayoutGravity.Center;
-  GridView1.Columns[9, 0].Title := '9';
-  GridView1.Columns[10, 0].Title := '10';
   GridView1.Columns[11, 0].Title := '11';
   GridView1.Columns[14, 0].Title := '14';
-  GridView1.Columns[1, 0].Width := 50;
-  GridView1.Columns[1, 1].Width := 50;
-  GridView1.Columns[1, 1].ColsPan := 8;
 
   DBGridView1.Columns[0, 0].DataFilter := True;
   DBGridView1.Columns[0, 0].Width := 100;
 
-  FDMemTable1.InsertRecord(['test', 'name']);
-  FDMemTable1.InsertRecord(['test1', 'name']);
-  FDMemTable1.InsertRecord(['test2', 'name']);
-  FDMemTable1.InsertRecord(['test3', 'name']);
+  FDMemTable1.InsertRecord(['test', 'name', '12']);
+  FDMemTable1.InsertRecord(['test1', 'name', '25']);
+  FDMemTable1.InsertRecord(['test2', 'name', '21.5']);
+  FDMemTable1.InsertRecord(['test3', 'name', '22']);
   //FDMemTable1.InsertRecord(['test4', 'name']);
   //FDMemTable1.InsertRecord(['test5', 'name']);
 

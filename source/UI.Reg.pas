@@ -289,6 +289,7 @@ begin
       'DrawableCells',
       'Options',
       'FixedSettings',
+      'FooterStyle',
       'MinRowCount',
       'DataSource',
       'ShowCheck',
@@ -310,6 +311,7 @@ begin
       'OnDrawFixedColText',
       'OnDrawFixedCellsText',
       'OnDrawCells',
+      'OnDrawFooterCells',
       { Text }
       'Text',
       'TextHint',
@@ -376,6 +378,8 @@ begin
     ['Rectangle', 'Circle', 'Ellipse']);
   AddEnumElementAliases(TypeInfo(TGridDataType),
     ['PlanText', 'CheckBox', 'RadioButton', 'Image', 'ProgressBar', 'CustomDraw']);
+  AddEnumElementAliases(TypeInfo(TGridFooterStyle),
+    ['None', 'DataTotal', 'DataAverage', 'DataMin', 'DataMax']);
 end;
 
 procedure UnregisterAliases;
@@ -392,6 +396,7 @@ begin
   RemoveEnumElementAliases(TypeInfo(TBadgeStyle));
   RemoveEnumElementAliases(TypeInfo(TRingViewStyle));
   RemoveEnumElementAliases(TypeInfo(TGridDataType));
+  RemoveEnumElementAliases(TypeInfo(TGridFooterStyle));
 end;
 
 { TViewControlEditor }
