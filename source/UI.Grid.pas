@@ -6112,8 +6112,11 @@ begin
   Result.ReadOnly := ReadOnly;
   Result.DataType := TGridDataType.CheckBox;
   Result.Title := DisplayText;
-  if (FieldName <> '') and FDataLink.Active then
-    REsult.Field := FDataLink.DataSet.FindField(FieldName);
+  if (FieldName <> '') and FDataLink.Active then begin
+    Result.Field := FDataLink.DataSet.FindField(FieldName);
+    if Assigned(Result.Field) then
+      Result.FieldType := Result.Field.DataType;
+  end;
 end;
 
 function TDBGridView.AddField(const FieldName, DisplayText: string;
@@ -6128,8 +6131,11 @@ begin
   Result.FWidth := ADisplayColWidth;
   Result.Visible := Visible;
   Result.ReadOnly := ReadOnly;
-  if (FieldName <> '') and FDataLink.Active then
-    REsult.Field := FDataLink.DataSet.FindField(FieldName);
+  if (FieldName <> '') and FDataLink.Active then begin
+    Result.Field := FDataLink.DataSet.FindField(FieldName);
+    if Assigned(Result.Field) then
+      Result.FieldType := Result.Field.DataType;
+  end;
 end;
 
 procedure TDBGridView.BeginUpdate;
@@ -6265,19 +6271,26 @@ var
 begin
   if FFooterStyle = TGridFooterStyle.None then
     Exit;
-  if (not Assigned(FDataLink)) or (not FDataLink.Active) or (not Assigned(FDataLink.DataSet)) then
-    Exit;
 
   LCount := FColumns.ColsCount;
   if LCount = 0 then
     Exit;
 
-  LDataSet := FDataLink.DataSet;
-  if LDataSet.IsEmpty then
-    Exit;  
 
   if FContentViews.FColumnsList.Count <> LCount then
     FContentViews.InitColumnList;
+
+  for I := 0 to LCount - 1 do begin
+    Item := TGridDBColumnItem(FContentViews.FColumnsList.Items[I]);
+    Item.FooterText := '';
+  end;
+
+  if (not Assigned(FDataLink)) or (not FDataLink.Active) or (not Assigned(FDataLink.DataSet)) then
+    Exit;
+
+  LDataSet := FDataLink.DataSet;
+  if LDataSet.IsEmpty then
+    Exit;
 
   // 取出需要统计的列，并分析出数据类型
   J := 0;
@@ -6399,7 +6412,7 @@ begin
             
     end;
 
-finally
+  finally
     LDataSet.EnableControls;
   end;
 end;
@@ -6510,7 +6523,6 @@ begin
           IsBLOB := Field.IsBlob;
 
           FilterText := '';
-          FooterText := '';
 
           ReadOnly := Field.ReadOnly or IsBLOB;
           Visible := Field.Visible;
@@ -6538,7 +6550,6 @@ begin
 
           Field := DataSet.FindField(FieldName);
           FilterText := '';
-          FooterText := '';
 
           if Assigned(Field) then begin
             TDBGridAdapter(FAdapter).FFieldMap.Add(I, Field); 
