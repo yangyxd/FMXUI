@@ -5423,13 +5423,13 @@ procedure TGridColumnItem.WriteData(Data: TJSONObject);
 var
   JA: TJSONArray;
 begin
-  Data.Add('Width', FWidth);
+  Data.Add('Width', FWidth, TGridBase.CDefaultFixedColWidth);
 
-  Data.Add('ColIndex', ColIndex);
-  Data.Add('RowIndex', RowIndex);
-  Data.Add('Gravity', Ord(Gravity));
-  Data.Add('DataType', Ord(DataType));
-  Data.Add('Opacity', Opacity);
+  Data.Add('ColIndex', ColIndex, -1);
+  Data.Add('RowIndex', RowIndex, 0);
+  Data.Add('Gravity', Ord(Gravity), 0);
+  Data.Add('DataType', Ord(DataType), 0);
+  Data.Add('Opacity', Opacity, 1);
 
   JA := Data.AddJsonArray('Padding');
   JA.Add(Padding.Left);
@@ -5437,18 +5437,18 @@ begin
   JA.Add(Padding.Right);
   JA.Add(Padding.Bottom);
 
-  Data.Add('Locked', Locked, True);
-  Data.Add('DataFilter', DataFilter, True);
-  Data.Add('ReadOnly', ReadOnly, True);
+  Data.Add('Locked', Locked, False);
+  Data.Add('DataFilter', DataFilter, False);
+  Data.Add('ReadOnly', ReadOnly, False);
   Data.Add('Visible', Visible, True);
   Data.Add('Enabled', Enabled, True);
-  Data.Add('WordWrap', WordWrap, True);
+  Data.Add('WordWrap', WordWrap, False);
 
-  Data.Add('RowsPan', RowsPan, True);
-  Data.Add('ColsPan', ColsPan, True);
-  Data.Add('Tag', Tag, True);
+  Data.Add('RowsPan', RowsPan, 0);
+  Data.Add('ColsPan', ColsPan, 0);
+  Data.Add('Tag', Tag, 0);
 
-  Data.Add('Title', Title, True);
+  Data.Add('Title', Title, '');
 end;
 
 { TGridColumns }
@@ -6095,7 +6095,7 @@ end;
 procedure TGridDBColumnItem.WriteData(Data: TJSONObject);
 begin
   inherited WriteData(Data);
-  Data.Add('FieldName', FieldName, True);
+  Data.Add('FieldName', FieldName, '');
 end;
 
 { TDBGridView }

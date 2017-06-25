@@ -20,11 +20,11 @@ type
 
     function Exist(const Key: string): Boolean;
 
-    procedure Add(const Key: string; const Value: string; NotAddEmpty: Boolean = False); overload;
-    procedure Add(const Key: string; const Value: Boolean; NotAddEmpty: Boolean = False); overload;
-    procedure Add(const Key: string; const Value: Int64; NotAddEmpty: Boolean = False); overload;
-    procedure Add(const Key: string; const Value: Double; NotAddEmpty: Boolean = False); overload;
-    procedure AddDateTime(const Key: string; const Value: TDateTime; NotAddEmpty: Boolean = False); overload;
+    procedure Add(const Key: string; const Value: string; const DefaultValue: string = ''); overload;
+    procedure Add(const Key: string; const Value: Boolean; const DefaultValue: Boolean = False); overload;
+    procedure Add(const Key: string; const Value: Int64; const DefaultValue: Int64 = 0); overload;
+    procedure Add(const Key: string; const Value: Double; const DefaultValue: Double = 0); overload;
+    procedure AddDateTime(const Key: string; const Value: TDateTime; const DefaultValue: TDateTime = 0); overload;
     function AddJsonArray(const Key: string): TJSONArray; overload;
     function AddJsonObject(const Key: string): TJSONObject; overload;
 
@@ -59,37 +59,37 @@ implementation
 
 { TJSONObjectHelper }
 
-procedure TJSONObjectHelper.Add(const Key: string; const Value: Double; NotAddEmpty: Boolean);
+procedure TJSONObjectHelper.Add(const Key: string; const Value: Double; const DefaultValue: Double);
 begin
-  if NotAddEmpty and (Value = 0) then
+  if Value = DefaultValue then
     Exit;
   Self.AddPair(Key, TJSONNumber.Create(Value));
 end;
 
-procedure TJSONObjectHelper.Add(const Key: string; const Value: Int64; NotAddEmpty: Boolean);
+procedure TJSONObjectHelper.Add(const Key: string; const Value: Int64; const DefaultValue: Int64);
 begin
-  if NotAddEmpty and (Value = 0) then
+  if Value = DefaultValue then
     Exit;
   Self.AddPair(Key, TJSONNumber.Create(Value));
 end;
 
-procedure TJSONObjectHelper.Add(const Key, Value: string; NotAddEmpty: Boolean);
+procedure TJSONObjectHelper.Add(const Key, Value, DefaultValue: string);
 begin
-  if NotAddEmpty and (Value = '') then
+  if Value = DefaultValue then
     Exit;
   Self.AddPair(Key, Value);
 end;
 
-procedure TJSONObjectHelper.Add(const Key: string; const Value: Boolean; NotAddEmpty: Boolean);
+procedure TJSONObjectHelper.Add(const Key: string; const Value, DefaultValue: Boolean);
 begin
-  if NotAddEmpty and (Value = False) then
+  if Value = DefaultValue then
     Exit;
   Self.AddPair(Key, TJSONBool.Create(Value));
 end;
 
-procedure TJSONObjectHelper.AddDateTime(const Key: string; const Value: TDateTime; NotAddEmpty: Boolean);
+procedure TJSONObjectHelper.AddDateTime(const Key: string; const Value, DefaultValue: TDateTime);
 begin
-  if NotAddEmpty and (Value = 0) then
+  if Value = DefaultValue then
     Exit;
   Self.AddPair(Key, FormatDateTime('yyyy-mm-dd hh:nn:ss', Value));
 end;
