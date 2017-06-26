@@ -1158,7 +1158,7 @@ function TListViewEx.ObjectAtPoint(AScreenPoint: TPointF): IControl;
 begin
   Result := inherited;
   {$IFNDEF NEXTGEN}
-  if DragScroll and FMouseEnter then begin  // 如果允许拖动
+  if DragScroll then begin // 如果允许拖动
     P := ScreenToLocal(AScreenPoint);
     if Assigned(Result) and (P.X < Width - 10) then begin
       FPointTarget := Result;

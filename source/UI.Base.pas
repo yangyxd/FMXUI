@@ -29,10 +29,13 @@ uses
   Androidapi.JNI.Os,
   FMX.Helpers.Android,
   {$ENDIF}
+  {$IFDEF IOS}
+  IOSApi.Foundation,
+  {$ENDIF}
   FMX.BehaviorManager, FMX.StdActns, FMX.Menus,
   FMX.Utils, FMX.ImgList, FMX.MultiResBitmap, FMX.ActnList, System.Rtti, FMX.Consts,
   FMX.TextLayout, FMX.Objects, System.ImageList, System.RTLConsts,
-  System.TypInfo, FMX.Graphics, System.Generics.Collections, System.Math,
+  System.TypInfo, FMX.Graphics, System.Generics.Collections, System.Math, System.UIConsts,
   System.Classes, System.Types, System.UITypes, System.SysUtils, System.Math.Vectors,
   FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls, FMX.InertialMovement, FMX.Ani;
 
@@ -887,18 +890,13 @@ type
   TScrollCalculations = class (TAniCalculations)
   private
     [Weak] FScrollView: TView;
-    FDownPoint: TPointF;
-    FIsDown: Boolean;
   protected
     procedure DoChanged; override;
     procedure DoStart; override;
     procedure DoStop; override;
   public
     constructor Create(AOwner: TPersistent); override;
-    procedure MouseDown(X, Y: Double);
-    procedure MouseUp(X, Y: Double);
     property ScrollView: TView read FScrollView;
-    property DownPoint: TPointF read FDownPoint write FDownPoint;
     property Shown;
     property MouseTarget;
     property MinTarget;
@@ -1567,6 +1565,13 @@ type
   end;
 
 
+// 处理消息
+procedure ProcessMessages;
+// 模拟点击
+procedure SimulateClick(AControl: TControl; const x, y: single);
+// 替换不透明颜色
+procedure ReplaceOpaqueColor(ABmp: TBitmap; const Color: TAlphaColor);
+
 function ViewStateToString(const State: TViewStates): string;
 function ComponentStateToString(const State: TComponentState): string;
 
@@ -1854,6 +1859,70 @@ begin
   end;
 end;
 {$ENDIF}
+
+{ 来自 KernowSoftwareFMX }
+procedure ProcessMessages;
+{$IFDEF IOS}
+var
+  TimeoutDate: NSDate;
+begin
+  TimeoutDate := TNSDate.Wrap(TNSDate.OCClass.dateWithTimeIntervalSinceNow(0.0));
+  TNSRunLoop.Wrap(TNSRunLoop.OCClass.currentRunLoop).runMode(NSDefaultRunLoopMode, TimeoutDate);
+end;
+{$ELSE}
+begin
+  // FMX can occasionally raise an exception.
+  try
+    Application.ProcessMessages;
+  except end;
+end;
+{$ENDIF}
+
+{ 来自 KernowSoftwareFMX }
+procedure ReplaceOpaqueColor(ABmp: TBitmap; const Color: TAlphaColor);
+var
+  x,y: Integer;
+  AMap: TBitmapData;
+  PixelColor: TAlphaColor;
+  PixelWhiteColor: TAlphaColor;
+  C: PAlphaColorRec;
+begin
+  if (Assigned(ABmp)) then
+  begin
+    if ABmp.Map(TMapAccess.ReadWrite, AMap) then
+    try
+      AlphaColorToPixel(Color   , @PixelColor, AMap.PixelFormat);
+      AlphaColorToPixel(claWhite, @PixelWhiteColor, AMap.PixelFormat);
+      for y := 0 to ABmp.Height - 1 do
+      begin
+        for x := 0 to ABmp.Width - 1 do
+        begin
+          C := @PAlphaColorArray(AMap.Data)[y * (AMap.Pitch div 4) + x];
+          if (C^.Color<>claWhite) and (C^.A>0) then
+            C^.Color := PremultiplyAlpha(MakeColor(PixelColor, C^.A / $FF));
+        end;
+      end;
+    finally
+      ABmp.Unmap(AMap);
+    end;
+  end;
+end;
+
+procedure SimulateClick(AControl: TControl; const x, y: single);
+var
+  AForm: TCommonCustomForm;
+  AFormPoint: TPointF;
+begin
+  AForm := nil;
+  if (AControl.Root is TCustomForm) then
+    AForm := (AControl.Root as TCustomForm);
+  if AForm <> nil then
+  begin
+    AFormPoint := AControl.LocalToAbsolute(PointF(X,Y));
+    AForm.MouseDown(TMouseButton.mbLeft, [], AFormPoint.X, AFormPoint.Y);
+    AForm.MouseUp(TMouseButton.mbLeft, [], AFormPoint.X, AFormPoint.Y);
+  end;
+end;
 
 { TDrawableBase }
 
@@ -6580,25 +6649,9 @@ begin
 end;
 
 procedure TScrollCalculations.DoChanged;
-var
-  IsBackPop: Boolean; // 是否正在回弹
 begin
-  if (FScrollView <> nil) and not (csDestroying in FScrollView.ComponentState) then begin
-    if (not Down) and Animation and BoundsAnimation then begin
-      if FScrollView.ScrollBars = TViewScroll.Vertical then begin
-        IsBackPop := (FIsDown and (ViewportPosition.Y <= MinTarget.Point.Y)) or
-          ((not FIsDown) and (ViewportPosition.Y >= MaxTarget.Point.Y));
-        if IsBackPop then
-          Animation := False;
-      end else if FScrollView.ScrollBars = TViewScroll.Horizontal then begin
-        IsBackPop := (FIsDown and (ViewportPosition.X <= MinTarget.Point.X)) or
-          ((not FIsDown) and (ViewportPosition.X >= MaxTarget.Point.X));
-        if IsBackPop then
-          Animation := False;
-      end;
-    end;
+  if (FScrollView <> nil) and not (csDestroying in FScrollView.ComponentState) then
     FScrollView.InternalAlign;
-  end;
   inherited;
 end;
 
@@ -6614,24 +6667,6 @@ begin
   inherited;
   if (FScrollView <> nil) and not (csDestroying in FScrollView.ComponentState) then
     FScrollView.StopScrolling;
-end;
-
-procedure TScrollCalculations.MouseDown(X, Y: Double);
-begin
-  FDownPoint := PointF(X, Y);
-  if FScrollView <> nil then
-    Animation := FScrollView.CanAnimation;
-  inherited MouseDown(X, Y);
-end;
-
-procedure TScrollCalculations.MouseUp(X, Y: Double);
-begin
-  if FScrollView.ScrollBars = TViewScroll.Vertical then begin
-    FIsDown := Y > FDownPoint.Y;
-  end else if FScrollView.ScrollBars = TViewScroll.Horizontal then begin
-    FIsDown := X > FDownPoint.X;
-  end;
-  inherited MouseUp(X, Y);
 end;
 
 { TScrollBarHelper }

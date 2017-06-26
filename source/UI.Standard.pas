@@ -1562,6 +1562,11 @@ begin
     UpdateScrollStretchStrength(NewViewPos - MaxScrollViewPos)
   else
     UpdateScrollStretchStrength(0);
+
+  if (Round(NewViewPos) = 0) or (Round(NewViewPos) = MaxScrollViewPos) then begin
+    ProcessMessages;
+    FAniCalculations.UpdatePosImmediately(True);
+  end;
 end;
 
 procedure TScrollView.AniMouseDown(const Touch: Boolean; const X, Y: Single);
@@ -1659,6 +1664,8 @@ begin
   Result := TScrollCalculations.Create(Self);
   Result.Interval := PhysicsProcessingInterval;
   Result.OnChanged := AniCalcChange;
+  Result.OnStart := AniCalcChange;
+  Result.OnStop := AniCalcChange;
 end;
 
 function TScrollView.CreateScroll: TScrollBar;
@@ -2127,27 +2134,33 @@ end;
 procedure TScrollView.MouseWheel(Shift: TShiftState; WheelDelta: Integer;
   var Handled: Boolean);
 var
-  Offset: Single;
+  Offset, ANewPos: Single;
 begin
   inherited;
   if (not (Handled or FDisableMouseWheel)) and (not FInVisible) then begin
     if (FCanScrollV and (not (ssShift in Shift))) then begin
-      FAniCalculations.Shown := True;
-      if VScrollBar <> nil then begin
+      FAniCalculations.UpdatePosImmediately(True);
+      if VScrollBar <> nil then
         Offset := VScrollBar.SmallChange
-      end else
-        Offset := FContentBounds.Height / 5;
+      else
+        Offset := FContentBounds.Height / 14;
       Offset := Offset * -1 * (WheelDelta / 120);
-      FAniCalculations.MouseWheel(0, Offset);
+      ANewPos := Max(VScrollBarValue + Offset, 0);
+      ANewPos := Min(ANewPos, (FAniCalculations.MaxTarget.Point.Y));
+      if VScrollBar <> nil then
+        VScrollBar.ValueD := Floor(ANewPos);
       Handled := True;
     end else if FCanScrollH then begin
-      FAniCalculations.Shown := True;
+      FAniCalculations.UpdatePosImmediately(True);
       if HScrollBar <> nil then
         Offset := HScrollBar.SmallChange
       else
-        Offset := FContentBounds.Width / 5;
+        Offset := FContentBounds.Width / 14;
       Offset := Offset * -1 * (WheelDelta / 120);
-      FAniCalculations.MouseWheel(Offset, 0);
+      ANewPos := Max(HScrollBarValue + Offset, 0);
+      ANewPos := Min(ANewPos, (FAniCalculations.MaxTarget.Point.X));
+      if HScrollBar <> nil then
+        HScrollBar.ValueD := Floor(ANewPos);
       Handled := True;
     end;
   end;
