@@ -1627,7 +1627,7 @@ procedure TScrollView.CMGesture(var EventInfo: TGestureEventInfo);
 var
   LP: TPointF;
 begin
-  if (FCanScrollV or FCanScrollH) and ((EventInfo.GestureID = igiPan)) then
+  if (FCanScrollV or FCanScrollH or FDragScroll) and ((EventInfo.GestureID = igiPan)) then
   begin
     if FInVisible or (FAniCalculations = nil) then
       Exit;
@@ -1928,7 +1928,7 @@ end;
 
 function TScrollView.GetVScrollBarValue: Double;
 begin
-  if (FAniCalculations <> nil) and Assigned(FScrollV) and (FCanScrollV) then begin
+  if (FAniCalculations <> nil) and Assigned(FScrollV) and (FCanScrollV or FDragScroll) then begin
     Result := ViewportPosition.Y; // / (FScroll.Max - FScroll.ViewportSize) * FScroll.Max
   end else
     Result := 0;
@@ -2345,7 +2345,7 @@ procedure TScrollView.SetVScrollBarValue(const Value: Double);
 var
   V: TPointD;
 begin
-  if (FAniCalculations <> nil) and Assigned(FScrollV) and (FCanScrollV) then begin
+  if (FAniCalculations <> nil) and Assigned(FScrollV) and (FCanScrollV or FDragScroll) then begin
     V := ViewportPosition;
     V.Y := Value;
     ViewportPosition := V;
