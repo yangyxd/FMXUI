@@ -1563,10 +1563,8 @@ begin
   else
     UpdateScrollStretchStrength(0);
 
-  if (Round(NewViewPos) = 0) or (Round(NewViewPos) = MaxScrollViewPos) then begin
+  if (Round(NewViewPos) = 0) or (Round(NewViewPos) = MaxScrollViewPos) then
     FAniCalculations.UpdatePosImmediately(True);
-    ProcessMessages;
-  end;
 end;
 
 procedure TScrollView.AniMouseDown(const Touch: Boolean; const X, Y: Single);
