@@ -356,7 +356,7 @@ type
     FLastViewportPosition: TPointD;
     FMouseEvents: Boolean;
     FScrollStretchStrength: Single;
-    FScrollTrackPressed: Boolean;
+    //FScrollTrackPressed: Boolean;
     FScrollingStretchGlowColor: TAlphaColor;
     FScrollSmallChangeFraction: Single;
 
@@ -518,6 +518,7 @@ type
     property EnableExecuteAction default True;
     property Hint;
     property ShowHint;
+    property DragScroll;
     property Text: string read GetText write SetText stored TextStored;
     property TextHint: string read FTextHint write SetTextHint;
     property TextSettings: UI.Base.TTextSettings read FText write SetTextSettings;
@@ -1627,23 +1628,23 @@ end;
 
 procedure TScrollView.AniMouseDown(const Touch: Boolean; const X, Y: Single);
 
-  function GetScrollPressed: Boolean;
-  var
-    FTrack: TCustomTrack;
-    FThumb: TThumb;
-  begin
-    Result := False;
-    FTrack := GetRttiObject(FScrollV, 'FTrack') as TCustomTrack;
-    if not Assigned(FTrack) then Exit;
-    FThumb := GetRttiObject(FTrack, 'FThumb') as TThumb;
-    Result := Assigned(FThumb) and (FThumb.Pressed);
-  end;
+//  function GetScrollPressed: Boolean;
+//  var
+//    FTrack: TCustomTrack;
+//    FThumb: TThumb;
+//  begin
+//    Result := False;
+//    FTrack := GetRttiObject(FScrollV, 'FTrack') as TCustomTrack;
+//    if not Assigned(FTrack) then Exit;
+//    FThumb := GetRttiObject(FTrack, 'FThumb') as TThumb;
+//    Result := Assigned(FThumb) and (FThumb.Pressed);
+//  end;
 
 begin
-  if Assigned(FScrollV) then
-    FScrollTrackPressed := FScrollV.Pressed or GetScrollPressed
-  else
-    FScrollTrackPressed := False;
+//  if Assigned(FScrollV) then
+//    FScrollTrackPressed := FScrollV.Pressed or GetScrollPressed
+//  else
+//    FScrollTrackPressed := False;
   FAniCalculations.Averaging := Touch;
   FAniCalculations.MouseDown(X, Y);
 end;
@@ -1657,8 +1658,8 @@ end;
 
 procedure TScrollView.AniMouseUp(const Touch: Boolean; const X, Y: Single);
 begin
-  if FScrollTrackPressed then  // 更新一下按钮时的位置，不然会回弹
-    SetRttiValue<TPointD>(FAniCalculations, 'FDownPosition', ViewportPosition);
+//  if FScrollTrackPressed then  // 更新一下按钮时的位置，不然会回弹
+//    SetRttiValue<TPointD>(FAniCalculations, 'FDownPosition', ViewportPosition);
   FAniCalculations.MouseUp(X, Y);
   if (FAniCalculations.LowVelocity) or
      (not FAniCalculations.Animation) then

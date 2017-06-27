@@ -2725,6 +2725,7 @@ begin
   FListView.HeightSize := TViewSize.WrapContent;
   FListView.Background.ItemPressed.Color := StyleMgr.ListItemPressedColor;
   FListView.Divider := StyleMgr.ListItemDividerColor;
+  //FListView.DragScroll := True;
 end;
 
 procedure TDialogView.InitMessage(StyleMgr: TDialogStyleManager);

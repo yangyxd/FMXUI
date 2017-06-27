@@ -953,7 +953,14 @@ type
 
     FSelectionAnchor: Integer;  // 当前选中行 
 
-    function PointInItem(const P: TPointF; var R: TRectF): Integer;     
+    {$IFNDEF NEXTGEN}
+    [Weak] FPointTarget: IControl;
+    FMouseEnter: Boolean;
+    {$ENDIF}
+
+    function ObjectAtPoint(AScreenPoint: TPointF): IControl; override;
+
+    function PointInItem(const P: TPointF; var R: TRectF): Integer;
     
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
@@ -2681,6 +2688,7 @@ var
   H, LH, DH, PH: Double;
 begin
   inherited;
+
   FDownPos.X := X;
   FDownPos.Y := Y;
   FDownFixedRowIndex := -2;
@@ -2692,7 +2700,7 @@ begin
       K := -1
     else
       K := 0;
-      
+
     DH := GetDividerHeight;
     if (Y > FColumns.Height) then begin
 
@@ -2743,6 +2751,33 @@ begin
 
     end;
 
+  end else if (Y > FColumns.Height) then begin
+
+    {$IFNDEF NEXTGEN}
+    if DragScroll and Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
+      FMovePos := FDownPos;
+      AniMouseDown(True, X, Y);
+
+      TFrameAnimator.DelayExecute(Self,
+        procedure (Sender: TObject)
+        var
+          P: TPointF;
+        begin
+          try
+            if FMovePos <> FDownPos then Exit;
+            if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
+              P := LocalToScreen(FDownPos);
+              P := FPointTarget.ScreenToLocal(P);
+              FPointTarget.MouseDown(Button, Shift, P.X, P.Y);
+            end;
+          except
+          end;
+        end,
+      0.05);
+
+    end;
+    {$ENDIF}
+
   end;
 end;
 
@@ -2755,6 +2790,20 @@ begin
   FMovePos.X := X;
   FMovePos.Y := Y;
   if not (csDesigning in ComponentState) then begin
+
+    {$IFNDEF NEXTGEN}
+    if DragScroll and (FAdjuestItem = nil) and (FHotItem = nil) then begin
+      if ssLeft in Shift then begin
+        FMovePos.X := X;
+        FMovePos.Y := Y;
+        AniMouseMove(True, X, Y);
+      end else
+        if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
+          FPointTarget.MouseMove(Shift, X, Y);
+        end;
+    end;
+    {$ENDIF}
+
     if (ssLeft in Shift) then begin
 
       if Assigned(FAdjuestItem) then begin
@@ -2782,6 +2831,7 @@ begin
           FDragView.Position.X := FDragView.Position.X + (X - FDownPos.X);
           FDownPos := PointF(X, Y);
         end;
+
       end;
       Exit;
 
@@ -2805,7 +2855,7 @@ begin
     FHotItem := nil;
     FAdjuestItem := nil;
   end;
-  inherited;
+
 end;
 
 procedure TGridBase.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
@@ -2813,6 +2863,9 @@ procedure TGridBase.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
 var
   I: Integer;
   R: TRectF;
+  {$IFNDEF NEXTGEN}
+  P: TPointF;
+  {$ENDIF}
 begin
   if Assigned(FDragView) and FDragView.Visible and Assigned(FHotItem) then begin
     FDragView.Visible := False;
@@ -2830,7 +2883,22 @@ begin
     end;
   end;
 
+  {$IFDEF NEXTGEN}
   inherited MouseUp(Button, Shift, X, Y);
+  {$ELSE}
+  if DragScroll and Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
+    Sleep(10);
+    P := LocalToScreen(FDownPos);
+    P := FPointTarget.ScreenToLocal(P);
+    FPointTarget.MouseUp(Button, Shift, P.X, P.Y);
+
+    if (Button = TMouseButton.mbLeft) then begin
+      FMovePos := TPointF.Zero;
+      AniMouseUp(True, X, Y);
+    end;
+  end else
+    inherited MouseUp(Button, Shift, X, Y);
+  {$ENDIF}
 
   FDownFixedRowIndex := -2;
   FDownFixedColIndex := -2;
@@ -2889,6 +2957,24 @@ begin
 
   HandleSizeChanged;
   Invalidate;
+end;
+
+function TGridBase.ObjectAtPoint(AScreenPoint: TPointF): IControl;
+{$IFNDEF NEXTGEN}var P: TPointF; {$ENDIF}
+begin
+  Result := inherited;
+  {$IFNDEF NEXTGEN}
+  if DragScroll then begin // 如果允许拖动
+    P := ScreenToLocal(AScreenPoint);
+    if Assigned(Result) and (P.X > FContentViews.Left) and (P.X < Width - Max(VScrollBar.Width, 10)) and
+     (P.Y > FContentViews.Top) and (P.Y < Height - Max(HScrollBar.Height, 10)) then
+    begin
+      FPointTarget := Result;
+      Result := Self;
+    end else
+      FPointTarget := nil;
+  end;
+  {$ENDIF}
 end;
 
 procedure TGridBase.PaintBackground;
