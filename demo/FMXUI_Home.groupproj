@@ -6,7 +6,7 @@
         <Projects Include="FMXUI.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="L:\Projects\Delphi\FMXUI\FMXUI\source\YxdUI.dproj">
+        <Projects Include="..\source\YxdUI.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -27,13 +27,13 @@
         <MSBuild Projects="FMXUI.dproj" Targets="Make"/>
     </Target>
     <Target Name="YxdUI">
-        <MSBuild Projects="L:\Projects\Delphi\FMXUI\FMXUI\source\YxdUI.dproj"/>
+        <MSBuild Projects="..\source\YxdUI.dproj"/>
     </Target>
     <Target Name="YxdUI:Clean">
-        <MSBuild Projects="L:\Projects\Delphi\FMXUI\FMXUI\source\YxdUI.dproj" Targets="Clean"/>
+        <MSBuild Projects="..\source\YxdUI.dproj" Targets="Clean"/>
     </Target>
     <Target Name="YxdUI:Make">
-        <MSBuild Projects="L:\Projects\Delphi\FMXUI\FMXUI\source\YxdUI.dproj" Targets="Make"/>
+        <MSBuild Projects="..\source\YxdUI.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
         <CallTarget Targets="FMXUI;YxdUI"/>

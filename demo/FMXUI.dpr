@@ -24,7 +24,9 @@ uses
   uFrameDialog_CustomView in 'uFrameDialog_CustomView.pas' {FrameDialogCustomView: TFrame},
   uFramePopMenu in 'uFramePopMenu.pas' {FramePopMenu: TFrame},
   uFrameImageView in 'uFrameImageView.pas' {FrameImageView: TFrame},
-  uFrameListViewGroup in 'uFrameListViewGroup.pas' {FrameListViewGroup: TFrame};
+  uFrameListViewGroup in 'uFrameListViewGroup.pas' {FrameListViewGroup: TFrame},
+  uFrameImageViewer in 'uFrameImageViewer.pas' {FrameImageViewer: TFrame},
+  uFrameGridView in 'uFrameGridView.pas' {FrameGridView: TFrame};
 
 {$R *.res}
 

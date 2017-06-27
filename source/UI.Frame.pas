@@ -808,6 +808,7 @@ var
   Obj: TObject;
 begin
   DoFree();
+  FWaitDialog := nil;
   Obj := TagObject;
   if Assigned(Obj) then
     FreeAndNil(Obj);

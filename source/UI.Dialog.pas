@@ -2611,8 +2611,10 @@ begin
   end else if Assigned(FDialog) then begin
     if Assigned(FDialog.Builder) and Assigned(FDialog.Builder.View) then
       TMyControl(FDialog.Builder.View).KeyDown(Key, Char(Key), Shift)
-    else if (ControlsCount = 1) then
+    else if (ControlsCount = 1) and (not Assigned(FAnilndictor)) then
       TMyControl(Controls[0]).KeyDown(Key, Char(Key), Shift)
+    else
+      Key := 0;
   end;
 end;
 

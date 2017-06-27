@@ -4,7 +4,7 @@
         <ProjectFileVersion>12</ProjectFileVersion>
     </ProjectExtensions>
     <PropertyGroup>
-        <DeviceId Condition="'$(Platform)'=='Android'">Android5.1.1</DeviceId>
+        <DeviceId Condition="'$(Platform)'=='Android'">22b8d4aa</DeviceId>
         <DeviceId Condition="'$(Platform)'=='iOSDevice32'"/>
         <DeviceId Condition="'$(Platform)'=='iOSDevice64'"/>
         <DeviceId Condition="'$(Platform)'=='iOSSimulator'">iPhone5</DeviceId>
@@ -137,6 +137,15 @@
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
         </DeployFile>
+        <DeployFile Include="..\res\android\styles_translucent.xml" Condition="'$(Config)'=='Release'">
+            <RemoteDir>FMXUI\res\values-v19\</RemoteDir>
+            <RemoteName>styles_translucent.xml</RemoteName>
+            <DeployClass>File</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
         <DeployFile Include="$(BDS)\bin\Artwork\Android\FM_SplashImage_640x480.png" Condition="'$(Config)'=='Debug'">
             <RemoteDir>FMXUI\res\drawable-large\</RemoteDir>
             <RemoteName>splash_image.png</RemoteName>
@@ -187,15 +196,6 @@
             <RemoteName>ic_launcher.png</RemoteName>
             <DeployClass>Android_LauncherIcon144</DeployClass>
             <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-        </DeployFile>
-        <DeployFile Include="styles_translucent.xml" Condition="'$(Config)'=='Release'">
-            <RemoteDir>FMXUI\res\values-v19\</RemoteDir>
-            <RemoteName>styles_translucent.xml</RemoteName>
-            <DeployClass>File</DeployClass>
-            <Operation>0</Operation>
             <LocalCommand/>
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
@@ -254,20 +254,20 @@
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
         </DeployFile>
-        <DeployFile Include="styles_translucent.xml" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>FMXUI\res\values-v19\</RemoteDir>
-            <RemoteName>styles_translucent.xml</RemoteName>
-            <DeployClass>File</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-        </DeployFile>
         <DeployFile Include="$(BDS)\lib\android\debug\mips\libnative-activity.so" Condition="'$(Config)'=='Debug'">
             <RemoteDir>FMXUI\library\lib\mips\</RemoteDir>
             <RemoteName>libDialogDemo.so</RemoteName>
             <DeployClass>AndroidLibnativeMipsFile</DeployClass>
             <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
+        <DeployFile Include="..\res\android\styles_translucent.xml" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>FMXUI\res\values-v19\</RemoteDir>
+            <RemoteName>styles_translucent.xml</RemoteName>
+            <DeployClass>File</DeployClass>
+            <Operation>0</Operation>
             <LocalCommand/>
             <RemoteCommand/>
             <Overwrite>True</Overwrite>

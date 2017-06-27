@@ -17,7 +17,7 @@ interface
 
 {$IF CompilerVersion >= 29.0}
   {$DEFINE XE8_OR_NEWER}
-{$IFEND}
+{$ENDIF}
 
 uses
   UI.Debug, UI.Utils,

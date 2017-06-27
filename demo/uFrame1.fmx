@@ -1,6 +1,6 @@
 object Frame1: TFrame1
   Size.Width = 320.000000000000000000
-  Size.Height = 665.000000000000000000
+  Size.Height = 804.000000000000000000
   Size.PlatformDefault = False
   object LinearLayout1: TLinearLayout
     Align = Top
@@ -41,7 +41,7 @@ object Frame1: TFrame1
         89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
         03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
         0293494441545847CD98C972DB301044E5FF701C451F109DE38F8EBF22CE62DF
-        B25439E52407BBEC4372D4413BD30F6CAA241894497191BB4A051098E9193401
+        B25439E52407BBEC4372D3453BD30F6CAA241894497191BB4A051098E9193401
         08C420CBB293F57AFD76B55ABD577D343802884B7CE531269F0195C562F16B32
         99AC97CBE557350E6DDB0B88475CE29307F90C94E1050DEA2C70AD8E37F6E914
         C4215E1E36CBC8837C82745628C0197F97C36BFB7602F889B32D88F2F8A6229F
@@ -60,7 +60,7 @@ object Frame1: TFrame1
         7E9B5403440985DA3EA357E7B3424FBE66546D3417F08727528C38FBBF66ACD0
         9758A1DA5297009E8462E5DF7D56E8585FC8DC5DEC0E5CED2FEB2EC1064F6E5D
         546D34879E03FCC48984208FD1CBBC9F52073779611F71A69D2A148378C4F51B
-        621F1CD3C89DE7980C553FE69DE70579645976F21FAA9EB308CE2C5010000000
+        621F1CD3C89DE7980C553FE69DE70579645976F21F4A9AB28761068C0B000000
         0049454E44AE426082}
       Drawable.ItemDefault.Bitmap.WrapMode = TileStretch
       Drawable.ItemDefault.Kind = Bitmap
@@ -120,21 +120,21 @@ object Frame1: TFrame1
       Drawable.ItemDefault.Bitmap.Bitmap.PNG = {
         89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
         03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
-        01C1494441545847ED98BF4A03411087730968622141501134F82C0AFA16D6C6
-        C2467D138DDADADB0BEA4B68E13F04215A59582468F072D16FCD2FC2C926B077
-        C99AE23E1876767E033B6CF696C9E6D2D0E97416B0DD300C6FBEC08C666EE24A
-        F10B0BCF4551746E8AF98B89A3CF2BD51F2CBAA31AACA0EF29D51FFC548F5ADF
-        0AFA83529DC96B74A6D56A55E45A415F94EB4CE2A24AA5D2AD5C2BE8FE772A9F
-        CFD79ACD66A8690C13473FD2D41F1CE469BEB2531DA118266E74A53A13684C04
-        EB4F615BD80A361304C11B7689D5B077A53993AAA81EECCA24C304858458AB1B
-        CDC8181F521D740EF82CC3065FDE1A7E85BBE999837E46EC04FFF527C9271452
-        36DD40A3D1E8E0FF62E6EA1ECA4AF5073BB34D01ED6E29714CDCE84AF5075DC0
-        BD6AB0827EA75467D27409CB72ADA02FC975267151C562F149AE15F4BA5C6712
-        17552814F6E906224D639838FA81A6FEE0D88CECEB1BD63DB5AE7BAAFEAFF754
-        46461FC6B2F31C468F5EC556B15E8F7E811D62897BF4C4B03B23FB37931816DD
-        E4A2FC541D314C1CBDAA547FB4DBED6BD56005FD4AA9FEE8B74B3DD03F94EA4C
-        9A2E61601780FE22D799345DC2C0B702F463B9FEE0208FDF4B9E818547F0E699
-        CB7D033321576A3044C7520000000049454E44AE426082}
+        01C0494441545847ED98CF4AC34010879B1494E620455011B4F82C0AFA169EAD
+        072FEA9B68D5AB77EF82FA127AF01F82503D79105A3062DAE8B7F65721921636
+        B16B0FF960D8D9F90DECB0DD2CD32DE5218EE3796C278AA2EB4F30A3999BB852
+        DCC2C2B3DD6EF7CC14F31B13479F53AA3B58745B35A482BEAB5477F0533D68FD
+        54D0EF956A8DAFD19A300C6B7253415F906B4DE6A28220B8919B0ABAFB9DF27D
+        BFD16EB7234D139838FAA1A6EEE0204FF1959DE808253071A32BD51A4F632658
+        3FC036B1656CDAF3BC57EC026B606F4AB32657517DD8954986090A89B0F75EB4
+        A0607CC875D039E0330CEB7C79ABF835EEA6270EFA29B163FC97EF24975048D5
+        7403AD562BC6FFC1CCD53D5495EA0E76668B023ABD529298B8D195EA0EBA803B
+        D5900AFAAD52ADC9D3252CC94D057D51AE35998BAA542A8F7253416FCAB52673
+        51E572798F6EA0AB69021347DFD7D41D1C9B917D7D7F754FADE99E6AFEEB3D55
+        503080B1EC3CFFA247AF632B58BF473FC70EB0CC3D7A66D89D91FD9BC90C8B6E
+        70517EA88E04268E5E57AA3B3A9DCE956A4805FD52A9EE18B44B7DD043A55A93
+        A74B18DA05A03FCBB5264F9730F4AD00FD48AE3B38C8E3F7926760E111BC7996
+        4A5FA4D557462FFE9D0D0000000049454E44AE426082}
       Drawable.ItemDefault.Bitmap.WrapMode = TileStretch
       Drawable.ItemDefault.Kind = Bitmap
       Drawable.ItemPressed.ImageIndex = 1
@@ -143,11 +143,11 @@ object Frame1: TFrame1
   object VertScrollBox1: TVertScrollBox
     Align = Client
     Size.Width = 320.000000000000000000
-    Size.Height = 615.000000000000000000
+    Size.Height = 754.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
     Viewport.Width = 320.000000000000000000
-    Viewport.Height = 615.000000000000000000
+    Viewport.Height = 754.000000000000000000
     object LinearLayout2: TLinearLayout
       Align = Top
       HeightSize = WrapContent
@@ -157,7 +157,7 @@ object Frame1: TFrame1
       Padding.Right = 8.000000000000000000
       Padding.Bottom = 8.000000000000000000
       Size.Width = 320.000000000000000000
-      Size.Height = 608.000000000000000000
+      Size.Height = 624.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
       Orientation = Vertical
@@ -177,11 +177,11 @@ object Frame1: TFrame1
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Size.Width = 304.000000000000000000
-        Size.Height = 42.000000000000000000
+        Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 8.000000000000000000
-        TabOrder = 11
+        TabOrder = 13
         OnClick = ButtonView1Click
         Text = 'GridsLayout Demo'
         TextSettings.Color.Default = claWhite
@@ -210,11 +210,11 @@ object Frame1: TFrame1
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Size.Width = 304.000000000000000000
-        Size.Height = 42.000000000000000000
+        Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 58.000000000000000000
-        TabOrder = 7
+        Position.Y = 52.000000000000000000
+        TabOrder = 9
         OnClick = ButtonView2Click
         Text = #20061#23467#26684#32972#26223#22270
         TextSettings.Color.Default = claWhite
@@ -243,11 +243,11 @@ object Frame1: TFrame1
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Size.Width = 304.000000000000000000
-        Size.Height = 42.000000000000000000
+        Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 108.000000000000000000
-        TabOrder = 10
+        Position.Y = 96.000000000000000000
+        TabOrder = 12
         OnClick = ButtonView3Click
         Text = 'Dialog Demo'
         TextSettings.Color.Default = claWhite
@@ -276,11 +276,11 @@ object Frame1: TFrame1
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Size.Width = 304.000000000000000000
-        Size.Height = 42.000000000000000000
+        Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 158.000000000000000000
-        TabOrder = 9
+        Position.Y = 140.000000000000000000
+        TabOrder = 11
         OnClick = ButtonView4Click
         Text = #33258#23450#20041' ListView Demo'
         TextSettings.Color.Default = claWhite
@@ -309,11 +309,11 @@ object Frame1: TFrame1
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Size.Width = 304.000000000000000000
-        Size.Height = 42.000000000000000000
+        Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 208.000000000000000000
-        TabOrder = 8
+        Position.Y = 184.000000000000000000
+        TabOrder = 10
         OnClick = ButtonView12Click
         Text = #20998#32452' ListView Demo'
         TextSettings.Color.Default = claWhite
@@ -342,11 +342,11 @@ object Frame1: TFrame1
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Size.Width = 304.000000000000000000
-        Size.Height = 42.000000000000000000
+        Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 258.000000000000000000
-        TabOrder = 6
+        Position.Y = 228.000000000000000000
+        TabOrder = 8
         OnClick = ButtonView5Click
         Text = #24377#20986#24335#23545#35805#26694
         TextSettings.Color.Default = claWhite
@@ -375,11 +375,11 @@ object Frame1: TFrame1
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Size.Width = 304.000000000000000000
-        Size.Height = 42.000000000000000000
+        Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 308.000000000000000000
-        TabOrder = 5
+        Position.Y = 272.000000000000000000
+        TabOrder = 7
         OnClick = ButtonView6Click
         Text = 'ProgressView Demo'
         TextSettings.Color.Default = claWhite
@@ -408,11 +408,11 @@ object Frame1: TFrame1
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Size.Width = 304.000000000000000000
-        Size.Height = 42.000000000000000000
+        Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 358.000000000000000000
-        TabOrder = 4
+        Position.Y = 316.000000000000000000
+        TabOrder = 6
         OnClick = ButtonView7Click
         Text = #20998#26639#39029#38754' Demo'
         TextSettings.Color.Default = claWhite
@@ -441,11 +441,11 @@ object Frame1: TFrame1
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Size.Width = 304.000000000000000000
-        Size.Height = 42.000000000000000000
+        Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 408.000000000000000000
-        TabOrder = 3
+        Position.Y = 360.000000000000000000
+        TabOrder = 5
         OnClick = ButtonView10Click
         Text = #36793#26639#33756#21333' Demo'
         TextSettings.Color.Default = claWhite
@@ -474,11 +474,11 @@ object Frame1: TFrame1
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Size.Width = 304.000000000000000000
-        Size.Height = 42.000000000000000000
+        Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 458.000000000000000000
-        TabOrder = 2
+        Position.Y = 404.000000000000000000
+        TabOrder = 4
         OnClick = ButtonView8Click
         Text = 'RingView Demo'
         TextSettings.Color.Default = claWhite
@@ -507,11 +507,11 @@ object Frame1: TFrame1
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Size.Width = 304.000000000000000000
-        Size.Height = 42.000000000000000000
+        Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 508.000000000000000000
-        TabOrder = 1
+        Position.Y = 448.000000000000000000
+        TabOrder = 3
         OnClick = ButtonView9Click
         Text = 'MultiPathView Demo'
         TextSettings.Color.Default = claWhite
@@ -540,13 +540,79 @@ object Frame1: TFrame1
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Size.Width = 304.000000000000000000
-        Size.Height = 42.000000000000000000
+        Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 558.000000000000000000
-        TabOrder = 0
+        Position.Y = 492.000000000000000000
+        TabOrder = 2
         OnClick = ButtonView11Click
         Text = 'ImageView Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+      end
+      object ButtonView13: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 304.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 536.000000000000000000
+        TabOrder = 1
+        OnClick = ButtonView13Click
+        Text = 'ImageViewer Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+      end
+      object ButtonView14: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 304.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 580.000000000000000000
+        TabOrder = 0
+        OnClick = ButtonView14Click
+        Text = 'DBGridView Demo'
         TextSettings.Color.Default = claWhite
         TextSettings.Color.Pressed = claWhitesmoke
         TextSettings.Color.Focused = claNull

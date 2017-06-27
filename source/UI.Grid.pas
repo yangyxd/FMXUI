@@ -3516,7 +3516,8 @@ end;
 procedure TGridViewContent.DoCellBrushChange(Sender: TObject);
 begin
   {$IFNDEF MSWINDOWS}
-  FScrollRB.Color := TAlphaColorRec.Alpha or FCellBrush.FDefault.Color;
+  if Assigned(FScrollRB) and Assigned(FCellBrush) and Assigned(FCellBrush.FDefault) then
+    FScrollRB.Color := TAlphaColorRec.Alpha or FCellBrush.FDefault.Color;
   {$ENDIF}
   Invalidate;
 end;

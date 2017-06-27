@@ -76,7 +76,7 @@ object Frame3: TFrame3
       Size.Height = 41.000000000000000000
       Size.PlatformDefault = False
       Position.X = 16.000000000000000000
-      Position.Y = 32.000000000000000000
+      Position.Y = 24.000000000000000000
       TabOrder = 2
       OnClick = ButtonView1Click
       Hint = #27979#35797'hint'
@@ -86,15 +86,17 @@ object Frame3: TFrame3
     end
     object ButtonView2: TButtonView
       Layout.Below = ButtonView1
+      Layout.AlignRight = ButtonView1
       Padding.Left = 4.000000000000000000
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
+      Margins.Top = 12.000000000000000000
       Size.Width = 225.000000000000000000
       Size.Height = 41.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 24.000000000000000000
-      Position.Y = 73.000000000000000000
+      Position.X = 15.000000000000000000
+      Position.Y = 77.000000000000000000
       TabOrder = 3
       OnClick = ButtonView2Click
       Text = 'ButtonView2'
