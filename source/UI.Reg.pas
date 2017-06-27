@@ -143,6 +143,7 @@ begin
   RegisterComponents(PageName, [TView, TViewGroup, TLinearLayout, TRelativeLayout, TGridsLayout]);
 
   RegisterComponents(PageName, [TImageView]);
+  RegisterComponents(PageName, [TImageViewerEx]);
   RegisterComponents(PageName, [TTextView]);
   RegisterComponents(PageName, [TButtonView]);
   RegisterComponents(PageName, [TBadgeView]);
@@ -224,6 +225,9 @@ begin
       { TImageView }
       'Image',
       'ScaleType',
+      'Stretch',
+      'Zoom',
+      'OnZoom',
       { TListViewEx}
       'AllowItemClickEx',
       'DividerHeight',

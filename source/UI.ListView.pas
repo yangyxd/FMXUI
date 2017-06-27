@@ -3403,6 +3403,7 @@ procedure TStringsListSingleAdapter.DoInitData;
 begin
   inherited DoInitData;
   FItemIndex := -1;
+  FFontSize := TListTextItem.C_FontSize;
 end;
 
 procedure TStringsListSingleAdapter.DoItemIndexChange(Sender: TObject);
@@ -3803,6 +3804,7 @@ end;
 procedure TStringsListIconAdapter.DoInitData;
 begin
   inherited;
+  FFontSize := TListTextItem.C_FontSize;
   FIconSize.Width := 16;
   FIconSize.Height := 16;
   FPadding := 8;

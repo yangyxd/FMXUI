@@ -230,6 +230,64 @@ type
   end;
 
 type
+  /// <summary>
+  /// Í¼Ïñä¯ÀÀÆ÷  {ÓÉ TksImageViewer ¸ÄÐ´}
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TImageViewerEx = class(TView)
+  private
+    FAniCalc: TAniCalculations;
+    FBitmap: TBitmap;
+    FZoom: integer;
+
+    FStartZoom: integer;
+    FStartDistance: Integer;
+    FMaxXPos: single;
+    FMaxYPos: single;
+
+    FStretch: Boolean;
+
+    FOnZoom: TNotifyEvent;
+    procedure SetBitmap(const Value: TBitmap);
+    procedure SetStretch(const Value: Boolean);
+  protected
+    procedure AniCalcChange(Sender: TObject);
+    procedure AniCalcStart(Sender: TObject);
+    procedure AniCalcStop(Sender: TObject);
+    procedure UpdateScrollLimits;
+    procedure SetZoom(const Value: integer);
+  protected
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState;
+      x, y: single); override;
+    procedure MouseMove(Shift: TShiftState; x, y: single); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState;
+      x, y: single); override;
+    procedure DoMouseLeave; override;
+    procedure Resize; override;
+    procedure PaintBackground; override;
+    procedure CMGesture(var EventInfo: TGestureEventInfo); override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    procedure MultiTouch(const Touches: TTouches; const Action: TTouchAction);
+    procedure UpdateLabel(ADistance: integer);
+  published
+    property Image: TBitmap read FBitmap write SetBitmap;
+    property Zoom: integer read FZoom write SetZoom default 100;
+    /// <summary>
+    /// ÊÇ·ñÀ­Éì
+    /// </summary>
+    property Stretch: Boolean read FStretch write SetStretch default False;
+
+    property CanFocus default True;
+    property HitTest default True;
+    property Clickable default True;
+
+    property OnGesture;
+    property OnZoom: TNotifyEvent read FOnZoom write FOnZoom;
+  end;
+
+type
   TScrollView = class;
   TOnCalcContentBoundsEvent = procedure (Sender: TObject; var ContentBounds: TRectF) of object;
   PRectD = ^TRectD;
@@ -4268,7 +4326,241 @@ begin
   Clickable := True;
 end;
 
+{ TImageViewerEx }
 
+procedure TImageViewerEx.AniCalcChange(Sender: TObject);
+begin
+  InvalidateRect(ClipRect);
+end;
+
+procedure TImageViewerEx.AniCalcStart(Sender: TObject);
+begin
+  if Scene <> nil then
+    Scene.ChangeScrollingState(Self, True);
+end;
+
+procedure TImageViewerEx.AniCalcStop(Sender: TObject);
+begin
+  if Scene <> nil then
+    Scene.ChangeScrollingState(nil, False);
+end;
+
+procedure TImageViewerEx.CMGesture(var EventInfo: TGestureEventInfo);
+{$IFDEF IOS}
+var
+  APercent: integer;
+  ANewZoom: integer;
+{$ENDIF}
+begin
+  inherited;
+  {$IFDEF IOS}
+  if FStartDistance = 0 then
+    APercent := 100
+  else
+    APercent := Round((EventInfo.Distance / FStartDistance) * 100);
+
+  ANewZoom := Round(FStartZoom * (APercent / 100));
+  if Max(FZoom, ANewZoom) - Min(FZoom, ANewZoom) > 10 then
+  begin
+    FStartZoom := FZoom;
+    FStartDistance := 0;
+    Exit;
+  end;
+  Zoom := ANewZoom;
+  FStartZoom := Zoom;
+  FStartDistance := EventInfo.Distance;
+  {$ENDIF}
+end;
+
+constructor TImageViewerEx.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FBitmap := TBitmap.Create;
+
+  FAniCalc := TAniCalculations.Create(nil);
+  FAniCalc.ViewportPositionF := PointF(0, 0);
+  FAniCalc.Animation := True;
+  FAniCalc.Averaging := True;
+  FAniCalc.Interval := 8;
+  FAniCalc.BoundsAnimation := True;
+  FAniCalc.TouchTracking := [ttHorizontal, ttVertical];
+  FAniCalc.OnChanged := AniCalcChange;
+  FAniCalc.OnStart := AniCalcStart;
+  FAniCalc.OnStop := AniCalcStop;
+  FZoom := 100;
+  FMaxXPos := 0;
+  FMaxYPos := 0;
+  Touch.InteractiveGestures := [TInteractiveGesture.Zoom, TInteractiveGesture.Pan];
+
+  Clickable := True;
+  CanFocus := True;
+end;
+
+destructor TImageViewerEx.Destroy;
+begin
+  FreeAndNil(FBitmap);
+  FreeAndNil(FAniCalc);
+  inherited Destroy;
+end;
+
+procedure TImageViewerEx.DoMouseLeave;
+begin
+  inherited;
+  if (FAniCalc <> nil) then
+    FAniCalc.MouseLeave;
+
+  FStartDistance := 0;
+  FStartZoom := 0;
+end;
+
+procedure TImageViewerEx.MouseDown(Button: TMouseButton; Shift: TShiftState; x,
+  y: single);
+begin
+  inherited;
+  FAniCalc.MouseDown(x, y);
+end;
+
+procedure TImageViewerEx.MouseMove(Shift: TShiftState; x, y: single);
+begin
+  inherited;
+  FAniCalc.MouseMove(x, y);
+end;
+
+procedure TImageViewerEx.MouseUp(Button: TMouseButton; Shift: TShiftState; x,
+  y: single);
+begin
+  inherited;
+  FAniCalc.MouseUp(x, y);
+  FStartZoom := 0;
+  FStartDistance := 0;
+  UpdateScrollLimits;
+end;
+
+procedure TImageViewerEx.MultiTouch(const Touches: TTouches;
+  const Action: TTouchAction);
+begin
+  // still working this out.
+end;
+
+procedure TImageViewerEx.PaintBackground;
+var
+  ASourceRect: TRectF;
+  ADestRect: TRectF;
+begin
+  inherited PaintBackground;
+
+  if Assigned(FBitmap) and (AbsoluteInVisible = False) then begin
+    ASourceRect := RectF(0, 0, FBitmap.Width, FBitmap.Height);
+
+    if FStretch then begin
+      ADestRect := RectF(Padding.Left, Padding.Top, Width - Padding.Right, Height - Padding.Bottom);
+
+      OffsetRect(ADestRect, 0 - FAniCalc.ViewportPosition.X, 0 - FAniCalc.ViewportPosition.Y);
+
+    end else begin
+      ADestRect := ASourceRect;
+      ADestRect.Width := (FBitmap.Width / 100) * FZoom;
+      ADestRect.Height := (FBitmap.Height / 100) * FZoom;
+
+      OffsetRect(ADestRect, 0 - FAniCalc.ViewportPosition.X, 0 - FAniCalc.ViewportPosition.Y);
+
+      if ADestRect.Width < Width then
+        OffsetRect(ADestRect, (Width - ADestRect.Width) * 0.5, 0);
+
+      if ADestRect.Height < Height then
+        OffsetRect(ADestRect, 0, (Height - ADestRect.Height)  * 0.5);
+    end;
+
+    Canvas.DrawBitmap(FBitmap, ASourceRect, ADestRect, 1, True);
+  end;
+end;
+
+procedure TImageViewerEx.Resize;
+begin
+  inherited;
+  UpdateScrollLimits;
+end;
+
+procedure TImageViewerEx.SetBitmap(const Value: TBitmap);
+begin
+  FBitmap.Assign(Value);
+  UpdateScrollLimits;
+end;
+
+procedure TImageViewerEx.SetStretch(const Value: Boolean);
+begin
+  if FStretch <> Value then begin
+    FStretch := Value;
+    UpdateScrollLimits;
+  end;
+end;
+
+procedure TImageViewerEx.SetZoom(const Value: integer);
+var
+  xpercent, ypercent: single;
+begin
+  if (Value > 10) and (Value < 200) then begin
+    if FZoom <> Value then begin
+      FZoom := Value;
+
+      FAniCalc.UpdatePosImmediately;
+      FAniCalc.MouseLeave;
+
+      if FMaxXPos = 0 then
+        XPercent := 0
+      else
+        xpercent := (FAniCalc.ViewportPositionF.X / FMaxXPos) * 100;
+
+      if FMaxYPos = 0 then
+        ypercent := 0
+      else
+        ypercent := (FAniCalc.ViewportPositionF.Y / FMaxYPos) * 100;
+
+      UpdateScrollLimits;
+
+      FAniCalc.ViewportPositionF := PointF((FMaxXPos / 100) * xpercent, (FMaxYPos / 100) * ypercent);
+
+      InvalidateRect(ClipRect);
+      if Assigned(FOnZoom) then
+        FOnZoom(Self);
+    end;
+  end;
+end;
+
+procedure TImageViewerEx.UpdateLabel(ADistance: integer);
+begin
+  //
+end;
+
+procedure TImageViewerEx.UpdateScrollLimits;
+var
+  Targets: array of TAniCalculations.TTarget;
+  w, h: single;
+begin
+  if FAniCalc <> nil then begin
+
+    if FStretch then begin
+      W := 0;
+      H := 0;
+    end else begin
+      w := (FBitmap.Width / 100) * FZoom;
+      h := (FBitmap.Height / 100) * FZoom;
+      w := w - Width;
+      h := h - Height;
+    end;
+
+    SetLength(Targets, 2);
+    Targets[0].TargetType := TAniCalculations.TTargetType.Min;
+    Targets[0].Point := TPointD.Create(0, 0);
+
+    Targets[1].TargetType := TAniCalculations.TTargetType.Max;
+    Targets[1].Point := TPointD.Create(Max(0,w), Max(0, h));
+    FAniCalc.SetTargets(Targets);
+
+    FMaxXPos := Targets[1].Point.X;
+    FMaxYPos := Targets[1].Point.Y;
+  end;
+end;
 
 initialization
 
