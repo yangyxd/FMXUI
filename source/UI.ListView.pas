@@ -1314,9 +1314,12 @@ begin
       TFrameAnimator.DelayExecute(Self,
         procedure (Sender: TObject)
         begin
-          if FMovePos <> FDownPos then Exit;
-          if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then
-            FPointTarget.MouseDown(Button, Shift, X, Y);
+          try
+            if FMovePos <> FDownPos then Exit;
+            if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then
+              FPointTarget.MouseDown(Button, Shift, X, Y);
+          except
+          end;
         end,
       0.05);
     end;
@@ -1801,19 +1804,22 @@ begin
       var
         H: Single;
       begin
-        if (FState = TListViewState.PullUpFinish) then begin
-          H := 0;
-          if Assigned(FHeader) then begin
-            H := (FHeader as TControl).Height;
-            FHeader.DoUpdateState(TListViewState.None, 0);
-          end;
-          FState := TListViewState.None;
-          if not ListView.FEnablePullLoad then
-            ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - H
-          else
+        try
+          if (FState = TListViewState.PullUpFinish) then begin
             H := 0;
-          ListView.DoUpdateScrollingLimits(True, H);
-          DoRealign;
+            if Assigned(FHeader) then begin
+              H := (FHeader as TControl).Height;
+              FHeader.DoUpdateState(TListViewState.None, 0);
+            end;
+            FState := TListViewState.None;
+            if not ListView.FEnablePullLoad then
+              ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - H
+            else
+              H := 0;
+            ListView.DoUpdateScrollingLimits(True, H);
+            DoRealign;
+          end;
+        except
         end;
       end
     , 0.6);
@@ -1838,29 +1844,32 @@ begin
       var
         H: Single;
       begin
-        if (FState = TListViewState.PullDownFinish) then begin
-          H := 0;
-          if Assigned(FHeader) then begin
-            H := (FHeader as TControl).Height;
-            FHeader.DoUpdateState(TListViewState.None, 0);
-          end;
-          if H > 0 then begin
-            ListView.AniVScrollTo(-H,
-              procedure (Sender: TObject)
-              begin
-                ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - H;
-                ListView.DoUpdateScrollingLimits(True, 0);
-                ListView.VScrollBarValue := ListView.VScrollBarValue - H;
+        try
+          if (FState = TListViewState.PullDownFinish) then begin
+            H := 0;
+            if Assigned(FHeader) then begin
+              H := (FHeader as TControl).Height;
+              FHeader.DoUpdateState(TListViewState.None, 0);
+            end;
+            if H > 0 then begin
+              ListView.AniVScrollTo(-H,
+                procedure (Sender: TObject)
+                begin
+                  ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - H;
+                  ListView.DoUpdateScrollingLimits(True, 0);
+                  ListView.VScrollBarValue := ListView.VScrollBarValue - H;
 
-                FState := TListViewState.None;
-                FLastScrollValue := FLastScrollValue - H;
-                FViewTop := FViewTop - H;
-                FViewItemBottom := FViewItemBottom - H;
-                FViewBottom := FViewBottom - H;
-                DoRealign;
-              end
-            );
+                  FState := TListViewState.None;
+                  FLastScrollValue := FLastScrollValue - H;
+                  FViewTop := FViewTop - H;
+                  FViewItemBottom := FViewItemBottom - H;
+                  FViewBottom := FViewBottom - H;
+                  DoRealign;
+                end
+              );
+            end;
           end;
+        except
         end;
       end
     , 0.6);

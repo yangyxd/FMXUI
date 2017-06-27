@@ -15,6 +15,10 @@ interface
 
 {$SCOPEDENUMS ON}
 
+{$IF CompilerVersion >= 29.0}
+  {$DEFINE XE8_OR_NEWER}
+{$IFEND}
+
 uses
   UI.Debug, UI.Utils,
   FMX.Forms,
@@ -33,6 +37,7 @@ uses
   IOSApi.Foundation,
   {$ENDIF}
   FMX.BehaviorManager, FMX.StdActns, FMX.Menus,
+  FMX.Styles, FMX.Styles.Objects,
   FMX.Utils, FMX.ImgList, FMX.MultiResBitmap, FMX.ActnList, System.Rtti, FMX.Consts,
   FMX.TextLayout, FMX.Objects, System.ImageList, System.RTLConsts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, System.Math, System.UIConsts,
@@ -78,7 +83,17 @@ type
   /// </summary>
   TViewScroll = (None, Horizontal, Vertical, Both);
 
-  TViewBrushKind = (None, Solid, Gradient, Bitmap, Resource, Patch9Bitmap);
+  TViewBrushKind = (None, Solid, Gradient, Bitmap, Resource, Patch9Bitmap, AccessoryBitmap);
+
+  /// <summary>
+  /// 附图类型
+  /// </summary>
+  TViewAccessoryType = (None, More, Checkmark, Detail, Ellipses, Flag, Back, Refresh,
+    Action, Play, Rewind, Forwards, Pause, Stop, Add, Prior,
+    Next, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Reply,
+    Search, Bookmarks, Trash, Organize, Camera, Compose, Info,
+    Pagecurl, Details, RadioButton, RadioButtonChecked, CheckBox,
+    CheckBoxChecked, UserDefined1, UserDefined2, UserDefined3);
 
   TPatchBounds = class(TBounds);
 
@@ -93,6 +108,31 @@ type
     function SetFocusObject(V: TControl): Boolean;
     // 进入下一个焦点控件
     procedure FocusToNext();
+  end;
+
+  { 感谢  KernowSoftwareFMX }
+  TViewAccessoryImageList = class(TObjectList<TBitmap>)
+  private
+    FImageScale: Single;
+    FImageMap: TBitmap;
+    FActiveStyle: TFmxObject;
+    procedure AddEllipsesAccessory;
+    procedure AddFlagAccessory;
+    procedure CalculateImageScale;
+    function GetAccessoryFromResource(const AStyleName: string; const AState: string = ''): TBitmap;
+    procedure Initialize;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    function GetAccessoryImage(AAccessory: TViewAccessoryType): TBitmap;
+
+    procedure Draw(ACanvas: TCanvas; const ARect: TRectF; AAccessory: TViewAccessoryType;
+      const AOpacity: Single = 1; const AStretch: Boolean = True);
+
+    property Images[AAccessory: TViewAccessoryType]: TBitmap read GetAccessoryImage; default;
+    property ImageMap: TBitmap read FImageMap;
+    property ImageScale: single read FImageScale;
   end;
 
   /// <summary>
@@ -114,11 +154,29 @@ type
     property BlackLine: Boolean read FRemoveBlackLine write SetRemoveBlackLine default False;
   end;
 
-  TViewBrush = class(TBrush)
+  TViewBrushBase = class(TBrush)
   private
+    FAccessoryType: TViewAccessoryType;
+    FAccessoryBmp: TBitmap;
+    FAccessoryColor: TAlphaColor;
+    procedure SetAccessoryType(const Value: TViewAccessoryType);
     function GetKind: TViewBrushKind;
     procedure SetKind(const Value: TViewBrushKind);
     function IsKindStored: Boolean;
+    procedure SetAccessoryColor(const Value: TAlphaColor);
+  protected
+    procedure DoAccessoryChange;
+  public
+    destructor Destroy; override;
+    procedure Assign(Source: TPersistent); override;
+  published
+    property AccessoryType: TViewAccessoryType read FAccessoryType write SetAccessoryType default TViewAccessoryType.None;
+    property AccessoryColor: TAlphaColor read FAccessoryColor write SetAccessoryColor default 0;
+    property Kind: TViewBrushKind read GetKind write SetKind stored IsKindStored;
+  end;
+
+  TViewBrush = class(TViewBrushBase)
+  private
     function IsPatch9BitmapStored: Boolean;
     function GetBitmap: TPatch9Bitmap;
     procedure SetBitmap(const Value: TPatch9Bitmap);
@@ -126,13 +184,12 @@ type
   public
     constructor Create(const ADefaultKind: TViewBrushKind; const ADefaultColor: TAlphaColor);
   published
-    property Kind: TViewBrushKind read GetKind write SetKind stored IsKindStored;
     property Bitmap: TPatch9Bitmap read GetBitmap write SetBitmap stored IsPatch9BitmapStored;
   end;
 
   TCustomActionEx = class(FMX.Menus.TMenuItem);
 
-  TViewImagesBrush = class(TBrush, IInterface, IGlyph, IInterfaceComponentReference)
+  TViewImagesBrush = class(TViewBrushBase, IInterface, IGlyph, IInterfaceComponentReference)
   private
     FImageIndex: TImageIndex;
     [Weak] FOwner: TObject;
@@ -220,6 +277,8 @@ type
     constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
     destructor Destroy; override;
+
+    function BrushIsEmpty(V: TBrush): Boolean;
 
     function GetBrush(const State: TViewState; AutoCreate: Boolean): TBrush;
     function GetStateBrush(const State: TViewState): TBrush; overload;
@@ -1571,9 +1630,17 @@ procedure ProcessMessages;
 procedure SimulateClick(AControl: TControl; const x, y: single);
 // 替换不透明颜色
 procedure ReplaceOpaqueColor(ABmp: TBitmap; const Color: TAlphaColor);
+// 屏幕缩放
+function GetScreenScale: single;
 
 function ViewStateToString(const State: TViewStates): string;
 function ComponentStateToString(const State: TComponentState): string;
+
+var
+  /// <summary>
+  /// Accessory 图像列表
+  /// </summary>
+  FAccessoryImages: TViewAccessoryImageList;
 
 implementation
 
@@ -1924,6 +1991,26 @@ begin
   end;
 end;
 
+var
+  AScreenScale: Single;
+
+function GetScreenScale: single;
+var
+  Service: IFMXScreenService;
+begin
+  if AScreenScale > 0 then begin
+    Result := AScreenScale;
+    Exit;
+  end;
+  Service := IFMXScreenService(TPlatformServices.Current.GetPlatformService(IFMXScreenService));
+  Result := Service.GetScreenScale;
+  {$IFDEF IOS}
+  if Result < 2 then
+    Result := 2;
+  {$ENDIF}
+  AScreenScale := Result;
+end;
+
 { TDrawableBase }
 
 procedure TDrawableBase.Assign(Source: TPersistent);
@@ -1963,6 +2050,20 @@ begin
       FOnChanged(Self);
   end else
     inherited;
+end;
+
+function TDrawableBase.BrushIsEmpty(V: TBrush): Boolean;
+begin
+  if (not Assigned(V)) or (V.Kind = TBrushKind.None) or
+    ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid)) or
+    ((Ord(V.Kind) = Ord(TViewBrushKind.AccessoryBitmap)) and (TViewBrushBase(V).FAccessoryType = TViewAccessoryType.None))
+  then begin
+    if (V is TViewImagesBrush) and (TViewImagesBrush(V).FImageIndex >= 0) then
+      Result := False
+    else
+      Result := True
+  end else
+    Result := False;
 end;
 
 procedure TDrawableBase.Change;
@@ -2105,20 +2206,6 @@ begin
 end;
 
 function TDrawableBase.GetStateImagesItem(AState: TViewState): TBrush;
-
-  function BrushIsEmpty(V: TBrush): Boolean;
-  begin
-    if (not Assigned(V)) or (V.Kind = TBrushKind.None) or
-      ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid))
-    then begin
-      if (V is TViewImagesBrush) and (TViewImagesBrush(V).FImageIndex >= 0) then
-        Result := False
-      else
-        Result := True
-    end else
-      Result := False;
-  end;
-
 begin
   GetStateBrush(AState, Result);
   if Result <> FDefault then begin
@@ -2137,17 +2224,6 @@ begin
 end;
 
 function TDrawableBase.GetStateItem(AState: TViewState): TBrush;
-
-  function BrushIsEmpty(V: TBrush): Boolean;
-  begin
-    if (not Assigned(V)) or (V.Kind = TBrushKind.None) or
-      ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid))
-    then begin
-      Result := True
-    end else
-      Result := False;
-  end;
-
 begin
   GetStateBrush(AState, Result);
   if Result <> FDefault then begin
@@ -2219,11 +2295,19 @@ procedure TDrawableBase.FillRect(Canvas: TCanvas; const ARect: TRectF;
   const XRadius, YRadius: Single; const ACorners: TCorners;
   const AOpacity: Single; const ABrush: TBrush;
   const ACornerType: TCornerType = TCornerType.Round);
+var
+  Bmp: TBitmap;
 begin
   if (Ord(ABrush.Kind) = Ord(TViewBrushKind.Patch9Bitmap)) and (ABrush is TViewBrush) then begin
     FillRect9Patch(Canvas, ARect, XRadius, YRadius, ACorners, AOpacity, TViewBrush(ABrush), ACornerType);
-  end else
-    Canvas.FillRect(ARect, XRadius, YRadius, ACorners, AOpacity, ABrush, ACornerType);
+  end else begin
+    if Ord(ABrush.Kind) = Ord(TViewBrushKind.AccessoryBitmap) then begin
+      Bmp := TViewBrushBase(ABrush).FAccessoryBmp;
+      if Assigned(Bmp) then
+        Canvas.DrawBitmap(Bmp, RectF(0, 0, Bmp.Width, Bmp.Height), ARect, AOpacity, True);
+    end else
+      Canvas.FillRect(ARect, XRadius, YRadius, ACorners, AOpacity, ABrush, ACornerType);
+  end;
 end;
 
 class procedure TDrawableBase.FillRect9Patch(Canvas: TCanvas; const ARect: TRectF;
@@ -6469,6 +6553,69 @@ begin
   Result := Width <> 1;
 end;
 
+{ TViewBrushBase }
+
+procedure TViewBrushBase.Assign(Source: TPersistent);
+begin
+  inherited;
+  if Source is TViewBrushBase then begin
+    Self.FAccessoryType := TViewBrushBase(Source).FAccessoryType;
+    Self.FAccessoryColor := TViewBrushBase(Source).FAccessoryColor;
+    DoAccessoryChange;
+  end;
+end;
+
+destructor TViewBrushBase.Destroy;
+begin
+  FreeAndNil(FAccessoryBmp);
+  inherited;
+end;
+
+procedure TViewBrushBase.DoAccessoryChange;
+begin
+  if FAccessoryType <> TViewAccessoryType.None then begin
+    if not Assigned(FAccessoryBmp) then
+      FAccessoryBmp := TBitmap.Create;
+    FAccessoryBmp.Assign(FAccessoryImages.GetAccessoryImage(FAccessoryType));
+    if FAccessoryColor <> TAlphaColorRec.Null then
+      ReplaceOpaqueColor(FAccessoryBmp, FAccessoryColor);
+  end else
+    FreeAndNil(FAccessoryBmp);
+  if Assigned(OnChanged) then
+    OnChanged(Self);
+end;
+
+function TViewBrushBase.GetKind: TViewBrushKind;
+begin
+  Result := TViewBrushKind(inherited Kind);
+end;
+
+function TViewBrushBase.IsKindStored: Boolean;
+begin
+  Result := inherited Kind <> DefaultKind;
+end;
+
+procedure TViewBrushBase.SetAccessoryColor(const Value: TAlphaColor);
+begin
+  if FAccessoryColor <> Value then begin
+    FAccessoryColor := Value;
+    DoAccessoryChange;
+  end;
+end;
+
+procedure TViewBrushBase.SetAccessoryType(const Value: TViewAccessoryType);
+begin
+  if FAccessoryType <> Value then begin
+    FAccessoryType := Value;
+    DoAccessoryChange;
+  end;
+end;
+
+procedure TViewBrushBase.SetKind(const Value: TViewBrushKind);
+begin
+  inherited Kind := TBrushKind(Value);
+end;
+
 { TViewBrush }
 
 constructor TViewBrush.Create(const ADefaultKind: TViewBrushKind;
@@ -6492,16 +6639,6 @@ begin
   Result := TPatch9Bitmap(inherited Bitmap);
 end;
 
-function TViewBrush.GetKind: TViewBrushKind;
-begin
-  Result := TViewBrushKind(inherited Kind);
-end;
-
-function TViewBrush.IsKindStored: Boolean;
-begin
-  Result := inherited Kind <> DefaultKind;
-end;
-
 function TViewBrush.IsPatch9BitmapStored: Boolean;
 begin
   Result := Kind in [TViewBrushKind.Bitmap, TViewBrushKind.Patch9Bitmap];
@@ -6512,22 +6649,13 @@ begin
   inherited Bitmap.Assign(Value);
 end;
 
-procedure TViewBrush.SetKind(const Value: TViewBrushKind);
-begin
-  inherited Kind := TBrushKind(Value);
-end;
-
 { TPatch9Bitmap }
 
 procedure TPatch9Bitmap.Assign(Source: TPersistent);
 begin
-  if Source is TPatch9Bitmap then begin
-    WrapMode := TPatch9Bitmap(Source).WrapMode;
+  if Source is TPatch9Bitmap then
     FBounds.Assign(TPatch9Bitmap(Source).FBounds);
-    Bitmap.Assign(TPatch9Bitmap(Source).Bitmap);
-    DoChanged;
-  end else
-    inherited;
+  inherited;
 end;
 
 constructor TPatch9Bitmap.Create;
@@ -6554,6 +6682,250 @@ begin
     FRemoveBlackLine := Value;
     if Assigned(OnChanged) then
       OnChanged(Self);
+  end;
+end;
+
+{ TViewAccessoryImageList }
+
+procedure TViewAccessoryImageList.AddEllipsesAccessory;
+var
+  AAcc: TBitmap;
+  ARect: TRectF;
+  ASpacing: single;
+  ASize: single;
+begin
+  AAcc := TBitmap.Create;
+  AAcc.SetSize(Round(32 * GetScreenScale), Round(32 * GetScreenScale));
+  ASize := 7 * GetScreenScale;
+  ASpacing := (AAcc.Width - (3 * ASize)) / 2;
+
+  AAcc.Clear(claNull);
+  AAcc.Canvas.BeginScene;
+  try
+    AAcc.Canvas.Fill.Color := claSilver;
+    ARect := RectF(0, 0, ASize, ASize);
+    OffsetRect(ARect, 0, (AAcc.Height - ARect.Height) / 2);
+    AAcc.Canvas.FillEllipse(ARect, 1);
+    OffsetRect(ARect, ASize+ASpacing, 0);
+    AAcc.Canvas.FillEllipse(ARect, 1);
+    OffsetRect(ARect, ASize+ASpacing, 0);
+    AAcc.Canvas.FillEllipse(ARect, 1);
+  finally
+    AAcc.Canvas.EndScene;
+  end;
+  Add(AAcc);
+end;
+
+procedure TViewAccessoryImageList.AddFlagAccessory;
+var
+  AAcc: TBitmap;
+  ARect: TRectF;
+  s: single;
+  r1, r2: TRectF;
+begin
+  s := GetScreenScale;
+  AAcc := TBitmap.Create;
+  AAcc.SetSize(Round(32 * s), Round(32 * s));
+  AAcc.Clear(claNull);
+  ARect := RectF(0, 0, AAcc.Width, AAcc.Height);
+  ARect.Inflate(0-(AAcc.Width / 4), 0-(AAcc.Height / 7));
+
+
+  AAcc.Canvas.BeginScene;
+  try
+    r1 := ARect;
+    r2 := ARect;
+
+    r2.Top := ARect.Top + (ARect.Height / 12);
+
+
+    r2.Left := r2.Left;
+    r2.Height := ARect.Height / 2;
+    AAcc.Canvas.stroke.Color := claSilver;
+    AAcc.Canvas.Stroke.Thickness := s*2;
+    AAcc.Canvas.Fill.Color := claSilver;
+    AAcc.Canvas.FillRect(r2, 0, 0, AllCorners, 1);
+    AAcc.Canvas.DrawLine(r1.TopLeft, PointF(r1.Left, r1.Bottom), 1);
+  finally
+    AAcc.Canvas.EndScene;
+  end;
+  Add(AAcc);
+end;
+
+procedure TViewAccessoryImageList.CalculateImageScale;
+begin
+  if FImageScale = 0 then
+  begin
+    FImageScale := Min(Trunc(GetScreenScale), 3);
+    {$IFDEF MSWINDOWS}
+    FImageScale := 1;
+    {$ENDIF}
+  end;
+end;
+
+constructor TViewAccessoryImageList.Create;
+begin
+  inherited Create(True);
+  FImageScale := 0;
+  FImageMap := TBitmap.Create;
+end;
+
+destructor TViewAccessoryImageList.Destroy;
+begin
+  FreeAndNil(FImageMap);
+  if FActiveStyle <> nil then
+    FreeAndNil(FActiveStyle);
+  inherited;
+end;
+
+procedure TViewAccessoryImageList.Draw(ACanvas: TCanvas; const ARect: TRectF;
+  AAccessory: TViewAccessoryType; const AOpacity: Single; const AStretch: Boolean);
+var
+  R: TRectF;
+  Bmp: TBitmap;
+begin
+  Bmp := GetAccessoryImage(AAccessory);
+  if not Assigned(Bmp) then
+    Exit;
+  if AStretch = False then begin
+    R := RectF(0, 0, Bmp.Width / GetScreenScale, Bmp.Height / GetScreenScale);
+    OffsetRect(R, ARect.Left, ARect.Top);
+    OffsetRect(R, (ARect.Width - R.Width) * 0.5, (ARect.Height - R.Height) * 0.5);
+    ACanvas.DrawBitmap(Bmp, RectF(0, 0, Bmp.Width, Bmp.Height), R, AOpacity, True);
+  end else
+    ACanvas.DrawBitmap(Bmp, RectF(0, 0, Bmp.Width, Bmp.Height), ARect, AOpacity, True);
+end;
+
+function TViewAccessoryImageList.GetAccessoryFromResource(const AStyleName: string;
+  const AState: string): TBitmap;
+var
+  AStyleObj: TStyleObject;
+  AImgRect: TBounds;
+  AIds: TStrings;
+  ABitmapLink: TBitmapLinks;
+  AImageMap: TBitmap;
+begin
+  CalculateImageScale;
+
+  Result := TBitmap.Create;
+  AIds := TStringList.Create;
+  try
+    AIds.Text := StringReplace(AStyleName, '.', #13, [rfReplaceAll]);
+    AStyleObj := TStyleObject(TStyleManager.ActiveStyle(nil));
+
+    while AIds.Count > 0 do begin
+      AStyleObj := TStyleObject(AStyleObj.FindStyleResource(AIds[0]));
+      AIds.Delete(0);
+    end;
+
+    if AStyleObj <> nil then begin
+      if FImageMap.IsEmpty then begin
+        AImageMap := ((AStyleObj as TStyleObject).Source.MultiResBitmap.Bitmaps[FImageScale]);
+
+        FImageMap.SetSize(Round(AImageMap.Width), Round(AImageMap.Height));
+        FImageMap.Clear(claNull);
+
+        FImageMap.Canvas.BeginScene;
+        try
+          FImageMap.Canvas.DrawBitmap(AImageMap,
+              RectF(0, 0, AImageMap.Width, AImageMap.Height),
+              RectF(0, 0, FImageMap.Width, FImageMap.Height),
+              1,
+              True);
+        finally
+          FImageMap.Canvas.EndScene;
+        end;
+      end;
+
+      ABitmapLink := nil;
+      if AStyleObj = nil then
+        Exit;
+      if (AStyleObj.ClassType = TCheckStyleObject) then begin
+        if AState = 'checked' then
+          ABitmapLink := TCheckStyleObject(AStyleObj).ActiveLink
+        else
+          ABitmapLink := TCheckStyleObject(AStyleObj).SourceLink
+      end;
+
+      if ABitmapLink = nil then
+        ABitmapLink := AStyleObj.SourceLink;
+
+      {$IFDEF XE8_OR_NEWER}
+      AImgRect := ABitmapLink.LinkByScale(FImageScale, True).SourceRect;
+      {$ELSE}
+      AImgRect := ABitmapLink.LinkByScale(FImageScale).SourceRect;
+      {$ENDIF}
+      Result.SetSize(Round(AImgRect.Width), Round(AImgRect.Height));
+      Result.Clear(claNull);
+      Result.Canvas.BeginScene;
+
+      Result.Canvas.DrawBitmap(FImageMap, AImgRect.Rect, RectF(0, 0, Result.Width,
+        Result.Height), 1, True);
+      Result.Canvas.EndScene;
+    end;
+  finally
+    {$IFDEF NEXTGEN}
+    FreeAndNil(AIds);
+    {$ELSE}
+    AIds.Free;
+    {$ENDIF}
+  end;
+end;
+
+function TViewAccessoryImageList.GetAccessoryImage(
+  AAccessory: TViewAccessoryType): TBitmap;
+begin
+  if Count = 0 then
+    Initialize;
+  Result := Items[Ord(AAccessory)];
+end;
+
+procedure TViewAccessoryImageList.Initialize;
+var
+  ICount: TViewAccessoryType;
+begin
+  for ICount := Low(TViewAccessoryType) to High(TViewAccessoryType) do
+  begin
+    case ICount of
+      TViewAccessoryType.None: Add(GetAccessoryFromResource('none'));
+      TViewAccessoryType.More: Add(GetAccessoryFromResource('listviewstyle.accessorymore'));
+      TViewAccessoryType.Checkmark: Add(GetAccessoryFromResource('listviewstyle.accessorycheckmark'));
+      TViewAccessoryType.Detail: Add(GetAccessoryFromResource('listviewstyle.accessorydetail'));
+      TViewAccessoryType.Ellipses: AddEllipsesAccessory;
+      TViewAccessoryType.Flag: AddFlagAccessory;
+      TViewAccessoryType.Back: Add(GetAccessoryFromResource('backtoolbutton.icon'));
+      TViewAccessoryType.Refresh: Add(GetAccessoryFromResource('refreshtoolbutton.icon'));
+      TViewAccessoryType.Action: Add(GetAccessoryFromResource('actiontoolbutton.icon'));
+      TViewAccessoryType.Play: Add(GetAccessoryFromResource('playtoolbutton.icon'));
+      TViewAccessoryType.Rewind: Add(GetAccessoryFromResource('rewindtoolbutton.icon'));
+      TViewAccessoryType.Forwards: Add(GetAccessoryFromResource('forwardtoolbutton.icon'));
+      TViewAccessoryType.Pause: Add(GetAccessoryFromResource('pausetoolbutton.icon'));
+      TViewAccessoryType.Stop: Add(GetAccessoryFromResource('stoptoolbutton.icon'));
+      TViewAccessoryType.Add: Add(GetAccessoryFromResource('addtoolbutton.icon'));
+      TViewAccessoryType.Prior: Add(GetAccessoryFromResource('priortoolbutton.icon'));
+      TViewAccessoryType.Next: Add(GetAccessoryFromResource('nexttoolbutton.icon'));
+      TViewAccessoryType.ArrowUp: Add(GetAccessoryFromResource('arrowuptoolbutton.icon'));
+      TViewAccessoryType.ArrowDown: Add(GetAccessoryFromResource('arrowdowntoolbutton.icon'));
+      TViewAccessoryType.ArrowLeft: Add(GetAccessoryFromResource('arrowlefttoolbutton.icon'));
+      TViewAccessoryType.ArrowRight: Add(GetAccessoryFromResource('arrowrighttoolbutton.icon'));
+      TViewAccessoryType.Reply: Add(GetAccessoryFromResource('replytoolbutton.icon'));
+      TViewAccessoryType.Search: Add(GetAccessoryFromResource('searchtoolbutton.icon'));
+      TViewAccessoryType.Bookmarks: Add(GetAccessoryFromResource('bookmarkstoolbutton.icon'));
+      TViewAccessoryType.Trash: Add(GetAccessoryFromResource('trashtoolbutton.icon'));
+      TViewAccessoryType.Organize: Add(GetAccessoryFromResource('organizetoolbutton.icon'));
+      TViewAccessoryType.Camera: Add(GetAccessoryFromResource('cameratoolbutton.icon'));
+      TViewAccessoryType.Compose: Add(GetAccessoryFromResource('composetoolbutton.icon'));
+      TViewAccessoryType.Info: Add(GetAccessoryFromResource('infotoolbutton.icon'));
+      TViewAccessoryType.Pagecurl: Add(GetAccessoryFromResource('pagecurltoolbutton.icon'));
+      TViewAccessoryType.Details: Add(GetAccessoryFromResource('detailstoolbutton.icon'));
+      TViewAccessoryType.RadioButton: Add(GetAccessoryFromResource('radiobuttonstyle.background'));
+      TViewAccessoryType.RadioButtonChecked: Add(GetAccessoryFromResource('radiobuttonstyle.background', 'checked'));
+      TViewAccessoryType.CheckBox: Add(GetAccessoryFromResource('checkboxstyle.background'));
+      TViewAccessoryType.CheckBoxChecked: Add(GetAccessoryFromResource('checkboxstyle.background', 'checked'));
+      TViewAccessoryType.UserDefined1: Add(GetAccessoryFromResource('userdefined1'));
+      TViewAccessoryType.UserDefined2: Add(GetAccessoryFromResource('userdefined2'));
+      TViewAccessoryType.UserDefined3: Add(GetAccessoryFromResource('userdefined3'));
+    end;
   end;
 end;
 
@@ -7569,6 +7941,7 @@ end;
 
 initialization
   FShareImageList := TList<TShareImageList>.Create;
+  FAccessoryImages := TViewAccessoryImageList.Create;
   {$IFDEF ANDROID}
   TView.InitAudioManager();
   DoInitFrameStatusHeight();
@@ -7580,5 +7953,6 @@ finalization
   FAudioManager := nil;
   {$ENDIF}
   FreeAndNil(FShareImageList);
+  FreeAndNil(FAccessoryImages);
 
 end.

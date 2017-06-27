@@ -363,7 +363,7 @@ begin
   AddEnumElementAliases(TypeInfo(TViewBorderStyle),
     ['None', 'RectBorder', 'RectBitmap', 'LineEdit', 'LineTop', 'LineBottom', 'LineLeft', 'LineRight']);
   AddEnumElementAliases(TypeInfo(TViewBrushKind),
-    ['None', 'Solid', 'Gradient', 'Bitmap', 'Resource', 'Patch9Bitmap']);
+    ['None', 'Solid', 'Gradient', 'Bitmap', 'Resource', 'Patch9Bitmap', 'AccessoryBitmap']);
   AddEnumElementAliases(TypeInfo(TViewScroll),
     ['None', 'Horizontal', 'Vertical', 'Both']);
   AddEnumElementAliases(TypeInfo(TViewStretchMode),
@@ -380,6 +380,14 @@ begin
     ['PlanText', 'CheckBox', 'RadioButton', 'Image', 'ProgressBar', 'CustomDraw']);
   AddEnumElementAliases(TypeInfo(TGridFooterStyle),
     ['None', 'DataTotal', 'DataAverage', 'DataMin', 'DataMax']);
+  AddEnumElementAliases(TypeInfo(TViewAccessoryType),
+    ['None', 'More', 'Checkmark', 'Detail', 'Ellipses', 'Flag', 'Back', 'Refresh',
+     'Action', 'Play','Rewind', 'Forwards', 'Pause', 'Stop', 'Add', 'Prior',
+     'Next', 'ArrowUp', 'ArrowDown', 'ArrowLeft','ArrowRight', 'Reply',
+     'Search', 'Bookmarks', 'Trash', 'Organize', 'Camera', 'Compose', 'Info',
+     'Pagecurl', 'Details', 'RadioButton', 'RadioButtonChecked', 'CheckBox',
+     'CheckBoxChecked', 'UserDefined1', 'UserDefined2', 'UserDefined3'
+    ]);
 end;
 
 procedure UnregisterAliases;
@@ -397,6 +405,7 @@ begin
   RemoveEnumElementAliases(TypeInfo(TRingViewStyle));
   RemoveEnumElementAliases(TypeInfo(TGridDataType));
   RemoveEnumElementAliases(TypeInfo(TGridFooterStyle));
+  RemoveEnumElementAliases(TypeInfo(TViewAccessoryType));
 end;
 
 { TViewControlEditor }

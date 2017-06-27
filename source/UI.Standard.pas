@@ -1564,8 +1564,8 @@ begin
     UpdateScrollStretchStrength(0);
 
   if (Round(NewViewPos) = 0) or (Round(NewViewPos) = MaxScrollViewPos) then begin
-    ProcessMessages;
     FAniCalculations.UpdatePosImmediately(True);
+    ProcessMessages;
   end;
 end;
 
