@@ -920,7 +920,7 @@ end;
 
 function TListViewEx.CreateScroll: TScrollBar;
 begin
-  {$IFDEF MSWINDOWS}
+  {$IFNDEF NEXTGEN}
   if DragScroll then
     Result := TSmallScrollBar.Create(Self)
   else

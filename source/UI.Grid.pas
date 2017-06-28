@@ -695,6 +695,7 @@ type
   private
     [Weak] FOwner: TGridBase;
     FFooterText: string;
+    FFooterBackgroundColor: TAlphaColor;
     function GetFixedBrush: TGridViewBrush;
     function GetFixedCols: Integer;
     function GetFixedDefaultColWidth: Single;
@@ -750,7 +751,11 @@ type
     /// <summary>
     /// µ×²¿Ò³½Å±êÌâ
     /// </summary>
-    property TextFooter: string read FFooterText write SetFooterText;
+    property Footer: string read FFooterText write SetFooterText;
+    /// <summary>
+    /// µ×²¿Ò³½Å±³¾°É«
+    /// </summary>
+    property FooterBgColor: TAlphaColor read FFooterBackgroundColor write FFooterBackgroundColor default TAlphaColorRec.White;
   end;
 
   /// <summary>
@@ -1760,7 +1765,7 @@ end;
 
 function TGridBase.CreateScroll: TScrollBar;
 begin
-  {$IFDEF MSWINDOWS}
+  {$IFNDEF NEXTGEN}
   if DragScroll then
     Result := TSmallScrollBar.Create(Self)
   else
@@ -4030,7 +4035,7 @@ begin
   if gvFixedFooter in GridView.FOptions then begin
     LS.Top := LS.Height;
     LS.Bottom := LS.Height + RowHeight[-2] + LS.DividerH * 2;
-    Canvas.ClearRect(RectF(0, LS.Top, LS.Width, LS.Bottom));
+    Canvas.ClearRect(RectF(0, LS.Top, LS.Width, LS.Bottom), GridView.FFixedSetting.FooterBgColor);
 
     if LS.ShowRowLine and (LS.DividerH > 0) then
       Canvas.FillRect(RectF(LS.FixedWidth, LS.Top, LW + LS.FixedWidth, LS.Top + LS.DividerH), 0, 0, [], LS.Opacity, FDividerBrush);
@@ -5337,6 +5342,10 @@ begin
   Padding.Top := TGridBase.CDefaultPadding;
   Padding.Right := TGridBase.CDefaultPadding;
   Padding.Bottom := TGridBase.CDefaultPadding;
+
+  {$IFDEF AUTOREFCOUNT}
+  Inc(Self.FRefCount);
+  {$ENDIF}
 end;
 
 destructor TGridColumnItem.Destroy;
@@ -6683,6 +6692,8 @@ end;
 
 procedure TDBGridView.LinkActive(Value: Boolean);
 begin
+  if not Assigned(FDataLink) then
+    Exit;
   if not Value then FContentViews.DoEditCancel;
   FFilterDataList.Clear;
   InitColumns(FDataLink.DataSet);
@@ -6972,6 +6983,7 @@ end;
 constructor TGridFixedSetting.Create(AOwner: TGridBase);
 begin
   FOwner := AOwner;
+  FFooterBackgroundColor := TAlphaColorRec.White;
 end;
 
 function TGridFixedSetting.GetFixedBrush: TGridViewBrush;

@@ -1752,7 +1752,7 @@ procedure TScrollView.CMGesture(var EventInfo: TGestureEventInfo);
 var
   LP: TPointF;
 begin
-  if (FCanScrollV or FCanScrollH or FDragScroll) and ((EventInfo.GestureID = igiPan)) then
+  if (FCanScrollV or FCanScrollH {$IFNDEF NEXTGEN} or FDragScroll{$ENDIF}) and ((EventInfo.GestureID = igiPan)) then
   begin
     if FInVisible or (FAniCalculations = nil) then
       Exit;
@@ -1862,11 +1862,14 @@ end;
 
 procedure TScrollView.DoUpdateAniCalculations(const AAniCalculations: TScrollCalculations);
 begin
+  {$IFNDEF NEXTGEN}
   if FDragScroll then begin
     FCanAnimation := True;
     AAniCalculations.Animation := FCanAnimation;
     AAniCalculations.TouchTracking := [ttVertical, ttHorizontal];
-  end else begin
+  end else
+  {$ENDIF}
+  begin
     FCanAnimation := (TScrollingBehaviour.Animation in GetScrollingBehaviours);
     AAniCalculations.Animation := FCanAnimation;
     if TScrollingBehaviour.TouchTracking in GetScrollingBehaviours then
@@ -2023,13 +2026,25 @@ begin
 end;
 
 function TScrollView.GetScrollValueH: Single;
+var
+  V: Double;
 begin
-  Result := (FScrollH.ValueD - FScrollH.MinD) / (FScrollH.MaxD - FScrollH.MinD - FScrollH.ViewportSizeD);
+  V := FScrollH.MaxD - FScrollH.MinD - FScrollH.ViewportSizeD;
+  if V <> 0 then
+    Result := (FScrollH.ValueD - FScrollH.MinD) / V
+  else
+    Result := 0;
 end;
 
 function TScrollView.GetScrollValueV: Single;
+var
+  V: Double;
 begin
-  Result := (FScrollV.ValueD - FScrollV.MinD) / (FScrollV.MaxD - FScrollV.MinD - FScrollV.ViewportSizeD);
+  V := FScrollV.MaxD - FScrollV.MinD - FScrollV.ViewportSizeD;
+  if V <> 0 then
+    Result := (FScrollV.ValueD - FScrollV.MinD) / V
+  else
+    Result := 0;
 end;
 
 function TScrollView.GetViewportPosition: TPointD;
@@ -2053,7 +2068,7 @@ end;
 
 function TScrollView.GetVScrollBarValue: Double;
 begin
-  if (FAniCalculations <> nil) and Assigned(FScrollV) and (FCanScrollV or FDragScroll) then begin
+  if (FAniCalculations <> nil) and Assigned(FScrollV) and (FCanScrollV{$IFNDEF NEXTGEN} or FDragScroll{$ENDIF}) then begin
     Result := ViewportPosition.Y; // / (FScroll.Max - FScroll.ViewportSize) * FScroll.Max
   end else
     Result := 0;
@@ -2229,7 +2244,7 @@ procedure TScrollView.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
 begin
   FMouseEvents := True;
   inherited;
-  if Assigned(FAniCalculations) and (Button = TMouseButton.mbLeft) and (FDragScroll) then
+  if Assigned(FAniCalculations) and (Button = TMouseButton.mbLeft){$IFNDEF NEXTGEN} and (FDragScroll){$ENDIF} then
   begin
     AniMouseDown(ssTouch in Shift, X, Y);
   end;
@@ -2239,7 +2254,7 @@ procedure TScrollView.MouseMove(Shift: TShiftState; X, Y: Single);
 begin
   FMouseEvents := True;
   inherited;
-  if Assigned(FAniCalculations) and FAniCalculations.Down and (FDragScroll) then
+  if Assigned(FAniCalculations) and FAniCalculations.Down{$IFNDEF NEXTGEN} and (FDragScroll){$ENDIF} then
   begin
     AniMouseMove(ssTouch in Shift, X, Y);
   end;
@@ -2250,7 +2265,7 @@ procedure TScrollView.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
 begin
   FMouseEvents := True;
   inherited;
-  if Assigned(FAniCalculations) and (Button = TMouseButton.mbLeft) and (FDragScroll) then
+  if Assigned(FAniCalculations) and (Button = TMouseButton.mbLeft){$IFNDEF NEXTGEN} and (FDragScroll){$ENDIF} then
   begin
     AniMouseUp(ssTouch in Shift, X, Y);
   end;
@@ -2406,6 +2421,7 @@ procedure TScrollView.SetDragScroll(const Value: Boolean);
 begin
   if FDragScroll <> Value then begin
     FDragScroll := Value;
+    {$IFNDEF NEXTGEN}
     if not (csDesigning in ComponentState) then begin
       if FScrollbar = TViewScroll.None then
         FreeScrollbar
@@ -2413,6 +2429,7 @@ begin
         InitScrollbar;
       RealignContent;
     end;
+    {$ENDIF}
   end;
 end;
 
@@ -2470,7 +2487,7 @@ procedure TScrollView.SetVScrollBarValue(const Value: Double);
 var
   V: TPointD;
 begin
-  if (FAniCalculations <> nil) and Assigned(FScrollV) and (FCanScrollV or FDragScroll) then begin
+  if (FAniCalculations <> nil) and Assigned(FScrollV) and (FCanScrollV{$IFNDEF NEXTGEN} or FDragScroll{$ENDIF}) then begin
     V := ViewportPosition;
     V.Y := Value;
     ViewportPosition := V;

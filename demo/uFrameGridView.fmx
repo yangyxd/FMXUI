@@ -69,14 +69,14 @@ object FrameGridView: TFrameGridView
       end
       item
         Color = xFFECE8E8
-        Offset = 0.838509321212768600
+        Offset = 0.838509321212768500
       end
       item
         Color = claWhite
         Offset = 1.000000000000000000
       end>
     FixedSettings.Brush.ItemDefault.Gradient.StartPosition.X = 1.000000000000000000
-    FixedSettings.Brush.ItemDefault.Gradient.StartPosition.Y = 0.733153879642486600
+    FixedSettings.Brush.ItemDefault.Gradient.StartPosition.Y = 0.733153879642486500
     FixedSettings.Brush.ItemDefault.Gradient.StopPosition.Y = 0.266846120357513400
     FixedSettings.ColCount = 2
     FixedSettings.RowCount = 2
@@ -254,7 +254,7 @@ object FrameGridView: TFrameGridView
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
-      Size.Width = 99.200012207031250000
+      Size.Width = 99.200012207031240000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
       Position.X = 396.799987792968800000
