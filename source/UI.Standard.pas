@@ -17,6 +17,8 @@ uses
   FMX.AcceleratorKey,
   {$ENDIF}
   FMX.BehaviorManager, FMX.Forms, System.Messaging, FMX.Styles,
+  FMX.Pickers,
+  {$IFDEF MSWINDOWS} FMX.DateTimeCtrls, {$ENDIF}
   FMX.ActnList, FMX.Objects, System.Math, System.Actions, System.Rtti, FMX.Consts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, FMX.TextLayout,
   System.Classes, System.Types, System.UITypes, System.SysUtils, System.Math.Vectors,
@@ -301,12 +303,14 @@ type
     PhysicsProcessingInterval = 8; // 8 ms for ~120 frames per second
     DefaultScrollingStretchGlowColor: TAlphaColor = $FFC0C0C0;
   private
-    FOnScrollChange: TNotifyEvent;
     FCanAnimation: Boolean;
     FInInternalAlign: Boolean;
     FCachedAutoShowing: Boolean;
     FDragScroll: Boolean;
     FScrollbarWidth: Single;
+
+    FOnScrollChange: TNotifyEvent;
+
     function GetViewportPosition: TPointD;
     procedure SetViewportPosition(const Value: TPointD);
     procedure SetShowScrollBars(const Value: Boolean);
@@ -328,7 +332,19 @@ type
     FScrolling: Boolean;
     FSystemInfoSrv: IFMXSystemInformationService;
     FListingService: IFMXListingService;
-    //Animation mouse events
+
+    FScrollV: TScrollBar;
+    FScrollH: TScrollBar;
+    FAniCalculations: TScrollCalculations;
+
+    FContentBounds: PRectD;
+    FLastViewportPosition: TPointD;
+    FMouseEvents: Boolean;
+    FScrollStretchStrength: Single;
+    //FScrollTrackPressed: Boolean;
+    FScrollingStretchGlowColor: TAlphaColor;
+    FScrollSmallChangeFraction: Single;    //Animation mouse events
+
     procedure AniMouseDown(const Touch: Boolean; const X, Y: Single); virtual;
     procedure AniMouseMove(const Touch: Boolean; const X, Y: Single); virtual;
     procedure AniMouseUp(const Touch: Boolean; const X, Y: Single); virtual;
@@ -349,17 +365,6 @@ type
     procedure UpdateScrollStretchStrength(const NewValue: Single);
 
   protected
-    FScrollV: TScrollBar;
-    FScrollH: TScrollBar;
-    FContentBounds: PRectD;
-    FAniCalculations: TScrollCalculations;
-    FLastViewportPosition: TPointD;
-    FMouseEvents: Boolean;
-    FScrollStretchStrength: Single;
-    //FScrollTrackPressed: Boolean;
-    FScrollingStretchGlowColor: TAlphaColor;
-    FScrollSmallChangeFraction: Single;
-
     procedure Resize; override;
     procedure DoRealign; override;
     procedure DoInVisibleChange; override;
@@ -951,7 +956,70 @@ type
     property Clickable default True;
   end;
 
+type
+  /// <summary>
+  /// 日期时间显示组件 （感谢： 入云龙）
+  /// </summary>
+  TCustomDateTimeView = class(TTextView)
+  strict private
+  private
+    FDateTime: TDateTime;
+    FDateTimeFormat: string;
+    function GetDateTime: TDateTime;
+    procedure SetDateTime(const Value: TDateTime);
+  protected
+    FDateTimePicker: TCustomDateTimePicker;
+    procedure HandlerPickerClosed(Sender: TObject); virtual;
+    procedure HandlerPickerOpened(Sender: TObject); virtual;
+    procedure HandlerPickerDateTimeChanged(Sender: TObject; const ADate: TDateTime); virtual;
+    procedure InitPicker; virtual;
+    procedure Click; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    {Pickers}
+    procedure OpenPicker; virtual;
+    procedure ClosePicker; virtual;
+    function IsPickerOpened: Boolean; virtual;
+    function HasPicker: Boolean;
+    {Value}
+    property DateTime: TDateTime read GetDateTime write SetDateTime;
+  published
+    property DateTimeFormat: string read FDateTimeFormat write FDateTimeFormat;
+
+    property CanFocus default True;
+    property HitTest default True;
+    property Clickable default True;
+  end;
+
+  /// <summary>
+  /// 日期视图 (日期选择)
+  /// </summary>
+  TDateView = class(TCustomDateTimeView)
+  public
+    constructor Create(AOwner: TComponent); override;
+  end;
+
+  /// <summary>
+  /// 时间视图 (弹出时间选择对话框)
+  /// </summary>
+  TTimeView = class(TCustomDateTimeView)
+  protected
+  public
+    constructor Create(AOwner: TComponent); override;
+    {$IFDEF MSWINDOWS}
+    procedure DoTimeChange(Sender: TObject);
+    procedure OpenPicker; override;
+    procedure ClosePicker; override;
+    {$ENDIF}
+  end;
+
 implementation
+
+{$IFDEF MSWINDOWS}
+uses
+  UI.Dialog;
+{$ENDIF}
 
 procedure DisableHitTestForControl(const AControl: TControl);
 var
@@ -1622,7 +1690,7 @@ begin
   else
     UpdateScrollStretchStrength(0);
 
-  if (Round(NewViewPos) = 0) or (Round(NewViewPos) = MaxScrollViewPos) then
+  if (Round(NewViewPos) = 0) or ((MaxScrollViewPos > 0) and (Round(NewViewPos) = MaxScrollViewPos)) then
     FAniCalculations.UpdatePosImmediately(True);
 end;
 
@@ -4562,6 +4630,154 @@ begin
     FMaxYPos := Targets[1].Point.Y;
   end;
 end;
+
+{ TCustomDateTimeView }
+
+procedure TCustomDateTimeView.Click;
+begin
+  inherited Click;
+
+  OpenPicker;
+end;
+
+procedure TCustomDateTimeView.ClosePicker;
+begin
+  if HasPicker and FDateTimePicker.IsShown then
+    FDateTimePicker.Hide;
+end;
+
+constructor TCustomDateTimeView.Create(AOwner: TComponent);
+var
+  PickerService: IFMXPickerService;
+begin
+  inherited;
+
+  FDateTime := 0;
+  FDateTimeFormat := FormatSettings.ShortDateFormat;
+  if TPlatformServices.Current.SupportsPlatformService(IFMXPickerService, PickerService)
+  then
+  begin
+    FDateTimePicker := PickerService.CreateDateTimePicker;
+    FDateTimePicker.Parent := Self;
+    FDateTimePicker.OnHide := HandlerPickerClosed;
+    FDateTimePicker.OnShow := HandlerPickerOpened;
+    FDateTimePicker.OnDateChanged := HandlerPickerDateTimeChanged;
+  end;
+
+  HitTest := True;
+  CanFocus := True;
+end;
+
+destructor TCustomDateTimeView.Destroy;
+begin
+  ClosePicker;
+  FreeAndNil(FDateTimePicker);
+
+  inherited;
+end;
+
+function TCustomDateTimeView.GetDateTime: TDateTime;
+begin
+  Result := FDateTime;
+end;
+
+procedure TCustomDateTimeView.HandlerPickerClosed(Sender: TObject);
+begin
+end;
+
+procedure TCustomDateTimeView.HandlerPickerDateTimeChanged(Sender: TObject;
+  const ADate: TDateTime);
+begin
+  DateTime := ADate;
+end;
+
+procedure TCustomDateTimeView.HandlerPickerOpened(Sender: TObject);
+begin
+end;
+
+function TCustomDateTimeView.HasPicker: Boolean;
+begin
+  Result := FDateTimePicker <> nil;
+end;
+
+procedure TCustomDateTimeView.InitPicker;
+begin
+  FDateTimePicker.Date := DateTime;
+end;
+
+function TCustomDateTimeView.IsPickerOpened: Boolean;
+begin
+  Result := HasPicker and FDateTimePicker.IsShown;
+end;
+
+procedure TCustomDateTimeView.OpenPicker;
+begin
+  if HasPicker and not FDateTimePicker.IsShown then
+  begin
+    InitPicker;
+    FDateTimePicker.PreferedDisplayIndex :=
+      Screen.DisplayFromPoint(Screen.MousePos).Index;
+    FDateTimePicker.Show;
+  end;
+end;
+
+procedure TCustomDateTimeView.SetDateTime(const Value: TDateTime);
+begin
+  FDateTime := Value;
+  Text := FormatDateTime(DateTimeFormat, Value);
+end;
+
+{TDateView}
+
+constructor TDateView.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  FDateTimeFormat := FormatSettings.ShortDateFormat;
+  if HasPicker then
+    FDateTimePicker.ShowMode := TDatePickerShowMode.Date;
+
+  DateTime := Now;
+end;
+
+{TTimeView}
+
+constructor TTimeView.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  FDateTimeFormat := FormatSettings.ShortTimeFormat;
+  if HasPicker then
+    FDateTimePicker.ShowMode := TDatePickerShowMode.Time;
+
+  DateTime := Now;
+end;
+
+{$IFDEF MSWINDOWS}
+procedure TTimeView.DoTimeChange(Sender: TObject);
+begin
+  if Assigned(Self) then
+    HandlerPickerDateTimeChanged(Self, TTimeEdit(Sender).DateTime);
+end;
+
+procedure TTimeView.ClosePicker;
+begin
+end;
+
+procedure TTimeView.OpenPicker;
+var
+  FTimeEdit: TTimeEdit;
+begin
+  FTimeEdit := TTimeEdit.Create(Self);
+  FTimeEdit.Width := Max(Self.Width, 100);
+  FTimeEdit.Height := 24;
+  FTimeEdit.Time := DateTime;
+  FTimeEdit.OnChange := DoTimeChange;
+
+  TDialog.ShowView(Self, Self, FTimeEdit, True, 0, 0, TDialogViewPosition.Bottom,
+    True, TFrameAniType.None, False);
+end;
+{$ENDIF}
 
 initialization
 

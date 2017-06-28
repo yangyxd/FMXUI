@@ -230,6 +230,7 @@ type
 type
   TDialogBuilder = class;
   TCustomAlertDialog = class;
+  TDialogView = class;
 
   /// <summary>
   /// 对话框接口
@@ -238,6 +239,7 @@ type
     ['{53E2915A-B90C-4C9B-85D8-F4E3B9892D9A}']
     function GetBuilder: TDialogBuilder;
     function GetView: TControl;
+    function GetViewRoot: TDialogView;
     function GetCancelable: Boolean;
 
     /// <summary>
@@ -273,6 +275,10 @@ type
     /// 视图组件
     /// </summary>
     property View: TControl read GetView;
+    /// <summary>
+    /// 根视图组件
+    /// </summary>
+    property ViewRoot: TDialogView read GetViewRoot;
     /// <summary>
     /// 是否能取消对话框
     /// </summary>
@@ -355,6 +361,7 @@ type
     procedure SetOnCancelListener(const Value: TOnDialogListener);
     procedure SetOnCancelListenerA(const Value: TOnDialogListenerA);
     function GetView: TControl;
+    function GetViewRoot: TDialogView;
     function GetRootView: TDialogView;
     function GetIsDismiss: Boolean;
     function GetAniView: TControl;
@@ -1716,6 +1723,11 @@ begin
     Result := nil;
 end;
 
+function TDialog.GetViewRoot: TDialogView;
+begin
+  Result := FViewRoot;
+end;
+
 procedure TDialog.Hide;
 begin
   if FViewRoot <> nil then
@@ -2298,6 +2310,13 @@ begin
       FViewRoot.FTitleSpace.Visible := False;
   end;
 
+  if (Builder.Title = '') then begin
+    if FBuilder.Message = '' then begin
+      if Assigned(FViewRoot.FListView) then
+        FViewRoot.FListView.Margins.Top := StyleManager.FBackgroundRadius;
+    end;
+  end;
+
   if Builder.FMaskVisible then
     SetBackColor(StyleManager.FDialogMaskColor);
 end;
@@ -2525,7 +2544,7 @@ procedure TCustomAlertDialog.InitListPopView;
 var
   ListView: TListViewEx;
 begin
-  if not FIsDowPopup then 
+  if not FIsDowPopup then
     InitDefaultPopView;
   FViewRoot.FMsgBody.Visible := True;
   if Assigned(FViewRoot.FMsgMessage) then begin
@@ -2727,7 +2746,7 @@ begin
   FListView.HeightSize := TViewSize.WrapContent;
   FListView.Background.ItemPressed.Color := StyleMgr.ListItemPressedColor;
   FListView.Divider := StyleMgr.ListItemDividerColor;
-  //FListView.DragScroll := True;
+  FListView.DragScroll := True;
 end;
 
 procedure TDialogView.InitMessage(StyleMgr: TDialogStyleManager);

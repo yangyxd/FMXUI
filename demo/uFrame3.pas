@@ -10,15 +10,15 @@ uses
 type
   TFrame3 = class(TFrame)
     LinearLayout1: TLinearLayout;
-    TextView17: TTextView;
     tvTitle: TTextView;
     View1: TView;
     RelativeLayout1: TRelativeLayout;
     ButtonView1: TButtonView;
     ButtonView2: TButtonView;
-    procedure TextView17Click(Sender: TObject);
+    btnBack: TTextView;
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
+    procedure btnBackClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -46,6 +46,11 @@ uses
   FMX.Helpers.Android;
 {$ENDIF}
 
+procedure TFrame3.btnBackClick(Sender: TObject);
+begin
+  Finish();
+end;
+
 procedure TFrame3.ButtonView1Click(Sender: TObject);
 begin
   StatusColor := $ff009900;
@@ -57,11 +62,6 @@ begin
   {$IFDEF ANDROID}
   Hint(Format('SDK: %d', [TJBuild_VERSION.JavaClass.SDK_INT]));
   {$ENDIF}
-end;
-
-procedure TFrame3.TextView17Click(Sender: TObject);
-begin
-  Finish();
 end;
 
 end.

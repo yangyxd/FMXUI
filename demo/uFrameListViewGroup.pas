@@ -26,10 +26,10 @@ type
 type
   TFrameListViewGroup = class(TFrame)
     LinearLayout1: TLinearLayout;
-    TextView1: TTextView;
     tvTitle: TTextView;
     ListView: TListViewEx;
-    procedure TextView1Click(Sender: TObject);
+    btnBack: TTextView;
+    procedure btnBackClick(Sender: TObject);
   private
     { Private declarations }
     FAdapter: TCustomListDataAdapter;
@@ -47,6 +47,11 @@ implementation
 
 uses
   ui_CustomListView_ListItem;
+
+procedure TFrameListViewGroup.btnBackClick(Sender: TObject);
+begin
+  Finish();
+end;
 
 procedure TFrameListViewGroup.DoCreate;
 begin
@@ -117,11 +122,6 @@ procedure TFrameListViewGroup.DoShow;
 begin
   inherited;
   tvTitle.Text := Title;
-end;
-
-procedure TFrameListViewGroup.TextView1Click(Sender: TObject);
-begin
-  Finish;
 end;
 
 { TDataItem }

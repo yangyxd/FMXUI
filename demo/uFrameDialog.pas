@@ -11,12 +11,10 @@ uses
 type
   TFrmaeDialog = class(TFrame)
     LinearLayout1: TLinearLayout;
-    SpeedButton1: TSpeedButton;
     tvTitle: TTextView;
     VertScrollBox1: TVertScrollBox;
     LinearLayout2: TLinearLayout;
     ButtonView1: TButtonView;
-    ImageList1: TImageList;
     ButtonView2: TButtonView;
     ButtonView3: TButtonView;
     ButtonView4: TButtonView;
@@ -24,13 +22,11 @@ type
     ButtonView6: TButtonView;
     ButtonView7: TButtonView;
     ButtonView8: TButtonView;
-    ButtonView9: TButtonView;
     ButtonView11: TButtonView;
     ButtonView10: TButtonView;
     ButtonView12: TButtonView;
-    PopupMenu1: TPopupMenu;
-    MenuItem1: TMenuItem;
-    procedure SpeedButton1Click(Sender: TObject);
+    btnBack: TTextView;
+    ButtonView9: TButtonView;
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
     procedure ButtonView3Click(Sender: TObject);
@@ -39,10 +35,11 @@ type
     procedure ButtonView6Click(Sender: TObject);
     procedure ButtonView7Click(Sender: TObject);
     procedure ButtonView8Click(Sender: TObject);
-    procedure ButtonView9Click(Sender: TObject);
     procedure ButtonView11Click(Sender: TObject);
     procedure ButtonView10Click(Sender: TObject);
     procedure ButtonView12Click(Sender: TObject);
+    procedure btnBackClick(Sender: TObject);
+    procedure ButtonView9Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -62,6 +59,11 @@ uses
 
 { TFrmaeDialog }
 
+procedure TFrmaeDialog.btnBackClick(Sender: TObject);
+begin
+  Finish();
+end;
+
 procedure TFrmaeDialog.ButtonView10Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
@@ -79,23 +81,23 @@ begin
       '列表项 - 2',
       '列表项 - 3',
       '列表项 - 4',
-      '列表项 - 1',
-      '列表项 - 2',
-      '列表项 - 3',
-      '列表项 - 4',
-      '列表项 - 1',
-      '列表项 - 2',
-      '列表项 - 3',
-      '列表项 - 4',
-      '列表项 - 1',
-      '列表项 - 2',
-      '列表项 - 3',
-      '列表项 - 4',
-      '列表项 - 1',
-      '列表项 - 2',
-      '列表项 - 3',
-      '列表项 - 4',
-      '列表项 - 5'
+      '列表项 - 5',
+      '列表项 - 6',
+      '列表项 - 7',
+      '列表项 - 8',
+      '列表项 - 9',
+      '列表项 - 10',
+      '列表项 - 11',
+      '列表项 - 12',
+      '列表项 - 13',
+      '列表项 - 14',
+      '列表项 - 15',
+      '列表项 - 16',
+      '列表项 - 17',
+      '列表项 - 18',
+      '列表项 - 19',
+      '列表项 - 20',
+      '列表项 - 21'
     ], 1)
     .SetPositiveButton('取消')
     .SetNegativeButton('确定',
@@ -244,18 +246,25 @@ end;
 
 procedure TFrmaeDialog.ButtonView9Click(Sender: TObject);
 begin
-  StartFrame(TFrameListViewTest);
+  TDialogBuilder.Create(Self)
+    .SetItems(['列表项 - 1', '列表项 - 2', '列表项 - 3', '列表项 - 4', '列表项 - 5'],
+      procedure (Dialog: IDialog; Which: Integer) begin
+        Hint(Dialog.Builder.ItemArray[Which]);
+      end
+    )
+    .SetOnInitListAdapterA(
+      procedure (Dialog: IDialog; Builder: TDialogBuilder; var Adapter: IListAdapter)
+      begin
+        TDialogView(Dialog.ViewRoot).ListView.ColumnCount := 2;
+      end
+    )
+    .Show;
 end;
 
 procedure TFrmaeDialog.DoShow;
 begin
   inherited;
   tvTitle.Text := Title;
-end;
-
-procedure TFrmaeDialog.SpeedButton1Click(Sender: TObject);
-begin
-  Finish(TFrameAniType.FadeInOut);
 end;
 
 end.

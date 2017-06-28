@@ -12,7 +12,7 @@ object FrameMultiPathView: TFrameMultiPathView
     Size.PlatformDefault = False
     TabOrder = 0
     Orientation = Horizontal
-    object TextView17: TTextView
+    object btnBack: TTextView
       Background.ItemPressed.Color = x7F000000
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = xBFC0C0C0
@@ -28,7 +28,7 @@ object FrameMultiPathView: TFrameMultiPathView
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 3
-      OnClick = TextView17Click
+      OnClick = btnBackClick
       TextSettings.Color.Default = claWhite
       TextSettings.Color.Focused = claNull
       TextSettings.Color.Selected = claNull
@@ -37,24 +37,9 @@ object FrameMultiPathView: TFrameMultiPathView
       TextSettings.PrefixStyle = HidePrefix
       TextSettings.Gravity = Center
       Drawable.Position = Center
-      Drawable.ItemDefault.Bitmap.Bitmap.PNG = {
-        89504E470D0A1A0A0000000D4948445200000040000000400806000000AA6971
-        DE000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
-        014F49444154785EEDDAB151C3401844618948A14BA0044A101DB8044AA0043A
-        A114DC01254007840AA49378B6FF230049368C6186BD7DC98D3D977C2B271EBB
-        FA4F4DD3B449293D72B6F15659053E57D6089FF0B9324658C0E7B44738819FBA
-        AE7BE3D8C475ADCEC46FE3BA56C01E0ECA858C375E3060C62F258D1FC7F1FEC8
-        9CCF78E305337E25E38D17CCF8958C57C6077036E38D17CCF852F1C0EE8C5FC8
-        78E305035634BE55C15FC5F9ED9AA639F57BDC6B9C9AF184DBC3E35E283E0537
-        715D33801E01A04700E811007A0480E78C701DD73503B83A42DFF72F1C9A7F69
-        C901F408003D02408F00D023005C1D611886670E8FC0E111383C425CD50DA747
-        C0E911707A049C1E01E7EA0829A5A7B8AA1B4E8F80D323E0F408383D024E8F80
-        D323E0FCD5117EFCDBE05F55D7F58EE3F6F86A3E76D0FE06B90FE4974FC2FEE9
-        73E8E373603F46280E9F03DD5E0E5F55EF7FEA95CD7963214A0000000049454E
-        44AE426082}
-      Drawable.ItemDefault.Bitmap.WrapMode = TileStretch
-      Drawable.ItemDefault.Kind = Bitmap
-      Drawable.ItemPressed.ImageIndex = 1
+      Drawable.ItemDefault.Kind = AccessoryBitmap
+      Drawable.ItemDefault.AccessoryType = Back
+      Drawable.ItemDefault.AccessoryColor = claWhite
     end
     object tvTitle: TTextView
       Background.Border.Color.Default = xBFC0C0C0

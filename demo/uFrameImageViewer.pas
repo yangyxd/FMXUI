@@ -10,10 +10,10 @@ uses
 type
   TFrameImageViewer = class(TFrame)
     LinearLayout1: TLinearLayout;
-    TextView17: TTextView;
     tvTitle: TTextView;
     ImageViewerEx1: TImageViewerEx;
-    procedure TextView17Click(Sender: TObject);
+    btnBack: TTextView;
+    procedure btnBackClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -24,7 +24,7 @@ implementation
 
 {$R *.fmx}
 
-procedure TFrameImageViewer.TextView17Click(Sender: TObject);
+procedure TFrameImageViewer.btnBackClick(Sender: TObject);
 begin
   Finish;
 end;

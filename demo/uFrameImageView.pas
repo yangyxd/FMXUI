@@ -10,14 +10,14 @@ uses
 type
   TFrameImageView = class(TFrame)
     LinearLayout1: TLinearLayout;
-    TextView1: TTextView;
     tvTitle: TTextView;
     ImageView1: TImageView;
     ButtonView1: TButtonView;
     ButtonView2: TButtonView;
-    procedure TextView1Click(Sender: TObject);
+    btnBack: TTextView;
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
+    procedure btnBackClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -30,6 +30,11 @@ implementation
 
 uses
   UI.Dialog, TypInfo;
+
+procedure TFrameImageView.btnBackClick(Sender: TObject);
+begin
+  Finish;
+end;
 
 procedure TFrameImageView.ButtonView1Click(Sender: TObject);
 begin
@@ -55,11 +60,6 @@ begin
       end
     )
     .Show();
-end;
-
-procedure TFrameImageView.TextView1Click(Sender: TObject);
-begin
-  Finish;
 end;
 
 end.

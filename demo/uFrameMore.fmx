@@ -12,9 +12,15 @@ object FrameMore: TFrameMore
     Size.PlatformDefault = False
     TabOrder = 0
     Orientation = Horizontal
-    object TextView1: TTextView
+    object btnBack: TTextView
+      Background.ItemPressed.Color = x7F000000
+      Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = xBFC0C0C0
       Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
       Clickable = True
       HeightSize = FillParent
       HitTest = True
@@ -22,16 +28,26 @@ object FrameMore: TFrameMore
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 3
-      OnClick = TextView1Click
+      OnClick = btnBackClick
+      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Font.Size = 18.000000000000000000
       TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
       Drawable.Position = Center
-      Drawable.Images = ImageList1
-      Drawable.ItemDefault.ImageIndex = 0
-      Drawable.ItemPressed.ImageIndex = 1
+      Drawable.ItemDefault.Kind = AccessoryBitmap
+      Drawable.ItemDefault.AccessoryType = Back
+      Drawable.ItemDefault.AccessoryColor = claWhite
     end
     object tvTitle: TTextView
       Background.Border.Color.Default = xBFC0C0C0
       Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
       Weight = 1.000000000000000000
       Margins.Right = 50.000000000000000000
       Size.Width = 242.000000000000000000
@@ -41,6 +57,9 @@ object FrameMore: TFrameMore
       TabOrder = 1
       Text = 'tvTitle'
       TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
       TextSettings.Font.Size = 18.000000000000000000
       TextSettings.PrefixStyle = HidePrefix
       TextSettings.Gravity = Center
@@ -63,17 +82,21 @@ object FrameMore: TFrameMore
       Padding.Right = 12.000000000000000000
       Padding.Bottom = 12.000000000000000000
       Size.Width = 342.000000000000000000
-      Size.Height = 258.000000000000000000
+      Size.Height = 259.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
       Orientation = Vertical
       object TextView2: TTextView
         Background.Border.Color.Default = xBFC0C0C0
         Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Selected = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
         WidthSize = WrapContent
         HeightSize = WrapContent
         Size.Width = 192.000000000000000000
-        Size.Height = 80.000000000000000000
+        Size.Height = 81.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 12.000000000000000000
@@ -98,12 +121,13 @@ object FrameMore: TFrameMore
         object ButtonView1: TButtonView
           Background.ItemDefault.Color = claOlivedrab
           Background.ItemPressed.Color = claOlive
-          Background.ItemPressed.Kind = Solid
           Background.Border.Color.Default = claOlive
           Background.Border.Color.Pressed = claOlive
           Background.Border.Color.Focused = xEFCCCCCC
           Background.Border.Color.Hovered = xEFCCCCCC
+          Background.Border.Color.Selected = claNull
           Background.Border.Color.Checked = xEFCCCCCC
+          Background.Border.Color.Enabled = claNull
           Background.Border.Color.Activated = xEFCCCCCC
           WidthSize = FillParent
           Padding.Left = 4.000000000000000000
@@ -121,6 +145,9 @@ object FrameMore: TFrameMore
           OnClick = ButtonView1Click
           Text = 'Dialog Test'
           TextSettings.Color.Default = claWhite
+          TextSettings.Color.Focused = claNull
+          TextSettings.Color.Selected = claNull
+          TextSettings.Color.Enabled = claNull
           TextSettings.Font.Size = 16.000000000000000000
           TextSettings.PrefixStyle = HidePrefix
           TextSettings.Gravity = Center
@@ -129,12 +156,13 @@ object FrameMore: TFrameMore
         object ButtonView2: TButtonView
           Background.ItemDefault.Color = claMediumslateblue
           Background.ItemPressed.Color = claMediumblue
-          Background.ItemPressed.Kind = Solid
           Background.Border.Color.Default = claOlive
           Background.Border.Color.Pressed = claOlive
           Background.Border.Color.Focused = xEFCCCCCC
           Background.Border.Color.Hovered = xEFCCCCCC
+          Background.Border.Color.Selected = claNull
           Background.Border.Color.Checked = xEFCCCCCC
+          Background.Border.Color.Enabled = claNull
           Background.Border.Color.Activated = xEFCCCCCC
           WidthSize = FillParent
           Padding.Left = 4.000000000000000000
@@ -152,12 +180,29 @@ object FrameMore: TFrameMore
           OnClick = ButtonView2Click
           Text = 'ListView Test'
           TextSettings.Color.Default = claWhite
+          TextSettings.Color.Focused = claNull
+          TextSettings.Color.Selected = claNull
+          TextSettings.Color.Enabled = claNull
           TextSettings.Font.Size = 16.000000000000000000
           TextSettings.PrefixStyle = HidePrefix
           TextSettings.Gravity = Center
           Drawable.ItemDefault.ImageIndex = 0
         end
       end
+    end
+    object DateView1: TDateView
+      Position.X = 16.000000000000000000
+      Position.Y = 264.000000000000000000
+      TabOrder = 2
+      Text = '2017-06-28'
+      DateTimeFormat = 'yyyy/MM/dd'
+    end
+    object TimeView1: TTimeView
+      Position.X = 16.000000000000000000
+      Position.Y = 288.000000000000000000
+      TabOrder = 3
+      Text = '15:26'
+      DateTimeFormat = 'hh:mm'
     end
   end
   object ImageList1: TImageList
@@ -174,18 +219,18 @@ object FrameMore: TFrameMore
               89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
               03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
               017A494441545847D5984D4EC33010855347390711555541A9DACB941E077193
-              72079620B163072C9315650B1788F267DE443391006705F20C9F644D3DB1E4A7
-              5767623BF90BBCF739DA8122A774E9FB7E53D7F511823C45EAF3231DA0E3B46D
-              DB671224745D77C78FE30347D6E29050144587FC9E87C405132FE0D0136B19A8
-              AAEA4353D00F8708E42F79485C30F1D29A432B6B0E9D051C7A5715D434CD2B6B
-              19417E8F30E361F1C0C4E7D61C5A86D610D8A1A9387411720861C743E202418B
-              A9B70C41C5A1B5B53534B7B28686C92068837648D3743B64197CF11F9D73B7DC
-              8DC60C2EE4A8430F59969D704E1D0787AE2D0922F0EFB82B38F5C6FD91B22C3D
-              FF8C8EC935350251C1B70F799DFA244000D5A92F7B6EAE533AFB250102A62ABA
-              CEAE4060C7EC5476010282BB041286A0EAD86AC231F535666BE7299030AB6BCC
-              D6694680003AF77DAF6374EE531766EB842C4000DD25FC0FC7546F5D040898C3
-              B117D634809DC53D3FD603C26CDDE409D093C3A11B8A9CFA0549F209D33B4BC2
-              A5EF4E910000000049454E44AE426082}
+              72079620B1630748C99EB2850B44F9336FA2994880B30279864FB2A69E58F2D3
+              AB33B19DFC05DEFB1CED409153BAF47DBFA9EBFA08419E22F5F9910ED071DAB6
+              ED330912BAAEBBE3C7F181236B7148288AA2437ECF43E282891770E889B50C54
+              55F5A129E8874304F2973C242E987869CDA1953587CE020EBDAB0A6A9AE695B5
+              8C20BF4798F1B07860E2736B0E2D436B08ECD0541CBA083984B0E3217181A0C5
+              D45B86A0E2D0DADA1A9A5B5943C36410B4413BA469BA1DB20CBEF88FCEB95BEE
+              4663061772D4A1872CCB4E38A78E8343D7960411F877DC159C7AE3FE4859969E
+              7F46C7E49A1A81A8E0DB87BC4E7D122080EAD4973D37D7299DFD92000153155D
+              675720B063762ABB0001C15D02094350756C35E198FA1AB3B5F3144898D53566
+              EB342340009DFBBED7313AF7A90BB37542162080EE12FE8763AAB72E0204CCE1
+              D80B6B1AC0CEE29E1FEB0161B66EF204E8C9E1D00D454EFD8224F904F4DF4B95
+              F0AAAC940000000049454E44AE426082}
             FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_back.png'
           end>
         Name = 'btn_back'
@@ -237,21 +282,21 @@ object FrameMore: TFrameMore
             PNG = {
               89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
               03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
-              01BC494441545847ED98CF4AC34010879B14142C481154042D3E8B82BE8567EB
-              C18BFA265AF5EADDBBA0BE841E444510AA270FB687AA983FFAADFD5588A4854D
-              DAB5877C30ECECFC0676D86C96494A7988E37801DB0D82E0E60BCC68E626AE14
-              B7B0F05C1445E7A698BF9838FABC52DDC1A23BAA2115F43DA5BA8347F5A0F553
-              41BF57AA35BE466B3A9D4E4D6E2AE88B72DD1186E1B5362515F42BA55A9379A7
-              7CDF6FB4DBED40D304268E7EA4A93B38C8D3BC65A7DA9804266E74A55AE369CC
-              04EB4F615BD80A36E379DE2B768935B037A55993ABA81EECCA24C3048504D847
-              375A50303EE43AE81CF059860DDEBC35FC1A77D31307FD8CD809FECB4F924B28
-              A46ABA8156AB15E3FF62E6EA1EAA4A75073BB34D0161B79424266E74A5BA832E
-              E04E35A4827EAB546BF27409CB7253415F926B4DE6A22A95CAA3DC54D09B72AD
-              C95C54B95CDEA71B88344D60E2E8079ABA836333B2B76F58F7D4BAEEA9E6BFDE
-              5305057D18CBCE73183D7A1D5BC57A3DFA05768865EED133C3EE8CEC6B26332C
-              BAC945F9A93A1298387A5DA9EE18E5177266FAED520FF477A55A93A74B18D805
-              A03FCBB5264F9730F05F01FAB15C777090C7EF4F9E818547F0CFB354FA060314
-              7872D370E41F0000000049454E44AE426082}
+              01B2494441545847ED98BD4AC44010C72F3950B090435011F4F05914F42DAC3D
+              0B1BF54DF4D4D6DE5E505F420BF1ABD22E81A44854CC87FEC7FB9F10C9299B5C
+              C614F9C1B0B333033B4C7697C9B6CA90A6E90264378AA29B0F20A3CCC5CE105D
+              B0F05C9224E792CC4FC40EFF3C43F5C0A23BCC2117F8F718AA073ED523D7CF05
+              FE7B861A637334C6F7FD2ED55C822058A4AA471CC7D72C4A2EF05F31D498C295
+              B26DBBEFBA6EC46906B1C37FC4A91ED8C8D33865A72C4C06B18B9FA1C6581C0B
+              81F5A7205B9015C88C65591EE412D287BC30CC9852490D415526314C209108F2
+              36B03634D487521B1D1B7C16C3064EDE1AF42EEEA6676CF433D84EA03B5F419A
+              20918E74038EE3A4D0BF9139BB870E43F54065B691403C48258BD8C5CF503DD0
+              05DC31875CE0BF65A83165BA8465AAB98461B844558F5A56AADD6EEFA31B4838
+              CD2076F80F38D503C5A8ECF48DEB9E5AE73DF5F4AFF75443C3086AD9798EA347
+              EF415621C31EFD02720829DCA31706D5A9EC6FA63058741317E53BF3C82076F8
+              7B0CD5A3CA3FE4C28CAAD210CFF35E19AA07BA80BF5E5D1E186A4C992EE1D7B7
+              02F88FA9EA818D5CBF973C010B57F0E6D96A7D0231C2BA70E4CF19F500000000
+              49454E44AE426082}
             FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_top_more.png'
           end>
         Name = 'btn_top_more'

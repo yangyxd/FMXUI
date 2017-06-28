@@ -10,7 +10,6 @@ uses
 type
   TFrameRingView = class(TFrame)
     LinearLayout1: TLinearLayout;
-    TextView17: TTextView;
     tvTitle: TTextView;
     RelativeLayout1: TRelativeLayout;
     RingView1: TRingView;
@@ -20,10 +19,11 @@ type
     RingView5: TRingView;
     RingView6: TRingView;
     TextView1: TTextView;
-    procedure TextView17Click(Sender: TObject);
+    btnBack: TTextView;
     procedure RingView5Click(Sender: TObject);
     procedure RingView1MouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Single);
+    procedure btnBackClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -37,6 +37,11 @@ uses
 
 {$R *.fmx}
 
+procedure TFrameRingView.btnBackClick(Sender: TObject);
+begin
+  Finish;
+end;
+
 procedure TFrameRingView.RingView1MouseMove(Sender: TObject; Shift: TShiftState;
   X, Y: Single);
 begin
@@ -48,11 +53,6 @@ end;
 procedure TFrameRingView.RingView5Click(Sender: TObject);
 begin
   tvTitle.Text := (TView(Sender).Name);
-end;
-
-procedure TFrameRingView.TextView17Click(Sender: TObject);
-begin
-  Finish;
 end;
 
 end.

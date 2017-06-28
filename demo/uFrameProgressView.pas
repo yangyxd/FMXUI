@@ -11,7 +11,6 @@ uses
 type
   TFrameProgressView = class(TFrame)
     LinearLayout1: TLinearLayout;
-    TextView1: TTextView;
     tvTitle: TTextView;
     TextView2: TTextView;
     ImageList1: TImageList;
@@ -23,7 +22,7 @@ type
     TextView3: TTextView;
     Timer2: TTimer;
     ProgressView5: TProgressView;
-    procedure TextView1Click(Sender: TObject);
+    btnBack: TTextView;
     procedure Timer1Timer(Sender: TObject);
     procedure ProgressView1Click(Sender: TObject);
     procedure ProgressView2Click(Sender: TObject);
@@ -31,6 +30,7 @@ type
     procedure Image1Click(Sender: TObject);
     procedure Timer2Timer(Sender: TObject);
     procedure RingView1Click(Sender: TObject);
+    procedure btnBackClick(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -43,6 +43,11 @@ type
 implementation
 
 {$R *.fmx}
+
+procedure TFrameProgressView.btnBackClick(Sender: TObject);
+begin
+  Finish();
+end;
 
 procedure TFrameProgressView.DoFree;
 begin
@@ -77,11 +82,6 @@ end;
 procedure TFrameProgressView.RingView1Click(Sender: TObject);
 begin
   Hint('click');
-end;
-
-procedure TFrameProgressView.TextView1Click(Sender: TObject);
-begin
-  Finish();
 end;
 
 procedure TFrameProgressView.Timer1Timer(Sender: TObject);

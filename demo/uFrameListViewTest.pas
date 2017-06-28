@@ -12,13 +12,13 @@ type
     ListViewEx1: TListViewEx;
     TextView1: TTextView;
     LinearLayout1: TLinearLayout;
-    SpeedButton1: TSpeedButton;
     tvTitle: TTextView;
+    btnBack: TTextView;
     procedure ListViewEx1ItemClick(Sender: TObject; ItemIndex: Integer;
       const ItemView: TControl);
     procedure ListViewEx1ScrollChange(Sender: TObject);
-    procedure SpeedButton1Click(Sender: TObject);
     procedure tvTitleClick(Sender: TObject);
+    procedure btnBackClick(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -33,6 +33,11 @@ implementation
 
 uses
   UI.Dialog;
+
+procedure TFrameListViewTest.btnBackClick(Sender: TObject);
+begin
+  Finish();
+end;
 
 procedure TFrameListViewTest.DoShow;
 var
@@ -70,11 +75,6 @@ procedure TFrameListViewTest.ListViewEx1ScrollChange(Sender: TObject);
 begin
   TCustomForm(Parent).Caption := Format('ScrollBarValue: %.2f/%.2f',
     [ListViewEx1.VScrollBar.ValueD, ListViewEx1.VScrollBar.MaxD])
-end;
-
-procedure TFrameListViewTest.SpeedButton1Click(Sender: TObject);
-begin
-  Finish;
 end;
 
 procedure TFrameListViewTest.tvTitleClick(Sender: TObject);

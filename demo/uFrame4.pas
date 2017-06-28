@@ -10,15 +10,15 @@ uses
 type
   TFrame4 = class(TFrame)
     LinearLayout1: TLinearLayout;
-    TextView17: TTextView;
     tvTitle: TTextView;
     LinearLayout3: TLinearLayout;
     TextView1: TTextView;
     TextView2: TTextView;
     TextView3: TTextView;
     TextView4: TTextView;
-    procedure TextView17Click(Sender: TObject);
+    btnBack: TTextView;
     procedure TextView1Click(Sender: TObject);
+    procedure btnBackClick(Sender: TObject);
   private
     { Private declarations }
     FViews: array of TFrameView;
@@ -41,6 +41,11 @@ uses
   uFrame4_Page2,
   uFrame4_Page3,
   uFrame4_Page0;
+
+procedure TFrame4.btnBackClick(Sender: TObject);
+begin
+  Finish();
+end;
 
 procedure TFrame4.DoCreate;
 begin
@@ -66,11 +71,6 @@ procedure TFrame4.DoShow;
 begin
   inherited;
 
-end;
-
-procedure TFrame4.TextView17Click(Sender: TObject);
-begin
-  Finish();
 end;
 
 procedure TFrame4.TextView1Click(Sender: TObject);

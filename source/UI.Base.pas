@@ -118,6 +118,7 @@ type
     FActiveStyle: TFmxObject;
     procedure AddEllipsesAccessory;
     procedure AddFlagAccessory;
+    procedure AddBackAccessory;
     procedure CalculateImageScale;
     function GetAccessoryFromResource(const AStyleName: string; const AState: string = ''): TBitmap;
     procedure Initialize;
@@ -126,11 +127,12 @@ type
     destructor Destroy; override;
 
     function GetAccessoryImage(AAccessory: TViewAccessoryType): TBitmap;
+    procedure SetAccessoryImage(AAccessory: TViewAccessoryType; const Value: TBitmap);
 
     procedure Draw(ACanvas: TCanvas; const ARect: TRectF; AAccessory: TViewAccessoryType;
       const AOpacity: Single = 1; const AStretch: Boolean = True);
 
-    property Images[AAccessory: TViewAccessoryType]: TBitmap read GetAccessoryImage; default;
+    property Images[AAccessory: TViewAccessoryType]: TBitmap read GetAccessoryImage write SetAccessoryImage; default;
     property ImageMap: TBitmap read FImageMap;
     property ImageScale: single read FImageScale;
   end;
@@ -1948,25 +1950,25 @@ end;
 { ю╢вт KernowSoftwareFMX }
 procedure ReplaceOpaqueColor(ABmp: TBitmap; const Color: TAlphaColor);
 var
-  x,y: Integer;
+  x, y: Integer;
   AMap: TBitmapData;
   PixelColor: TAlphaColor;
-  PixelWhiteColor: TAlphaColor;
+  //PixelWhiteColor: TAlphaColor;
   C: PAlphaColorRec;
 begin
-  if (Assigned(ABmp)) then
-  begin
+  if (Assigned(ABmp)) then begin
     if ABmp.Map(TMapAccess.ReadWrite, AMap) then
     try
       AlphaColorToPixel(Color   , @PixelColor, AMap.PixelFormat);
-      AlphaColorToPixel(claWhite, @PixelWhiteColor, AMap.PixelFormat);
-      for y := 0 to ABmp.Height - 1 do
-      begin
-        for x := 0 to ABmp.Width - 1 do
-        begin
+      //AlphaColorToPixel(claWhite, @PixelWhiteColor, AMap.PixelFormat);
+      for y := 0 to ABmp.Height - 1 do begin
+        for x := 0 to ABmp.Width - 1 do begin
           C := @PAlphaColorArray(AMap.Data)[y * (AMap.Pitch div 4) + x];
-          if (C^.Color<>claWhite) and (C^.A>0) then
-            C^.Color := PremultiplyAlpha(MakeColor(PixelColor, C^.A / $FF));
+          if (C^.Color <> claWhite) and (C^.A > 0) then begin
+            TAlphaColorRec(PixelColor).A := C^.A;
+            C^.Color := PremultiplyAlpha(PixelColor);
+          end;
+            //C^.Color := PremultiplyAlpha(MakeColor(PixelColor, C^.A / $FF));
         end;
       end;
     finally
@@ -6687,6 +6689,31 @@ end;
 
 { TViewAccessoryImageList }
 
+procedure TViewAccessoryImageList.AddBackAccessory;
+var
+  AAcc: TBitmap;
+begin
+  AAcc := TBitmap.Create;
+  AAcc.SetSize(64, 64);
+  AAcc.Clear(claNull);
+  AAcc.Canvas.BeginScene;
+  try
+    AAcc.Canvas.Fill.Color := claSilver;
+    AAcc.Canvas.FillPolygon([
+      PointF(40, 0),
+      PointF(46, 6),
+      PointF(21, 31.5),
+      PointF(46, 56),
+      PointF(40, 63),
+      PointF(9, 31.5),
+      PointF(40, 0)
+    ], 1);
+  finally
+    AAcc.Canvas.EndScene;
+  end;
+  Add(AAcc);
+end;
+
 procedure TViewAccessoryImageList.AddEllipsesAccessory;
 var
   AAcc: TBitmap;
@@ -6880,6 +6907,14 @@ begin
   Result := Items[Ord(AAccessory)];
 end;
 
+procedure TViewAccessoryImageList.SetAccessoryImage(
+  AAccessory: TViewAccessoryType; const Value: TBitmap);
+begin
+  if Count = 0 then
+    Initialize;
+  Items[Ord(AAccessory)].Assign(Value);
+end;
+
 procedure TViewAccessoryImageList.Initialize;
 var
   ICount: TViewAccessoryType;
@@ -6893,7 +6928,7 @@ begin
       TViewAccessoryType.Detail: Add(GetAccessoryFromResource('listviewstyle.accessorydetail'));
       TViewAccessoryType.Ellipses: AddEllipsesAccessory;
       TViewAccessoryType.Flag: AddFlagAccessory;
-      TViewAccessoryType.Back: Add(GetAccessoryFromResource('backtoolbutton.icon'));
+      TViewAccessoryType.Back: AddBackAccessory;// Add(GetAccessoryFromResource('backtoolbutton.icon'));
       TViewAccessoryType.Refresh: Add(GetAccessoryFromResource('refreshtoolbutton.icon'));
       TViewAccessoryType.Action: Add(GetAccessoryFromResource('actiontoolbutton.icon'));
       TViewAccessoryType.Play: Add(GetAccessoryFromResource('playtoolbutton.icon'));

@@ -5,6 +5,7 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
+  FMX.DialogService,
   UI.Standard, UI.Base, UI.Grid, UI.Frame, FireDAC.Stan.Intf,
   FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf,
   FireDAC.Stan.Def, FireDAC.Phys, FireDAC.Stan.Pool, FireDAC.Stan.Async,
@@ -14,26 +15,28 @@ uses
 type
   TFrameGridView = class(TFrame)
     GridView1: TStringGridView;
-    ButtonView1: TButtonView;
-    ButtonView2: TButtonView;
-    ButtonView3: TButtonView;
-    ButtonView4: TButtonView;
     LinearLayout1: TLinearLayout;
-    TextView1: TTextView;
     tvTitle: TTextView;
     DBGridView1: TDBGridView;
     FDMemTable1: TFDMemTable;
     FDMemTable1Name: TStringField;
     FDMemTable1Title: TStringField;
     DataSource1: TDataSource;
-    ButtonView5: TButtonView;
     FDMemTable1Total: TFloatField;
+    LinearLayout2: TLinearLayout;
+    ButtonView5: TButtonView;
+    ButtonView4: TButtonView;
+    ButtonView3: TButtonView;
+    ButtonView2: TButtonView;
+    ButtonView1: TButtonView;
+    btnBack: TTextView;
     procedure TextView1Click(Sender: TObject);
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
     procedure ButtonView3Click(Sender: TObject);
     procedure ButtonView4Click(Sender: TObject);
     procedure ButtonView5Click(Sender: TObject);
+    procedure btnBackClick(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -49,6 +52,11 @@ uses
 
 {$R *.fmx}
 
+procedure TFrameGridView.btnBackClick(Sender: TObject);
+begin
+  Finish;
+end;
+
 procedure TFrameGridView.ButtonView1Click(Sender: TObject);
 begin
   GridView1.Clear;
@@ -60,20 +68,23 @@ begin
 end;
 
 procedure TFrameGridView.ButtonView3Click(Sender: TObject);
-var
-  V: string;
 begin
-  V := InputBox('输入新行数', '新行数', IntToStr(GridView1.RowCount));
-  GridView1.RowCount := StrToIntDef(V, GridView1.RowCount);
-  //FAdapter.NotifyDataChanged;
+  TDialogService.InputQuery('输入新行数', ['新行数'], [IntToStr(GridView1.RowCount)],
+    procedure(const AResult: TModalResult; const AValues: array of string)
+    begin
+      GridView1.RowCount := StrToIntDef(AValues[0], GridView1.RowCount);
+    end
+  );
 end;
 
 procedure TFrameGridView.ButtonView4Click(Sender: TObject);
-var
-  V: string;
 begin
-  V := InputBox('输入新列数', '新列数', IntToStr(GridView1.ColCount));
-  GridView1.ColCount := StrToIntDef(V, GridView1.ColCount);
+  TDialogService.InputQuery('输入新列数', ['新列数'], [IntToStr(GridView1.RowCount)],
+    procedure(const AResult: TModalResult; const AValues: array of string)
+    begin
+      GridView1.ColCount := StrToIntDef(AValues[0], GridView1.ColCount);
+    end
+  );
 end;
 
 procedure TFrameGridView.ButtonView5Click(Sender: TObject);

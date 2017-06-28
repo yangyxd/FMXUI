@@ -10,10 +10,10 @@ uses
 type
   TFrameMultiPathView = class(TFrame)
     LinearLayout1: TLinearLayout;
-    TextView17: TTextView;
     tvTitle: TTextView;
     HorzScrollBox1: THorzScrollBox;
-    procedure TextView17Click(Sender: TObject);
+    btnBack: TTextView;
+    procedure btnBackClick(Sender: TObject);
   private
     { Private declarations }
     FMultiPath: TMultiPathView;
@@ -27,6 +27,11 @@ type
 implementation
 
 {$R *.fmx}
+
+procedure TFrameMultiPathView.btnBackClick(Sender: TObject);
+begin
+  Finish;
+end;
 
 procedure TFrameMultiPathView.DoCreate;
 var
@@ -155,11 +160,6 @@ end;
 procedure TFrameMultiPathView.DoItemClick(Sender: TObject; Index: Integer);
 begin
   tvTitle.Text := FMultiPath.Paths[Index].DisplayName;
-end;
-
-procedure TFrameMultiPathView.TextView17Click(Sender: TObject);
-begin
-  Finish;
 end;
 
 end.

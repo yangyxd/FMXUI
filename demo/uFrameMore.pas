@@ -6,12 +6,11 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
   System.ImageList, FMX.ImgList, UI.Standard, FMX.Layouts, UI.Base, UI.Frame,
-  UI.Edit;
+  UI.Edit, FMX.DateTimeCtrls;
 
 type
   TFrameMore = class(TFrame)
     LinearLayout1: TLinearLayout;
-    TextView1: TTextView;
     tvTitle: TTextView;
     VertScrollBox1: TVertScrollBox;
     LinearLayout2: TLinearLayout;
@@ -20,9 +19,12 @@ type
     LinearLayout3: TLinearLayout;
     ButtonView1: TButtonView;
     ButtonView2: TButtonView;
-    procedure TextView1Click(Sender: TObject);
+    btnBack: TTextView;
+    DateView1: TDateView;
+    TimeView1: TTimeView;
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
+    procedure btnBackClick(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -37,6 +39,11 @@ implementation
 
 uses
   UI.Dialog, uFrameListViewTest;
+
+procedure TFrameMore.btnBackClick(Sender: TObject);
+begin
+  Finish();
+end;
 
 procedure TFrameMore.ButtonView1Click(Sender: TObject);
 begin
@@ -59,11 +66,6 @@ procedure TFrameMore.DoShow;
 begin
   inherited;
   tvTitle.Text := Title;
-end;
-
-procedure TFrameMore.TextView1Click(Sender: TObject);
-begin
-  Finish();
 end;
 
 end.

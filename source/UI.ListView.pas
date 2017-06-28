@@ -2111,8 +2111,8 @@ procedure TListViewContent.DoRealign;
       if Control <> ItemView then begin
         {$IFDEF Debug}
         {$IFDEF MSWINDOWS}
-        OutputDebugString(PChar(Format('增加列表视图 Index: %d, %s. (ViewCount: %d)',
-          [I, ItemView.ClassName, FViews.Count])));
+        //OutputDebugString(PChar(Format('增加列表视图 Index: %d, %s. (ViewCount: %d)',
+        //  [I, ItemView.ClassName, FViews.Count])));
         {$ENDIF}
         {$IFDEF ANDROID}
         //LogD(Format('增加列表视图 Index: %d (ViewCount: %d)', [I, FViews.Count]));
@@ -2712,8 +2712,7 @@ begin
 
   BeginUpdate;
   try
-
-    if LS.MoveSpace >= 0 then begin
+    if (LS.MoveSpace >= 0) then begin
       LS.IsAutoSize := (FMaxParentHeight > 0) and (LS.ScrollValue = 0);  // 如果需要自动调整大小，且滚动条偏移为0时，说明正在初始化列表
       DoRealignDown(LS);   // 向下滚动
     end else begin

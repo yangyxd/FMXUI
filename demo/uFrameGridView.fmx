@@ -21,11 +21,11 @@ object FrameGridView: TFrameGridView
     Background.ItemPressed.Color = xFFD9D9D9
     Background.ItemPressed.Kind = Solid
     Gravity = None
-    Margins.Top = 30.000000000000000000
+    Margins.Top = 4.000000000000000000
     Size.Width = 496.000000000000000000
-    Size.Height = 322.000000000000000000
+    Size.Height = 324.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 19
+    TabOrder = 14
     Divider = x3FE3E4E5
     ScrollBars = Both
     DrawableCells.ItemTwoColor.Color = x5FFDFEFF
@@ -69,14 +69,14 @@ object FrameGridView: TFrameGridView
       end
       item
         Color = xFFECE8E8
-        Offset = 0.838509321212768500
+        Offset = 0.838509321212768600
       end
       item
         Color = claWhite
         Offset = 1.000000000000000000
       end>
     FixedSettings.Brush.ItemDefault.Gradient.StartPosition.X = 1.000000000000000000
-    FixedSettings.Brush.ItemDefault.Gradient.StartPosition.Y = 0.733153879642486500
+    FixedSettings.Brush.ItemDefault.Gradient.StartPosition.Y = 0.733153879642486600
     FixedSettings.Brush.ItemDefault.Gradient.StopPosition.Y = 0.266846120357513400
     FixedSettings.ColCount = 2
     FixedSettings.RowCount = 2
@@ -88,54 +88,6 @@ object FrameGridView: TFrameGridView
     RowCount = 50
     ShowColIndex = True
   end
-  object ButtonView1: TButtonView
-    Padding.Left = 4.000000000000000000
-    Padding.Top = 4.000000000000000000
-    Padding.Right = 4.000000000000000000
-    Padding.Bottom = 4.000000000000000000
-    Position.X = 8.000000000000000000
-    Position.Y = 55.000000000000000000
-    TabOrder = 13
-    OnClick = ButtonView1Click
-    Text = #28165#31354#34920#26684
-    TextSettings.Gravity = Center
-  end
-  object ButtonView2: TButtonView
-    Padding.Left = 4.000000000000000000
-    Padding.Top = 4.000000000000000000
-    Padding.Right = 4.000000000000000000
-    Padding.Bottom = 4.000000000000000000
-    Position.X = 96.000000000000000000
-    Position.Y = 55.000000000000000000
-    TabOrder = 12
-    OnClick = ButtonView2Click
-    Text = #21462#28040#36873#20013
-    TextSettings.Gravity = Center
-  end
-  object ButtonView3: TButtonView
-    Padding.Left = 4.000000000000000000
-    Padding.Top = 4.000000000000000000
-    Padding.Right = 4.000000000000000000
-    Padding.Bottom = 4.000000000000000000
-    Position.X = 184.000000000000000000
-    Position.Y = 55.000000000000000000
-    TabOrder = 16
-    OnClick = ButtonView3Click
-    Text = #20462#25913#34892#25968
-    TextSettings.Gravity = Center
-  end
-  object ButtonView4: TButtonView
-    Padding.Left = 4.000000000000000000
-    Padding.Top = 4.000000000000000000
-    Padding.Right = 4.000000000000000000
-    Padding.Bottom = 4.000000000000000000
-    Position.X = 272.000000000000000000
-    Position.Y = 55.000000000000000000
-    TabOrder = 11
-    OnClick = ButtonView4Click
-    Text = #20462#25913#21015#25968
-    TextSettings.Gravity = Center
-  end
   object LinearLayout1: TLinearLayout
     Align = Top
     Background.ItemDefault.Color = claPurple
@@ -146,7 +98,9 @@ object FrameGridView: TFrameGridView
     Size.PlatformDefault = False
     TabOrder = 0
     Orientation = Horizontal
-    object TextView1: TTextView
+    object btnBack: TTextView
+      Background.ItemPressed.Color = x7F000000
+      Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = xBFC0C0C0
       Background.Border.Color.Pressed = claSilver
       Background.Border.Color.Focused = claNull
@@ -160,11 +114,18 @@ object FrameGridView: TFrameGridView
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 3
-      OnClick = TextView1Click
+      OnClick = btnBackClick
+      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Font.Size = 18.000000000000000000
       TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
       Drawable.Position = Center
-      Drawable.ItemDefault.ImageIndex = 0
-      Drawable.ItemPressed.ImageIndex = 1
+      Drawable.ItemDefault.Kind = AccessoryBitmap
+      Drawable.ItemDefault.AccessoryType = Back
+      Drawable.ItemDefault.AccessoryColor = claWhite
     end
     object tvTitle: TTextView
       Background.Border.Color.Default = xBFC0C0C0
@@ -199,7 +160,7 @@ object FrameGridView: TFrameGridView
     Size.Height = 233.000000000000000000
     Size.PlatformDefault = False
     Position.Y = 402.000000000000000000
-    TabOrder = 20
+    TabOrder = 15
     ScrollBars = Both
     ReadOnly = False
     Options = [gvEditing, gvIndicator, gvRowIndex, gvColLines, gvRowLines, gvTwoColor, gvCancelOnExit, gvEscCancelEdit, gvColumnBestWidth, gvColumnResize, gvColumnMove, gvFixedFooter]
@@ -217,17 +178,91 @@ object FrameGridView: TFrameGridView
     DataSource = DataSource1
     ShowCheck = False
   end
-  object ButtonView5: TButtonView
-    Padding.Left = 4.000000000000000000
-    Padding.Top = 4.000000000000000000
-    Padding.Right = 4.000000000000000000
-    Padding.Bottom = 4.000000000000000000
-    Position.X = 360.000000000000000000
-    Position.Y = 55.000000000000000000
-    TabOrder = 10
-    OnClick = ButtonView5Click
-    Text = #23646#24615#20462#25913
-    TextSettings.Gravity = Center
+  object LinearLayout2: TLinearLayout
+    Align = Top
+    HeightSize = WrapContent
+    Gravity = None
+    Margins.Top = 2.000000000000000000
+    Size.Width = 496.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    Position.Y = 52.000000000000000000
+    TabOrder = 18
+    Orientation = Horizontal
+    object ButtonView5: TButtonView
+      Weight = 1.000000000000000000
+      Padding.Left = 4.000000000000000000
+      Padding.Top = 4.000000000000000000
+      Padding.Right = 4.000000000000000000
+      Padding.Bottom = 4.000000000000000000
+      Size.Width = 99.199996948242190000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 10
+      OnClick = ButtonView5Click
+      Text = #23646#24615#20462#25913
+      TextSettings.Gravity = Center
+    end
+    object ButtonView3: TButtonView
+      Weight = 1.000000000000000000
+      Padding.Left = 4.000000000000000000
+      Padding.Top = 4.000000000000000000
+      Padding.Right = 4.000000000000000000
+      Padding.Bottom = 4.000000000000000000
+      Size.Width = 99.200004577636720000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 99.199996948242190000
+      TabOrder = 16
+      OnClick = ButtonView3Click
+      Text = #20462#25913#34892#25968
+      TextSettings.Gravity = Center
+    end
+    object ButtonView4: TButtonView
+      Weight = 1.000000000000000000
+      Padding.Left = 4.000000000000000000
+      Padding.Top = 4.000000000000000000
+      Padding.Right = 4.000000000000000000
+      Padding.Bottom = 4.000000000000000000
+      Size.Width = 99.199996948242190000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 198.399993896484400000
+      TabOrder = 11
+      OnClick = ButtonView4Click
+      Text = #20462#25913#21015#25968
+      TextSettings.Gravity = Center
+    end
+    object ButtonView2: TButtonView
+      Weight = 1.000000000000000000
+      Padding.Left = 4.000000000000000000
+      Padding.Top = 4.000000000000000000
+      Padding.Right = 4.000000000000000000
+      Padding.Bottom = 4.000000000000000000
+      Size.Width = 99.199996948242190000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 297.600006103515600000
+      TabOrder = 12
+      OnClick = ButtonView2Click
+      Text = #21462#28040#36873#20013
+      TextSettings.Gravity = Center
+    end
+    object ButtonView1: TButtonView
+      Weight = 1.000000000000000000
+      Padding.Left = 4.000000000000000000
+      Padding.Top = 4.000000000000000000
+      Padding.Right = 4.000000000000000000
+      Padding.Bottom = 4.000000000000000000
+      Size.Width = 99.200012207031250000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 396.799987792968800000
+      TabOrder = 13
+      OnClick = ButtonView1Click
+      Text = #28165#31354#34920#26684
+      TextSettings.Gravity = Center
+    end
   end
   object FDMemTable1: TFDMemTable
     Active = True

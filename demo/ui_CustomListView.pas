@@ -32,14 +32,15 @@ type
 type
   TCustomListview = class(TFrame)
     LinearLayout1: TLinearLayout;
-    TextView1: TTextView;
     tvTitle: TTextView;
     TextView2: TTextView;
     ImageList1: TImageList;
     ListView: TListViewEx;
+    btnBack: TTextView;
     procedure TextView1Click(Sender: TObject);
     procedure ListViewPullRefresh(Sender: TObject);
     procedure ListViewPullLoad(Sender: TObject);
+    procedure btnBackClick(Sender: TObject);
   private
     { Private declarations }
     FAdapter: IListAdapter;
@@ -75,6 +76,11 @@ begin
     FList.Add(Item);
   end;
   FAdapter.NotifyDataChanged;
+end;
+
+procedure TCustomListview.btnBackClick(Sender: TObject);
+begin
+  Finish();
 end;
 
 procedure TCustomListview.DoCreate;
@@ -149,7 +155,6 @@ end;
 
 procedure TCustomListview.TextView1Click(Sender: TObject);
 begin
-  Finish();
 end;
 
 { TCustomListDataAdapter }

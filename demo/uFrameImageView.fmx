@@ -12,7 +12,7 @@ object FrameImageView: TFrameImageView
     Size.PlatformDefault = False
     TabOrder = 0
     Orientation = Horizontal
-    object TextView1: TTextView
+    object btnBack: TTextView
       Background.ItemPressed.Color = x7F000000
       Background.ItemPressed.Kind = Solid
       Background.Border.Color.Default = xBFC0C0C0
@@ -28,17 +28,18 @@ object FrameImageView: TFrameImageView
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 3
-      OnClick = TextView1Click
-      Text = '<'
+      OnClick = btnBackClick
       TextSettings.Color.Default = claWhite
       TextSettings.Color.Focused = claNull
       TextSettings.Color.Selected = claNull
       TextSettings.Color.Enabled = claNull
+      TextSettings.Font.Size = 18.000000000000000000
       TextSettings.PrefixStyle = HidePrefix
       TextSettings.Gravity = Center
       Drawable.Position = Center
-      Drawable.ItemDefault.ImageIndex = 0
-      Drawable.ItemPressed.ImageIndex = 1
+      Drawable.ItemDefault.Kind = AccessoryBitmap
+      Drawable.ItemDefault.AccessoryType = Back
+      Drawable.ItemDefault.AccessoryColor = claWhite
     end
     object tvTitle: TTextView
       Background.Border.Color.Default = xBFC0C0C0

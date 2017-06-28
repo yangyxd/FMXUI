@@ -27,11 +27,11 @@ type
     TextView15: TTextView;
     TextView16: TTextView;
     LinearLayout1: TLinearLayout;
-    TextView17: TTextView;
+    btnBack: TTextView;
     tvTitle: TTextView;
     BadgeView1: TBadgeView;
     BadgeView2: TBadgeView;
-    procedure TextView17Click(Sender: TObject);
+    procedure btnBackClick(Sender: TObject);
     procedure GridsLayout1Resize(Sender: TObject);
     procedure TextView2Click(Sender: TObject);
     procedure TextView3Click(Sender: TObject);
@@ -50,7 +50,7 @@ begin
   TextView16.Text := Format('%.2f', [GridsLayout1.Width])
 end;
 
-procedure TFrame2.TextView17Click(Sender: TObject);
+procedure TFrame2.btnBackClick(Sender: TObject);
 begin
   Finish();
 end;

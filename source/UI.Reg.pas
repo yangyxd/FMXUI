@@ -151,6 +151,9 @@ begin
   RegisterComponents(PageName, [TRingView]);
   RegisterComponents(PageName, [TMultiPathView]);
 
+  RegisterComponents(PageName, [TDateView]);
+  RegisterComponents(PageName, [TTimeView]);
+
   RegisterComponents(PageName, [TEditView]);
   RegisterComponents(PageName, [TListViewEx]);
 
