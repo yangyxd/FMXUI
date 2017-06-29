@@ -769,13 +769,13 @@ type
     CDefaultCellWidth = 100;             // 默认单元格宽度
     CDefaultMinColWidth = 25;            // 默认最佳单元格列宽
     CDefaultFixedColWidth = 50;          // 默认固定单元格列宽
-    CDefaultFixedRowHeight = 20;         // 默认固定单元格行高
+    CDefaultFixedRowHeight = 22;         // 默认固定单元格行高
     CDefaultEmptyRows = 1;               // 为空时显示几个空行？
     CDefaultTextRowIndex = '行号';       // 默认行号文本
     CDefaultAnchorWidth = 6;             // 默认列头图标宽度
     CDefaultAnchorHeight = 12;           // 默认列头图标高度
     CDefaultFilterIconWH = 12;           // 默认过滤图标宽度
-    CDefaultPadding = 3;                 // 默认Padding大小
+    CDefaultPadding = 2;                 // 默认Padding大小
 
     CDefaultOptions = [gvEditing, gvRowIndex, gvColLines, gvRowLines, gvTwoColor, gvCancelOnExit, gvEscCancelEdit];
   private
@@ -790,8 +790,6 @@ type
 
     FReadOnly: Boolean;
     FResizeing: Boolean;           // 正在调节大小
-
-    FDrawBuffer: TBitmap;
 
     FDivider: TAlphaColor;
     FDividerHeight: Single;
@@ -1642,8 +1640,6 @@ begin
 
   FOptions := CDefaultOptions;
 
-  FDrawBuffer := TBitmap.Create;
-
   FText := TGridTextSettings.Create(Self);
   FText.OnChanged := DoTextChange;
 
@@ -1796,7 +1792,6 @@ begin
   FreeAndNil(FFixedText);
   FreeAndNil(FFixedMergeMap);
   FreeAndNil(FFixedHeaderRange);
-  FreeAndNil(FDrawBuffer);
   FreeAndNil(FFixedSetting);
   FreeAndNil(FColumnsSetting);
   FreeAndNil(FFilterList);
@@ -2121,7 +2116,10 @@ begin
               Canvas.FillRect(VR, 0, 0, [], LOpacity, FContentViews.FDividerBrush);
             end;
             // 画底边横线
-            VR.Left := Max(R.Left, V + LW);
+            if V = LV then
+              VR.Left := LW
+            else
+              VR.Left := Max(R.Left, V + LW);
             VR.Top := LH + FFixedRowHeight;
             VR.Right := Min(R.Right, W + LW);
             VR.Bottom := Min(R.Bottom, LH + FFixedRowHeight + DH);
@@ -2146,7 +2144,9 @@ begin
   end;
 
   // 画行线
-  if FContentViews.FirstRowIndex >= 0 then begin
+  // OutputDebugString(PChar(Format('FContentViews.FirstRowIndex: %d', [FContentViews.FirstRowIndex])));
+
+  if (FContentViews.FLastRowIndex - FContentViews.FirstRowIndex) > 0 then begin
     if FColumns.ExistWordWarp then begin
       PH := @FItemsPoints[FContentViews.FirstRowIndex];
       LR.Bottom := LR.Top + FContentViews.FViewTop;
@@ -2154,9 +2154,12 @@ begin
         LR.Bottom := LR.Bottom + PH^ + DH;
         LR.Top := LR.Bottom - DH;
 
-        DoDrawFixedRowText(Canvas, I,
-          RectF(LR.Left, LR.Bottom - PH^ - DH, LR.Right, LR.Bottom - DH), LOpacity, ItemList);
-        if LR.Top < R.Bottom then
+        if I >= 0 then begin
+          DoDrawFixedRowText(Canvas, I,
+            RectF(LR.Left, LR.Bottom - PH^ - DH, LR.Right, LR.Bottom - DH), LOpacity, ItemList);
+        end;
+
+        if (LR.Top < R.Bottom) and (I >= 0) then
           Canvas.FillRect(LR, 0, 0, [], LOpacity, FContentViews.FDividerBrush);
 
         if LR.Top > MH then
@@ -2171,12 +2174,16 @@ begin
         LR.Bottom := LR.Bottom + LH + DH;
         LR.Top := LR.Bottom - DH;
 
-        DoDrawFixedRowText(Canvas, I,
-          RectF(LR.Left, LR.Bottom - LH - DH, LR.Right, LR.Bottom - DH), LOpacity, ItemList);
+        if I >= 0 then begin
+          DoDrawFixedRowText(Canvas, I,
+            RectF(LR.Left, LR.Bottom - LH - DH, LR.Right, LR.Bottom - DH), LOpacity, ItemList);
+        end;
+
         if LR.Top < R.Bottom then begin
           if LR.Bottom > R.Bottom then
             LR.Bottom := R.Bottom;
-          Canvas.FillRect(LR, 0, 0, [], LOpacity, FContentViews.FDividerBrush);
+          if (I >= 0) then
+            Canvas.FillRect(LR, 0, 0, [], LOpacity, FContentViews.FDividerBrush);
         end;
 
         if LR.Top > MH then
@@ -2212,7 +2219,7 @@ begin
 
   // 画左上角
   LR := RectF(R.Left, R.Top, R.Left + LW, H);
-  Canvas.ClearRect(LR);
+  Canvas.ClearRect(LR, TAlphaColorRec.White);
   if Assigned(FFixedBrush.FDefault) then
     Canvas.FillRect(LR, 0, 0, [], LOpacity, FFixedBrush.FDefault);
 
@@ -2404,7 +2411,7 @@ begin
   inherited DoUpdateAniCalculations(AAniCalculations);
   AAniCalculations.TouchTracking := [ttVertical, ttHorizontal];
   {$IFDEF MSWINDOWS}
-  AAniCalculations.BoundsAnimation := TScrollingBehaviour.BoundsAnimation in GetScrollingBehaviours;
+  AAniCalculations.BoundsAnimation := True;// TScrollingBehaviour.BoundsAnimation in GetScrollingBehaviours;
   {$ENDIF}
 end;
 
@@ -2901,8 +2908,13 @@ begin
       FMovePos := TPointF.Zero;
       AniMouseUp(True, X, Y);
     end;
-  end else
+
     inherited MouseUp(Button, Shift, X, Y);
+  end else begin
+    if DragScroll and (Assigned(FAdjuestItem) or Assigned(FHotItem)) then
+      FAniCalculations.Down := False;
+    inherited MouseUp(Button, Shift, X, Y);
+  end;
   {$ENDIF}
 
   FDownFixedRowIndex := -2;
@@ -2985,7 +2997,6 @@ end;
 procedure TGridBase.PaintBackground;
 var
   R: TRectF;
-  LW, LH: Single;
 begin
   if (csReading in ComponentState) then
     Exit;
@@ -2994,25 +3005,9 @@ begin
     DoDrawBackground(R)
   else
     inherited PaintBackground;
-  if (AbsoluteInVisible = False) and Assigned(FColumns) then begin
-    LW := FDrawBuffer.Width;
-    LH := FDrawBuffer.Height;
-    if (LW > 0) and (LH > 0) then begin    
-      FDrawBuffer.Canvas.BeginScene();
-      try
-        FDrawBuffer.Clear(0);
-        R.Right := Min(R.Right, R.Left + LW);
-        R.Bottom := Min(R.Bottom, R.Top + LH);
-        DoDrawHeaderRows(FDrawBuffer.Canvas, R);
-      finally
-        FDrawBuffer.Canvas.EndScene;
-        Canvas.DrawBitmap(FDrawBuffer, R, R, 1);
-      end;
-    end else begin
-      if (Width > 0) and (Height > 0) then        
-        HandleSizeChanged;
-    end;
-  end;
+  if (AbsoluteInVisible = False) and Assigned(FColumns) then
+    if (R.Width > 0) and (R.Height > 0) then
+      DoDrawHeaderRows(Canvas, R);
 end;
 
 function TGridBase.PointAsCell(const X, Y: Single): TGridCell;
@@ -3076,9 +3071,6 @@ begin
     FContentViews.FMaxParentHeight := 0;
 
   inherited Resize;
-
-  if Assigned(FDrawBuffer) and (Assigned(Canvas)) then
-    FDrawBuffer.SetSize(Canvas.Width, Canvas.Height);
 
   UpdateScrollBar(FScrollV, TViewScroll.Vertical);
   UpdateScrollBar(FScrollH, TViewScroll.Horizontal);
@@ -3858,7 +3850,7 @@ procedure TGridViewContent.DoDrawHeaderRows(Canvas: TCanvas; var R: TRectF);
     end;
 
     // 画当前行
-    if (LS.RowIndex = FSelectCell.Row) and Assigned(FCellBrush.FSelected) then begin
+    if (LS.RowIndex >= 0) and (LS.RowIndex = FSelectCell.Row) and Assigned(FCellBrush.FSelected) then begin
       if (gvRowSelect in GridView.FOptions) then
         Canvas.FillRect(RectF(0, LS.Top, X + LS.ColumnWidth, LS.Bottom), 0, 0, [], LS.Opacity, FCellBrush.FSelected); 
     end;

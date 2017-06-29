@@ -1679,18 +1679,34 @@ end;
 procedure TScrollView.AniCalcChange(Sender: TObject);
 var
   NewViewPos, MaxScrollViewPos: Single;
+  NeedUpdatePosImmediately: Boolean;
 begin
-  NewViewPos := FAniCalculations.ViewportPosition.Y;
-  MaxScrollViewPos := GetMaxScrollViewPos;
+  NeedUpdatePosImmediately := False;
 
-  if NewViewPos < 0 then
-    UpdateScrollStretchStrength(NewViewPos)
-  else if NewViewPos > MaxScrollViewPos then
-    UpdateScrollStretchStrength(NewViewPos - MaxScrollViewPos)
-  else
-    UpdateScrollStretchStrength(0);
+  if FCanScrollV then begin
+    NewViewPos := FAniCalculations.ViewportPosition.Y;
+    MaxScrollViewPos := GetMaxScrollViewPos;
 
-  if (Round(NewViewPos) = 0) or ((MaxScrollViewPos > 0) and (Round(NewViewPos) = MaxScrollViewPos)) then
+    if NewViewPos < 0 then
+      UpdateScrollStretchStrength(NewViewPos)
+    else if NewViewPos > MaxScrollViewPos then
+      UpdateScrollStretchStrength(NewViewPos - MaxScrollViewPos)
+    else
+      UpdateScrollStretchStrength(0);
+
+    NeedUpdatePosImmediately := (Round(NewViewPos) = 0) or
+      ((MaxScrollViewPos > 0) and (Round(NewViewPos) = MaxScrollViewPos));
+  end;
+
+  if FCanScrollH and (not NeedUpdatePosImmediately) then begin
+    NewViewPos := FAniCalculations.ViewportPosition.X;
+    MaxScrollViewPos := Max(Round(FAniCalculations.MaxTarget.Point.X), 0);
+
+    NeedUpdatePosImmediately := (Round(NewViewPos) = 0) or
+      ((MaxScrollViewPos > 0) and (Round(NewViewPos) = MaxScrollViewPos));
+  end;
+
+  if NeedUpdatePosImmediately then
     FAniCalculations.UpdatePosImmediately(True);
 end;
 
@@ -2138,6 +2154,7 @@ end;
 
 procedure TScrollView.InternalAlign;
 var
+  NeedRePaint: Boolean;
   LViewportPosition: TPointD;
   ContentLayoutRect: TRectD;
   VR: TRectF;
@@ -2145,6 +2162,7 @@ var
 begin
   if (not FInInternalAlign) and (FAniCalculations <> nil) then
   begin
+    NeedRePaint := True;
     FInInternalAlign := True;
     try
       if not Released then begin
@@ -2160,8 +2178,10 @@ begin
       if Assigned(FScrollH) and (FScrollH.Visible) then
         FScrollH.Opacity := AniCalculations.Opacity{$IFNDEF MSWINDOWS} - 0.1{$ENDIF};
       LViewportPosition := ViewportPosition;
-      if FLastViewportPosition = LViewportPosition then
+      if FLastViewportPosition = LViewportPosition then begin
+        NeedRePaint := False;
         Exit;
+      end;
       FLastViewportPosition := LViewportPosition;
       VR := ViewRect;
       UpdateVScrollBar(LViewportPosition.Y, VR.Height);
@@ -2176,7 +2196,8 @@ begin
         end;
       end;
     finally
-      Repaint;
+      if NeedRePaint then
+        Repaint;
       FInInternalAlign := False;
     end;
   end;
