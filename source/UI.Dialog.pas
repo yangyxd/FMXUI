@@ -1980,13 +1980,16 @@ begin
         X := X + OX;
         Y := Y + H + OY;
       end;
-    TLayoutGravity.RightTop: ;
-    TLayoutGravity.RightBottom: ;
-    TLayoutGravity.CenterVertical: ;
-    TLayoutGravity.CenterHorizontal: ;
-    TLayoutGravity.CenterHBottom: ;
-    TLayoutGravity.CenterVRight: ;
-    TLayoutGravity.Center: ;
+    TLayoutGravity.RightTop:
+      begin
+        X := X + (W - PW) + OX;
+        Y := Y + OY;
+      end;
+    TLayoutGravity.RightBottom:
+      begin
+        X := X + (W - PW) + OX;
+        Y := Y + H + OY;
+      end;
   end;
 
   FViewRoot.FLayBubble.Position.Point := PointF(X, Y);
@@ -3132,3 +3135,4 @@ finalization
   FreeAndNil(DefaultStyleManager);
 
 end.
+

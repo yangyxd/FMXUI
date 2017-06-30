@@ -150,6 +150,7 @@ begin
   RegisterComponents(PageName, [TProgressView]);
   RegisterComponents(PageName, [TRingView]);
   RegisterComponents(PageName, [TMultiPathView]);
+  RegisterComponents(PageName, [TCameraViewer]);
 
   RegisterComponents(PageName, [TDateView]);
   RegisterComponents(PageName, [TTimeView]);

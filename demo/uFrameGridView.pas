@@ -37,6 +37,10 @@ type
     procedure ButtonView4Click(Sender: TObject);
     procedure ButtonView5Click(Sender: TObject);
     procedure btnBackClick(Sender: TObject);
+    procedure GridView1CellClick(Sender: TObject; const ACell: TGridCell);
+    procedure GridView1TitleClick(Sender: TObject; Item: TGridColumnItem);
+    procedure GridView1TitleDbClick(Sender: TObject; Item: TGridColumnItem);
+    procedure GridView1CellDbClick(Sender: TObject; const ACell: TGridCell);
   private
     { Private declarations }
   protected
@@ -121,6 +125,30 @@ begin
 //  FAdapter.RowCount := 100;
 //  GridView1.Adapter := FAdapter;
 
+end;
+
+procedure TFrameGridView.GridView1CellClick(Sender: TObject;
+  const ACell: TGridCell);
+begin
+  //ShowMessage(Format('Cell Row: %d, Col: %d.', [ACell.Row, Acell.Col]));
+end;
+
+procedure TFrameGridView.GridView1CellDbClick(Sender: TObject;
+  const ACell: TGridCell);
+begin
+  //ShowMessage(Format('DbClick Cell Row: %d, Col: %d.', [ACell.Row, Acell.Col]));
+end;
+
+procedure TFrameGridView.GridView1TitleClick(Sender: TObject;
+  Item: TGridColumnItem);
+begin
+  //ShowMessage(Format('FixedColumn Row: %d, Col: %d.', [Item.RowIndex, Item.ColIndex]));
+end;
+
+procedure TFrameGridView.GridView1TitleDbClick(Sender: TObject;
+  Item: TGridColumnItem);
+begin
+  ShowMessage(Format('FixedColumn DbClick Row: %d, Col: %d.', [Item.RowIndex, Item.ColIndex]));
 end;
 
 procedure TFrameGridView.TextView1Click(Sender: TObject);

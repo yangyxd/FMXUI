@@ -26,7 +26,8 @@ uses
   uFrameImageView in 'uFrameImageView.pas' {FrameImageView: TFrame},
   uFrameListViewGroup in 'uFrameListViewGroup.pas' {FrameListViewGroup: TFrame},
   uFrameImageViewer in 'uFrameImageViewer.pas' {FrameImageViewer: TFrame},
-  uFrameGridView in 'uFrameGridView.pas' {FrameGridView: TFrame};
+  uFrameGridView in 'uFrameGridView.pas' {FrameGridView: TFrame},
+  uFrameCameraViewer in 'uFrameCameraViewer.pas' {FrameCameraViewer: TFrame};
 
 {$R *.res}
 

@@ -625,6 +625,7 @@ type
     procedure InitColumnList();
 
     procedure DoClickCell(const ACell: TGridCell); virtual;
+    procedure DoDbClickCell(const ACell: TGridCell); virtual;
     procedure DoEnterCell(const ACell: TGridCell); virtual;
     procedure DoLeaveCell(const ACell: TGridCell); virtual;
 
@@ -713,6 +714,10 @@ type
     procedure SetFixedText(const Value: TGridTextSettings);
     procedure SetTextRowIndex(const Value: string);
     procedure SetFooterText(const Value: string);
+    procedure SetRightPadding(const Value: Single);
+    function GetRightPadding: Single;
+    function GetFlatCols: Boolean;
+    procedure SetFlatCols(const Value: Boolean);
   public
     constructor Create(AOwner: TGridBase);
   published
@@ -756,6 +761,14 @@ type
     /// 底部页脚背景色
     /// </summary>
     property FooterBgColor: TAlphaColor read FFooterBackgroundColor write FFooterBackgroundColor default TAlphaColorRec.White;
+    /// <summary>
+    /// 表格右边的空白区域大小
+    /// </summary>
+    property RightBlank: Single read GetRightPadding write SetRightPadding;
+    /// <summary>
+    /// 固定列背景平坦
+    /// </summary>
+    property FlatCols: Boolean read GetFlatCols write SetFlatCols default False;
   end;
 
   /// <summary>
@@ -807,6 +820,8 @@ type
     FFixedRowHeight: Single; // 固定单元格行高
     FFixedColsWidth: Single;   // 固定单元格宽度
     FFixedDefaultColWidth: Single;  // 固定单元格默认列宽
+    FFixedRightPadding: Single;  // 固定单元格右边空白大小
+    FFixedFlatCols: Boolean;  // 固定单元格左边平坦
 
     FText: TGridTextSettings; // 单元格字体
     FFilterList: TStrings;
@@ -821,6 +836,7 @@ type
     FMaxListItemBottom: Double;
 
     FOnTitleClickEvent: TOnTitleClickEvent;
+    FOnTitleDbClickEvent: TOnTitleClickEvent;
     FOnColumnMovedEvent: TOnColumnMovedEvent;
     FOnFixedCellClickEvent: TOnFixedCellClickEvent;
 
@@ -834,6 +850,7 @@ type
     FOnDrawFooterCells: TOnDrawFooterCells;
 
     FOnCellClickEvent: TOnCellEvent;
+    FOnCellDbClickEvent: TOnCellEvent;
     FOnCellEnterEvent: TOnCellEvent;
     FOnCellLeaveEvent: TOnCellEvent;
     FOnCellEditDoneEvent: TOnCellEditDoneEvent;
@@ -875,6 +892,7 @@ type
     function GetFixedColsumn(const ACol: Integer): TGridColumnItem;
     function GetTextRowIndex: string;
     procedure SetFooterStyle(const Value: TGridFooterStyle);
+    procedure SetFixedFlatCols(const Value: Boolean);
   protected
     function GetColCount: Integer;
     function GetRowCount: Integer;
@@ -1114,6 +1132,10 @@ type
     /// 行号列标题
     /// </summary>
     property FixedTextRowIndex: string read GetTextRowIndex write SetTextRowIndex;
+    /// <summary>
+    /// 固定单元格列是否平坦（不绘制背景）
+    /// </summary>
+    property FixedFlatCols: Boolean read FFixedFlatCols write SetFixedFlatCols default False;
 
     /// <summary>
     /// 是否全局只读
@@ -1128,6 +1150,10 @@ type
     /// </summary>
     property OnTitleClick: TOnTitleClickEvent read FOnTitleClickEvent write FOnTitleClickEvent;
     /// <summary>
+    /// 列头双击事件
+    /// </summary>
+    property OnTitleDbClick: TOnTitleClickEvent read FOnTitleDbClickEvent write FOnTitleDbClickEvent;
+    /// <summary>
     /// 列头移动事件
     /// </summary>
     property OnColumnMoved: TOnColumnMovedEvent read FOnColumnMovedEvent write FOnColumnMovedEvent;
@@ -1140,6 +1166,10 @@ type
     /// 单元格点击事件
     /// </summary>
     property OnCellClick: TOnCellEvent read FOnCellClickEvent write FOnCellClickEvent;
+    /// <summary>
+    /// 单元格点击事件
+    /// </summary>
+    property OnCellDbClick: TOnCellEvent read FOnCellDbClickEvent write FOnCellDbClickEvent;
     /// <summary>
     /// 单元格进入事件
     /// </summary>
@@ -1221,10 +1251,12 @@ type
     property OnScrollChange;
 
     property OnTitleClick;
+    property OnTitleDbClick;
     property OnColumnMoved;
     property OnFixedCellClick;
     
     property OnCellClick;
+    property OnCellDbClick;
     property OnCellEnter;
     property OnCellLeave;
     property OnCellCheck;
@@ -1666,6 +1698,7 @@ begin
 
   FColumnsSetting := TGridColumnsSetting.Create(Self);
   FColumnsSetting.FColumns := FColumns;
+  FFixedRightPadding := 0;
   FFixedSetting := TGridFixedSetting.Create(Self);
 
   FDivider := CDefaultDividerColor;
@@ -1775,7 +1808,11 @@ end;
 procedure TGridBase.DblClick;
 begin
   if Assigned(FAdjuestItem) then
-    DoAutoAdjuestColWidth(FAdjuestItem, FAdjuestItem.Index);
+    DoAutoAdjuestColWidth(FAdjuestItem, FAdjuestItem.Index)
+  else if Assigned(FHotItem) and FHotItem.Enabled then begin
+    if Assigned(FOnTitleDbClickEvent) then
+      FOnTitleDbClickEvent(Self, FHotItem);
+  end;
   inherited;
 end;
 
@@ -1925,7 +1962,7 @@ var
   XOffset: Double;
   I, J, K, M, N, LI: Integer;
   Item: TGridColumnItem;
-  LDrawLine: Boolean;
+  LDrawLine, LDrawFixedRow: Boolean;
   LR, VR: TRectF;
   LOpacity: Single;
   LState: TGridFixedHeaderState;
@@ -2138,10 +2175,16 @@ begin
 
   // 画背景
   LR := RectF(R.Left, H, R.Left + LW, H + FContentViews.FViewBottom);
-  if Assigned(FFixedBrush.FDefault) then begin
-    if LR.Bottom > MH then LR.Bottom := MH;
-    Canvas.FillRect(LR, 0, 0, [], LOpacity, FFixedBrush.FDefault);
-  end;
+  if not FFixedFlatCols then begin
+    if Assigned(FFixedBrush.FDefault) and (FFixedBrush.FDefault.Kind = TBrushKind.Solid) then begin
+      if LR.Bottom > MH then LR.Bottom := MH;
+      FFixedBrush.DrawStateTo(Canvas, LR, TViewState.None, LOpacity);
+      //Canvas.FillRect(LR, 0, 0, [], LOpacity, FFixedBrush.FDefault);
+      LDrawFixedRow := False;
+    end else
+      LDrawFixedRow := Assigned(FFixedBrush.FDefault) and (FFixedBrush.FDefault.Kind <> TBrushKind.None);
+  end else
+    LDrawFixedRow := False;
 
   // 画行线
   // OutputDebugString(PChar(Format('FContentViews.FirstRowIndex: %d', [FContentViews.FirstRowIndex])));
@@ -2154,9 +2197,12 @@ begin
         LR.Bottom := LR.Bottom + PH^ + DH;
         LR.Top := LR.Bottom - DH;
 
+
         if I >= 0 then begin
+          if LDrawFixedRow then
+            FFixedBrush.DrawStateTo(Canvas, RectF(LR.Left, LR.Top - PH^, LR.Right, LR.Bottom - DH), TViewState.None, LOpacity);
           DoDrawFixedRowText(Canvas, I,
-            RectF(LR.Left, LR.Bottom - PH^ - DH, LR.Right, LR.Bottom - DH), LOpacity, ItemList);
+            RectF(LR.Left, LR.Top - PH^, LR.Right, LR.Bottom - DH), LOpacity, ItemList);
         end;
 
         if (LR.Top < R.Bottom) and (I >= 0) then
@@ -2175,8 +2221,11 @@ begin
         LR.Top := LR.Bottom - DH;
 
         if I >= 0 then begin
+          if LDrawFixedRow then
+            FFixedBrush.DrawStateTo(Canvas, RectF(LR.Left, LR.Top - LH, LR.Right, LR.Bottom - DH), TViewState.None, LOpacity);
+
           DoDrawFixedRowText(Canvas, I,
-            RectF(LR.Left, LR.Bottom - LH - DH, LR.Right, LR.Bottom - DH), LOpacity, ItemList);
+            RectF(LR.Left, LR.Top - LH, LR.Right, LR.Bottom - DH), LOpacity, ItemList);
         end;
 
         if LR.Top < R.Bottom then begin
@@ -2660,12 +2709,12 @@ begin
     H := H + ItemDefaultH + DividerH;
 
   if Assigned(FScrollV) then
-    FContentBounds.Right := W + FFixedColsWidth + FScrollV.Width + CDefaultFixedColWidth
+    FContentBounds.Right := W + FFixedColsWidth {$IFNDEF NEXTGEN} + FScrollV.Width {$ENDIF} + FFixedRightPadding
   else
-    FContentBounds.Right := W + FFixedColsWidth + CDefaultFixedColWidth;
+    FContentBounds.Right := W + FFixedColsWidth + FFixedRightPadding;
 
   if Assigned(FScrollH) then
-    FContentBounds.Bottom := H + FFixedRowHeight + FScrollH.Height + CDefaultFixedRowHeight * 2
+    FContentBounds.Bottom := H + FFixedRowHeight + {$IFNDEF NEXTGEN} FScrollH.Height {$ENDIF} + CDefaultFixedRowHeight * 2
   else
     FContentBounds.Bottom := H + FFixedRowHeight + CDefaultFixedRowHeight * 2;
 end;
@@ -2987,17 +3036,24 @@ begin
 end;
 
 function TGridBase.ObjectAtPoint(AScreenPoint: TPointF): IControl;
-{$IFNDEF NEXTGEN}var P: TPointF; {$ENDIF}
+{$IFNDEF NEXTGEN}var P: TPointF; O: TObject; {$ENDIF}
 begin
   Result := inherited;
   {$IFNDEF NEXTGEN}
   if DragScroll then begin // 如果允许拖动
     P := ScreenToLocal(AScreenPoint);
-    if Assigned(Result) and (P.X > FContentViews.Left) and (P.X < Width - Max(VScrollBar.Width, 10)) and
+    if (P.X > FContentViews.Left) and (P.X < Width - Max(VScrollBar.Width, 10)) and
      (P.Y > FContentViews.Top) and (P.Y < Height - Max(HScrollBar.Height, 10)) then
     begin
-      FPointTarget := Result;
-      Result := Self;
+      if Assigned(Result) then
+        O := Result.GetObject
+      else
+        O := nil;
+      if (O = nil) or (((O is TGridViewContent) or (O is TGridBase))) then begin
+        FPointTarget := Self.FContentViews;
+        Result := Self;
+      end else
+        FPointTarget := nil;
     end else
       FPointTarget := nil;
   end;
@@ -3195,6 +3251,14 @@ procedure TGridBase.SetFixedDivider(const Value: TAlphaColor);
 begin
   if FFixedDivider <> Value then begin
     FFixedDivider := Value;
+    Invalidate;
+  end;
+end;
+
+procedure TGridBase.SetFixedFlatCols(const Value: Boolean);
+begin
+  if FFixedFlatCols <> Value then begin
+    FFixedFlatCols := Value;
     Invalidate;
   end;
 end;
@@ -3506,6 +3570,8 @@ begin
   if IsPointInRect(FDownPos, FRBRect) then
     Exit;
   Inc(FSelectClickRef);
+  if (FSelectCell.Row >= 0) and (FSelectCell.Col >= 0) then
+    DoDbClickCell(FSelectCell);
   DoShowEditor;
 end;
 
@@ -3584,6 +3650,12 @@ begin
 
   DoShowEditor;
   Inc(FSelectClickRef);
+end;
+
+procedure TGridViewContent.DoDbClickCell(const ACell: TGridCell);
+begin
+  if Assigned(GridView.FOnCellDbClickEvent) then
+    GridView.FOnCellDbClickEvent(GridView, ACell);
 end;
 
 procedure TGridViewContent.DoDrawCell(Canvas: TCanvas; const R: TRectF;
@@ -7025,6 +7097,16 @@ begin
   Result := FOwner.FixedTextSettings;
 end;
 
+function TGridFixedSetting.GetFlatCols: Boolean;
+begin
+  Result := FOwner.FixedFlatCols;
+end;
+
+function TGridFixedSetting.GetRightPadding: Single;
+begin
+  Result := FOwner.FFixedRightPadding;
+end;
+
 function TGridFixedSetting.GetTextRowIndex: string;
 begin
   Result := FOwner.FixedTextRowIndex;
@@ -7065,11 +7147,28 @@ begin
   FOwner.FixedTextSettings := Value;
 end;
 
+procedure TGridFixedSetting.SetFlatCols(const Value: Boolean);
+begin
+  FOwner.FixedFlatCols := Value;
+end;
+
 procedure TGridFixedSetting.SetFooterText(const Value: string);
 begin
   if FFooterText <> Value then begin
     FFooterText := Value;
     FOwner.Invalidate;
+  end;
+end;
+
+procedure TGridFixedSetting.SetRightPadding(const Value: Single);
+begin
+  if FOwner.FFixedRightPadding <> Value then begin
+    FOwner.FFixedRightPadding := Value;
+    if not (csLoading in FOwner.ComponentState) then begin
+      FOwner.HandleSizeChanged;
+      FOwner.RealignContent;
+      FOwner.Invalidate;
+    end;
   end;
 end;
 

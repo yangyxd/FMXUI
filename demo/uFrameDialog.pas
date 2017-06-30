@@ -27,6 +27,7 @@ type
     ButtonView12: TButtonView;
     btnBack: TTextView;
     ButtonView9: TButtonView;
+    ButtonView13: TButtonView;
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
     procedure ButtonView3Click(Sender: TObject);
@@ -40,6 +41,7 @@ type
     procedure ButtonView12Click(Sender: TObject);
     procedure btnBackClick(Sender: TObject);
     procedure ButtonView9Click(Sender: TObject);
+    procedure ButtonView13Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -117,6 +119,22 @@ begin
     .SetTitle('µÇÂ¼')
     .SetView(View)
     .Show;
+end;
+
+procedure TFrmaeDialog.ButtonView13Click(Sender: TObject);
+begin
+  TDialogBuilder.Create(Self)
+      .SetSingleChoiceItems(['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'], 0,
+        procedure (Dialog: IDialog; Which: Integer)
+        begin
+          Dialog.AsyncDismiss;
+        end
+      )
+      //.SetWidth(160)
+      //.SetMaxHeight(320)
+      .SetDownPopup(TView(Sender), 0, 0 {$IFDEF ANDROID} - TView.GetStatusHeight{$ENDIF}, TLayoutGravity.LeftBottom)
+      .SetListItemDefaultHeight(30)
+      .Show;
 end;
 
 procedure TFrmaeDialog.ButtonView1Click(Sender: TObject);

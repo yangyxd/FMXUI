@@ -273,7 +273,7 @@ type
     procedure FillArc(Canvas: TCanvas; const Center, Radius: TPointF;
       const StartAngle, SweepAngle, AOpacity: Single; const ABrush: TBrush); inline;
 
-    procedure DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState); virtual;
+    procedure DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState; const AOpacity: Single); virtual;
     procedure InitDrawable; virtual;
   public
     constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
@@ -294,7 +294,8 @@ type
 
     procedure Draw(Canvas: TCanvas); virtual;
     procedure DrawTo(Canvas: TCanvas; const R: TRectF); inline;
-    procedure DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState); virtual;
+    procedure DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState); overload;
+    procedure DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState; const AOpacity: Single); overload; virtual;
     procedure DrawBrushTo(Canvas: TCanvas; ABrush: TBrush; const R: TRectF);
 
     procedure SetRadius(const X, Y: Single);
@@ -425,7 +426,7 @@ type
   protected
     function GetEmpty: Boolean; override;
     procedure CreateBorder(); virtual;
-    procedure DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState); override;
+    procedure DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState; const AOpacity: Single); override;
   public
     constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
@@ -535,8 +536,9 @@ type
 
     procedure CreateBrush(var Value: TBrush; IsDefault: Boolean); override;
     procedure Draw(Canvas: TCanvas); override;
-    procedure DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState); override;
-    procedure DrawImage(Canvas: TCanvas; Index: Integer; const R: TRectF); virtual;
+    procedure DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState; const AOpacity: Single); override;
+    procedure DrawImage(Canvas: TCanvas; Index: Integer; const R: TRectF); overload;
+    procedure DrawImage(Canvas: TCanvas; Index: Integer; const R: TRectF; const AOpacity: Single); overload; virtual;
   published
     property SizeWidth: Integer read FWidth write SetWidth default 16;
     property SizeHeight: Integer read FHeight write SetHeight default 16;
@@ -2137,7 +2139,7 @@ begin
     FOnChanged(Sender);
 end;
 
-procedure TDrawableBase.DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState);
+procedure TDrawableBase.DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState; const AOpacity: Single);
 begin
 end;
 
@@ -2255,8 +2257,8 @@ begin
   R := GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight);
   V := GetStateItem(AState);
   if V <> nil then
-    FillRect(Canvas, R, FXRadius, FYRadius, FCorners, FView.GetOpacity, V, FCornerType);
-  DoDrawed(Canvas, R, AState);
+    FillRect(Canvas, R, FXRadius, FYRadius, FCorners, FView.Opacity, V, FCornerType);
+  DoDrawed(Canvas, R, AState, FView.Opacity);
 end;
 
 procedure TDrawableBase.DrawBrushTo(Canvas: TCanvas; ABrush: TBrush;
@@ -2268,6 +2270,12 @@ end;
 
 procedure TDrawableBase.DrawStateTo(Canvas: TCanvas; const R: TRectF;
   AState: TViewState);
+begin
+  DrawStateTo(Canvas, R, AState, FView.GetOpacity);
+end;
+
+procedure TDrawableBase.DrawStateTo(Canvas: TCanvas; const R: TRectF;
+  AState: TViewState; const AOpacity: Single);
 var
   V: TBrush;
   VR: TRectF;
@@ -2277,8 +2285,8 @@ begin
   V := GetStateItem(AState);
   VR := GetDrawRect(R.Left, R.Top, R.Right, R.Bottom);
   if V <> nil then
-    FillRect(Canvas, VR, FXRadius, FYRadius, FCorners, FView.GetOpacity, V, FCornerType);
-  DoDrawed(Canvas, VR, AState);
+    FillRect(Canvas, VR, FXRadius, FYRadius, FCorners, AOpacity, V, FCornerType);
+  DoDrawed(Canvas, VR, AState, AOpacity);
 end;
 
 procedure TDrawableBase.DrawTo(Canvas: TCanvas; const R: TRectF);
@@ -2707,11 +2715,17 @@ begin
   inherited Draw(Canvas);
   ImageIndex := GetStateImageIndex();
   if (ImageIndex >= 0) and Assigned(FImageLink.Images) then
-    DrawImage(Canvas, ImageIndex, GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight));
+    DrawImage(Canvas, ImageIndex, GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight), FView.GetOpacity);
 end;
 
 procedure TDrawableIcon.DrawImage(Canvas: TCanvas; Index: Integer;
   const R: TRectF);
+begin
+  DrawImage(Canvas, Index, R, FView.GetOpacity);
+end;
+
+procedure TDrawableIcon.DrawImage(Canvas: TCanvas; Index: Integer;
+  const R: TRectF; const AOpacity: Single);
 var
   Images: TCustomImageList;
   Bitmap: TBitmap;
@@ -2728,19 +2742,19 @@ begin
     Bitmap := Images.Bitmap(BitmapSize, Index);
     if Bitmap <> nil then begin
       BitmapRect := TRectF.Create(0, 0, Bitmap.Width, Bitmap.Height);
-      Canvas.DrawBitmap(Bitmap, BitmapRect, R, FView.GetOpacity, False);
+      Canvas.DrawBitmap(Bitmap, BitmapRect, R, AOpacity, False);
     end;
   end;
 end;
 
-procedure TDrawableIcon.DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState);
+procedure TDrawableIcon.DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState; const AOpacity: Single);
 var
   ImageIndex: Integer;
 begin
-  inherited DrawStateTo(Canvas, R, AState);
+  inherited DrawStateTo(Canvas, R, AState, AOpacity);
   ImageIndex := GetStateImageIndex(AState);
   if (ImageIndex >= 0) and Assigned(FImageLink.Images) then
-    DrawImage(Canvas, ImageIndex, R);
+    DrawImage(Canvas, ImageIndex, R, AOpacity);
 end;
 
 function TDrawableIcon.GetComponent: TComponent;
@@ -6294,7 +6308,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TDrawableBorder.DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState);
+procedure TDrawableBorder.DoDrawed(Canvas: TCanvas; var R: TRectF; AState: TViewState; const AOpacity: Single);
 var
   TH: Single;
   LRect: TRectF;
@@ -6311,40 +6325,40 @@ begin
             LRect.Top := R.Top + TH;
             LRect.Right := R.Right - TH;
             LRect.Bottom := R.Bottom - TH;
-            Canvas.DrawRect(LRect, XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
+            Canvas.DrawRect(LRect, XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
           end else
-            Canvas.DrawRect(R, XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
+            Canvas.DrawRect(R, XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
         end;
       TViewBorderStyle.RectBitmap:
         begin
-          Canvas.FillRect(R, XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
+          Canvas.FillRect(R, XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
         end;
       TViewBorderStyle.LineEdit:
         begin
-          Canvas.DrawLine(R.BottomRight, PointF(R.Left, R.Bottom), FView.Opacity, FBorder.Brush);
+          Canvas.DrawLine(R.BottomRight, PointF(R.Left, R.Bottom), AOpacity, FBorder.Brush);
           TH := Min(6, Min(FBorder.Width * 4, R.Height / 4));
-          Canvas.DrawLine(PointF(R.Left, R.Bottom - TH), PointF(R.Left, R.Bottom), FView.Opacity, FBorder.Brush);
-          Canvas.DrawLine(PointF(R.Right, R.Bottom - TH), R.BottomRight, FView.Opacity, FBorder.Brush);
+          Canvas.DrawLine(PointF(R.Left, R.Bottom - TH), PointF(R.Left, R.Bottom), AOpacity, FBorder.Brush);
+          Canvas.DrawLine(PointF(R.Right, R.Bottom - TH), R.BottomRight, AOpacity, FBorder.Brush);
         end;
       TViewBorderStyle.LineTop:
         begin
           Canvas.FillRect(RectF(R.Left, R.Top, R.Right, R.Top + FBorder.Width),
-            XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
+            XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
         end;
       TViewBorderStyle.LineBottom:
         begin
           Canvas.FillRect(RectF(R.Left, R.Bottom - FBorder.Width, R.Right, R.Bottom),
-            XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
+            XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
         end;
       TViewBorderStyle.LineLeft:
         begin
           Canvas.FillRect(RectF(R.Left, R.Top, R.Left + FBorder.Width, R.Bottom),
-            XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
+            XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
         end;
       TViewBorderStyle.LineRight:
         begin
           Canvas.FillRect(RectF(R.Right - FBorder.Width, R.Top, R.Right, R.Bottom),
-            XRadius, YRadius, FCorners, FView.Opacity, FBorder.Brush, FCornerType);
+            XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
         end;
     end;
   end;
@@ -6353,7 +6367,7 @@ end;
 procedure TDrawableBorder.DrawBorder(Canvas: TCanvas; var R: TRectF;
   AState: TViewState);
 begin
-  DoDrawed(Canvas, R, AState);
+  DoDrawed(Canvas, R, AState, FView.Opacity);
 end;
 
 function TDrawableBorder.GetBorder: TViewBorder;

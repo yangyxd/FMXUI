@@ -17,7 +17,7 @@ uses
   FMX.AcceleratorKey,
   {$ENDIF}
   FMX.BehaviorManager, FMX.Forms, System.Messaging, FMX.Styles,
-  FMX.Pickers,
+  FMX.Pickers, FMX.Media,
   {$IFDEF MSWINDOWS} FMX.DateTimeCtrls, {$ENDIF}
   FMX.ActnList, FMX.Objects, System.Math, System.Actions, System.Rtti, FMX.Consts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, FMX.TextLayout,
@@ -264,6 +264,8 @@ type
     procedure MouseMove(Shift: TShiftState; x, y: single); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState;
       x, y: single); override;
+    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer;
+      var Handled: Boolean); override;
     procedure DoMouseLeave; override;
     procedure Resize; override;
     procedure PaintBackground; override;
@@ -995,6 +997,7 @@ type
   /// <summary>
   /// 日期视图 (日期选择)
   /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TDateView = class(TCustomDateTimeView)
   public
     constructor Create(AOwner: TComponent); override;
@@ -1003,6 +1006,7 @@ type
   /// <summary>
   /// 时间视图 (弹出时间选择对话框)
   /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TTimeView = class(TCustomDateTimeView)
   protected
   public
@@ -1012,6 +1016,40 @@ type
     procedure OpenPicker; override;
     procedure ClosePicker; override;
     {$ENDIF}
+  end;
+
+type
+  TScanBufferEvent = procedure (Sender: TObject; ABitmap: TBitmap) of object;
+
+  /// <summary>
+  /// 摄像头图像显示器
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TCameraViewer = class(TView)
+  private
+    FActive: Boolean;
+    FBuffer: TBitmap;
+    FViewportBuffer: TBitmap;
+
+    FDrawBmp, FViewBmp: TBitmap;
+
+    FVideoCamera: TVideoCaptureDevice;
+    FOnScanBuffer: TScanBufferEvent;
+    procedure DoScanBuffer(Sender: TObject; const ATime: TMediaTime);
+    procedure SyncroniseBuffer;
+    procedure SetActive(const Value: Boolean);
+  protected
+    procedure Paint; override;
+    procedure DoStop(); virtual;
+    procedure DoRepaint(); virtual;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    procedure StartCapture;
+    procedure StopCapture;
+  published
+    property Active: Boolean read FActive write SetActive;
+    property OnScanBuffer: TScanBufferEvent read FOnScanBuffer write FOnScanBuffer;
   end;
 
 implementation
@@ -1694,20 +1732,26 @@ begin
     else
       UpdateScrollStretchStrength(0);
 
-    NeedUpdatePosImmediately := (Round(NewViewPos) = 0) or
-      ((MaxScrollViewPos > 0) and (Round(NewViewPos) = MaxScrollViewPos));
+    if FLastViewportPosition.Y <> NewViewPos then
+      NeedUpdatePosImmediately := (Round(NewViewPos) = 0) or
+        ((MaxScrollViewPos > 0) and (Round(NewViewPos) = MaxScrollViewPos));
   end;
 
   if FCanScrollH and (not NeedUpdatePosImmediately) then begin
     NewViewPos := FAniCalculations.ViewportPosition.X;
     MaxScrollViewPos := Max(Round(FAniCalculations.MaxTarget.Point.X), 0);
 
-    NeedUpdatePosImmediately := (Round(NewViewPos) = 0) or
-      ((MaxScrollViewPos > 0) and (Round(NewViewPos) = MaxScrollViewPos));
+    if FLastViewportPosition.X <> NewViewPos then
+      NeedUpdatePosImmediately := (Round(NewViewPos) = 0) or
+        ((MaxScrollViewPos > 0) and (Round(NewViewPos) = MaxScrollViewPos));
   end;
 
   if NeedUpdatePosImmediately then
-    FAniCalculations.UpdatePosImmediately(True);
+    FAniCalculations.UpdatePosImmediately(True)
+  else begin
+    if (not FCanScrollV) and (not FCanScrollH) then
+      FAniCalculations.Shown := False;
+  end;
 end;
 
 procedure TScrollView.AniMouseDown(const Touch: Boolean; const X, Y: Single);
@@ -4453,14 +4497,12 @@ begin
 end;
 
 procedure TImageViewerEx.CMGesture(var EventInfo: TGestureEventInfo);
-{$IFDEF IOS}
 var
   APercent: integer;
   ANewZoom: integer;
-{$ENDIF}
 begin
   inherited;
-  {$IFDEF IOS}
+
   if FStartDistance = 0 then
     APercent := 100
   else
@@ -4476,7 +4518,7 @@ begin
   Zoom := ANewZoom;
   FStartZoom := Zoom;
   FStartDistance := EventInfo.Distance;
-  {$ENDIF}
+
 end;
 
 constructor TImageViewerEx.Create(AOwner: TComponent);
@@ -4541,6 +4583,16 @@ begin
   FStartZoom := 0;
   FStartDistance := 0;
   UpdateScrollLimits;
+end;
+
+procedure TImageViewerEx.MouseWheel(Shift: TShiftState; WheelDelta: Integer; var
+  Handled: Boolean);
+begin
+  if not (DisableMouseWheel or Handled) then begin
+    Zoom := Zoom + Trunc((WheelDelta / 120) * 4);
+    Handled := True;
+  end;
+  inherited;
 end;
 
 procedure TImageViewerEx.MultiTouch(const Touches: TTouches;
@@ -4810,12 +4862,142 @@ begin
   FTimeEdit.Width := Max(Self.Width, 100);
   FTimeEdit.Height := 24;
   FTimeEdit.Time := DateTime;
+  if FDateTimeFormat = FormatSettings.ShortTimeFormat then
+    FTimeEdit.TimeFormatKind := TDTFormatKind.Short
+  else
+    FTimeEdit.TimeFormatKind := TDTFormatKind.Long;
   FTimeEdit.OnChange := DoTimeChange;
 
   TDialog.ShowView(Self, Self, FTimeEdit, True, 0, 0, TDialogViewPosition.Bottom,
     True, TFrameAniType.None, False);
 end;
 {$ENDIF}
+
+{ TCameraViewer }
+
+constructor TCameraViewer.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FActive := False;
+  ClipChildren := True;
+  FBuffer := TBitmap.Create;
+  FViewportBuffer := TBitmap.Create;
+
+  FDrawBmp := TBitmap.Create;
+  FViewBmp := TBitmap.Create;
+end;
+
+destructor TCameraViewer.Destroy;
+begin
+  FActive := False;
+  SyncroniseBuffer;
+  FreeAndNil(FDrawBmp);
+  FreeAndNil(FBuffer);
+  FreeAndNil(FViewBmp);
+  FreeAndNil(FViewportBuffer);
+  inherited;
+end;
+
+procedure TCameraViewer.DoRepaint;
+begin
+  if Assigned(FOnScanBuffer) then
+    FOnScanBuffer(Self, FBuffer);
+  Repaint;
+end;
+
+procedure TCameraViewer.DoScanBuffer(Sender: TObject; const ATime: TMediaTime);
+begin
+  SyncroniseBuffer;
+end;
+
+procedure TCameraViewer.DoStop;
+begin
+  if FVideoCamera <> nil then begin
+    FVideoCamera.StopCapture;
+    {$IFDEF NEXTGEN}
+    FreeAndNil(FVideoCamera);
+    {$ELSE}
+    FVideoCamera.Free;
+    {$ENDIF}
+  end;
+end;
+
+procedure TCameraViewer.Paint;
+var
+  R, LR: TRectF;
+  F: TCustomForm;
+begin
+  if FBuffer.Width = 0 then
+    Exit;
+  if (FDrawBmp.Width = 0) then begin
+    F := ParentForm;
+    if Assigned(F) then
+      FDrawBmp.SetSize(F.Width, F.Height)
+    else
+      Exit;
+  end;
+
+  FDrawBmp.Canvas.BeginScene;
+  FDrawBmp.Canvas.DrawBitmap(FBuffer, RectF(0, 0, FBuffer.Width, FBuffer.Height),
+    RectF(0, 0, FDrawBmp.Width, FDrawBmp.Height), 1, True);
+  FDrawBmp.Canvas.EndScene;
+
+  LR := RectF(0, 0, Width, Height);
+  FViewBmp.SetSize(Round(Width), Round(Height));
+
+  R := LR;
+  OffsetRect(r, (FDrawBmp.Width - r.Width)/2, (FDrawBmp.Height - r.Height)/2);
+  FViewBmp.CopyFromBitmap(FDrawBmp, r.Truncate, 0, 0);
+  Canvas.DrawBitmap(FViewBmp, RectF(0, 0, FViewBmp.Width, FViewBmp.Height), LR, 1, True);
+end;
+
+procedure TCameraViewer.SetActive(const Value: Boolean);
+begin
+  FActive := Value;
+  case FActive of
+    True: StartCapture;
+    False: StopCapture;
+  end;
+end;
+
+procedure TCameraViewer.StartCapture;
+begin
+  if not Assigned(FVideoCamera) then
+    FVideoCamera := TVideoCaptureDevice(TCaptureDeviceManager.Current.GetDefaultDeviceByMediaType(TMediaType.Video));
+  if Assigned(FVideoCamera) then begin
+    FVideoCamera.Quality := TVideoCaptureQuality.MediumQuality;
+    {$IFDEF ANDROID}
+    FVideoCamera.FocusMode := TFocusMode.ContinuousAutoFocus;
+    {$ENDIF}
+    FVideoCamera.OnSampleBufferReady := DoScanBuffer;
+
+    FBuffer.Clear(TAlphaColors.Null);
+    FActive := True;
+
+    FVideoCamera.StartCapture;
+    {$IFDEF ANDROID}
+    FVideoCamera.FocusMode := TFocusMode.ContinuousAutoFocus;
+    {$ENDIF}
+  end else begin
+    if csDesigning in ComponentState then
+      FActive := True;
+  end;
+end;
+
+procedure TCameraViewer.StopCapture;
+begin
+  FActive := False;
+end;
+
+procedure TCameraViewer.SyncroniseBuffer;
+begin
+  if FActive = False then begin
+    TThread.Synchronize(TThread.CurrentThread, DoStop);
+  end else begin
+    FVideoCamera.SampleBufferToBitmap(FBuffer, True);
+    TThread.Synchronize(TThread.CurrentThread, DoRepaint);
+  end;
+end;
 
 initialization
 
