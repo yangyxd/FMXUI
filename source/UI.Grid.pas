@@ -2146,7 +2146,7 @@ begin
   // 画行线
   // OutputDebugString(PChar(Format('FContentViews.FirstRowIndex: %d', [FContentViews.FirstRowIndex])));
 
-  if (FContentViews.FLastRowIndex - FContentViews.FirstRowIndex) > 0 then begin
+  if (FContentViews.FLastRowIndex - FContentViews.FirstRowIndex) >= 0 then begin
     if FColumns.ExistWordWarp then begin
       PH := @FItemsPoints[FContentViews.FirstRowIndex];
       LR.Bottom := LR.Top + FContentViews.FViewTop;
@@ -2195,6 +2195,7 @@ begin
   // 画 Footer
   if gvFixedFooter in FOptions then begin
     LR := RectF(R.Left, R.Bottom - DH * 2 - FFixedRowHeight, R.Left +  LW, R.Bottom);
+    Canvas.ClearRect(LR, TAlphaColorRec.White);
     if Assigned(FFixedBrush.FDefault) then
       Canvas.FillRect(LR, 0, 0, [], LOpacity, FFixedBrush.FDefault);
     if LDrawLine then begin
@@ -2320,7 +2321,8 @@ begin
       )
       .SetWidth(Max(160, Item.Width))
       .SetMaxHeight(FFixedRowHeight * 12)
-      .SetDownPopup(Self, FContentViews.Left + Item.X, (Item.RowIndex + 1) * FFixedRowHeight + GetDividerHeight,
+      .SetDownPopup(Self, FContentViews.Left + Item.X,
+        (Item.RowIndex + 1) * FFixedRowHeight + GetDividerHeight{$IFDEF ANDROID} - TView.GetStatusHeight{$ENDIF},
         TLayoutGravity.LeftTop)
       .Show;
   end;
@@ -2509,9 +2511,10 @@ var
 begin
   DividerH := GetDividerHeight;
   Result := 0;
-  if (gvIndicator in FOptions) or (gvRowIndex in FOptions) then
-    J := -1
-  else
+  if (gvIndicator in FOptions) or (gvRowIndex in FOptions) then begin
+    J := -1;
+    FixedColsumn[J].FWidth := FixedIndicatorWidth;
+  end else
     J := 0;
   for I := J to FFixedCols - 1 do
     Result := Result + DividerH + FixedColsumn[I].Width;
@@ -2790,6 +2793,11 @@ begin
     end;
     {$ENDIF}
 
+  {$IFDEF NEXTGEN}
+  end else begin
+    if DragScroll and (Assigned(FAdjuestItem) or Assigned(FHotItem)) then
+      FAniCalculations.Down := False;
+  {$ENDIF}
   end;
 end;
 
@@ -2896,6 +2904,8 @@ begin
   end;
 
   {$IFDEF NEXTGEN}
+  if (Assigned(FAdjuestItem) or Assigned(FHotItem)) then
+    FAniCalculations.Down := False;
   inherited MouseUp(Button, Shift, X, Y);
   {$ELSE}
   if DragScroll and Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
@@ -3850,7 +3860,7 @@ procedure TGridViewContent.DoDrawHeaderRows(Canvas: TCanvas; var R: TRectF);
     end;
 
     // 画当前行
-    if (LS.RowIndex >= 0) and (LS.RowIndex = FSelectCell.Row) and Assigned(FCellBrush.FSelected) then begin
+    if (LS.RowIndex = FSelectCell.Row) and Assigned(FCellBrush.FSelected) then begin
       if (gvRowSelect in GridView.FOptions) then
         Canvas.FillRect(RectF(0, LS.Top, X + LS.ColumnWidth, LS.Bottom), 0, 0, [], LS.Opacity, FCellBrush.FSelected); 
     end;
@@ -3982,8 +3992,10 @@ begin
         Continue;
       end;
 
-      LS.RowIndex := J;
-      DrawRowCell(LS);
+      if J >= 0 then begin
+        LS.RowIndex := J;
+        DrawRowCell(LS);
+      end;
 
       if LS.Top > LS.Height then
         Break;
