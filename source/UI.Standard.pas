@@ -21,6 +21,7 @@ uses
   {$IFDEF MSWINDOWS} FMX.DateTimeCtrls, {$ENDIF}
   FMX.ActnList, FMX.Objects, System.Math, System.Actions, System.Rtti, FMX.Consts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, FMX.TextLayout,
+  System.SyncObjs,
   System.Classes, System.Types, System.UITypes, System.SysUtils, System.Math.Vectors,
   FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls, FMX.InertialMovement,
   FMX.Ani, FMX.StdActns;
@@ -1028,20 +1029,23 @@ type
   TCameraViewer = class(TView)
   private
     FActive: Boolean;
+    FLocker: TCriticalSection;
     FBuffer: TBitmap;
     FViewportBuffer: TBitmap;
 
     FDrawBmp, FViewBmp: TBitmap;
+    FTimer: TTimer;
 
     FVideoCamera: TVideoCaptureDevice;
     FOnScanBuffer: TScanBufferEvent;
     procedure DoScanBuffer(Sender: TObject; const ATime: TMediaTime);
     procedure SyncroniseBuffer;
+    procedure InitDrawBmp();
     procedure SetActive(const Value: Boolean);
   protected
     procedure Paint; override;
     procedure DoStop(); virtual;
-    procedure DoRepaint(); virtual;
+    procedure DoRepaint(Sender: TObject); virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -4883,22 +4887,30 @@ begin
   FBuffer := TBitmap.Create;
   FViewportBuffer := TBitmap.Create;
 
+  FLocker := TCriticalSection.Create;
   FDrawBmp := TBitmap.Create;
   FViewBmp := TBitmap.Create;
+
+  FTimer := TTimer.Create(Self);
+  FTimer.Interval := 40;
+  FTimer.OnTimer := DoRepaint;
 end;
 
 destructor TCameraViewer.Destroy;
 begin
   FActive := False;
   SyncroniseBuffer;
+  FTimer.OnTimer := nil;
+  FTimer := nil;
   FreeAndNil(FDrawBmp);
   FreeAndNil(FBuffer);
   FreeAndNil(FViewBmp);
   FreeAndNil(FViewportBuffer);
+  FreeAndNil(FLocker);
   inherited;
 end;
 
-procedure TCameraViewer.DoRepaint;
+procedure TCameraViewer.DoRepaint(Sender: TObject);
 begin
   if Assigned(FOnScanBuffer) then
     FOnScanBuffer(Self, FBuffer);
@@ -4914,41 +4926,40 @@ procedure TCameraViewer.DoStop;
 begin
   if FVideoCamera <> nil then begin
     FVideoCamera.StopCapture;
-    {$IFDEF NEXTGEN}
-    FreeAndNil(FVideoCamera);
-    {$ELSE}
-    FVideoCamera.Free;
-    {$ENDIF}
+    FVideoCamera.OnSampleBufferReady := nil;
+    FVideoCamera := nil;
   end;
+end;
+
+procedure TCameraViewer.InitDrawBmp;
+var
+  F: TCustomForm;
+begin
+  F := ParentForm;
+  if Assigned(F) then
+    FDrawBmp.SetSize(F.Width, F.Height);
 end;
 
 procedure TCameraViewer.Paint;
 var
   R, LR: TRectF;
-  F: TCustomForm;
+  NeedDraw: Boolean;
 begin
-  if FBuffer.Width = 0 then
-    Exit;
-  if (FDrawBmp.Width = 0) then begin
-    F := ParentForm;
-    if Assigned(F) then
-      FDrawBmp.SetSize(F.Width, F.Height)
-    else
-      Exit;
-  end;
-
-  FDrawBmp.Canvas.BeginScene;
-  FDrawBmp.Canvas.DrawBitmap(FBuffer, RectF(0, 0, FBuffer.Width, FBuffer.Height),
-    RectF(0, 0, FDrawBmp.Width, FDrawBmp.Height), 1, True);
-  FDrawBmp.Canvas.EndScene;
-
+  inherited Paint;
   LR := RectF(0, 0, Width, Height);
+  R := LR;
   FViewBmp.SetSize(Round(Width), Round(Height));
 
-  R := LR;
-  OffsetRect(r, (FDrawBmp.Width - r.Width)/2, (FDrawBmp.Height - r.Height)/2);
-  FViewBmp.CopyFromBitmap(FDrawBmp, r.Truncate, 0, 0);
-  Canvas.DrawBitmap(FViewBmp, RectF(0, 0, FViewBmp.Width, FViewBmp.Height), LR, 1, True);
+  FLocker.Enter;
+  NeedDraw := FDrawBmp.Width > 0;
+  if NeedDraw then begin
+    OffsetRect(r, (FDrawBmp.Width - r.Width) / 2, (FDrawBmp.Height - r.Height) / 2);
+    FViewBmp.CopyFromBitmap(FDrawBmp, r.Truncate, 0, 0);
+  end;
+  FLocker.Leave;
+
+  if NeedDraw then
+    Canvas.DrawBitmap(FViewBmp, RectF(0, 0, FViewBmp.Width, FViewBmp.Height), LR, 1, True);
 end;
 
 procedure TCameraViewer.SetActive(const Value: Boolean);
@@ -4995,7 +5006,25 @@ begin
     TThread.Synchronize(TThread.CurrentThread, DoStop);
   end else begin
     FVideoCamera.SampleBufferToBitmap(FBuffer, True);
-    TThread.Synchronize(TThread.CurrentThread, DoRepaint);
+
+    if FBuffer.Width > 0 then begin
+
+      FLocker.Enter;
+      try
+        if (FDrawBmp.Width = 0) then begin
+          InitDrawBmp;
+          if (FDrawBmp.Width = 0) then
+            Exit;
+        end;
+        FDrawBmp.Canvas.BeginScene;
+        FDrawBmp.Canvas.DrawBitmap(FBuffer, RectF(0, 0, FBuffer.Width, FBuffer.Height),
+          RectF(0, 0, FDrawBmp.Width, FDrawBmp.Height), 1, True);
+        FDrawBmp.Canvas.EndScene;
+      finally
+        FLocker.Leave;
+      end;
+
+    end;
   end;
 end;
 

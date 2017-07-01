@@ -1977,7 +1977,7 @@ begin
   R.Top := Padding.Top;
   R.Right := R.Right - Padding.Right;
   R.Bottom := R.Bottom - Padding.Bottom;
-  {$IFDEF MSWINDOWS}
+  {$IFNDEF NEXTGEN}
   if Assigned(FScrollH) and (FScrollH.Visible) then
     R.Bottom := R.Bottom - FScrollH.Height;
   if Assigned(FScrollV) and (FScrollV.Visible) then
@@ -1991,14 +1991,14 @@ begin
   LV := R.Left + XOffset;
 
   MH := Height - Padding.Bottom;
-  {$IFDEF MSWINDOWS}
+  {$IFNDEF NEXTGEN}
   if Assigned(FScrollH) and (FScrollH.Visible) then
     MH := MH - FScrollH.Height;
   {$ENDIF}
   if gvFixedFooter in FOptions then
     MH := MH - FFixedRowHeight - DH * 2;
   MW := Width - Padding.Right;
-  {$IFDEF MSWINDOWS}
+  {$IFNDEF NEXTGEN}
   if Assigned(FScrollV) and (FScrollV.Visible) then
     MW := MW - FScrollV.Width;
   {$ENDIF}
@@ -4031,7 +4031,7 @@ begin
   // 如果存在页脚时
   if gvFixedFooter in GridView.FOptions then begin
     LS.Height := LS.Height - GridView.FFixedRowHeight - LS.DividerH * 2;
-    {$IFDEF MSWINDOWS}
+    {$IFNDEF NEXTGEN}
     if Assigned(GridView.FScrollH) and (GridView.FScrollH.Visible) then
       LS.Height := LS.Height - GridView.FScrollH.Height;
     {$ENDIF}
@@ -5026,14 +5026,18 @@ begin
 
     DoDrawHeaderRows(Canvas, R);
 
+    {$IFNDEF NEXTGEN}
     if Assigned(GridView.FScrollV) and (GridView.FScrollV.Visible) and 
       (Assigned(GridView.FScrollH)) and (GridView.FScrollH.Visible) 
     then begin
-      R := RectF(R.Right - GridView.FScrollV.Width, R.Top - GridView.FScrollH.Height, R.Right, R.Bottom);
+      R := RectF(R.Right - GridView.FScrollV.Width,
+        R.Top - GridView.FScrollH.Height,
+        R.Right, R.Bottom);
       Canvas.FillRect(R, 0, 0, [], Opacity, FScrollRB);
     end else
       R.Clear;
     FRBRect := R;
+    {$ENDIF}
   end;
 end;
 
@@ -5101,7 +5105,7 @@ begin
 
   if ACell.Col >= 0 then begin  
     W := Width;
-    {$IFDEF MSWINDOWS}
+    {$IFNDEF NEXTGEN}
     if Assigned(GridView.FScrollV) and (GridView.FScrollV.Visible) then
       W := W - GridView.FScrollV.Width;
     {$ENDIF}   
