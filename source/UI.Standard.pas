@@ -274,7 +274,6 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    procedure MultiTouch(const Touches: TTouches; const Action: TTouchAction);
     procedure UpdateLabel(ADistance: integer);
   published
     property Image: TBitmap read FBitmap write SetBitmap;
@@ -4605,12 +4604,6 @@ begin
     Handled := True;
   end;
   inherited;
-end;
-
-procedure TImageViewerEx.MultiTouch(const Touches: TTouches;
-  const Action: TTouchAction);
-begin
-  // still working this out.
 end;
 
 procedure TImageViewerEx.PaintBackground;
