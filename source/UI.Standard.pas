@@ -533,6 +533,7 @@ type
     property Drawable: TDrawableIcon read GetDrawable write SetDrawable;
     property GroupIndex: Integer read FGroupIndex write SetGroupIndex default 0;
     property ScrollBars;
+    property ShowScrollBars;
     property DisableMouseWheel;
     property OnTextChange: TNotifyEvent read FOnTextChange write FOnTextChange;
     property OnDrawText: TOnDrawText read FOnDrawText write FOnDrawText;
@@ -1282,21 +1283,27 @@ begin
     case FScrollbar of
       TViewScroll.Horizontal:
         begin
-          if Assigned(FScrollH) and (FScrollH.Visible) then begin
+          if Assigned(FScrollH) and (FCanScrollH) then begin
             SR := GetRectF(FContentBounds^);
             SR.Top := R.Top;
             // windows平台显示滚动条，其它平台会自动隐藏
-            SR.Bottom := R.Bottom{$IFDEF MSWINDOWS} - FScrollH.Height{$ENDIF};
+            if FShowScrollBars then
+              SR.Bottom := R.Bottom{$IFDEF MSWINDOWS} - FScrollH.Height{$ENDIF}
+            else
+              SR.Bottom := R.Bottom;
             OffsetRect(SR, -(ScrollValueH * (SR.Width - R.Width)), 0);
           end else
             SR := R;
         end;
       TViewScroll.Vertical:
         begin
-          if Assigned(FScrollV) and (FScrollV.Visible) then begin
+          if Assigned(FScrollV) and (FCanScrollV) then begin
             SR := GetRectF(FContentBounds^);
             SR.Left := R.Left;
-            SR.Right := R.Right{$IFDEF MSWINDOWS} - FScrollV.Width{$ENDIF};
+            if FShowScrollBars then
+              SR.Right := R.Right{$IFDEF MSWINDOWS} - FScrollV.Width{$ENDIF}
+            else
+              SR.Right := R.Right;
             OffsetRect(SR, 0, -(ScrollValueV * (SR.Height - R.Height)));
           end else
             SR := R;
@@ -1307,7 +1314,7 @@ begin
     if Assigned(FOnDrawText) then
       FOnDrawText(Self, Canvas, FText, SR)
     else
-      FText.Draw(Canvas, SR, GetAbsoluteOpacity, DrawState);
+      FText.Draw(Canvas, SR, Opacity, DrawState);
   end;
 end;
 
@@ -1793,8 +1800,7 @@ begin
 //  if FScrollTrackPressed then  // 更新一下按钮时的位置，不然会回弹
 //    SetRttiValue<TPointD>(FAniCalculations, 'FDownPosition', ViewportPosition);
   FAniCalculations.MouseUp(X, Y);
-  if (FAniCalculations.LowVelocity) or
-     (not FAniCalculations.Animation) then
+  if (FAniCalculations.LowVelocity) or (not FAniCalculations.Animation) then
     FAniCalculations.Shown := False;
 end;
 
@@ -1830,8 +1836,7 @@ begin
       end else if AniCalculations.Down then begin
         AniMouseUp(True, LP.X, LP.Y);
       end;
-  end
-  else
+  end else
     inherited CMGesture(EventInfo);
 end;
 

@@ -2371,7 +2371,7 @@ begin
       .SetWidth(Max(160, Item.Width))
       .SetMaxHeight(FFixedRowHeight * 12)
       .SetDownPopup(Self, FContentViews.Left + Item.X,
-        (Item.RowIndex + 1) * FFixedRowHeight + GetDividerHeight{$IFDEF ANDROID} - TView.GetStatusHeight{$ENDIF},
+        (Item.RowIndex + 1) * FFixedRowHeight + GetDividerHeight,
         TLayoutGravity.LeftTop)
       .Show;
   end;

@@ -28,6 +28,7 @@ type
     btnBack: TTextView;
     ButtonView9: TButtonView;
     ButtonView13: TButtonView;
+    ButtonView14: TButtonView;
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
     procedure ButtonView3Click(Sender: TObject);
@@ -42,6 +43,7 @@ type
     procedure btnBackClick(Sender: TObject);
     procedure ButtonView9Click(Sender: TObject);
     procedure ButtonView13Click(Sender: TObject);
+    procedure ButtonView14Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -57,6 +59,7 @@ implementation
 
 uses
   uFrameListViewTest,
+  ui_PopupMenu,
   UI.Dialog, UI.Async, uFrameDialog_CustomView;
 
 { TFrmaeDialog }
@@ -132,9 +135,14 @@ begin
       )
       //.SetWidth(160)
       //.SetMaxHeight(320)
-      .SetDownPopup(TView(Sender), 0, 0 {$IFDEF ANDROID} - TView.GetStatusHeight{$ENDIF}, TLayoutGravity.LeftBottom)
+      .SetDownPopup(TView(Sender), 0, 0, TLayoutGravity.LeftBottom)
       .SetListItemDefaultHeight(30)
       .Show;
+end;
+
+procedure TFrmaeDialog.ButtonView14Click(Sender: TObject);
+begin
+  TDialog.ShowView(Self, TView(Sender), TMainPopupMenu, 0, 0, TDialogViewPosition.Bottom);
 end;
 
 procedure TFrmaeDialog.ButtonView1Click(Sender: TObject);

@@ -1828,7 +1828,7 @@ begin
   end;
 
   Dialog.FViewRoot.Clickable := True;
-  Dialog.FViewRoot.Align := TAlignLayout.Client;
+  Dialog.FViewRoot.Align := TAlignLayout.Contents; //TAlignLayout.Client;
   Dialog.FViewRoot.Index := Dialog.FViewRoot.Parent.ChildrenCount - 1;
   Dialog.FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
   Dialog.FViewRoot.CanFocus := False;
@@ -2189,7 +2189,7 @@ begin
     Exit;
   end;
   FViewRoot.Clickable := True;
-  FViewRoot.Align := TAlignLayout.Client;
+  FViewRoot.Align := TAlignLayout.Contents; // TAlignLayout.Client;
   FViewRoot.Index := FViewRoot.Parent.ChildrenCount - 1;
   FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
   FViewRoot.InitView(StyleManager);
@@ -2347,7 +2347,7 @@ begin
     Exit;
   end;
   FViewRoot.Clickable := True;
-  FViewRoot.Align := TAlignLayout.Client;
+  FViewRoot.Align := TAlignLayout.Contents; //TAlignLayout.Client;
   FViewRoot.Index := FViewRoot.Parent.ChildrenCount - 1;
   FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
   FViewRoot.InitView(Sytle);
@@ -3086,7 +3086,7 @@ begin
     Exit;
   end;
   FViewRoot.Clickable := True;
-  FViewRoot.Align := TAlignLayout.Client;
+  FViewRoot.Align := TAlignLayout.Contents; //TAlignLayout.Client;
   FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
   FViewRoot.InitProcessView(Style);
   if AMsg = '' then

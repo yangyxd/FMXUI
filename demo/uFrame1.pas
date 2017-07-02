@@ -19,7 +19,6 @@ type
     ButtonView3: TButtonView;
     TextView1: TTextView;
     ButtonView4: TButtonView;
-    ButtonView5: TButtonView;
     ButtonView6: TButtonView;
     ButtonView7: TButtonView;
     ButtonView8: TButtonView;
@@ -36,7 +35,6 @@ type
     procedure ButtonView3Click(Sender: TObject);
     procedure TextView1Click(Sender: TObject);
     procedure ButtonView4Click(Sender: TObject);
-    procedure ButtonView5Click(Sender: TObject);
     procedure ButtonView6Click(Sender: TObject);
     procedure ButtonView7Click(Sender: TObject);
     procedure ButtonView8Click(Sender: TObject);
@@ -70,7 +68,6 @@ uses
   uFrameMultiPathView,
   uFrameRingView,
   ui_CustomListView,
-  ui_PopupMenu,
   uFrameProgressView,
   uFrameMore,
   uFrameDialog,
@@ -80,14 +77,14 @@ uses
 
 procedure TFrame1.ButtonView10Click(Sender: TObject);
 begin
-  if ButtonView10.Tag = 0 then begin
-    ButtonView10.Tag := 1;
-    TDialog.ShowView(Self, ButtonView5, TFramePopMenu, 0, 0,
+  if TView(Sender).Tag = 0 then begin
+    TView(Sender).Tag := 1;
+    TDialog.ShowView(Self, TView(Sender), TFramePopMenu, 0, 0,
       TDialogViewPosition.LeftFill, True,
       TFrameAniType.LeftSlideMenu);
   end else begin
-    ButtonView10.Tag := 0;
-    TDialog.ShowView(Self, ButtonView5, TFramePopMenu, 0, 0,
+    TView(Sender).Tag := 0;
+    TDialog.ShowView(Self, TView(Sender), TFramePopMenu, 0, 0,
       TDialogViewPosition.RightFill, True,
       TFrameAniType.RightSlideMenu);
   end;
@@ -136,11 +133,6 @@ end;
 procedure TFrame1.ButtonView4Click(Sender: TObject);
 begin
   StartFrame(TCustomListview);
-end;
-
-procedure TFrame1.ButtonView5Click(Sender: TObject);
-begin
-  TDialog.ShowView(Self, ButtonView5, TMainPopupMenu, -50, ButtonView5.Height, TDialogViewPosition.Center);
 end;
 
 procedure TFrame1.ButtonView6Click(Sender: TObject);

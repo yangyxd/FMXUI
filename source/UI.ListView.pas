@@ -1811,12 +1811,11 @@ begin
               H := (FHeader as TControl).Height;
               FHeader.DoUpdateState(TListViewState.None, 0);
             end;
+
             FState := TListViewState.None;
             if not ListView.FEnablePullLoad then
-              ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - H
-            else
-              H := 0;
-            ListView.DoUpdateScrollingLimits(True, H);
+              ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - H;
+            ListView.DoUpdateScrollingLimits(True, 0);
             DoRealign;
           end;
         except
@@ -1847,26 +1846,17 @@ begin
         try
           if (FState = TListViewState.PullDownFinish) then begin
             H := 0;
-            if Assigned(FHeader) then begin
+            if Assigned(FHeader) then
               H := (FHeader as TControl).Height;
-              FHeader.DoUpdateState(TListViewState.None, 0);
-            end;
             if H > 0 then begin
-              ListView.AniVScrollTo(-H,
-                procedure (Sender: TObject)
-                begin
-                  ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - H;
-                  ListView.DoUpdateScrollingLimits(True, 0);
-                  ListView.VScrollBarValue := ListView.VScrollBarValue - H;
+              FHeader.DoUpdateState(TListViewState.None, 0);
 
-                  FState := TListViewState.None;
-                  FLastScrollValue := FLastScrollValue - H;
-                  FViewTop := FViewTop - H;
-                  FViewItemBottom := FViewItemBottom - H;
-                  FViewBottom := FViewBottom - H;
-                  DoRealign;
-                end
-              );
+              ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - H;
+              ListView.DoUpdateScrollingLimits(True, 0);
+
+              FState := TListViewState.None;
+              FLastScrollValue := FLastScrollValue - H;
+              ListView.VScrollBarValue := ListView.VScrollBarValue - H;
             end;
           end;
         except
@@ -1998,7 +1988,9 @@ procedure TListViewContent.DoRealign;
     Ctrl := FFooter as TControl;
 
     // 如果显示到了最后一行，说明已经滚动到最底下
-    if S >= FCount - 1 then begin
+    if (S >= FCount - 1) and ((LS.ScrollValue > 0) or (FState = TListViewState.PullUpFinish))
+      and ((FHeader = nil) or (FHeader.Visible = False)) then
+    begin
       H := Ctrl.Height;
 
       //LogD(Format('V: %.2f, ScrollV: %.2f, Top: %.2f, ScrollMove: %.2f', [V, LS.ScrollValue, V - LS.ScrollValue, LS.MoveSpace]));
@@ -2023,7 +2015,7 @@ procedure TListViewContent.DoRealign;
           end;
         TListViewState.PullUpOK:
           begin
-            if (V - LS.ScrollValue + H > LS.Height) then begin
+            if (V - LS.ScrollValue + H > LS.Height - 6) then begin
               FFooter.DoUpdateState(TListViewState.PullUpStart, LS.ScrollValue);
               FState := TListViewState.PullUpStart;
             end;
@@ -2032,7 +2024,7 @@ procedure TListViewContent.DoRealign;
 
     end else begin
       Ctrl.Visible := False;
-      if FState = TListViewState.PullUpStart then
+      if FState in [TListViewState.PullUpOK, TListViewState.PullUpStart] then
         FState := TListViewState.None;
     end;
   end;

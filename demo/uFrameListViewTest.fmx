@@ -54,6 +54,7 @@ object FrameListViewTest: TFrameListViewTest
       'eedButton1Click(Sender: TObject);'#13#10'begin'#13#10'  Finish;'#13#10'end;'#13#10#13#10#22797#21046#20195 +
       #30721
     ScrollBars = Vertical
+    ShowScrollBars = False
   end
   object LinearLayout1: TLinearLayout
     Align = Top
