@@ -982,7 +982,11 @@ type
     function ObjectAtPoint(AScreenPoint: TPointF): IControl; override;
 
     function PointInItem(const P: TPointF; var R: TRectF): Integer;
-    
+
+    {$IFDEF NEXTGEN}
+    procedure AniMouseMove(const Touch: Boolean; const X, Y: Single); override;
+    {$ENDIF}
+
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
@@ -1618,6 +1622,14 @@ function TGridBase.AllowInitScrollbar: Boolean;
 begin
   Result := True;
 end;
+
+{$IFDEF NEXTGEN}
+procedure TGridBase.AniMouseMove(const Touch: Boolean; const X, Y: Single);
+begin
+  if (FAdjuestItem = nil) and (FHotItem = nil) then
+    inherited;
+end;
+{$ENDIF}
 
 function TGridBase.CanRePaintBk(const View: IView; State: TViewState): Boolean;
 begin
@@ -2443,7 +2455,10 @@ procedure TGridBase.DoScrollVisibleChange;
 begin
   if FCanScrollV and FCanScrollH then begin
     FScrollV.Margins.Bottom := 0;
-    FScrollH.Margins.Right := FScrollV.Width;           
+    if FShowScrollBars then
+      FScrollH.Margins.Right := FScrollV.Width
+    else
+      FScrollH.Margins.Right := 0;
   end else if FCanScrollV and Assigned(FScrollV) then 
     FScrollV.Margins.Bottom := 0
   else if FCanScrollH and Assigned(FScrollH) then
@@ -2708,12 +2723,12 @@ begin
   if gvFixedFooter in FOptions then
     H := H + ItemDefaultH + DividerH;
 
-  if Assigned(FScrollV) then
+  if Assigned(FScrollV) and (FShowScrollBars) then
     FContentBounds.Right := W + FFixedColsWidth {$IFNDEF NEXTGEN} + FScrollV.Width {$ENDIF} + FFixedRightPadding
   else
     FContentBounds.Right := W + FFixedColsWidth + FFixedRightPadding;
 
-  if Assigned(FScrollH) then
+  if Assigned(FScrollH) and FShowScrollBars then
     FContentBounds.Bottom := H + FFixedRowHeight + {$IFNDEF NEXTGEN} FScrollH.Height {$ENDIF} + CDefaultFixedRowHeight * 2
   else
     FContentBounds.Bottom := H + FFixedRowHeight + CDefaultFixedRowHeight * 2;

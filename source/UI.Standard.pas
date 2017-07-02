@@ -4512,22 +4512,25 @@ var
 begin
   inherited;
 
-  if FStartDistance = 0 then
-    APercent := 100
-  else
-    APercent := Round((EventInfo.Distance / FStartDistance) * 100);
+  if EventInfo.GestureID = igiZoom then begin
+    if FStartDistance = 0 then
+      APercent := 100
+    else
+      APercent := Round((EventInfo.Distance / FStartDistance) * 100);
 
-  ANewZoom := Round(FStartZoom * (APercent / 100));
-  if Max(FZoom, ANewZoom) - Min(FZoom, ANewZoom) > 10 then
-  begin
-    FStartZoom := FZoom;
-    FStartDistance := 0;
-    Exit;
+    ANewZoom := Round(FStartZoom * (APercent / 100));
+
+    if Max(FZoom, ANewZoom) - Min(FZoom, ANewZoom) > 10 then
+    begin
+      FStartZoom := FZoom;
+      FStartDistance := 0;
+      Exit;
+    end;
+
+    Zoom := ANewZoom;
+    FStartZoom := Zoom;
+    FStartDistance := EventInfo.Distance;
   end;
-  Zoom := ANewZoom;
-  FStartZoom := Zoom;
-  FStartDistance := EventInfo.Distance;
-
 end;
 
 constructor TImageViewerEx.Create(AOwner: TComponent);
@@ -4597,7 +4600,7 @@ end;
 procedure TImageViewerEx.MouseWheel(Shift: TShiftState; WheelDelta: Integer; var
   Handled: Boolean);
 begin
-  if not (DisableMouseWheel or Handled) then begin
+  if not (DisableMouseWheel or Handled or FStretch) then begin
     Zoom := Zoom + Trunc((WheelDelta / 120) * 4);
     Handled := True;
   end;

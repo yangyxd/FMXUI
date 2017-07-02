@@ -1832,6 +1832,9 @@ begin
   Dialog.FViewRoot.Index := Dialog.FViewRoot.Parent.ChildrenCount - 1;
   Dialog.FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
   Dialog.FViewRoot.CanFocus := False;
+  {$IFDEF ANDROID}
+  Dialog.FViewRoot.Padding.Top := TView.GetStatusHeight;
+  {$ENDIF}
 
   View.Name := '';
   View.Parent := Dialog.FViewRoot;
