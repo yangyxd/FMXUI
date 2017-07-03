@@ -874,12 +874,13 @@ type
     procedure DoTextChanged;
     procedure DoFontChanged(Sender: TObject);
     procedure DoColorChanged(Sender: TObject);
-    function GetStateColor(const State: TViewState): TAlphaColor; virtual; abstract;
     function IsStoredGravity: Boolean; virtual;
   public
     constructor Create(AOwner: TComponent);
     destructor Destroy; override;
     procedure Change;
+
+    function GetStateColor(const State: TViewState): TAlphaColor; virtual; abstract;
 
     function CalcTextObjectSize(const AText: string; const MaxWidth, SceneScale: Single;
       const Margins: TBounds; var Size: TSizeF): Boolean;
@@ -889,7 +890,12 @@ type
 
     procedure FillText(const Canvas: TCanvas; const ARect: TRectF; const AText: string; const AOpacity: Single;
       const Flags: TFillTextFlags; const ATextAlign: TTextAlign;
-      const AVTextAlign: TTextAlign = TTextAlign.Center; State: TViewState = TViewState.None);
+      const AVTextAlign: TTextAlign = TTextAlign.Center; State: TViewState = TViewState.None); overload;
+
+    procedure FillText(const Canvas: TCanvas; const ARect: TRectF; const AText: string; const AOpacity: Single;
+      const AColor: TAlphaColor; const Flags: TFillTextFlags; ASize: PSizeF; const SceneScale: Single;
+      const ATextAlign: TTextAlign; const AVTextAlign: TTextAlign = TTextAlign.Center;
+      State: TViewState = TViewState.None); overload;
 
     procedure Draw(const Canvas: TCanvas; const R: TRectF;
         const Opacity: Single; State: TViewState); overload;
@@ -5787,6 +5793,14 @@ end;
 
 { TTextSettingsBase }
 
+function RoundToScale(const Value, Scale: Single): Single;
+begin
+  if Scale > 0 then
+    Result := Ceil(Value * Scale) / Scale
+  else
+    Result := Ceil(Value);
+end;
+
 function TTextSettingsBase.CalcTextHeight(const AText: string;
   SceneScale: Single): Single;
 var
@@ -5800,15 +5814,6 @@ function TTextSettingsBase.CalcTextObjectSize(const AText: string;
   const MaxWidth, SceneScale: Single; const Margins: TBounds; var Size: TSizeF): Boolean;
 const
   FakeText = 'P|y'; // Do not localize
-
-  function RoundToScale(const Value, Scale: Single): Single;
-  begin
-    if Scale > 0 then
-      Result := Ceil(Value * Scale) / Scale
-    else
-      Result := Ceil(Value);
-  end;
-
 var
   LText: string;
   LMaxWidth: Single;
@@ -6009,9 +6014,8 @@ begin
 end;
 
 procedure TTextSettingsBase.FillText(const Canvas: TCanvas; const ARect: TRectF;
-  const AText: string; const AOpacity: Single;
-  const Flags: TFillTextFlags; const ATextAlign, AVTextAlign: TTextAlign;
-  State: TViewState);
+  const AText: string; const AOpacity: Single; const Flags: TFillTextFlags;
+  const ATextAlign, AVTextAlign: TTextAlign; State: TViewState);
 begin
   with FLayout do begin
     BeginUpdate;
@@ -6026,6 +6030,32 @@ begin
     Trimming := FTrimming;
     RightToLeft := TFillTextFlag.RightToLeft in Flags;
     EndUpdate;
+    RenderLayout(Canvas);
+  end;
+end;
+
+procedure TTextSettingsBase.FillText(const Canvas: TCanvas; const ARect: TRectF;
+  const AText: string; const AOpacity: Single; const AColor: TAlphaColor;
+  const Flags: TFillTextFlags; ASize: PSizeF; const SceneScale: Single;
+  const ATextAlign, AVTextAlign: TTextAlign; State: TViewState);
+begin
+  with FLayout do begin
+    BeginUpdate;
+    TopLeft := ARect.TopLeft;
+    MaxSize := PointF(ARect.Width, ARect.Height);
+    Text := AText;
+    WordWrap := Self.WordWrap;
+    Opacity := AOpacity;
+    HorizontalAlign := ATextAlign;
+    VerticalAlign := AVTextAlign;
+    Color := AColor;
+    Trimming := FTrimming;
+    RightToLeft := TFillTextFlag.RightToLeft in Flags;
+    EndUpdate;
+    if Assigned(ASize) then begin
+      ASize.Width := RoundToScale(Width + Font.Size * 0.334, SceneScale);
+      ASize.Height := RoundToScale(Height, SceneScale);
+    end;
     RenderLayout(Canvas);
   end;
 end;
