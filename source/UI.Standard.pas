@@ -452,6 +452,7 @@ type
   TTextView = class(TScrollView, ICaption{$IF CompilerVersion > 30.0}, IAcceleratorKeyReceiver{$ENDIF})
   private
     FText: UI.Base.TTextSettings;
+    FHtmlText: TViewHtmlText;
     FTextHint: string;
     FDrawable: TDrawableIcon;
     FOnDrawText: TOnDrawText;
@@ -470,6 +471,8 @@ type
     function GetTextLength: Integer;
     procedure SetGroupIndex(const Value: Integer);
     function GetNeedSize: TSizeF;
+    function GetHtmlText: string;
+    procedure SetHtmlText(const Value: string);
   protected
     procedure Loaded; override;
     procedure DblClick; override;
@@ -529,6 +532,7 @@ type
     property Text: string read GetText write SetText stored TextStored;
     property TextHint: string read FTextHint write SetTextHint;
     property TextSettings: UI.Base.TTextSettings read FText write SetTextSettings;
+    property HtmlText: string read GetHtmlText write SetHtmlText;
     property Drawable: TDrawableIcon read GetDrawable write SetDrawable;
     property GroupIndex: Integer read FGroupIndex write SetGroupIndex default 0;
     property ScrollBars;
@@ -581,9 +585,9 @@ type
     procedure SetColor(const Value: TAlphaColor);
     function IsColorStored: Boolean;
   protected
-    function GetStateColor(const State: TViewState): TAlphaColor; override;
   public
     constructor Create(AOwner: TComponent);
+    function GetStateColor(const State: TViewState): TAlphaColor; override;
     property ColorChange: Boolean read FColorChange write FColorChange;
   published
     property Color: TAlphaColor read FColor write SetColor stored IsColorStored;
@@ -1179,6 +1183,7 @@ destructor TTextView.Destroy;
 begin
   FreeAndNil(FText);
   FreeAndNil(FDrawable);
+  FreeAndNil(FHtmlText);
   inherited Destroy;
 end;
 
@@ -1276,7 +1281,7 @@ var
 begin
   if InVisible then
     Exit;
-  if FText.Text = '' then
+  if Text = '' then
     FText.Draw(Canvas, FTextHint, R, GetAbsoluteOpacity, TViewState(8))
   else begin
     case FScrollbar of
@@ -1312,8 +1317,12 @@ begin
     end;
     if Assigned(FOnDrawText) then
       FOnDrawText(Self, Canvas, FText, SR)
-    else
-      FText.Draw(Canvas, SR, Opacity, DrawState);
+    else begin
+      if Assigned(FHtmlText) then
+        FHtmlText.Draw(Canvas, FText, SR, Opacity, DrawState)
+      else
+        FText.Draw(Canvas, SR, Opacity, DrawState);
+    end;
   end;
 end;
 
@@ -1341,7 +1350,7 @@ begin
       V := 0;
 
     // 计算文本区域大小
-    if not FText.CalcTextObjectSize(FText.Text, V, Scene.GetSceneScale, nil, ASize) then Exit;
+    if not FText.CalcTextObjectSize(Text, V, Scene.GetSceneScale, nil, ASize) then Exit;
     if ASize.Width < GetDrawableWidth then
       ASize.Width := GetDrawableWidth;
     if ASize.Height < GetDrawableHeight then
@@ -1480,10 +1489,18 @@ begin
     Result := 0;
 end;
 
+function TTextView.GetHtmlText: string;
+begin
+  if not Assigned(FHtmlText) then
+    Result := ''
+  else
+    Result := FHtmlText.HtmlText;
+end;
+
 function TTextView.GetNeedSize: TSizeF;
 begin
   if not (csDestroying in ComponentState) and Assigned(Scene) then begin
-    if not TextSettings.CalcTextObjectSize(TextSettings.Text, $FFFF, Scene.GetSceneScale, nil, Result) then
+    if not TextSettings.CalcTextObjectSize(Text, $FFFF, Scene.GetSceneScale, nil, Result) then
       Result := TSizeF.Create(0, 0)
   end else begin
     Result := TSizeF.Create(0, 0);
@@ -1492,7 +1509,10 @@ end;
 
 function TTextView.GetText: string;
 begin
-  Result := FText.Text;
+  if Assigned(FHtmlText) then
+    Result := FHtmlText.Text
+  else
+    Result := FText.Text;
 end;
 
 function TTextView.GetTextLength: Integer;
@@ -1578,6 +1598,16 @@ begin
   end;
 end;
 
+procedure TTextView.SetHtmlText(const Value: string);
+begin
+  if HtmlText <> Value then begin
+    if not Assigned(FHtmlText) then
+      FHtmlText := TViewHtmlText.Create(Value)
+    else
+      FHtmlText.HtmlText := Value;
+  end;
+end;
+
 procedure TTextView.SetName(const Value: TComponentName);
 var
   ChangeText: Boolean;
@@ -1598,6 +1628,8 @@ end;
 
 procedure TTextView.SetText(const Value: string);
 begin
+  if Assigned(FHtmlText) then
+    FreeAndNil(FHtmlText);
   FText.Text := Value;
 end;
 
@@ -1617,8 +1649,11 @@ end;
 
 function TTextView.TextStored: Boolean;
 begin
-  Result := (not Text.IsEmpty and not ActionClient) or (not (ActionClient and (ActionLink <> nil) and
-    ActionLink.CaptionLinked and (Action is TContainedAction)));
+  if Assigned(FHtmlText) and (FHtmlText.HtmlText <> '') then
+    Result := False
+  else
+    Result := (not Text.IsEmpty and not ActionClient) or (not (ActionClient and (ActionLink <> nil) and
+      ActionLink.CaptionLinked and (Action is TContainedAction)));
 end;
 
 function TTextView.ToString: string;

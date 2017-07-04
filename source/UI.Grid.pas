@@ -448,10 +448,10 @@ type
   protected
     function IsStoreOpacity: Boolean; virtual;
     function IsStoredGravity: Boolean; override;
-    function GetStateColor(const State: TViewState): TAlphaColor; override;
   public
     constructor Create(AOwner: TComponent);
     destructor Destroy; override;
+    function GetStateColor(const State: TViewState): TAlphaColor; override;
     property CustomColor: TAlphaColor read FCustomColor write FCustomColor;
   published
     property Color: TAlphaColor read FColor write SetColor default TAlphaColorRec.Black;

@@ -79,6 +79,11 @@ procedure Share(const AControl: TControl; const Title, Msg: string);
 // 统计字符串字符数
 function CharCount(const S: string): Integer;
 
+// Html颜色转为Color
+function HtmlColorToColor(const V: string): TAlphaColor;
+function Text2Color(const s:string): TAlphaColor;
+function Hex2Color(const s: string): TAlphaColor;
+
 function RectD(const Left, Top, Right, Bottom: Double): TRectD; overload;
 function RectD(const R: TRectF): TRectD; overload;
 function RectSF(const Left, Top, Width, Height: Single): TRectF;
@@ -608,6 +613,43 @@ begin
   pe := PWord(IntPtr(p) + (ALen shl 1));
   while IntPtr(p) < IntPtr(pe) do
     CountChar;
+end;
+
+function Hex2Color(const s: string): TAlphaColor;
+begin
+  Result := StrToIntDef('$ff' + Copy(S, 2, Length(S) - 1), 0)
+end;
+
+function Text2Color(const s:string): TAlphaColor;
+begin
+  Result := TAlphaColorRec.Null;
+
+  if (s='red') then result:=TAlphaColorRec.Red else
+  if (s='black') then result:=TAlphaColorRec.Black else
+  if (s='blue') then result:=TAlphaColorRec.Blue else
+  if (s='green') then result:=TAlphaColorRec.Green else
+  if (s='aqua') then result:=TAlphaColorRec.Aqua else
+  if (s='yellow') then result:=TAlphaColorRec.Yellow else
+  if (s='fuchsia') then result:=TAlphaColorRec.Fuchsia else
+  if (s='white') then result:=TAlphaColorRec.White else
+  if (s='lime') then result:=TAlphaColorRec.Lime else
+  if (s='silver') then result:=TAlphaColorRec.Silver else
+  if (s='gray') then result:=TAlphaColorRec.Gray else
+  if (s='olive') then result:=TAlphaColorRec.Olive else
+  if (s='navy') then result:=TAlphaColorRec.Navy else
+  if (s='purple') then result:=TAlphaColorRec.Purple else
+  if (s='teal') then result:=TAlphaColorRec.Teal else
+  if (s='maroon') then result:=TAlphaColorRec.Maroon;
+end;
+
+function HtmlColorToColor(const V: string): TAlphaColor;
+begin
+  Result := 0;
+  if V = '' then Exit;
+  if V[1] = '#' then
+    Result := Hex2Color(V)
+  else
+    Result := Text2Color(V)
 end;
 
 { TIntHash }

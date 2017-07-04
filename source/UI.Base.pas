@@ -938,10 +938,10 @@ type
     function IsStoreOpacity: Boolean;
     procedure SetOpacity(const Value: Single);
   protected
-    function GetStateColor(const State: TViewState): TAlphaColor; override;
   public
     constructor Create(AOwner: TComponent);
     destructor Destroy; override;
+    function GetStateColor(const State: TViewState): TAlphaColor; override;
   published
     property AutoSize;
     property Color: TViewColor read FColor write SetColor;
@@ -951,6 +951,45 @@ type
     property WordWrap;
     property Gravity;
     property Opacity: Single read FOpacity write SetOpacity stored IsStoreOpacity;
+  end;
+
+  /// <summary>
+  /// Html解析中间结果 (仅支持字体颜色、样式部分)
+  /// </summary>
+  THtmlTextItem = record
+    P: PChar;
+    Len: Cardinal;
+    Color: TAlphaColor;
+    Style: TFontStyles;
+  end;
+
+  THtmlDataList = TList<THtmlTextItem>;
+
+  TViewHtmlText = class(TPersistent)
+  private const
+    PLineBreak: PChar = #13;
+  private
+    FList: THtmlDataList;
+    FText: string;
+    FHtmlText: string;
+    FFont: TFont;
+    procedure SetHtmlText(const Value: string);
+  protected
+    procedure ParseHtmlText(const Text: string); virtual;
+    function GetHtmlText: string; virtual;
+  public
+    constructor Create(const AHtmlText: string = '');
+    destructor Destroy; override;
+
+    procedure Assign(Source: TPersistent); override;
+    // 绘制到画布中
+    procedure Draw(Canvas: TCanvas; TextSet: UI.Base.TTextSettings; const R: TRectF;
+      const Opacity: Single; State: TViewState);
+
+    property Text: string read FText;
+    property List: THtmlDataList read FList;
+  published
+    property HtmlText: string read FHtmlText write SetHtmlText;
   end;
 
   /// <summary>
@@ -6053,7 +6092,7 @@ begin
     RightToLeft := TFillTextFlag.RightToLeft in Flags;
     EndUpdate;
     if Assigned(ASize) then begin
-      ASize.Width := RoundToScale(Width + Font.Size * 0.334, SceneScale);
+      ASize.Width := RoundToScale(Width + Font.Size * 0.1, SceneScale);
       ASize.Height := RoundToScale(Height, SceneScale);
     end;
     RenderLayout(Canvas);
@@ -8015,6 +8054,336 @@ begin
       if SetFocusObject(Item) then
         Break;
     end;
+  end;
+end;
+
+{ TViewHtmlText }
+
+procedure TViewHtmlText.Assign(Source: TPersistent);
+begin
+  if Source is TViewHtmlText then
+    SetHtmlText(TViewHtmlText(Source).HtmlText)
+  else
+    inherited;
+end;
+
+constructor TViewHtmlText.Create(const AHtmlText: string);
+begin
+  FList := THtmlDataList.Create();
+  SetHtmlText(AHtmlText);
+end;
+
+destructor TViewHtmlText.Destroy;
+begin
+  FreeAndNil(FList);
+  FreeAndNil(FFont);
+  inherited;
+end;
+
+procedure TViewHtmlText.Draw(Canvas: TCanvas; TextSet: UI.Base.TTextSettings;
+  const R: TRectF; const Opacity: Single; State: TViewState);
+var
+  I: Integer;
+  Item: THtmlTextItem;
+  X, Y, LX: Single;
+  S: TSizeF;
+  LColor: TAlphaColor;
+  LFontChange: TNotifyEvent;
+  LText: string;
+begin
+  TextSet.CalcTextObjectSize(FText, $FFFFFF, Canvas.Scale, nil, S);
+  X := R.Left;
+  Y := R.Top;
+
+  case TextSet.Gravity of
+    TLayoutGravity.LeftBottom:
+      begin
+        X := R.Left;
+        Y := R.Bottom - S.Height;
+      end;
+    TLayoutGravity.RightTop:
+      begin
+        X := R.Right - S.Width;
+        Y := R.Top;
+      end;
+    TLayoutGravity.RightBottom:
+      begin
+        X := R.Right - S.Width;
+        Y := R.Bottom - S.Height;
+      end;
+    TLayoutGravity.CenterVertical:
+      begin
+        X := R.Left;
+        Y := R.Top + (R.Bottom - R.Top - S.Height) / 2;
+      end;
+    TLayoutGravity.CenterHorizontal:
+      begin
+        X := R.Left + (R.Right - R.Left - S.Width) / 2;
+        Y := R.Top;
+      end;
+    TLayoutGravity.CenterHBottom:
+      begin
+        X := R.Left + (R.Right - R.Left - S.Width) / 2;
+        Y := R.Bottom - S.Height;
+      end;
+    TLayoutGravity.CenterVRight:
+      begin
+        X := R.Right - S.Width;
+        Y := R.Top + (R.Bottom - R.Top - S.Height) / 2;
+      end;
+    TLayoutGravity.Center:
+      begin
+        X := R.Left + (R.Right - R.Left - S.Width) / 2;
+        Y := R.Top + (R.Bottom - R.Top - S.Height) / 2;
+      end;
+  end;
+
+  LFontChange := TextSet.Font.OnChanged;
+  if not Assigned(FFont) then
+    FFont := TFont.Create;
+  try
+    TextSet.Font.OnChanged := nil;
+
+    FFont.Assign(TextSet.Font);
+    LX := X;
+
+    for I := 0 to FList.Count - 1 do begin
+      Item := FList[I];
+      SetString(LText, Item.P, Item.Len);
+
+      if LText = #13 then begin
+        Y := Y + S.Height;
+        X := LX;
+        Continue;
+      end;
+
+      TextSet.Font.Assign(FFont);
+      TextSet.Font.Style := Item.Style;
+
+      if Item.Color = 0 then
+        LColor := TextSet.GetStateColor(State)
+      else
+        LColor := Item.Color;
+
+      TextSet.FillText(Canvas, RectF(X, Y, R.Right, Y + S.Height), LText, Opacity, LColor,
+        TextSet.FillTextFlags, @S, Canvas.Scale, TTextAlign.Leading, TTextAlign.Leading);
+      X := X + S.Width;
+    end;
+
+  finally
+    TextSet.Font.Assign(FFont);
+    TextSet.Font.OnChanged := LFontChange;
+  end;
+end;
+
+function TViewHtmlText.GetHtmlText: string;
+var
+  I: Integer;
+  LText: string;
+  SB: TStringBuilder;
+begin
+  SB := TStringBuilder.Create;
+  try
+    for I := 0 to FList.Count - 1 do begin
+      with FList[I] do
+        SetString(LText, P, Len);
+      SB.Append(LText);
+    end;
+  finally
+    Result := SB.ToString;
+    FreeAndNil(SB);
+  end;
+end;
+
+procedure TViewHtmlText.ParseHtmlText(const Text: string);
+
+  procedure SkipSpace(var P: PChar);
+  begin
+    while p^ <> #0 do begin
+      if (p^ = #9) or (p^ = #10) or (p^ = #13) or (p^ = #32) or (p^ = #$3000) then
+        Inc(p)
+      else
+        Break;
+    end;
+  end;
+
+  function ReadData(P: PChar; const Key: string; var Value: string): Boolean;
+  var
+    P1: PChar;
+  begin
+    Result := False;
+    if StrLComp(P, PChar(Key), Length(Key)) = 0 then begin
+      Inc(P, Length(Key));
+      SkipSpace(P);
+      if P^ = '=' then begin
+        Inc(P);
+        SkipSpace(P);
+        if (P^ = '"') or (P^ = '''') then begin
+          P1 := P;
+          Inc(P);
+          while (P^ <> #0) and (P^ <> P1^) do
+            Inc(P);
+          Inc(P1);
+          SetString(Value, P1, P - P1);
+        end else
+          Value := Trim(P);
+        Result := True;
+      end
+    end;
+  end;
+
+  procedure SetItem(var Item: THtmlTextItem; const LText: string);
+  var
+    P: PChar;
+    Value: string;
+  begin
+    if LText = 'b' then
+      Include(Item.Style, TFontStyle.fsBold)
+    else if LText = 'i' then
+      Include(Item.Style, TFontStyle.fsItalic)
+    else if LText = 'u' then
+      Include(Item.Style, TFontStyle.fsUnderline)
+    else if LText = 's' then
+      Include(Item.Style, TFontStyle.fsStrikeOut)
+    else begin
+      P := PChar(LText);
+
+      if StrLComp(P, 'font', 4) = 0 then begin
+        Inc(P, 4);
+        SkipSpace(P);
+        if ReadData(P, 'color', Value) then begin
+          Item.Color := HtmlColorToColor(Value);
+        end;
+      end;
+
+    end;
+  end;
+
+  procedure AddItem(const P: PChar; const Len: Integer; const LText: string);
+  var
+    Item: THtmlTextItem;
+  begin
+    if Len = 0 then
+      Exit;
+    Item.P := P;
+    Item.Len := Len;
+    Item.Color := 0;
+    Item.Style := [];
+    if LText <> '' then
+      SetItem(Item, LText);
+    List.Add(Item);
+  end;
+
+  procedure UpdateItem(const I: Integer; const LText: string);
+  var
+    Item: THtmlTextItem;
+  begin
+    Item := List.Items[I];
+    SetItem(Item, LText);
+    List.Items[I] := Item;
+  end;
+
+  procedure ParseText(var P, PE: PChar; const AFlag: string);
+  var
+    P1, P2: PChar;
+    LS, LE: string;
+    SIndex, I: Integer;
+  begin
+    if PE - P < 1 then
+      Exit;
+    LS := AFlag;
+    P2 := P;
+
+    while P < PE do begin
+      P1 := StrScan(P, '<');
+
+      if P1 = nil then begin
+        AddItem(P, PE - P, LS);
+        Break;
+      end;
+
+      if (P <> P1) and (AFlag = '') then begin
+        AddItem(P, P1 - P, AFlag);
+        LS := '';
+      end else if (P = P1) and (AFlag = '') then
+        LS := '';
+
+      P := P1 + 1;
+      P1 := StrScan(P, '>');
+      if (P1 = nil) or (P1 = P) then
+        Break;
+
+      if LS = '' then begin
+        SetString(LS, P, P1 - P);
+        LS := LowerCase(LS);
+      end else begin
+        SkipSpace(P);
+        if P^ = '/' then begin
+          Inc(P);
+          SetString(LE, P, P1 - P);
+          LE := LowerCase(LE);
+          if (LE = LS) or ((Length(LS) > Length(LE)) and (Pos(LE + ' ', LS) > 0)) then begin
+            AddItem(P2, P - P2 - 2, LS);
+          end;
+          P := P1 + 1;
+          LS := '';
+          Break;  // 不正确的 html 代码
+        end else begin
+          SetString(LE, P, P1 - P);
+          LE := LowerCase(Trim(LE));
+
+          if LE = 'br' then begin // 换行
+            AddItem(PLineBreak, 1, LS);
+            LS := '';
+            P := P1 + 1;
+            Continue;
+          end;
+
+          P := P1 + 1;
+          SIndex := List.Count;
+          ParseText(P, PE, LE);
+
+          P2 := P;
+          for I := SIndex to List.Count - 1 do
+            UpdateItem(I, LS);
+
+          Continue;
+        end;
+      end;
+
+      P := P1 + 1;
+
+      if LS = 'br' then begin // 换行
+        AddItem(PLineBreak, 1, LS);
+        LS := '';
+        Continue;
+      end else begin
+        SIndex := List.Count;
+        ParseText(P, PE, LS);
+
+        for I := SIndex to List.Count - 2 do
+          UpdateItem(I, LS);
+      end;
+
+    end;
+  end;
+
+var
+  P, PE: PChar;
+begin
+  List.Clear;
+  if Text = '' then Exit;
+  P := PChar(Text);
+  PE := P + Length(Text);
+  ParseText(P, PE, '');
+end;
+
+procedure TViewHtmlText.SetHtmlText(const Value: string);
+begin
+  if FHtmlText <> Value then begin
+    FHtmlText := Value;
+    ParseHtmlText(FHtmlText);
+    FText := GetHtmlText;
   end;
 end;
 
