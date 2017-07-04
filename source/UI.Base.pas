@@ -8298,7 +8298,7 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
       P1 := StrScan(P, '<');
 
       if P1 = nil then begin
-        AddItem(P, PE - P, LS);
+        AddItem(P, PE - P, AFlag);
         Break;
       end;
 

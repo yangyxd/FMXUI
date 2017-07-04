@@ -81,8 +81,8 @@ object Frame3: TFrame3
       OnClick = ButtonView1Click
       Hint = #27979#35797'hint'
       ShowHint = True
-      Text = 'ButtonView1'
       TextSettings.Gravity = Center
+      HtmlText = #25105#20351#29992#20102'<font color="blue">HtmlText</font><b>'#23646'</b>'#24615
     end
     object ButtonView2: TButtonView
       Layout.Below = ButtonView1
