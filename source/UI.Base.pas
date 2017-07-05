@@ -961,9 +961,14 @@ type
     Len: Cardinal;
     Color: TAlphaColor;
     Style: TFontStyles;
+    Link: SmallInt;  // ³¬Á´½ÓË÷ÒýºÅ
+    LinkURL: SmallInt; // ³¬Á´½ÓµØÖ·
+    function Text: string;
   end;
 
-  THtmlDataList = TList<THtmlTextItem>;
+  THtmlDataList = TList<THtmlTextItem>;  
+
+  TViewLinkClickEvent = procedure (Sender: TObject; const Text, URL: string) of object;    
 
   TViewHtmlText = class(TPersistent)
   private const
@@ -972,11 +977,23 @@ type
     FList: THtmlDataList;
     FText: string;
     FHtmlText: string;
+    FRealHtmlText: string;
     FFont: TFont;
+    FReplace: Boolean;
+    
+    FLinkHrefs: TStrings;
+    FLinkRange: TArray<TRectF>;
+    FLinkRangeCount: Integer;
+    FLinkHot: Integer;
+
+    FDefaultCursor: TCursor;
+    
     procedure SetHtmlText(const Value: string);
   protected
     procedure ParseHtmlText(const Text: string); virtual;
     function GetHtmlText: string; virtual;
+    function ReplaceValue(const Value: string): string;    
+    function PointInLink(const X, Y: Single): Integer;
   public
     constructor Create(const AHtmlText: string = '');
     destructor Destroy; override;
@@ -986,8 +1003,14 @@ type
     procedure Draw(Canvas: TCanvas; TextSet: UI.Base.TTextSettings; const R: TRectF;
       const Opacity: Single; State: TViewState);
 
+    procedure MouseDown(Sender: TView; Button: TMouseButton; Shift: TShiftState; X, Y: Single); 
+    procedure MouseMove(Sender: TView; X, Y: Single);
+    procedure MouseLeave(Sender: TView);
+
     property Text: string read FText;
-    property List: THtmlDataList read FList;
+    property List: THtmlDataList read FList;  
+    property LinkHot: Integer read FLinkHot;
+    property DefaultCursor: TCursor read FDefaultCursor write FDefaultCursor;
   published
     property HtmlText: string read FHtmlText write SetHtmlText;
   end;
@@ -1197,6 +1220,7 @@ type
     procedure DoCheckedChange(); virtual;
     procedure DoEndUpdate; override;
     procedure DoMatrixChanged(Sender: TObject); override;
+    procedure DoLinkClick(const Text, URL: string); virtual;
     procedure HandleSizeChanged; override;
     procedure Click; override;
 
@@ -1718,7 +1742,7 @@ var
   {$ENDIF}
 
 var
-  FShareImageList: TList<TShareImageList>;
+  FShareImageList: TList<TShareImageList>;    
 
 function ComponentStateToString(const State: TComponentState): string;
 
@@ -3601,6 +3625,10 @@ end;
 procedure TView.DoLayoutChanged(Sender: TObject);
 begin
   HandleSizeChanged;
+end;
+
+procedure TView.DoLinkClick(const Text, URL: string);
+begin 
 end;
 
 procedure TView.DoMatrixChanged(Sender: TObject);
@@ -6092,7 +6120,7 @@ begin
     RightToLeft := TFillTextFlag.RightToLeft in Flags;
     EndUpdate;
     if Assigned(ASize) then begin
-      ASize.Width := RoundToScale(Width + Font.Size * 0.1, SceneScale);
+      ASize.Width := RoundToScale(Width, SceneScale);
       ASize.Height := RoundToScale(Height, SceneScale);
     end;
     RenderLayout(Canvas);
@@ -8059,17 +8087,22 @@ end;
 
 { TViewHtmlText }
 
+type
+  TViewHtmlReadAttr = reference to procedure (var Item: THtmlTextItem; const Key, Value: string);  
+
 procedure TViewHtmlText.Assign(Source: TPersistent);
 begin
-  if Source is TViewHtmlText then
-    SetHtmlText(TViewHtmlText(Source).HtmlText)
-  else
+  if Source is TViewHtmlText then begin
+    SetHtmlText(TViewHtmlText(Source).HtmlText);
+    FDefaultCursor := TViewHtmlText(Source).FDefaultCursor;
+  end else
     inherited;
 end;
 
 constructor TViewHtmlText.Create(const AHtmlText: string);
 begin
   FList := THtmlDataList.Create();
+  FDefaultCursor := crDefault;
   SetHtmlText(AHtmlText);
 end;
 
@@ -8077,11 +8110,19 @@ destructor TViewHtmlText.Destroy;
 begin
   FreeAndNil(FList);
   FreeAndNil(FFont);
+  FreeAndNil(FLinkHrefs);
   inherited;
 end;
 
 procedure TViewHtmlText.Draw(Canvas: TCanvas; TextSet: UI.Base.TTextSettings;
   const R: TRectF; const Opacity: Single; State: TViewState);
+
+  function IncludeStyle(const Src: TFontStyles; const V: TFontStyle): TFontStyles;
+  begin
+    Result := Src;
+    Include(Result, V);
+  end;
+  
 var
   I: Integer;
   Item: THtmlTextItem;
@@ -8157,8 +8198,19 @@ begin
         Continue;
       end;
 
+      if LText = '' then
+        Continue;
+
+      if FReplace then
+        LText := ReplaceValue(LText);
+
       TextSet.Font.Assign(FFont);
       TextSet.Font.Style := Item.Style;
+
+      if (Item.Link >= 0) and (Item.Link = FLinkHot) then begin
+        TextSet.Font.Style := IncludeStyle(Item.Style, TFontStyle.fsUnderline)
+      end else
+        TextSet.Font.Style := Item.Style;
 
       if Item.Color = 0 then
         LColor := TextSet.GetStateColor(State)
@@ -8167,7 +8219,11 @@ begin
 
       TextSet.FillText(Canvas, RectF(X, Y, R.Right, Y + S.Height), LText, Opacity, LColor,
         TextSet.FillTextFlags, @S, Canvas.Scale, TTextAlign.Leading, TTextAlign.Leading);
-      X := X + S.Width;
+
+      if Item.Link >= 0 then // ¼ÇÂ¼³¬Á´½ÓÇøÓò
+        FLinkRange[Item.Link] := RectF(X, Y, X + S.Width, Y + S.Height);       
+
+      X := X + S.Width;          
     end;
 
   finally
@@ -8187,11 +8243,55 @@ begin
     for I := 0 to FList.Count - 1 do begin
       with FList[I] do
         SetString(LText, P, Len);
-      SB.Append(LText);
+      if FReplace then
+        SB.Append(ReplaceValue(LText))
+      else
+        SB.Append(LText);
     end;
   finally
     Result := SB.ToString;
     FreeAndNil(SB);
+  end;
+end;
+
+procedure TViewHtmlText.MouseDown(Sender: TView; Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+var
+  Item: THtmlTextItem;
+  I: Integer;
+begin
+  if (Button = TMouseButton.mbLeft) and (FLinkHot >= 0) and (FLinkHot < FLinkHrefs.Count) then begin
+    if Assigned(Sender) then begin
+      for I := 0 to FList.Count - 1 do begin
+        if FList[I].Link = FLinkHot then begin
+          Item := FList[I];
+          Sender.DoLinkClick(Item.Text, FLinkHrefs[Item.LinkURL]);
+          Break;
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure TViewHtmlText.MouseLeave(Sender: TView);
+begin
+  FLinkHot := -1;
+  Sender.Cursor := FDefaultCursor;
+end;
+
+procedure TViewHtmlText.MouseMove(Sender: TView; X, Y: Single);
+var
+  I: Integer;
+begin
+  I := PointInLink(X, Y);
+  if I <> FLinkHot then begin 
+    FLinkHot := I;
+    if I >= 0 then
+      Sender.Cursor := crHandPoint
+    else
+      Sender.Cursor := FDefaultCursor;
+    if Assigned(Sender) then
+      Sender.Invalidate;
   end;
 end;
 
@@ -8207,35 +8307,48 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
     end;
   end;
 
-  function ReadData(P: PChar; const Key: string; var Value: string): Boolean;
+  procedure ReadProperty(var Item: THtmlTextItem; var P, PE: PChar; OnReadAttr: TViewHtmlReadAttr);
   var
     P1: PChar;
+    Key, Value: string;
   begin
-    Result := False;
-    if StrLComp(P, PChar(Key), Length(Key)) = 0 then begin
-      Inc(P, Length(Key));
+    if not Assigned(OnReadAttr) then
+      Exit;
+    while P < PE do begin
       SkipSpace(P);
-      if P^ = '=' then begin
+      P1 := P;
+      while (P < PE) and (P^ <> '=') do
         Inc(P);
-        SkipSpace(P);
-        if (P^ = '"') or (P^ = '''') then begin
-          P1 := P;
+      if (P >= PE) then Break;
+      
+      SetString(Key, P1, P - P1);
+      Trim(Key);
+
+      Inc(P);
+      SkipSpace(P);
+      P1 := P;
+
+      if (P^ = '"') or (P^ = '''') then begin
+        Inc(P);
+        while (P^ <> #0) and (P^ <> P1^) do
           Inc(P);
-          while (P^ <> #0) and (P^ <> P1^) do
-            Inc(P);
-          Inc(P1);
-          SetString(Value, P1, P - P1);
-        end else
-          Value := Trim(P);
-        Result := True;
-      end
+        Inc(P1);
+        SetString(Value, P1, P - P1);
+        Inc(P);
+      end else begin
+        while not CharInSet(P^, [#0, #9, ' ', #13, #10]) do
+          Inc(P);
+        SetString(Value, P1, P - P1);
+      end;
+
+      if Key <> '' then      
+        OnReadAttr(Item, Key, Value);       
     end;
   end;
 
   procedure SetItem(var Item: THtmlTextItem; const LText: string);
   var
-    P: PChar;
-    Value: string;
+    P, PE: PChar;
   begin
     if LText = 'b' then
       Include(Item.Style, TFontStyle.fsBold)
@@ -8245,17 +8358,43 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
       Include(Item.Style, TFontStyle.fsUnderline)
     else if LText = 's' then
       Include(Item.Style, TFontStyle.fsStrikeOut)
-    else begin
+    else if (LText = 'em') or (LText = 'strong') then begin
+      Include(Item.Style, TFontStyle.fsItalic);
+      Include(Item.Style, TFontStyle.fsBold);
+    end else begin
       P := PChar(LText);
+      PE := P + Length(LText);
 
-      if StrLComp(P, 'font', 4) = 0 then begin
+      if StrLComp(P, 'font', 4) = 0 then begin  // font
         Inc(P, 4);
-        SkipSpace(P);
-        if ReadData(P, 'color', Value) then begin
-          Item.Color := HtmlColorToColor(Value);
-        end;
+        ReadProperty(Item, P, PE, 
+          procedure (var Item: THtmlTextItem; const Key, Value: string)
+          begin
+            if Key = 'color' then
+              Item.Color := HtmlColorToColor(Value);
+          end
+        );
+      end else if StrLComp(P, 'a ', 2) = 0 then begin  // a ³¬Á´½Ó
+        Inc(P, 1);        
+        ReadProperty(Item, P, PE, 
+          procedure (var Item: THtmlTextItem; const Key, Value: string)
+          begin
+            if Key = 'href' then begin                
+              if not Assigned(FLinkHrefs) then
+                FLinkHrefs := TStringList.Create;
+              Item.LinkURL := FLinkHrefs.IndexOf(Value);              
+              if Item.LinkURL < 0 then begin
+                Item.LinkURL := FLinkHrefs.Count;
+                FLinkHrefs.Add(Value);              
+              end;
+              Item.Link := FLinkRangeCount;
+              Inc(FLinkRangeCount);
+            end else if Key = 'color' then
+              Item.Color := HtmlColorToColor(Value);
+          end
+        );
       end;
-
+      
     end;
   end;
 
@@ -8268,6 +8407,8 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
     Item.P := P;
     Item.Len := Len;
     Item.Color := 0;
+    Item.Link := -1;
+    Item.LinkURL := -1;
     Item.Style := [];
     if LText <> '' then
       SetItem(Item, LText);
@@ -8324,6 +8465,8 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
           LE := LowerCase(LE);
           if (LE = LS) or ((Length(LS) > Length(LE)) and (Pos(LE + ' ', LS) > 0)) then begin
             AddItem(P2, P - P2 - 2, LS);
+            if LE = 'p' then
+              AddItem(PLineBreak, 1, LS);
           end;
           P := P1 + 1;
           LS := '';
@@ -8358,6 +8501,8 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
         LS := '';
         Continue;
       end else begin
+        if LS = 'p' then
+          AddItem(PLineBreak, 1, LS);
         SIndex := List.Count;
         ParseText(P, PE, LS);
 
@@ -8378,13 +8523,87 @@ begin
   ParseText(P, PE, '');
 end;
 
+function TViewHtmlText.PointInLink(const X, Y: Single): Integer;
+var
+  I: Integer;  
+  P: TPointF;
+begin
+  P := PointF(X, Y);
+  for I := 0 to High(FLinkRange) do begin
+    if IsPointInRect(P, FLinkRange[I]) then begin
+      Result := I;
+      Exit;
+    end;        
+  end;
+  Result := -1;
+end;
+
+function TViewHtmlText.ReplaceValue(const Value: string): string;
+begin   
+  Result := StringReplace(Value, '&#60;', '<', [rfReplaceAll]);   
+  Result := StringReplace(Result, '&#62;', '>', [rfReplaceAll]);   
+  Result := StringReplace(Result, '&#61;', '=', [rfReplaceAll]);   
+  Result := StringReplace(Result, '&lt;', '<', [rfReplaceAll]);
+  Result := StringReplace(Result, '&gt;', '>', [rfReplaceAll]);   
+end;
+
 procedure TViewHtmlText.SetHtmlText(const Value: string);
 begin
   if FHtmlText <> Value then begin
     FHtmlText := Value;
-    ParseHtmlText(FHtmlText);
+    FLinkRangeCount := 0;
+    FLinkHot := -1;
+    if Assigned(FLinkHrefs) then
+      FLinkHrefs.Clear;
+    if Pos('&', Value) > 0 then begin
+      FReplace := True;
+      FRealHtmlText := Value;
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#32;', ' ', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#33;', '!', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#34;', '"', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#35;', '#', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#36;', '$', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#37;', '%', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#38;', '&', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#39;', '''', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#64;', '@', [rfReplaceAll]); 
+      FRealHtmlText := StringReplace(FRealHtmlText, '&nbsp;', ' ', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&amp;', '&', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&quot;', '"', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&apos;', '''', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&cent;', '¡é', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&pound;', '¡ê', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&yen;', '£¤', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&euro;', string(#8364), [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&sect;', '¡ì', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&copy;', '?', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&reg;', '?', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&trade;', string(#8482), [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&trade;', string(#8482), [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&times;', '¡Á', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&divide;', '¡Â', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&plusmn;', '¡À', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&laquo;', '?', [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&raquo;', '?', [rfReplaceAll]);    
+      ParseHtmlText(FRealHtmlText);
+    end else begin
+      FReplace := False;
+      FRealHtmlText := '';
+      ParseHtmlText(FHtmlText);
+    end;
     FText := GetHtmlText;
+    SetLength(FLinkRange, FLinkRangeCount);
   end;
+end;
+
+{ THtmlTextItem }
+
+function THtmlTextItem.Text: string;
+begin
+  if (P = nil) or (Len < 1) then
+    Result := ''
+  else
+    SetString(Result, P, Len);
 end;
 
 initialization

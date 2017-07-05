@@ -455,10 +455,12 @@ type
     FHtmlText: TViewHtmlText;
     FTextHint: string;
     FDrawable: TDrawableIcon;
-    FOnDrawText: TOnDrawText;
-    FOnTextChange: TNotifyEvent;
     FInFitSize: Boolean;
     FGroupIndex: Integer;
+
+    FOnDrawText: TOnDrawText;
+    FOnTextChange: TNotifyEvent;
+    FOnLinkClick: TViewLinkClickEvent;
 
     function GetAutoSize: Boolean;
     function GetText: string;
@@ -493,6 +495,7 @@ type
     procedure SetName(const Value: TComponentName); override;
     procedure DoGroupSelected(); virtual;
     procedure DoCheckedChange(); override;
+    procedure DoLinkClick(const Text, URL: string); override;
   protected
     function TextStored: Boolean;
     function IsAutoSize: Boolean; override;
@@ -504,6 +507,10 @@ type
     procedure DoScrollVisibleChange; override;
     procedure DoAutoSize;
     procedure DoUpdateContentBounds;
+
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
+    procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
+    procedure DoMouseLeave; override;
   protected
     {Scrollbar}
     function CreateBackground: TDrawable; override;
@@ -540,6 +547,7 @@ type
     property DisableMouseWheel;
     property OnTextChange: TNotifyEvent read FOnTextChange write FOnTextChange;
     property OnDrawText: TOnDrawText read FOnDrawText write FOnDrawText;
+    property OnLinkClick: TViewLinkClickEvent read FOnLinkClick write FOnLinkClick;
   end;
 
 type
@@ -1261,6 +1269,23 @@ begin
     DoUpdateContentBounds;
 end;
 
+procedure TTextView.DoLinkClick(const Text, URL: string);
+begin
+  if Assigned(FOnLinkClick) then begin
+    try
+      FOnLinkClick(Self, Text, URL);
+    except
+    end;
+  end;
+end;
+
+procedure TTextView.DoMouseLeave;
+begin
+  if Assigned(FHtmlText) then
+    FHtmlText.MouseLeave(Self);
+  inherited;
+end;
+
 procedure TTextView.DoPaintBackground(var R: TRectF);
 begin
   R := RectF(R.Left + Padding.Left, R.Top + Padding.Top,
@@ -1539,6 +1564,21 @@ begin
   Change;
 end;
 
+procedure TTextView.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+begin
+  if Assigned(FHtmlText) then
+    FHtmlText.MouseDown(Self, Button, Shift, X, Y);
+  inherited;
+end;
+
+procedure TTextView.MouseMove(Shift: TShiftState; X, Y: Single);
+begin
+  inherited;
+  if Assigned(FHtmlText) and (FHtmlText.HtmlText <> '') then
+    FHtmlText.MouseMove(Self, X, Y);
+end;
+
 procedure TTextView.PaddingChanged;
 begin
   HandleSizeChanged;
@@ -1601,10 +1641,12 @@ end;
 procedure TTextView.SetHtmlText(const Value: string);
 begin
   if HtmlText <> Value then begin
-    if not Assigned(FHtmlText) then
-      FHtmlText := TViewHtmlText.Create(Value)
-    else
+    if not Assigned(FHtmlText) then begin
+      FHtmlText := TViewHtmlText.Create(Value);
+      FHtmlText.DefaultCursor := Cursor;
+    end else
       FHtmlText.HtmlText := Value;
+    Invalidate;
   end;
 end;
 

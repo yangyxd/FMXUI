@@ -639,7 +639,8 @@ begin
   if (s='navy') then result:=TAlphaColorRec.Navy else
   if (s='purple') then result:=TAlphaColorRec.Purple else
   if (s='teal') then result:=TAlphaColorRec.Teal else
-  if (s='maroon') then result:=TAlphaColorRec.Maroon;
+  if (s='maroon') then result:=TAlphaColorRec.Maroon else
+  if (Length(s) = 6) then result := StrToIntDef('$ff' + s, 0)
 end;
 
 function HtmlColorToColor(const V: string): TAlphaColor;
@@ -648,7 +649,9 @@ begin
   if V = '' then Exit;
   if V[1] = '#' then
     Result := Hex2Color(V)
-  else
+  else if V[1] = '$' then
+    Result := StrToIntDef(V, 0)
+  else     
     Result := Text2Color(V)
 end;
 
