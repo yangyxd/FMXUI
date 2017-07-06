@@ -897,6 +897,10 @@ type
       const ATextAlign: TTextAlign; const AVTextAlign: TTextAlign = TTextAlign.Center;
       State: TViewState = TViewState.None); overload;
 
+    // 计算 Text 真实大小
+    procedure TextSize(const AText: string; var ASize: TSizeF; const SceneScale: Single; 
+      const MaxWidth: Single = -1; AWordWrap: Boolean = False);
+
     procedure Draw(const Canvas: TCanvas; const R: TRectF;
         const Opacity: Single; State: TViewState); overload;
     procedure Draw(const Canvas: TCanvas; const AText: string; const R: TRectF;
@@ -999,6 +1003,7 @@ type
     destructor Destroy; override;
 
     procedure Assign(Source: TPersistent); override;
+
     // 绘制到画布中
     procedure Draw(Canvas: TCanvas; TextSet: UI.Base.TTextSettings; const R: TRectF;
       const Opacity: Single; State: TViewState);
@@ -6287,6 +6292,27 @@ begin
   end;
 end;
 
+procedure TTextSettingsBase.TextSize(const AText: string; var ASize: TSizeF;
+  const SceneScale: Single; const MaxWidth: Single; AWordWrap: Boolean);
+begin
+  with FLayout do begin
+    BeginUpdate;
+    TopLeft := TPointF.Zero;
+    if MaxWidth < 0 then    
+      MaxSize := TTextLayout.MaxLayoutSize
+    else
+      MaxSize := PointF(MaxWidth, $FFFFFF);
+    Text := AText;
+    WordWrap := AWordWrap;
+    HorizontalAlign := TTextAlign.Leading;
+    VerticalAlign := TTextAlign.Leading;
+    RightToLeft := False;
+    EndUpdate;
+    ASize.Width := RoundToScale(Width, SceneScale);
+    ASize.Height := RoundToScale(Height, SceneScale);
+  end;
+end;
+
 { TTextSettings }
 
 constructor TTextSettings.Create(AOwner: TComponent);
@@ -8116,80 +8142,207 @@ end;
 
 procedure TViewHtmlText.Draw(Canvas: TCanvas; TextSet: UI.Base.TTextSettings;
   const R: TRectF; const Opacity: Single; State: TViewState);
+var
+  CharW, CharH: Single;
+  
+  function CharSize(const c: PChar): Integer;
+  begin
+    if Ord(c^) > $FF then 
+      Result := 2
+    else
+      Result := 1;
+  end; 
+
+  procedure UpdateXY(var X, Y: Single; const S: TSizeF);
+  begin
+    case TextSet.Gravity of
+      TLayoutGravity.LeftBottom:
+        begin
+          X := R.Left;
+          Y := R.Bottom - S.Height;
+        end;
+      TLayoutGravity.RightTop:
+        begin
+          X := R.Right - S.Width;
+          Y := R.Top;
+        end;
+      TLayoutGravity.RightBottom:
+        begin
+          X := R.Right - S.Width;
+          Y := R.Bottom - S.Height;
+        end;
+      TLayoutGravity.CenterVertical:
+        begin
+          X := R.Left;
+          Y := R.Top + (R.Bottom - R.Top - S.Height) / 2;
+        end;
+      TLayoutGravity.CenterHorizontal:
+        begin
+          X := R.Left + (R.Right - R.Left - S.Width) / 2;
+          Y := R.Top;
+        end;
+      TLayoutGravity.CenterHBottom:
+        begin
+          X := R.Left + (R.Right - R.Left - S.Width) / 2;
+          Y := R.Bottom - S.Height;
+        end;
+      TLayoutGravity.CenterVRight:
+        begin
+          X := R.Right - S.Width;
+          Y := R.Top + (R.Bottom - R.Top - S.Height) / 2;
+        end;
+      TLayoutGravity.Center:
+        begin
+          X := R.Left + (R.Right - R.Left - S.Width) / 2;
+          Y := R.Top + (R.Bottom - R.Top - S.Height) / 2;
+        end;
+    end;
+  end;
 
   function IncludeStyle(const Src: TFontStyles; const V: TFontStyle): TFontStyles;
   begin
     Result := Src;
     Include(Result, V);
   end;
+
+  procedure DrawText(const LText: string; const Item: THtmlTextItem; const LColor: TAlphaColor; 
+    var X, Y: Single; var S: TSizeF);
+  begin
+    TextSet.FillText(Canvas, RectF(X, Y, R.Right, R.Bottom), LText, Opacity, LColor,
+          TextSet.FillTextFlags, @S, Canvas.Scale, TTextAlign.Leading, TTextAlign.Leading);
+
+    if Item.Link >= 0 then // 记录超链接区域
+      FLinkRange[Item.Link] := RectF(X, Y, X + S.Width, Y + S.Height);
+
+     X := X + S.Width;
+  end;
+
+  // Flag 非0时用于计算大小
+  procedure DrawWordWarpText(const LText: string; const Item: THtmlTextItem; const LColor: TAlphaColor; 
+    var X, Y, LX: Single; var S: TSizeF; Flag: Integer = 0);
+  var
+    J: Integer;
+    P, PE, P1: PChar;
+    LTmp: string;
+  begin  
+    if R.Right - R.Left < CharW then
+      Exit;
+          
+    if X + CharW >= R.Right then begin
+      Y := Y + S.Height;
+      X := LX;
+    end;
+
+    if Item.Link >= 0 then begin
+      // 超链接不换行
+      if X > LX then begin
+        TextSet.TextSize(LText, S, Canvas.Scale);
+        if X + S.Width > R.Right then begin
+          X := LX;
+          Y := Y + S.Height;
+        end;
+      end;
+
+      if Flag = 0 then begin 
+        TextSet.WordWrap := True;        
+        DrawText(LText, Item, LColor, X, Y, S);
+        TextSet.WordWrap := False;
+      end else begin
+        TextSet.TextSize(LText, S, Canvas.Scale, R.Right - X, True);
+        X := X + S.Width;          
+      end;
+      if S.Height > CharH then begin  // 超链接换行后，尾部不再跟其它内容
+        Y := Y + S.Height;
+        X := LX;
+      end;
+
+    end else begin
+      // 自动换行
+      P := PChar(LText);
+      PE := P + Length(LText);
+      while P < PE do begin
+        J := Trunc((R.Right - X) / CharW);
+        if J < 1 then Break;
+
+        SetString(LTmp, P, Min(PE - P, J));
+        if J > 1 then begin 
+          TextSet.TextSize(LTmp, S, Canvas.Scale);
+          if X + S.Width > R.Right then begin
+                
+            P1 := P + J;
+            while P1 > P do begin
+              SetString(LTmp, P, P1 - P);  
+              TextSet.TextSize(LTmp, S, Canvas.Scale);
+              if X + S.Width < R.Right then 
+                Break;
+              Dec(P1);
+            end; 
+            J := P1 - P;
+            if J < 1 then Break;
+          end;
+        end;   
+
+        if Flag = 0 then
+          DrawText(LTmp, Item, LColor, X, Y, S)
+        else
+          X := X + S.Width;
+
+        Inc(P, J);
+        if PE - P > 0 then begin
+          Y := Y + S.Height;
+          X := LX;
+        end;
+
+      end;
+    end;
+  end;
   
 var
   I: Integer;
   Item: THtmlTextItem;
-  X, Y, LX: Single;
+  X, Y, LX, LW, LY: Single;
   S: TSizeF;
   LColor: TAlphaColor;
+  LWordWarp, LVCenter: Boolean;
   LFontChange: TNotifyEvent;
   LText: string;
 begin
   TextSet.CalcTextObjectSize(FText, $FFFFFF, Canvas.Scale, nil, S);
   X := R.Left;
-  Y := R.Top;
+  Y := R.Top;  
 
-  case TextSet.Gravity of
-    TLayoutGravity.LeftBottom:
-      begin
-        X := R.Left;
-        Y := R.Bottom - S.Height;
-      end;
-    TLayoutGravity.RightTop:
-      begin
-        X := R.Right - S.Width;
-        Y := R.Top;
-      end;
-    TLayoutGravity.RightBottom:
-      begin
-        X := R.Right - S.Width;
-        Y := R.Bottom - S.Height;
-      end;
-    TLayoutGravity.CenterVertical:
-      begin
-        X := R.Left;
-        Y := R.Top + (R.Bottom - R.Top - S.Height) / 2;
-      end;
-    TLayoutGravity.CenterHorizontal:
-      begin
-        X := R.Left + (R.Right - R.Left - S.Width) / 2;
-        Y := R.Top;
-      end;
-    TLayoutGravity.CenterHBottom:
-      begin
-        X := R.Left + (R.Right - R.Left - S.Width) / 2;
-        Y := R.Bottom - S.Height;
-      end;
-    TLayoutGravity.CenterVRight:
-      begin
-        X := R.Right - S.Width;
-        Y := R.Top + (R.Bottom - R.Top - S.Height) / 2;
-      end;
-    TLayoutGravity.Center:
-      begin
-        X := R.Left + (R.Right - R.Left - S.Width) / 2;
-        Y := R.Top + (R.Bottom - R.Top - S.Height) / 2;
-      end;
-  end;
+  UpdateXY(X, Y, S);
 
+  LW := S.Width;
+  LY := Y;
+  CharW := 0;
+  CharH := 0;
+  LWordWarp := TextSet.WordWrap;
+  if LWordWarp then begin
+    if X < R.Left then X := R.Left;
+    if Y < R.Top then Y := R.Top;    
+    // 自动换行
+    TextSet.TextSize('yh中', S, Canvas.Scale);
+    CharW := S.Width / 4;
+    CharH := S.Height;
+    LVCenter := TextSet.Gravity in [TLayoutGravity.CenterVertical, TLayoutGravity.CenterVRight, TLayoutGravity.Center];
+  end else 
+    LVCenter := False;  
+  
   LFontChange := TextSet.Font.OnChanged;
   if not Assigned(FFont) then
     FFont := TFont.Create;
   try
     TextSet.Font.OnChanged := nil;
-
+    TextSet.WordWrap := False;
     FFont.Assign(TextSet.Font);
     LX := X;
 
     for I := 0 to FList.Count - 1 do begin
       Item := FList[I];
+
+      if Item.Len = 0 then Continue;
+      
       SetString(LText, Item.P, Item.Len);
 
       if LText = #13 then begin
@@ -8197,9 +8350,6 @@ begin
         X := LX;
         Continue;
       end;
-
-      if LText = '' then
-        Continue;
 
       if FReplace then
         LText := ReplaceValue(LText);
@@ -8217,16 +8367,64 @@ begin
       else
         LColor := Item.Color;
 
-      TextSet.FillText(Canvas, RectF(X, Y, R.Right, Y + S.Height), LText, Opacity, LColor,
-        TextSet.FillTextFlags, @S, Canvas.Scale, TTextAlign.Leading, TTextAlign.Leading);
+      if LWordWarp then begin
+        if LVCenter then
+          DrawWordWarpText(LText, Item, LColor, X, Y, LX, S, 1)
+        else
+          DrawWordWarpText(LText, Item, LColor, X, Y, LX, S);
+      end else begin
+        DrawText(LText, Item, LColor, X, Y, S);
+      end;
+    end;  
+    
+    // 自动换行时需要从新定位，并实际绘制实际绘制
+    if LWordWarp and LVCenter then begin
+      S.Width := LW; 
+      S.Height := Y - LY + S.Height; 
+      X := R.Left;
+      Y := R.Top; 
+      UpdateXY(X, Y, S);
+      
+      if X < R.Left then X := R.Left;
+      if Y < R.Top then Y := R.Top;    
+      LX := X;
+      
+      for I := 0 to FList.Count - 1 do begin
+        Item := FList[I];
 
-      if Item.Link >= 0 then // 记录超链接区域
-        FLinkRange[Item.Link] := RectF(X, Y, X + S.Width, Y + S.Height);       
+        if Item.Len = 0 then Continue;
 
-      X := X + S.Width;          
+        SetString(LText, Item.P, Item.Len);
+
+        if LText = #13 then begin
+          Y := Y + S.Height;
+          X := LX;
+          Continue;
+        end;
+
+        if FReplace then
+          LText := ReplaceValue(LText);
+
+        TextSet.Font.Assign(FFont);
+        TextSet.Font.Style := Item.Style;
+
+        if (Item.Link >= 0) and (Item.Link = FLinkHot) then begin
+          TextSet.Font.Style := IncludeStyle(Item.Style, TFontStyle.fsUnderline)
+        end else
+          TextSet.Font.Style := Item.Style;
+
+        if Item.Color = 0 then
+          LColor := TextSet.GetStateColor(State)
+        else
+          LColor := Item.Color;
+
+        DrawWordWarpText(LText, Item, LColor, X, Y, LX, S);
+      end;   
+            
     end;
-
+    
   finally
+    TextSet.WordWrap := LWordWarp;
     TextSet.Font.Assign(FFont);
     TextSet.Font.OnChanged := LFontChange;
   end;
@@ -8570,21 +8768,21 @@ begin
       FRealHtmlText := StringReplace(FRealHtmlText, '&nbsp;', ' ', [rfReplaceAll]);   
       FRealHtmlText := StringReplace(FRealHtmlText, '&amp;', '&', [rfReplaceAll]);   
       FRealHtmlText := StringReplace(FRealHtmlText, '&quot;', '"', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&apos;', '''', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&cent;', '￠', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&pound;', '￡', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&yen;', '￥', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&euro;', string(#8364), [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&sect;', '§', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&copy;', '?', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&reg;', '?', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&apos;', '''', [rfReplaceAll]);  
+      FRealHtmlText := StringReplace(FRealHtmlText, '&cent;', #$FFE0, [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&pound;', #$FFE1, [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&yen;', #$FFE5, [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&euro;', string(#8364), [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&sect;', #$00a7, [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&copy;', #$00a9, [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&reg;', #$00ae, [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&trade;', string(#8482), [rfReplaceAll]);
       FRealHtmlText := StringReplace(FRealHtmlText, '&trade;', string(#8482), [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&trade;', string(#8482), [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&times;', '×', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&divide;', '÷', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&plusmn;', '±', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&laquo;', '?', [rfReplaceAll]);
-      FRealHtmlText := StringReplace(FRealHtmlText, '&raquo;', '?', [rfReplaceAll]);    
+      FRealHtmlText := StringReplace(FRealHtmlText, '&times;', #$00d7, [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&divide;', #$00f7, [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&plusmn;', #$00b1, [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&laquo;', #$00ab, [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&raquo;', #$00bb, [rfReplaceAll]);
       ParseHtmlText(FRealHtmlText);
     end else begin
       FReplace := False;
