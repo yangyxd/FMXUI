@@ -213,6 +213,7 @@ begin
       { TScrollView }
       'ShowScrollBars',
       'DragScroll',
+      'DragOneWay',
       'ScrollSmallChangeFraction',
       'ScrollStretchGlowColor',
       'ScrollbarWidth',

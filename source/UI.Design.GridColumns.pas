@@ -60,6 +60,8 @@ type
     tvFixedColCount: TLabel;
     edtWidth: TEdit;
     Label13: TLabel;
+    Label14: TLabel;
+    edtWeight: TEdit;
     procedure btnOkClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure GridViewFixedCellClick(Sender: TObject; const ACol,
@@ -94,6 +96,7 @@ type
     procedure GridViewDrawFixedColText(Sender: TObject; Canvas: TCanvas;
       Item: TGridColumnItem; const R: TRectF);
     procedure edtFieldNameExit(Sender: TObject);
+    procedure edtWeightExit(Sender: TObject);
   private
     { Private declarations }
     [Weak] SrcGridView: TGridBase;
@@ -389,6 +392,14 @@ begin
   end;
 end;
 
+procedure TGridColumnsDesigner.edtWeightExit(Sender: TObject);
+begin
+  if Assigned(CurItem) then begin
+    CurItem.Weight := StrToFloatDef(TEdit(Sender).Text, 0);
+    DoChange;
+  end;
+end;
+
 procedure TGridColumnsDesigner.edtWidthExit(Sender: TObject);
 begin
   if Assigned(CurItem) then begin
@@ -490,6 +501,7 @@ procedure TGridColumnsDesigner.UpdateState;
     edtPaddingRight.Text := '';
     edtPaddingBottom.Text := '';
     edtWidth.Text := '';
+    edtWeight.Text := '';
 
     edtTag.Text := '';
     edtRowsPan.Text := '';
@@ -568,6 +580,7 @@ begin
       edtPaddingRight.Text := FloatToStr(Round(CurItem.Padding.Right * 10000) / 10000);
       edtPaddingBottom.Text := FloatToStr(Round(CurItem.Padding.Bottom * 10000) / 10000);
       edtWidth.Text := FloatToStr(Round(CurItem.Width * 10000) / 10000);
+      edtWeight.Text := FloatToStr(Round(CurItem.Weight * 10000) / 10000);
 
       edtTag.Text := IntToStr(CurItem.Tag);
 
@@ -589,6 +602,7 @@ begin
       edtPaddingRight.Text := FloatToStr(Round(CurItem.Padding.Right * 10000) / 10000);
       edtPaddingBottom.Text := FloatToStr(Round(CurItem.Padding.Bottom * 10000) / 10000);
       edtWidth.Text := FloatToStr(Round(CurItem.Width * 10000) / 10000);
+      edtWeight.Text := FloatToStr(Round(CurItem.Weight * 10000) / 10000);
 
       edtTag.Text := IntToStr(CurItem.Tag);
       edtRowsPan.Text := IntToStr(CurItem.RowsPan);

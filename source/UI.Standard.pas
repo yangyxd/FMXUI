@@ -309,6 +309,10 @@ type
     FInInternalAlign: Boolean;
     FCachedAutoShowing: Boolean;
     FDragScroll: Boolean;
+
+    FDragOneWay: Boolean;
+    FLastTouchTracking: TTouchTracking;
+
     FScrollbarWidth: Single;
 
     FOnScrollChange: TNotifyEvent;
@@ -327,6 +331,7 @@ type
     procedure SetVScrollBarValue(const Value: Double);
     function IsStoredScrollbarWidth: Boolean;
     procedure SetScrollbarWidth(const Value: Single);
+    procedure SetDragOneWay(const Value: Boolean);
   protected
     FCanScrollV: Boolean;
     FCanScrollH: Boolean;
@@ -433,6 +438,10 @@ type
     /// 是否启用鼠标拖动滚动功能 （在非移动平台上设置有效）
     /// </summary>
     property DragScroll: Boolean read FDragScroll write SetDragScroll default False;
+    /// <summary>
+    /// 拖动时是否只能单向
+    /// </summary>
+    property DragOneWay: Boolean read FDragOneWay write SetDragOneWay default False;
     // 是否显示滚动条
     property ShowScrollBars: Boolean read FShowScrollBars write SetShowScrollBars default True;
     // 视口位置
@@ -1860,12 +1869,26 @@ begin
 //    FScrollTrackPressed := FScrollV.Pressed or GetScrollPressed
 //  else
 //    FScrollTrackPressed := False;
+  FLastTouchTracking := [];
   FAniCalculations.Averaging := Touch;
   FAniCalculations.MouseDown(X, Y);
 end;
 
 procedure TScrollView.AniMouseMove(const Touch: Boolean; const X, Y: Single);
+var
+  P: TPointD;
 begin
+  if FDragOneWay then begin
+    // 只允许单向拖动时
+    if FLastTouchTracking = [] then begin
+      FLastTouchTracking := FAniCalculations.TouchTracking;
+      P := FAniCalculations.DownPoint;
+      if Abs(Y - P.Y)  > Abs(X - P.X) then
+        FAniCalculations.TouchTracking := [ttVertical]
+      else
+        FAniCalculations.TouchTracking := [ttHorizontal];
+    end;
+  end;
   FAniCalculations.MouseMove(X, Y);
   if FAniCalculations.Moved then
     FAniCalculations.Shown := True;
@@ -1878,6 +1901,8 @@ begin
   FAniCalculations.MouseUp(X, Y);
   if (FAniCalculations.LowVelocity) or (not FAniCalculations.Animation) then
     FAniCalculations.Shown := False;
+  if FDragOneWay then
+    FAniCalculations.TouchTracking := FLastTouchTracking;
 end;
 
 procedure TScrollView.AniVScrollTo(const AOffset: Single;
@@ -2565,6 +2590,11 @@ begin
     VScrollBar.ValueD := Dy;
   if HScrollBar <> nil then
     HScrollBar.ValueD := Dx;
+end;
+
+procedure TScrollView.SetDragOneWay(const Value: Boolean);
+begin
+  FDragOneWay := Value;
 end;
 
 procedure TScrollView.SetDragScroll(const Value: Boolean);

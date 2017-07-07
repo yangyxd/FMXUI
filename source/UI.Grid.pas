@@ -121,13 +121,16 @@ type
     procedure SetWidth(const Value: Single);
     function GetIndex: Integer;
     procedure SetIndex(const Value: Integer);
-    function GetRealWidth: Single;
     function GetRight: Double;
+    procedure SetWeight(const Value: Single);
+    function GetRealWidth: Single;
+    procedure SetRealWidth(const Value: Single);
   protected
     [Weak] FOwner: TGridColumns;
     FOnGetCellText: TOnGridGetCellText;
     IsLeftTop: Boolean;         // 是否是左上角
     FWidth: Single;             // 列宽度
+    FWeight: Single;            // 列宽度比例
     X: Double;                  // 位置
     procedure DoChange;
     property Right: Double read GetRight;
@@ -168,10 +171,11 @@ type
     function GetRowCol(var ACol, ARow: Integer): Boolean;
 
     property Width: Single read FWidth write SetWidth;
+    property Weight: Single read FWeight write SetWeight;
     property Index: Integer read GetIndex write SetIndex;
     property Owner: TGridColumns read FOwner;
 
-    property RealWidth: Single read GetRealWidth;
+    property RealWidth: Single read GetRealWidth write SetRealWidth;
     property DisplayText: string read GetDispLayText;
 
     /// <summary>
@@ -209,7 +213,7 @@ type
   end;
 
   /// <summary>
-  /// 格子列头信息
+  /// 格子列头信息, 所有列的宽度，以第一列为准
   /// </summary>
   TGridColumns = class(TPersistent)
   private
@@ -219,7 +223,12 @@ type
     FMaxRows: Integer;
     FMaxCols: Integer;
     FLastWidth: Double;
+    FLastViewWidth: Single;
+    FMaxWeight: Single;
+    FMaxWeightWidth: Single;
+    FUpdateWeighting: Boolean;
     FExistWordWarp: Boolean;
+    FColumnWidths: TArray<Single>;
     FOnChange: TNotifyEvent;
     function GetItem(const ACol, ARow: Integer): TGridColumnItem;
     procedure SetItem(const ACol, ARow: Integer; const Value: TGridColumnItem);
@@ -228,6 +237,7 @@ type
     procedure SetMaxCols(const Value: Integer);
     procedure SetMaxRows(const Value: Integer);
     function GetItemCols(const ACol: Integer): TGridColumnItem;
+    function GetColumnWidths(const ACol: Integer): Single;
   protected
     FShowColIndex: Boolean;
     function GetItemOfKey(const Key: Int64): TGridColumnItem;
@@ -235,15 +245,18 @@ type
     procedure DoItemChangeEx(Sender: TGridColumnItem; const ACol, ARow: Integer);
     procedure DoChange(); virtual;
     procedure DoValueNotify(Item: PIntHashItem);
+    procedure UpdateColsWidth;
+    procedure UpdateWeight();
     function GetExistWordWarp: Boolean;
   public
     constructor Create(AGridView: TGridBase);
     destructor Destroy; override;
     procedure Clear;
+    procedure Change();
 
     procedure Assign(Source: TPersistent); override;
 
-    procedure Change();
+    procedure InitColumnWidth(const AWidth: Single);
 
     function TryGetItem(const ACol, ARow: Integer; out Item: TGridColumnItem): Boolean;
 
@@ -254,7 +267,7 @@ type
 
     // 获取指定列的信息, 当存在多行时，自动选择。优先级为从最后一行开始，ColsPan 越小的优先级越大
     property ItemCols[const ACol: Integer]: TGridColumnItem read GetItemCols;
-
+    property ColumnWidths[const ACol: Integer]: Single read GetColumnWidths;
     property Items[const ACol, ARow: Integer]: TGridColumnItem read GetItem write SetItem; default;
 
     property GridView: TGridBase read FGridView;
@@ -1252,6 +1265,7 @@ type
     property HitTest default True;
     property Clickable default True;
     property DragScroll;
+    property DragOneWay;
     property OnScrollChange;
 
     property OnTitleClick;
@@ -1651,7 +1665,7 @@ procedure TGridBase.Click;
 begin
   if (not Assigned(FAdjuestItem)) and ((FDragView = nil) or (not FDragView.Visible)) then begin
     if Assigned(FHotItem) and FHotItem.Enabled then begin
-      if FHotItem.DataFilter and (FDownPos.X > FHotItem.X + FContentViews.Left + FHotItem.Width - CDefaultFilterIconWH - 4) then
+      if FHotItem.DataFilter and (FDownPos.X > FHotItem.X + FContentViews.Left + FColumns.FColumnWidths[FHotItem.ColIndex] - CDefaultFilterIconWH - 4) then
         DoFilterData(FHotItem)
       else if Assigned(FOnTitleClickEvent) then
         FOnTitleClickEvent(Self, FHotItem);
@@ -1996,6 +2010,11 @@ begin
     R.Right := R.Right - FScrollV.Width;
   {$ENDIF}
 
+  if Assigned(FColumns) then begin
+    W := FColumns.Width;
+  end else
+    W := 0;
+
   LOpacity := Opacity;
   XOffset := 0 - HScrollBarValue;
   H := (FFixedRowHeight + DH) * FixedRows;
@@ -2014,11 +2033,6 @@ begin
   if Assigned(FScrollV) and (FScrollV.Visible) then
     MW := MW - FScrollV.Width;
   {$ENDIF}
-
-  if Assigned(FColumns) then
-    W := FColumns.Width
-  else
-    W := 0;
 
   SetLength(ItemList, FFixedCols + 1);
   for I := 0 to FFixedCols do
@@ -2055,7 +2069,7 @@ begin
         // 如果单元格被合并，则直接加上其宽度
         if FFixedMergeMap.ContainsKey(GetKey(I, J)) then begin
           Inc(I);
-          V := V + Item.Width + DH;
+          V := V + FColumns.FColumnWidths[Item.ColIndex] + DH;
           Continue;
         end;
         LI := I;
@@ -2064,7 +2078,7 @@ begin
           Break;
 
         // 计算出当前格子大小
-        W := V + Item.Width + DH;
+        W := V + FColumns.FColumnWidths[Item.ColIndex] + DH;
         if Item.ColsPan > 1 then begin
           // 判断合并后的列是否超出最后一列，超出时以最大列为准
           if I + Item.ColsPan > FColumns.FMaxCols then
@@ -2072,7 +2086,7 @@ begin
 
           for K := 1 to Item.ColsPan - 1 do begin
             if FColumns[I + K, J].Visible then
-              W := W + DH + FColumns[I + K, J].Width;
+              W := W + DH + FColumns.FColumnWidths[I + K];
           end;
           Inc(I, Item.ColsPan);
         end else
@@ -2118,7 +2132,7 @@ begin
           end;
 
           // 画过滤图标
-          if Item.DataFilter and (Item.Width > CDefaultFilterIconWH + 2) then begin
+          if Item.DataFilter and (FColumns.FColumnWidths[Item.ColIndex] > CDefaultFilterIconWH + 2) then begin
             VR.Left := W + LW - Padding.Right - CDefaultFilterIconWH - DH;
             VR.Top := LH;
             VR.Right := VR.Left + 1;
@@ -2380,7 +2394,7 @@ begin
           Adapter := LAdapter;
         end
       )
-      .SetWidth(Max(160, Item.Width))
+      .SetWidth(Max(160, FColumns.FColumnWidths[Item.ColIndex]))
       .SetMaxHeight(FFixedRowHeight * 12)
       .SetDownPopup(Self, FContentViews.Left + Item.X,
         (Item.RowIndex + 1) * FFixedRowHeight + GetDividerHeight,
@@ -2443,6 +2457,18 @@ begin
       SetSize(Width, FContentViews.Height + Padding.Top + Padding.Bottom);
       EndUpdate;
       FDisableAlign := False;
+    end;
+
+    if FColumns.FLastViewWidth <> Width then begin
+      FColumns.FLastViewWidth := Width;
+      {$IFNDEF NEXTGEN}
+      if Assigned(FScrollV) and (FScrollV.Visible) then begin
+        FColumns.InitColumnWidth(FContentViews.Width - FScrollV.Width);
+      end else
+        FColumns.InitColumnWidth(FContentViews.Width);
+      {$ELSE}
+      FColumns.InitColumnWidth(FContentViews.Width);
+      {$ENDIF}
     end;
 
   finally
@@ -2705,7 +2731,6 @@ begin
     if Length(FItemsPoints) = 0 then
       Exit;
 
-
     // 计算出高度
     H := 0;
     for I := 0 to LCount - 1 do begin
@@ -2729,7 +2754,7 @@ begin
     FContentBounds.Right := W + FFixedColsWidth + FFixedRightPadding;
 
   if Assigned(FScrollH) and FShowScrollBars then
-    FContentBounds.Bottom := H + FFixedRowHeight + {$IFNDEF NEXTGEN} FScrollH.Height {$ENDIF} + CDefaultFixedRowHeight * 2
+    FContentBounds.Bottom := H + FFixedRowHeight {$IFNDEF NEXTGEN} + FScrollH.Height {$ENDIF} + CDefaultFixedRowHeight * 2
   else
     FContentBounds.Bottom := H + FFixedRowHeight + CDefaultFixedRowHeight * 2;
 end;
@@ -2758,6 +2783,14 @@ procedure TGridBase.Loaded;
 begin
   inherited Loaded;
   NotifyDataChanged;
+  if csDesigning in ComponentState then begin
+    if Assigned(FColumns) then begin
+      FColumns.FLastViewWidth := -1;
+      FColumns.UpdateColsWidth;
+      FColumns.UpdateWeight;
+      FColumns.InitColumnWidth(FContentViews.Width);
+    end;
+  end;
 end;
 
 procedure TGridBase.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
@@ -2894,7 +2927,7 @@ begin
         // 改变列大小
         W := FAdjuestItem.Width + (X - FDownPos.X);
         if W < 1 then Exit;
-        FAdjuestItem.Width := W;
+        FAdjuestItem.RealWidth := W;
         FDownPos := PointF(X, Y);
         FContentViews.InitColumnList;
         RealignContent;
@@ -3001,7 +3034,7 @@ end;
 procedure TGridBase.NotifyDataChanged;
 begin
   //MessageBox(0, PChar(ComponentStateToString(ComponentState)), 'NotifyDataChanged', 0);
-  if (csLoading in ComponentState) or (csDestroying in ComponentState) or (FContentViews = nil) or FContentViews.FDisableAlign then
+  if (csDestroying in ComponentState) or (FContentViews = nil) or FContentViews.FDisableAlign then
     Exit;
   FContentViews.FDisableAlign := True;
   try
@@ -3010,6 +3043,7 @@ begin
     else
       FCount := 0;
 
+    FColumns.FLastViewWidth := -1;
     if FSelectionAnchor < 0 then
       FSelectionAnchor := 0;
     if (FSelectionAnchor > FCount) and (FCount > 0) then
@@ -3153,9 +3187,11 @@ begin
 
   inherited Resize;
 
+  if Assigned(FColumns) then
+    FColumns.FLastViewWidth := -1;
   UpdateScrollBar(FScrollV, TViewScroll.Vertical);
   UpdateScrollBar(FScrollH, TViewScroll.Horizontal);
-  
+
   FContentViews.DoRealign;
   FContentViews.Invalidate;
   FLastHeight := Height;
@@ -3444,7 +3480,8 @@ begin
     {$IFDEF NEXTGEN}
     FCanScrollH := True; // 移动平台始终能滚动
     {$ELSE}
-    FCanScrollH := FContentBounds.Width > V;
+    FCanScrollH := (FContentBounds.Width > V) and
+      ((not Assigned(FColumns)) or (FColumns.FMaxWeight = 0) or (FColumns.FMaxWeightWidth > V));
     {$ENDIF}
     LViewportPosition.X := LViewportPosition.X + ValueOffset;
     if (LViewportPosition.X > FContentBounds.Width - AScroll.ViewportSizeD) and
@@ -5396,6 +5433,7 @@ begin
     Src := TGridColumnItem(Source);
     IsLeftTop := Src.IsLeftTop;
     FWidth := Src.FWidth;
+    FWeight := Src.FWeight;
     ColIndex := Src.ColIndex;
     RowIndex := Src.RowIndex;
     Gravity := Src.Gravity;
@@ -5426,6 +5464,7 @@ constructor TGridColumnItem.Create(AOwner: TGridColumns);
 begin
   FOwner := AOwner;
   ColIndex := -1;
+  FWeight := 0;
   FWidth := TGridBase.CDefaultCellWidth;
   Gravity := TLayoutGravity.CenterVertical;
   Opacity := 1;
@@ -5462,20 +5501,17 @@ begin
     Result := IntToStr(Self.ColIndex + 1)
 end;
 
+function TGridColumnItem.GetRealWidth: Single;
+begin
+  Result := FOwner.FColumnWidths[ColIndex];
+end;
+
 function TGridColumnItem.GetIndex: Integer;
 var
   ARow: Integer;
 begin
   if not GetRowCol(Result, ARow) then
     Result := -1;
-end;
-
-function TGridColumnItem.GetRealWidth: Single;
-begin
-  if Visible then
-    Result := Width
-  else
-    Result := 0;
 end;
 
 function TGridColumnItem.GetRight: Double;
@@ -5511,6 +5547,7 @@ var
   JA: TJSONArray;
 begin
   Data.TryGetFloat('Width', FWidth);
+  Data.TryGetFloat('Weight', FWeight);
 
   Data.TryGetInt('ColIndex', ColIndex);
   Data.TryGetInt('RowIndex', RowIndex);
@@ -5602,6 +5639,21 @@ begin
   end;
 end;
 
+procedure TGridColumnItem.SetRealWidth(const Value: Single);
+begin
+  if (FWeight <= 0) and (FWidth <> Value) then
+    Width := Value;
+  FOwner.FColumnWidths[ColIndex] := Value;
+end;
+
+procedure TGridColumnItem.SetWeight(const Value: Single);
+begin
+  if FWeight <> Value then begin
+    FWeight := Value;
+    DoChange;
+  end;
+end;
+
 procedure TGridColumnItem.SetWidth(const Value: Single);
 begin
   if FWidth <> Value then begin
@@ -5615,6 +5667,7 @@ var
   JA: TJSONArray;
 begin
   Data.Add('Width', FWidth, TGridBase.CDefaultFixedColWidth);
+  Data.Add('Weight', FWeight, 0);
 
   Data.Add('ColIndex', ColIndex, -1);
   Data.Add('RowIndex', RowIndex, 0);
@@ -5658,6 +5711,7 @@ begin
       Src := TGridColumns(Source);
       Self.FMaxRows := Src.FMaxRows;
       Self.FMaxCols := Src.FMaxCols;
+      Self.UpdateColsWidth;
       Self.FData.Clear;
 
       if Src.FData.TryGetValue(TGridBase.GetKey(-1, -1), TObject(Item)) and Assigned(Item) then
@@ -5680,6 +5734,7 @@ begin
       end;
     finally
       FOnChange := LOnChange;
+      UpdateWeight;
       DoChange;
     end;
   end else
@@ -5712,8 +5767,9 @@ begin
   FData := TIntHash.Create(99991);
   FData.OnFreeItem := DoValueNotify;
   FMaxRows := 1;
-  FMaxCols := 1;
+  ColsCount := 1;
   FLastWidth := -1;
+  FLastViewWidth := -1;
   FColumnClass := TGridColumnItem;
 end;
 
@@ -5737,6 +5793,7 @@ var
   I, J: Integer;
 begin
   if Assigned(Sender) and (Sender is TGridColumnItem) then begin
+    UpdateWeight;
     if TGridColumnItem(Sender).GetRowCol(J, I) then
       DoItemChangeEx(TGridColumnItem(Sender), J, I);
   end;
@@ -5745,6 +5802,7 @@ end;
 procedure TGridColumns.DoItemChangeEx(Sender: TGridColumnItem; const ACol, ARow: Integer);
 var
   I: Integer;
+  Item: TGridColumnItem;
 begin
   if (ACol < 0) then Exit;
   if (FMaxRows < 2) then begin
@@ -5752,8 +5810,11 @@ begin
   end else begin
     FLastWidth := -1;
     for I := 0 to FMaxRows - 1 do begin
-      if I <> ARow then
-        GetItem(ACol, I).Width := Sender.Width;
+      if I <> ARow then begin
+        Item := GetItem(ACol, I);
+        Item.FWidth := Sender.FWidth;
+        Item.FWeight := Sender.FWeight;
+      end;
     end;
   end;
 end;
@@ -5762,6 +5823,11 @@ procedure TGridColumns.DoValueNotify(Item: PIntHashItem);
 begin
   if (Item <> nil) and Assigned(Item.AsPointer) then
     TObject(Item.AsPointer).DisposeOf;
+end;
+
+function TGridColumns.GetColumnWidths(const ACol: Integer): Single;
+begin
+  Result := FColumnWidths[ACol];
 end;
 
 function TGridColumns.GetExistWordWarp: Boolean;
@@ -5824,8 +5890,11 @@ begin
     FMaxRows := ARow + V + 1;
 
   V := Max(Result.ColsPan - 1, 0);
-  if ACol + V >= FMaxCols then
+  if ACol + V >= FMaxCols then begin
     FMaxCols := ACol + V + 1;
+    UpdateColsWidth;
+    UpdateWeight;
+  end;
 
   if (FMaxRows <> LMaxRows) or (FMaxCols <> LMaxCols) then
     DoChange;
@@ -5913,8 +5982,8 @@ end;
 
 function TGridColumns.GetWidth: Double;
 var
-  DH, V: Double;
-  I, J: Integer;
+  DH: Double;
+  I: Integer;
   Item: TGridColumnItem;
 begin
   if FLastWidth >= 0 then begin
@@ -5927,24 +5996,41 @@ begin
     DH := 1;
 
   Result := 0;
-  for J := 0 to RowsCount - 1 do begin
-    I := 0;
-    V := 0;
-    while I < ColsCount do begin
-      Item := Items[I, J];
-      if not Item.Visible then begin
-        Inc(I);
-        Continue;
-      end;
-      V := V + Item.Width + DH;
-      if Item.ColsPan > 1 then
-        Inc(I, Item.ColsPan)
-      else
-        Inc(I);
-    end;
-    Result := Max(V, Result);
+  for I := 0 to ColsCount - 1 do begin
+    Item := Items[I, 0];
+    if not Item.Visible then
+      Continue;
+    Result := Result + Item.RealWidth + DH;
   end;
   FLastWidth := Result;
+end;
+
+procedure TGridColumns.InitColumnWidth(const AWidth: Single);
+var
+  W: Single;
+  I: Integer;
+  Item: TGridColumnItem;
+  DH: Single;
+begin
+  FLastWidth := -1;
+
+  // 计算出以Weight动态宽诉列的宽度
+  if FMaxWeight > 0 then begin
+    if Assigned(FGridView) then
+      DH := FGridView.GetDividerHeight
+    else
+      DH := 1;
+    W := AWidth - FMaxWeightWidth;
+    if W > 0 then begin
+      for I := 0 to ColsCount - 1 do begin
+        if FData.TryGetValue(TGridBase.GetKey(I, 0), TObject(Item)) then begin
+          if Item.Visible and (Item.FWeight > 0) then begin
+            Item.RealWidth := Item.Weight / FMaxWeight * W - DH
+          end;
+        end;
+      end;
+    end;
+  end;
 end;
 
 procedure TGridColumns.RegisterColumnClass(
@@ -5986,6 +6072,8 @@ procedure TGridColumns.SetMaxCols(const Value: Integer);
 begin
   if FMaxCols <> Value then begin
     FMaxCols := Value;
+    UpdateColsWidth;
+    UpdateWeight;
     DoChange;
   end;
 end;
@@ -6002,6 +6090,52 @@ function TGridColumns.TryGetItem(const ACol, ARow: Integer;
   out Item: TGridColumnItem): Boolean;
 begin
   Result := FData.TryGetValue(TGridBase.GetKey(ACol, ARow), TObject(Item));
+end;
+
+procedure TGridColumns.UpdateColsWidth;
+var
+  I: Integer;
+begin
+  I := FMaxCols;
+  if I mod 256 <> 0 then
+    I := I div 256 * 256 + 256;
+  if I <> Length(FColumnWidths) then
+    SetLength(FColumnWidths, I);
+end;
+
+procedure TGridColumns.UpdateWeight;
+var
+  W: Single;
+  I: Integer;
+  Item: TGridColumnItem;
+begin
+  if FUpdateWeighting then
+    Exit;
+  FUpdateWeighting := True;
+  FMaxWeight := 0;
+  FLastViewWidth := -1;
+  W := 0;
+
+  // 计算出总的比重和比重所占的宽度
+  for I := 0 to ColsCount - 1 do begin
+    if FData.TryGetValue(TGridBase.GetKey(I, 0), TObject(Item)) then begin
+      if Item.Visible then begin
+        if Item.FWeight > 0 then begin
+          FMaxWeight := FMaxWeight + Item.FWeight;
+        end else begin
+          W := W + Item.FWidth;
+          FColumnWidths[Item.ColIndex] := Item.FWidth;
+        end;
+      end else
+        FColumnWidths[I] := 0;
+    end else begin
+      W := W + TGridBase.CDefaultFixedColWidth;
+      FColumnWidths[I] := TGridBase.CDefaultFixedColWidth;
+    end;
+  end;
+
+  FMaxWeightWidth := W;
+  FUpdateWeighting := False;
 end;
 
 { TGridTextSettings }

@@ -1026,6 +1026,7 @@ type
   TScrollCalculations = class (TAniCalculations)
   private
     [Weak] FScrollView: TView;
+    function GetDownPoint: TPointD;
   protected
     procedure DoChanged; override;
     procedure DoStart; override;
@@ -1038,6 +1039,7 @@ type
     property MinTarget;
     property MaxTarget;
     property Target;
+    property DownPoint: TPointD read GetDownPoint;
   end;
 
   TScrollBarHelper = class Helper for TScrollBar
@@ -7210,6 +7212,11 @@ begin
   inherited;
   if (FScrollView <> nil) and not (csDestroying in FScrollView.ComponentState) then
     FScrollView.StopScrolling;
+end;
+
+function TScrollCalculations.GetDownPoint: TPointD;
+begin
+  Result := TView.GetRttiValue<TPointD>(Self, 'FDownPoint');
 end;
 
 { TScrollBarHelper }

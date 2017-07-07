@@ -98,7 +98,8 @@ begin
   Dialog := TGridColumnsDesigner.Create(Self);
   try
     Dialog.Columns := DBGridView1.Columns;
-    Dialog.ShowModal;
+    if Dialog.ShowModal = mrOk then
+      DBGridView1.Columns.Assign(Dialog.Columns);
   finally
     Dialog.Free;
   end;
