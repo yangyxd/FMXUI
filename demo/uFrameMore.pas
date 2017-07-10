@@ -25,6 +25,7 @@ type
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
     procedure btnBackClick(Sender: TObject);
+    procedure TextView2LinkClick(Sender: TObject; const Text, URL: string);
   private
     { Private declarations }
   protected
@@ -38,7 +39,7 @@ implementation
 {$R *.fmx}
 
 uses
-  UI.Dialog, uFrameListViewTest;
+  UI.Dialog, UI.Utils, uFrameListViewTest;
 
 procedure TFrameMore.btnBackClick(Sender: TObject);
 begin
@@ -66,6 +67,12 @@ procedure TFrameMore.DoShow;
 begin
   inherited;
   tvTitle.Text := Title;
+end;
+
+procedure TFrameMore.TextView2LinkClick(Sender: TObject; const Text,
+  URL: string);
+begin
+  OpenURL(URL);
 end;
 
 end.

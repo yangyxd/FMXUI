@@ -519,6 +519,7 @@ type
 
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; x, y: single); override;
     procedure DoMouseLeave; override;
   protected
     {Scrollbar}
@@ -1384,7 +1385,14 @@ begin
       V := 0;
 
     // 计算文本区域大小
-    if not FText.CalcTextObjectSize(Text, V, Scene.GetSceneScale, nil, ASize) then Exit;
+    if Assigned(FHtmlText) and FText.WordWrap then begin
+      if Scene.GetSceneScale >= 0 then
+        FHtmlText.CalcTextSize(Canvas, TextSettings, RectF(0, 0, V, $FFFFFF), ASize)
+      else
+        Exit;
+    end else
+      if not FText.CalcTextObjectSize(Text, V, Scene.GetSceneScale, nil, ASize) then Exit;
+
     if ASize.Width < GetDrawableWidth then
       ASize.Width := GetDrawableWidth;
     if ASize.Height < GetDrawableHeight then
@@ -1586,6 +1594,14 @@ begin
   inherited;
   if Assigned(FHtmlText) and (FHtmlText.HtmlText <> '') then
     FHtmlText.MouseMove(Self, X, Y);
+end;
+
+procedure TTextView.MouseUp(Button: TMouseButton; Shift: TShiftState; x,
+  y: single);
+begin
+  inherited;
+  if Assigned(FHtmlText) then
+    FHtmlText.MouseUp(Self, Button, Shift, X, Y);
 end;
 
 procedure TTextView.PaddingChanged;

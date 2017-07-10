@@ -1006,10 +1006,15 @@ type
 
     // 绘制到画布中
     procedure Draw(Canvas: TCanvas; TextSet: UI.Base.TTextSettings; const R: TRectF;
-      const Opacity: Single; State: TViewState);
+      const Opacity: Single; State: TViewState; ASize: PSizeF = nil);
+
+    // 计算大小
+    procedure CalcTextSize(Canvas: TCanvas; TextSet: UI.Base.TTextSettings; const R: TRectF;
+      var ASize: TSizeF);
 
     procedure MouseDown(Sender: TView; Button: TMouseButton; Shift: TShiftState; X, Y: Single); 
     procedure MouseMove(Sender: TView; X, Y: Single);
+    procedure MouseUp(Sender: TView; Button: TMouseButton; Shift: TShiftState; X, Y: Single); 
     procedure MouseLeave(Sender: TView);
 
     property Text: string read FText;
@@ -8131,6 +8136,12 @@ begin
     inherited;
 end;
 
+procedure TViewHtmlText.CalcTextSize(Canvas: TCanvas;
+  TextSet: UI.Base.TTextSettings; const R: TRectF; var ASize: TSizeF);
+begin
+  Draw(Canvas, TextSet, R, 1, TViewState.None, @ASize);
+end;
+
 constructor TViewHtmlText.Create(const AHtmlText: string);
 begin
   FList := THtmlDataList.Create();
@@ -8147,17 +8158,9 @@ begin
 end;
 
 procedure TViewHtmlText.Draw(Canvas: TCanvas; TextSet: UI.Base.TTextSettings;
-  const R: TRectF; const Opacity: Single; State: TViewState);
+  const R: TRectF; const Opacity: Single; State: TViewState; ASize: PSizeF);
 var
   CharW, CharH: Single;
-  
-  function CharSize(const c: PChar): Integer;
-  begin
-    if Ord(c^) > $FF then 
-      Result := 2
-    else
-      Result := 1;
-  end; 
 
   procedure UpdateXY(var X, Y: Single; const S: TSizeF);
   begin
@@ -8254,19 +8257,18 @@ var
       end;
 
       if Flag = 0 then begin 
-        TextSet.WordWrap := True;        
+        TextSet.WordWrap := True; 
         DrawText(LText, Item, LColor, X, Y, S);
         TextSet.WordWrap := False;
       end else begin
-        if X + S.Width > MW then
-          TextSet.TextSize(LText, S, Canvas.Scale, MW - X, True);
+        TextSet.TextSize(LText, S, Canvas.Scale, MW - X, True);
         X := X + S.Width;
         S.Width := Max(LW, X);
       end;
       if S.Height > CharH then begin  // 超链接换行后，尾部不再跟其它内容
         Y := Y + S.Height;
         X := LX;
-      end;
+      end;       
 
     end else begin
       // 自动换行
@@ -8329,13 +8331,13 @@ var
       Item := FList[I];
       if Item.Len = 0 then Continue;
 
-      SetString(LText, Item.P, Item.Len);
-
-      if LText = #13 then begin
+      if (Item.Len = 1) and (Item.P^ = #13) then begin
         Y := Y + S.Height;
         X := 0;
         Continue;
       end;
+
+      SetString(LText, Item.P, Item.Len);   
 
       if FReplace then
         LText := ReplaceValue(LText);
@@ -8382,11 +8384,23 @@ begin
     CharH := S.Height;
   end;
 
-  if LVCenter then begin
+  if LVCenter or (ASize <> nil) then begin
     ClacWordWarpTextSize(S);
   end else begin
     TextSet.CalcTextObjectSize(FText, $FFFFFF, Canvas.Scale, nil, S);
   end;
+
+  if ASize <> nil then begin
+    // 测算高度
+    ASize.Width := S.Width;
+    ASize.Height := S.Height;  
+      
+    TextSet.WordWrap := LWordWarp;
+    TextSet.Font.Assign(FFont);
+    TextSet.Font.OnChanged := LFontChange;
+    
+    Exit;
+  end;  
 
   UpdateXY(X, Y, S);
   if LWordWarp then begin
@@ -8410,6 +8424,8 @@ begin
         Continue;
       end;
 
+      LText := StringReplace(LText, #13, '', [rfReplaceAll]);
+      LText := StringReplace(LText, #10, '', [rfReplaceAll]);
       if FReplace then
         LText := ReplaceValue(LText);
 
@@ -8462,21 +8478,7 @@ end;
 
 procedure TViewHtmlText.MouseDown(Sender: TView; Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
-var
-  Item: THtmlTextItem;
-  I: Integer;
 begin
-  if (Button = TMouseButton.mbLeft) and (FLinkHot >= 0) and (FLinkHot < FLinkHrefs.Count) then begin
-    if Assigned(Sender) then begin
-      for I := 0 to FList.Count - 1 do begin
-        if FList[I].Link = FLinkHot then begin
-          Item := FList[I];
-          Sender.DoLinkClick(Item.Text, FLinkHrefs[Item.LinkURL]);
-          Break;
-        end;
-      end;
-    end;
-  end;
 end;
 
 procedure TViewHtmlText.MouseLeave(Sender: TView);
@@ -8498,6 +8500,25 @@ begin
       Sender.Cursor := FDefaultCursor;
     if Assigned(Sender) then
       Sender.Invalidate;
+  end;
+end;
+
+procedure TViewHtmlText.MouseUp(Sender: TView; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Single);
+var
+  Item: THtmlTextItem;
+  I: Integer;
+begin
+  if (Button = TMouseButton.mbLeft) and (FLinkHot >= 0) and (FLinkHot < FLinkHrefs.Count) then begin
+    if Assigned(Sender) then begin
+      for I := 0 to FList.Count - 1 do begin
+        if FList[I].Link = FLinkHot then begin
+          Item := FList[I];
+          Sender.DoLinkClick(Item.Text, FLinkHrefs[Item.LinkURL]);
+          Break;
+        end;
+      end;
+    end;
   end;
 end;
 
