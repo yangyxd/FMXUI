@@ -109,7 +109,7 @@
         <AUP_WRITE_EXTERNAL_STORAGE>true</AUP_WRITE_EXTERNAL_STORAGE>
         <AUP_READ_CALENDAR>true</AUP_READ_CALENDAR>
         <AUP_INTERNET>true</AUP_INTERNET>
-        <DCC_UnitSearchPath>..\source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\source;D:\Documents\Desktop\YxdIocp\YxdIocp\source\IOCP;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_DcuOutput>..\dcu</DCC_DcuOutput>
         <DCC_ExeOutput>..\bin</DCC_ExeOutput>
         <DCC_E>false</DCC_E>

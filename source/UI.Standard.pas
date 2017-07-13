@@ -1833,7 +1833,7 @@ var
 begin
   NeedUpdatePosImmediately := False;
 
-  if FCanScrollV then begin
+  if FCanScrollV or FDragScroll then begin
     NewViewPos := FAniCalculations.ViewportPosition.Y;
     MaxScrollViewPos := GetMaxScrollViewPos;
 
@@ -1858,9 +1858,9 @@ begin
         ((MaxScrollViewPos > 0) and (Round(NewViewPos) = MaxScrollViewPos));
   end;
 
-  if NeedUpdatePosImmediately then
-    FAniCalculations.UpdatePosImmediately(True)
-  else begin
+  if NeedUpdatePosImmediately then begin
+    FAniCalculations.UpdatePosImmediately(True);
+  end else begin
     if (not FCanScrollV) and (not FCanScrollH) then
       FAniCalculations.Shown := False;
   end;
@@ -2324,10 +2324,9 @@ end;
 
 procedure TScrollView.InternalAlign;
 var
-  NeedRePaint: Boolean;
+  NeedRePaint, UV, UH: Boolean;
   LViewportPosition: TPointD;
   ContentLayoutRect: TRectD;
-  VR: TRectF;
   NewTargets: array of TAniCalculations.TTarget;
 begin
   if (not FInInternalAlign) and (FAniCalculations <> nil) then
@@ -2348,14 +2347,20 @@ begin
       if Assigned(FScrollH) and (FScrollH.Visible) then
         FScrollH.Opacity := AniCalculations.Opacity{$IFNDEF MSWINDOWS} - 0.1{$ENDIF};
       LViewportPosition := ViewportPosition;
-      if FLastViewportPosition = LViewportPosition then begin
+      UV := FLastViewportPosition.Y <> LViewportPosition.Y;
+      UH := FLastViewportPosition.X <> LViewportPosition.X;
+      if (UV = False) and (UH = False) then begin
         NeedRePaint := False;
         Exit;
       end;
       FLastViewportPosition := LViewportPosition;
-      VR := ViewRect;
-      UpdateVScrollBar(LViewportPosition.Y, VR.Height);
-      UpdateHScrollBar(LViewportPosition.X, VR.Width);
+      if UV then begin
+        UpdateVScrollBar(LViewportPosition.Y, Height - Padding.Top - Padding.Bottom);
+        if (LViewportPosition.Y = 0) or (LViewportPosition.Y >= GetMaxScrollViewPos) then
+          VScrollChange(FScrollV);
+      end;
+      if UH then
+        UpdateHScrollBar(LViewportPosition.X, Width - Padding.Left - Padding.Right);
       if not (csDesigning in ComponentState) then begin
         if (not FAniCalculations.Animation) then
           FAniCalculations.UpdatePosImmediately(True)

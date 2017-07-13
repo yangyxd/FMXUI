@@ -17,7 +17,7 @@ type
     tvText: TTextView;
     AniView: TAniIndicator;
     vImg: TView;
-    View1: TView;
+    View2: TView;
   private
     { Private declarations }
     FStatePullDownStart, FStatePullDownOK, FStatePullDownFinish, FStatePullDownComplete: string;

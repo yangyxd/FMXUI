@@ -165,7 +165,8 @@ type
     FViews: TDictionary<Integer, TViewBase>;  // 当前显示的控件列表
     FCacleViews: TDictionary<Integer, TListViewList>; // 缓存的控件
 
-    FItemViews: TDictionary<Pointer, Integer>; // 当前显示的控件及索引号
+    //FItemViews: TDictionary<Pointer, Integer>; // 当前显示的控件及索引号
+    FItemViews: TIntHash; // 当前显示的控件及索引号
     FItemClick: TDictionary<Pointer, TNotifyEvent>; // 当前显示的控件的原始事件字典
     
     FFirstRowIndex: Integer;  // 当前显示的第一行行号
@@ -1677,11 +1678,15 @@ begin
       RemoveObject(Item.Value.Items[I]);
     Item.Value.DisposeOf;
   end;
-  FCacleViews.Clear;
-  FItemViews.Clear;
-  for ItemView in FViews do
-    RemoveObject(ItemView.Value);
-  FViews.Clear;
+  if FCacleViews.Count > 0 then
+    FCacleViews.Clear;
+  if FItemViews.Count > 0 then
+    FItemViews.Clear;
+  if FViews.Count > 0 then begin
+    for ItemView in FViews do
+      RemoveObject(ItemView.Value);
+    FViews.Clear;
+  end;
 end;
 
 constructor TListViewContent.Create(AOwner: TComponent);
@@ -1692,7 +1697,8 @@ begin
 
   FViews := TDictionary<Integer, TViewBase>.Create(256);
   FCacleViews := TDictionary<Integer, TListViewList>.Create(17);
-  FItemViews := TDictionary<Pointer, Integer>.Create(256);
+  //FItemViews := TDictionary<Pointer, Integer>.Create(256);
+  FItemViews := TIntHash.Create(997);
   FItemClick := TDictionary<Pointer, TNotifyEvent>.Create(256);
 
   FDividerBrush := TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Null);
@@ -1752,22 +1758,26 @@ begin
 end;
 
 procedure TListViewContent.DoItemChildClick(Sender: TObject);
+var
+  ItemIndex: NativeInt;
 begin
-  if (FItemViews.ContainsKey(Sender)) then begin
+  if FItemViews.TryGetValue(THashType(Sender), ItemIndex) then begin
     if FItemClick.ContainsKey(Sender) and Assigned(FItemClick[Sender]) then
       FItemClick[Sender](Sender);
     if Assigned(ListView.FOnItemClickEx) then
-      ListView.FOnItemClickEx(ListView, FItemViews[Sender], TControl(Sender));
+      ListView.FOnItemClickEx(ListView, ItemIndex, TControl(Sender));
   end;
 end;
 
 procedure TListViewContent.DoItemClick(Sender: TObject);
+var
+  ItemIndex: NativeInt;
 begin
-  if (FItemViews.ContainsKey(Sender)) then begin
+  if FItemViews.TryGetValue(THashType(Sender), ItemIndex) then begin
     if FItemClick.ContainsKey(Sender) and Assigned(FItemClick[Sender]) then
       FItemClick[Sender](Sender);
     if Assigned(ListView.FOnItemClick) then
-      ListView.FOnItemClick(ListView, FItemViews[Sender], TView(Sender));
+      ListView.FOnItemClick(ListView, ItemIndex, TView(Sender));
   end;
 end;
 
@@ -1862,14 +1872,14 @@ begin
         except
         end;
       end
-    , 0.6);
+    , 0.5);
   end;
 end;
 
 procedure TListViewContent.DoRealign;
 
   // 递归设置组件及其子项的点击事件
-  procedure SetChildClickEvent(const Parent: TControl; const Index: Integer);
+  procedure SetChildClickEvent(const Parent: TControl; const Index: NativeInt);
   var
     I: Integer;
     Control: TControl;
@@ -1880,7 +1890,7 @@ procedure TListViewContent.DoRealign;
         Continue;
       if Control.HitTest then begin
         Control.OnClick := DoItemChildClick;
-        FItemViews.AddOrSetValue(Control, Index);
+        FItemViews.AddOrUpdate(THashType(Control), Index);
       end;
       if Control.ControlsCount > 0 then
         SetChildClickEvent(Control, Index);
@@ -1888,7 +1898,7 @@ procedure TListViewContent.DoRealign;
   end;
 
   // 递归设置组件及其子项的点击事件所对应的索引号
-  procedure UpdateChildEventIndex(const Parent: TControl; const Index: Integer);
+  procedure UpdateChildEventIndex(const Parent: TControl; const Index: NativeInt);
   var
     I: Integer;
     Control: TControl;
@@ -1898,7 +1908,7 @@ procedure TListViewContent.DoRealign;
       if not Control.Visible then
         Continue;
       if Control.HitTest then
-        FItemViews.AddOrSetValue(Control, Index);
+        FItemViews.AddOrUpdate(THashType(Control), Index);
       if Control.ControlsCount > 0 then
         SetChildClickEvent(Control, Index);
     end;
@@ -2050,7 +2060,7 @@ procedure TListViewContent.DoRealign;
   end;
 
   // 获取一个列表项, AH 返回控件的高度
-  procedure DoGetView(const I: Integer; var V, H, X: Double; var AH: Single; var LS: TListViewRealginState);
+  procedure DoGetView(const I: NativeInt; var V, H, X: Double; var AH: Single; var LS: TListViewRealginState);
   var
     MinH, MaxH: Single;
     Control, ItemView: TViewBase;
@@ -2144,12 +2154,12 @@ procedure TListViewContent.DoRealign;
           View.ViewState := [TViewState.Checked]
         else
           View.ViewState := [];
-        FItemViews.AddOrSetValue(View, I);
+        FItemViews.AddOrUpdate(THashType(View), I);
         if Assigned(View.OnClick) and (not EqulsMethod(FNewOnClick, View.OnClick)) then
           FItemClick.AddOrSetValue(View, View.OnClick);
         View.OnClick := FNewOnClick;
       end else begin
-        FItemViews.AddOrSetValue(ItemView, I);
+        FItemViews.AddOrUpdate(THashType(View), I);
         if Assigned(ItemView.OnClick) and (not EqulsMethod(FNewOnClick, ItemView.OnClick)) then
           FItemClick.AddOrSetValue(ItemView, ItemView.OnClick);
         ItemView.OnClick := FNewOnClick;
@@ -2679,6 +2689,8 @@ begin
     FlastH := LS.Height;
   end;
 
+  //LogD(Format('ScrollValue: %.2f', [LS.ScrollValue]));
+
   {$IFDEF MSWINDOWS}
   {$IFDEF DEBUG}
   //OutputDebugString(PChar('TListViewContent.DoRealign. MoveSpace: ' + FloatToStr(LS.MoveSpace)));
@@ -2864,19 +2876,21 @@ begin
     FCount := FAdapter.Count
   else
     FCount := 0;
-  for ItemView in FViews do begin
-    if ItemView.Key >= FCount then
-      RemoveObject(ItemView.Value)
-    else begin
-      ItemViewType := FAdapter.GetItemViewType(ItemView.Key);
-      if ItemViewType = ListViewType_Remove then // 如果返回状态是删除，则清掉
+  if FViews.Count > 0 then begin
+    for ItemView in FViews do begin
+      if ItemView.Key >= FCount then
         RemoveObject(ItemView.Value)
       else begin
-        AddControlToCacle(ItemViewType, ItemView.Value);
+        ItemViewType := FAdapter.GetItemViewType(ItemView.Key);
+        if ItemViewType = ListViewType_Remove then // 如果返回状态是删除，则清掉
+          RemoveObject(ItemView.Value)
+        else begin
+          AddControlToCacle(ItemViewType, ItemView.Value);
+        end;
       end;
     end;
+    FViews.Clear;
   end;
-  FViews.Clear;
   if Assigned(FFooter) then
     (FFooter as TControl).Visible := False;
   if Assigned(FFooterView) then
