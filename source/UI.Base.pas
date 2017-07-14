@@ -4863,6 +4863,7 @@ begin
     // 获取所有子组件的重力大小之和
     WeightSum := GetWeightSum(Fix);
     IsWeight := WeightSum > 0;
+    LAdjustControl := nil;
     // 如果 WeightSum 大于0，说明使用了重力, 则不进行组件自动大小处理了
     LIsAdjustSize := (WeightSum <= 0) and AdjustAutoSizeControl(LAdjustControl, LAdjustSize);
 
@@ -4922,8 +4923,11 @@ begin
         end else if Control = LAdjustControl then begin
           // 如果是需要自动调整大小的组件
           VW := LAdjustSize - Control.Margins.Right - Control.Margins.Left;
-        end else
+        end else begin
           VW := Control.Width;
+        end;
+
+        //LogD(Format('I: %d, WeightSum: %.3f, Fix: %.2f, VW: %.2f', [I, WeightSum, Fix, Control.Width]));
 
         // 检测宽度大小限制
         if SaveAdjustViewBounds then begin
@@ -5081,6 +5085,8 @@ begin
         end;
       end;
 
+//      LogD(Format('I: %d, Name: %s, Width: %.2f, VW: %.2f', [I, Control.Name, Control.Width, VW]));
+
       // 调整组件大小
       if Assigned(View) then begin
         Control.SetBounds(VL, VT, VW, VH);
@@ -5161,6 +5167,8 @@ var
 begin
   //if IsUpdating or (csDestroying in ComponentState) then
   if (csDestroying in ComponentState) or (csLoading in ComponentState) then
+    Exit;
+  if FDisableAlign then
     Exit;
   if not Assigned(ParentView) then begin
     P := ParentControl;
@@ -5290,7 +5298,7 @@ var
   NewSize: Single;
 begin
   Result := False;
-  AControl := nil;
+  AControl := nil;  // 注意：东京版 out 参数后，这里即使会默认设为 nil ，但在 Release 模式无效
   AdjustSize := 0;
   NewSize := 0;
 
@@ -5373,6 +5381,7 @@ begin
       else
         FixSize := FixSize + Control.Height + Control.Margins.Top + Control.Margins.Bottom;
     end;
+    // LogD(Format('I: %d, W: %.2f, FixSize: %.2f', [I, Control.Width, FixSize]));
   end;
 end;
 
