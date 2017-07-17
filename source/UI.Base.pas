@@ -13,7 +13,7 @@ unit UI.Base;
 
 interface
 
-{.$R ViewIcon.res}
+{$R ViewIcon.res}
 {$SCOPEDENUMS ON}
 
 {$IF CompilerVersion >= 29.0}
@@ -8823,7 +8823,8 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
       P1 := StrScan(P, '<');
 
       if P1 = nil then begin
-        AddItem(P, PE - P, AFlag);
+        AddItem(P, PE - P, '', False);
+        P := PE;
         Break;
       end;
 
