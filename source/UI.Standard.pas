@@ -1671,7 +1671,8 @@ begin
       FHtmlText.DefaultCursor := Cursor;
     end else
       FHtmlText.HtmlText := Value;
-    Invalidate;
+    FText.IsTextChange := True;
+    DoChanged(FText);
   end;
 end;
 
@@ -2334,7 +2335,11 @@ begin
     NeedRePaint := True;
     FInInternalAlign := True;
     try
+      {$IF CompilerVersion < 32}
       if not Released then begin
+      {$ELSE}
+      if Assigned(Self) then begin  // Tokyo ÆúÓÃ Released £¬ÓÀÔ¶·µ»Ø False
+      {$ENDIF}
         if (FCachedAutoShowing <> FAniCalculations.AutoShowing) and not FAniCalculations.AutoShowing then
           InvalidateContentSize;
         FCachedAutoShowing := FAniCalculations.AutoShowing;

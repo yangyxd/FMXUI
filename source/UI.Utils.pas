@@ -56,6 +56,9 @@ function LerpFolat(const A, B: Double; T: Single): Double;
 // 获取当前设备PPI
 function GetPPI(Context: TFmxObject): Single;
 
+// 跳过空格
+procedure SkipSpace(var P: PChar);
+
 // 隐藏手机号中间的四位数字
 function HideMobilePhone(const Mobile: string ):String;
 // 隐藏用户中文姓名中的前部内容，只显示最后一个字
@@ -79,10 +82,14 @@ procedure Share(const AControl: TControl; const Title, Msg: string);
 // 统计字符串字符数
 function CharCount(const S: string): Integer;
 
+// 字符串指针转为数字
+function PCharToIntDef(const S: pchar; Len: Integer; def: NativeInt = 0): NativeInt;
+
 // Html颜色转为Color
 function HtmlColorToColor(const V: string): TAlphaColor;
 function Text2Color(const s:string): TAlphaColor;
 function Hex2Color(const s: string): TAlphaColor;
+function RgbStrToColor(const s: string): TAlphaColor;
 
 function RectD(const Left, Top, Right, Bottom: Double): TRectD; overload;
 function RectD(const R: TRectF): TRectD; overload;
@@ -195,6 +202,27 @@ implementation
 
 uses
   {$IFNDEF MSWINDOWS}System.Diagnostics, {$ENDIF} Math;
+
+const
+  Convert: array[0..255] of Integer =
+    (
+     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,
+     -1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     -1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+     );
 
 {$IFDEF MSWINDOWS}
 type
@@ -369,6 +397,16 @@ begin
       Result := Format('%.2fGB', [V / 1024])
   end else
     Result := Format('%.0fMB', [V])
+end;
+
+procedure SkipSpace(var P: PChar);
+begin
+  while p^ <> #0 do begin
+    if (p^ = #9) or (p^ = #10) or (p^ = #13) or (p^ = #32) or (p^ = #$3000) then
+      Inc(p)
+    else
+      Break;
+  end;
 end;
 
 function HideUserName(const Name: string): string;
@@ -586,6 +624,22 @@ begin
   {$ENDIF}
 end;
 
+function PCharToIntDef(const S: pchar; Len: Integer; def: NativeInt = 0): NativeInt;
+var
+  I: Integer;
+  v: Integer;
+begin
+  Result := 0;
+  for I := 0 to len-1 do begin
+    V := Convert[ord(s[i])];
+    if V<0 then begin
+      Result := def;
+      Exit;
+    end;
+    result := (result * 10) + V;
+  end;
+end;
+
 function CharCount(const S: string): Integer;
 var
   p, pe: PWord;
@@ -643,16 +697,47 @@ begin
   if (Length(s) = 6) then result := StrToIntDef('$ff' + s, 0)
 end;
 
+function RgbStrToColor(const s: string): TAlphaColor;
+var
+  P, PE, P1: PChar;
+begin
+  Result := TAlphaColorRec.Black;
+  P := PChar(s);
+  Inc(P, 4);
+  PE := P + Length(S);
+  SkipSpace(P);
+  P1 := P;
+  while (P < PE) and (not CharInSet(P^, [',',')',' '])) do Inc(P);
+  TAlphaColorRec(Result).R := PCharToIntDef(P1, P - P1, 0);
+  Inc(P);
+  SkipSpace(P);
+  if P < PE then begin
+    P1 := P;
+    while (P < PE) and (not CharInSet(P^, [',',')',' '])) do Inc(P);
+    TAlphaColorRec(Result).G := PCharToIntDef(P1, P - P1, 0);
+    Inc(P);
+    SkipSpace(P);
+    if P < PE then begin
+      P1 := P;
+      while (P < PE) and (not CharInSet(P^, [',',')',' '])) do Inc(P);
+      TAlphaColorRec(Result).B := PCharToIntDef(P1, P - P1, 0);
+    end;
+  end;
+end;
+
 function HtmlColorToColor(const V: string): TAlphaColor;
 begin
   Result := 0;
   if V = '' then Exit;
-  if V[1] = '#' then
-    Result := Hex2Color(V)
-  else if V[1] = '$' then
-    Result := StrToIntDef(V, 0)
-  else     
-    Result := Text2Color(V)
+  case PChar(V)^ of
+    '#': Result := Hex2Color(V);
+    '$': Result := StrToIntDef(V, 0);
+  else
+    if PDWORD(PChar(V))^ = PDWORD(PChar('rgb('))^ then begin
+      Result := RgbStrToColor(V)
+    end else
+      Result := Text2Color(V)
+  end;
 end;
 
 { TIntHash }

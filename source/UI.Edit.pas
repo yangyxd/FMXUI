@@ -567,7 +567,7 @@ end;
 
 procedure TEditViewBase.Change;
 begin
-  if not FIsChanging and ([csLoading, csDestroying] * ComponentState = []) and not Released then
+  if not FIsChanging and ([csLoading, csDestroying] * ComponentState = []){$IF CompilerVersion < 32} and not Released{$ENDIF} then
   begin
     FIsChanging := True;
     try
@@ -2426,7 +2426,7 @@ end;
 
 procedure TCustomEditView.MMTextSettingsChanged(var AMessage: TDispatchMessage);
 begin
-  if ([csLoading, csDesigning] * ComponentState = []) and (not Released) then
+  if ([csLoading, csDesigning] * ComponentState = []){$IF CompilerVersion < 32} and not Released{$ENDIF} then
   begin
     UpdateTextHeight;
     if not FDisableAlign then

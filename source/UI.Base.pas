@@ -13,6 +13,7 @@ unit UI.Base;
 
 interface
 
+{.$R ViewIcon.res}
 {$SCOPEDENUMS ON}
 
 {$IF CompilerVersion >= 29.0}
@@ -95,6 +96,21 @@ type
     Pagecurl, Details, RadioButton, RadioButtonChecked, CheckBox,
     CheckBoxChecked, UserDefined1, UserDefined2, UserDefined3);
 
+  /// <summary>
+  /// 常用 Icon 类型
+  /// </summary>
+  TViewIconType = (
+    None, AlarmClock, BarChart, Barcode, Bell, BookCover, BookCoverMinus, BookCoverPlus, BookMark, BookOpen,
+    Calendar, Camera, Car, Clock, CloudDownload, CloudUpload, Cross, Document, Download, Earth, Email,
+    Fax, FileList, FileMinus, FilePlus, Files, FileStar, FileTick, Flag, Folder, FolderMinus,
+    FolderPlus, FolderStar, Home, Inbox, Incoming, ListBullets, ListCheckBoxes, ListImages, ListNumbered, ListTicked,
+    Location, More, Note, Outgoing,
+    PaperClip, Photo, PieChart, Pin, Presentation, Search, Settings, Share, ShoppingCart, Spanner, Speaker,
+    Star, Tablet, Tag, Telephone, Telephone2, TelephoneBook, Tick, Timer, Trash, Upload,
+    User, UserEdit, UserGroup, Users, UserSearch,
+    VideoCamera, VideoPlayer, Viewer,
+    Wifi, Window, Write);
+
   TPatchBounds = class(TBounds);
 
   TRectFHelper = record Helper for TRectF
@@ -156,24 +172,50 @@ type
     property BlackLine: Boolean read FRemoveBlackLine write SetRemoveBlackLine default False;
   end;
 
+  TViewAccessory = class(TPersistent)
+  private
+    FIcon: TViewIconType;
+    FUseIcon: Boolean;
+    FAccessoryType: TViewAccessoryType;
+    FAccessoryColor: TAlphaColor;
+    FAccessoryBmp: TBitmap;
+    FOnChanged: TNotifyEvent;
+    procedure SetAccessoryType(const Value: TViewAccessoryType);
+    procedure SetAccessoryColor(const Value: TAlphaColor);
+    function GetIsEmpty: Boolean;
+    procedure SetIcon(const Value: TViewIconType);
+    procedure SetUseIcon(const Value: Boolean);
+  protected
+    procedure DoChanged();
+    procedure DoIconChanged();
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Assign(Source: TPersistent); override;
+    property IsEmpty: Boolean read GetIsEmpty;
+    property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
+  published
+    property Accessory: TViewAccessoryType read FAccessoryType write SetAccessoryType default TViewAccessoryType.None;
+    property Icon: TViewIconType read FIcon write SetIcon default TViewIconType.None;
+    property Color: TAlphaColor read FAccessoryColor write SetAccessoryColor default TAlphaColorRec.White;
+    property UseIcon: Boolean read FUseIcon write SetUseIcon default False;
+  end;
+
   TViewBrushBase = class(TBrush)
   private
-    FAccessoryType: TViewAccessoryType;
-    FAccessoryBmp: TBitmap;
-    FAccessoryColor: TAlphaColor;
-    procedure SetAccessoryType(const Value: TViewAccessoryType);
+    FAccessory: TViewAccessory;
     function GetKind: TViewBrushKind;
     procedure SetKind(const Value: TViewBrushKind);
     function IsKindStored: Boolean;
-    procedure SetAccessoryColor(const Value: TAlphaColor);
+    function GetAccessory: TViewAccessory;
+    procedure SetAccessory(const Value: TViewAccessory);
   protected
-    procedure DoAccessoryChange;
+    procedure DoAccessoryChange(Sender: TObject);
   public
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
   published
-    property AccessoryType: TViewAccessoryType read FAccessoryType write SetAccessoryType default TViewAccessoryType.None;
-    property AccessoryColor: TAlphaColor read FAccessoryColor write SetAccessoryColor default 0;
+    property Accessory: TViewAccessory read GetAccessory write SetAccessory;
     property Kind: TViewBrushKind read GetKind write SetKind stored IsKindStored;
   end;
 
@@ -908,9 +950,9 @@ type
     procedure Draw(const Canvas: TCanvas; const AText: string; const R: TRectF;
         const Opacity: Single; State: TViewState; AGravity: TLayoutGravity); overload;
 
-    property IsColorChange: Boolean read FIsColorChange;
-    property IsSizeChange: Boolean read FIsSizeChange;
-    property IsTextChange: Boolean read FIsTextChange;
+    property IsColorChange: Boolean read FIsColorChange write FIsColorChange;
+    property IsSizeChange: Boolean read FIsSizeChange write FIsSizeChange;
+    property IsTextChange: Boolean read FIsTextChange write FIsTextChange;
     property IsEffectsChange: Boolean read FIsEffectsChange;
 
     property Text: string read FText write SetText;
@@ -967,6 +1009,7 @@ type
     Style: TFontStyles;
     Link: SmallInt;  // 超链接索引号
     LinkURL: SmallInt; // 超链接地址
+    NoneTag: Boolean;  // 是否存在标签
     function Text: string;
   end;
 
@@ -977,6 +1020,7 @@ type
   TViewHtmlText = class(TPersistent)
   private const
     PLineBreak: PChar = #13;
+    PStyle = 'style';
   private
     FList: THtmlDataList;
     FText: string;
@@ -2141,7 +2185,7 @@ function TDrawableBase.BrushIsEmpty(V: TBrush): Boolean;
 begin
   if (not Assigned(V)) or (V.Kind = TBrushKind.None) or
     ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid)) or
-    ((Ord(V.Kind) = Ord(TViewBrushKind.AccessoryBitmap)) and (TViewBrushBase(V).FAccessoryType = TViewAccessoryType.None))
+    ((Ord(V.Kind) = Ord(TViewBrushKind.AccessoryBitmap)) and ((TViewBrushBase(V).FAccessory = nil) or TViewBrushBase(V).FAccessory.IsEmpty))
   then begin
     if (V is TViewImagesBrush) and (TViewImagesBrush(V).FImageIndex >= 0) then
       Result := False
@@ -2393,9 +2437,11 @@ begin
     FillRect9Patch(Canvas, ARect, XRadius, YRadius, ACorners, AOpacity, TViewBrush(ABrush), ACornerType);
   end else begin
     if Ord(ABrush.Kind) = Ord(TViewBrushKind.AccessoryBitmap) then begin
-      Bmp := TViewBrushBase(ABrush).FAccessoryBmp;
-      if Assigned(Bmp) then
-        Canvas.DrawBitmap(Bmp, RectF(0, 0, Bmp.Width, Bmp.Height), ARect, AOpacity, True);
+      if Assigned(TViewBrushBase(ABrush).FAccessory) then begin
+        Bmp := TViewBrushBase(ABrush).FAccessory.FAccessoryBmp;
+        if Assigned(Bmp) then
+          Canvas.DrawBitmap(Bmp, RectF(0, 0, Bmp.Width, Bmp.Height), ARect, AOpacity, True);
+      end;
     end else
       Canvas.FillRect(ARect, XRadius, YRadius, ACorners, AOpacity, ABrush, ACornerType);
   end;
@@ -6713,30 +6759,36 @@ procedure TViewBrushBase.Assign(Source: TPersistent);
 begin
   inherited;
   if Source is TViewBrushBase then begin
-    Self.FAccessoryType := TViewBrushBase(Source).FAccessoryType;
-    Self.FAccessoryColor := TViewBrushBase(Source).FAccessoryColor;
-    DoAccessoryChange;
+    if TViewBrushBase(Source).FAccessory = nil then begin
+      if FAccessory <> nil then begin
+        FreeAndNil(FAccessory);
+        DoAccessoryChange(Self);
+      end;
+    end else
+      Accessory.Assign(TViewBrushBase(Source).FAccessory);
   end;
 end;
 
 destructor TViewBrushBase.Destroy;
 begin
-  FreeAndNil(FAccessoryBmp);
+  if FAccessory <> nil then
+    FreeAndNil(FAccessory);
   inherited;
 end;
 
-procedure TViewBrushBase.DoAccessoryChange;
+procedure TViewBrushBase.DoAccessoryChange(Sender: TObject);
 begin
-  if FAccessoryType <> TViewAccessoryType.None then begin
-    if not Assigned(FAccessoryBmp) then
-      FAccessoryBmp := TBitmap.Create;
-    FAccessoryBmp.Assign(FAccessoryImages.GetAccessoryImage(FAccessoryType));
-    if FAccessoryColor <> TAlphaColorRec.Null then
-      ReplaceOpaqueColor(FAccessoryBmp, FAccessoryColor);
-  end else
-    FreeAndNil(FAccessoryBmp);
   if Assigned(OnChanged) then
     OnChanged(Self);
+end;
+
+function TViewBrushBase.GetAccessory: TViewAccessory;
+begin
+  if not Assigned(FAccessory) then begin
+    FAccessory := TViewAccessory.Create;
+    FAccessory.OnChanged := DoAccessoryChange;
+  end;
+  Result := FAccessory;
 end;
 
 function TViewBrushBase.GetKind: TViewBrushKind;
@@ -6749,20 +6801,13 @@ begin
   Result := inherited Kind <> DefaultKind;
 end;
 
-procedure TViewBrushBase.SetAccessoryColor(const Value: TAlphaColor);
+procedure TViewBrushBase.SetAccessory(const Value: TViewAccessory);
 begin
-  if FAccessoryColor <> Value then begin
-    FAccessoryColor := Value;
-    DoAccessoryChange;
-  end;
-end;
-
-procedure TViewBrushBase.SetAccessoryType(const Value: TViewAccessoryType);
-begin
-  if FAccessoryType <> Value then begin
-    FAccessoryType := Value;
-    DoAccessoryChange;
-  end;
+  if Value = nil then begin
+    FreeAndNil(FAccessory);
+    DoAccessoryChange(Self);
+  end else
+    Accessory.Assign(Value);
 end;
 
 procedure TViewBrushBase.SetKind(const Value: TViewBrushKind);
@@ -7386,7 +7431,9 @@ begin
   end;
 
   PW := 0;
+  {$IF CompilerVersion <> 32}
   VL := 0;
+  {$ENDIF}
 
   // 如果长宽 > 0 和子控件 > 0 时才处理布局
   if ((VW > 0) and (VH > 0)) or (CtrlCount > 0) then begin
@@ -7482,7 +7529,7 @@ begin
     FLastCW := LItemWidth;
     FLastPW := PW;
     FLastStretchMode := LStretchMode;
-    VW := 0;
+    //VW := 0;
 
     for I := 0 to CtrlCount - 1 do begin
       Control := Controls[I];
@@ -8472,12 +8519,17 @@ begin
   SB := TStringBuilder.Create;
   try
     for I := 0 to FList.Count - 1 do begin
-      with FList[I] do
-        SetString(LText, P, Len);
-      if FReplace then
-        SB.Append(ReplaceValue(LText))
-      else
-        SB.Append(LText);
+      if FList[I].P <> PLineBreak then  begin
+        with FList[I] do
+          SetString(LText, P, Len);
+        LText := StringReplace(LText, #13, '', [rfReplaceAll]);
+        LText := StringReplace(LText, #10, '', [rfReplaceAll]);
+        if FReplace then
+          SB.Append(ReplaceValue(LText))
+        else
+          SB.Append(LText);
+      end else
+        SB.Append(PLineBreak);
     end;
   finally
     Result := SB.ToString;
@@ -8531,17 +8583,65 @@ begin
   end;
 end;
 
-procedure TViewHtmlText.ParseHtmlText(const Text: string);
+procedure ReadStyleProperty(var Item: THtmlTextItem; const Data: string);
+var
+  P, PE, P1: PChar;
+  Key, Value: string;
+begin
+  P := PChar(Data);
+  PE := P + Length(Data);
+  while P < PE do begin
+    SkipSpace(P);
+    P1 := P;
+    while (P < PE) and (P^ <> ':') do
+      Inc(P);
+    if (P >= PE) then Break;
 
-  procedure SkipSpace(var P: PChar);
-  begin
-    while p^ <> #0 do begin
-      if (p^ = #9) or (p^ = #10) or (p^ = #13) or (p^ = #32) or (p^ = #$3000) then
-        Inc(p)
-      else
-        Break;
+    SetString(Key, P1, P - P1);
+    Trim(Key);
+
+    Inc(P);
+    SkipSpace(P);
+    P1 := P;
+    while (P^ <> #0) and (P^ <> ';') do
+      Inc(P);
+    SetString(Value, P1, P - P1);
+    if (Key <> '') then begin
+      if Key = 'color' then
+        Item.Color := HtmlColorToColor(Value)
+
+      else if Key = 'text-decoration' then begin
+        if Value = 'none' then
+          Item.Style := []
+        else if Value = 'underline' then
+          Item.Style := [TFontStyle.fsUnderline]
+        else if Value = 'overline' then
+          Item.Style := []
+        else if Value = 'line-through' then
+          Item.Style := [TFontStyle.fsStrikeOut]
+        else if Value = 'blink' then
+          Item.Style := [TFontStyle.fsBold]
+
+      end else if Key = 'font-style' then begin
+        if Value = 'normal' then
+          Item.Style := []
+        else if Value = 'italic' then
+          Item.Style := [TFontStyle.fsItalic]
+        else if Value = 'oblique' then
+          Item.Style := [TFontStyle.fsItalic]
+
+      end else if Key = 'font-weight' then begin
+        if (Value = 'normal') or (Value = 'lighter') then
+          Exclude(Item.Style, TFontStyle.fsBold)
+        else if (Value = 'bold') or (Value = 'bolder') then
+          Include(Item.Style, TFontStyle.fsBold);
+      end;
     end;
+    Inc(P);
   end;
+end;
+
+procedure TViewHtmlText.ParseHtmlText(const Text: string);
 
   procedure ReadProperty(var Item: THtmlTextItem; var P, PE: PChar; OnReadAttr: TViewHtmlReadAttr);
   var
@@ -8607,11 +8707,13 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
           procedure (var Item: THtmlTextItem; const Key, Value: string)
           begin
             if Key = 'color' then
-              Item.Color := HtmlColorToColor(Value);
+              Item.Color := HtmlColorToColor(Value)
+            else if (Key = PStyle) and (Value <> '') then
+              ReadStyleProperty(Item, Value);
           end
         );
       end else if StrLComp(P, 'a ', 2) = 0 then begin  // a 超链接
-        Inc(P, 1);        
+        Inc(P, 1);
         ReadProperty(Item, P, PE, 
           procedure (var Item: THtmlTextItem; const Key, Value: string)
           begin
@@ -8626,15 +8728,56 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
               Item.Link := FLinkRangeCount;
               Inc(FLinkRangeCount);
             end else if Key = 'color' then
-              Item.Color := HtmlColorToColor(Value);
+              Item.Color := HtmlColorToColor(Value)
+            else if (Key = PStyle) and (Value <> '') then
+              ReadStyleProperty(Item, Value);
           end
         );
+      end else if StrLComp(P, 'span ', 5) = 0 then begin  // span
+        Inc(P, 4);
+        ReadProperty(Item, P, PE,
+          procedure (var Item: THtmlTextItem; const Key, Value: string)
+          begin
+            if Key = PStyle then
+              ReadStyleProperty(Item, Value);
+          end
+        );
+      end else if StrLComp(P, 'div ', 3) = 0 then begin  // div
+        Inc(P, 3);
+        ReadProperty(Item, P, PE,
+          procedure (var Item: THtmlTextItem; const Key, Value: string)
+          begin
+            if (Key = PStyle) and (Value <> '') then
+              ReadStyleProperty(Item, Value);
+          end
+        );
+      end else if StrLComp(P, 'p ', 2) = 0 then begin  // p
+        Inc(P, 1);
+        ReadProperty(Item, P, PE,
+          procedure (var Item: THtmlTextItem; const Key, Value: string)
+          begin
+            if (Key = PStyle) and (Value <> '') then
+              ReadStyleProperty(Item, Value);
+          end
+        );
+      end else if (P^ = 'h') and (PE - P > 1) and (P[1] > '0') and (P[1] < '9') then begin  // h1, h2, h3, ... , h9
+        Inc(P, 2);
+        Include(Item.Style, TFontStyle.fsBold);
+        if PE - P > 0 then begin
+          ReadProperty(Item, P, PE,
+            procedure (var Item: THtmlTextItem; const Key, Value: string)
+            begin
+              if (Key = PStyle) and (Value <> '') then
+                ReadStyleProperty(Item, Value);
+            end
+          );
+        end;
       end;
-      
+
     end;
   end;
 
-  procedure AddItem(const P: PChar; const Len: Integer; const LText: string);
+  procedure AddItem(const P: PChar; const Len: Integer; const LText: string; NoneTag: Boolean = True);
   var
     Item: THtmlTextItem;
   begin
@@ -8646,6 +8789,7 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
     Item.Link := -1;
     Item.LinkURL := -1;
     Item.Style := [];
+    Item.NoneTag := NoneTag;
     if LText <> '' then
       SetItem(Item, LText);
     List.Add(Item);
@@ -8656,6 +8800,8 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
     Item: THtmlTextItem;
   begin
     Item := List.Items[I];
+    if (Item.P = PLineBreak) or (not Item.NoneTag) then
+      Exit;
     SetItem(Item, LText);
     List.Items[I] := Item;
   end;
@@ -8665,11 +8811,13 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
     P1, P2: PChar;
     LS, LE: string;
     SIndex, I: Integer;
+    NeedBreak: Boolean;
   begin
     if PE - P < 1 then
       Exit;
     LS := AFlag;
     P2 := P;
+    NeedBreak := False;
 
     while P < PE do begin
       P1 := StrScan(P, '<');
@@ -8679,9 +8827,31 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
         Break;
       end;
 
-      if (P <> P1) and (AFlag = '') then begin
-        AddItem(P, P1 - P, AFlag);
-        LS := '';
+      if (P <> P1) and ((AFlag = '') or (LS = '')) then begin
+        AddItem(P, P1 - P, '', False);
+        if NeedBreak then begin
+          P := P1;
+          Inc(P1);
+          P2 := P1 + Min(6, PE - P1);
+          if (P2 = nil) or (P2 = P1) then
+            Break;
+          SetString(LS, P1, P2 - P1);
+          LS := LowerCase(LS);
+          P1 := PChar(LS);
+          if (StrLComp(P1, 'div', 3) = 0) or (StrLComp(P1, 'p', 1) = 0) or (StrLComp(P1, 'li', 2) = 0) then begin
+            AddItem(PLineBreak, 1, '');
+          end else if P1^ = 'h' then begin
+            Inc(P1);
+            if (P1^ > '0') and (P1^ < '9') then begin
+              AddItem(PLineBreak, 1, '');
+            end;
+          end;
+          Break;
+        end else
+          LS := '';
+
+      end else if NeedBreak then begin
+        Break;
       end else if (P = P1) and (AFlag = '') then
         LS := '';
 
@@ -8701,12 +8871,18 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
           LE := LowerCase(LE);
           if (LE = LS) or ((Length(LS) > Length(LE)) and (Pos(LE + ' ', LS) > 0)) then begin
             AddItem(P2, P - P2 - 2, LS);
-            if LE = 'p' then
-              AddItem(PLineBreak, 1, LS);
+            if LE <> '' then begin
+              if (LE = 'p') or (LE = 'div') or (LE = 'li') or ((Length(LE) = 2) and (PChar(LE)^ = 'h')) then begin
+                AddItem(PLineBreak, 1, LS);
+              end;
+            end;
           end;
           P := P1 + 1;
+          SkipSpace(P);
           LS := '';
-          Break;  // 不正确的 html 代码
+          LE := '';
+          NeedBreak := True;
+          Continue;
         end else begin
           SetString(LE, P, P1 - P);
           LE := LowerCase(Trim(LE));
@@ -8722,6 +8898,7 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
           SIndex := List.Count;
           ParseText(P, PE, LE);
 
+          SkipSpace(P);
           P2 := P;
           for I := SIndex to List.Count - 1 do
             UpdateItem(I, LS);
@@ -8734,16 +8911,24 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
 
       if LS = 'br' then begin // 换行
         AddItem(PLineBreak, 1, LS);
+        SkipSpace(P);
         LS := '';
         Continue;
       end else begin
-        if LS = 'p' then
-          AddItem(PLineBreak, 1, LS);
+        if LE <> '' then begin
+          if (LE = 'p') or (LE = 'div') or (LE = 'li') or ((Length(LE) = 2) and (PChar(LE)^ = 'h')) then begin
+            AddItem(PLineBreak, 1, LS);
+            NeedBreak := False;
+          end;
+        end;
+
         SIndex := List.Count;
         ParseText(P, PE, LS);
 
         for I := SIndex to List.Count - 2 do
           UpdateItem(I, LS);
+
+        SkipSpace(P);
       end;
 
     end;
@@ -8797,7 +8982,7 @@ begin
       FRealHtmlText := StringReplace(FRealHtmlText, '&#32;', ' ', [rfReplaceAll]);   
       FRealHtmlText := StringReplace(FRealHtmlText, '&#33;', '!', [rfReplaceAll]);   
       FRealHtmlText := StringReplace(FRealHtmlText, '&#34;', '"', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&#35;', '#', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#35;', '#', [rfReplaceAll]);
       FRealHtmlText := StringReplace(FRealHtmlText, '&#36;', '$', [rfReplaceAll]);   
       FRealHtmlText := StringReplace(FRealHtmlText, '&#37;', '%', [rfReplaceAll]);   
       FRealHtmlText := StringReplace(FRealHtmlText, '&#38;', '&', [rfReplaceAll]);   
@@ -8840,6 +9025,115 @@ begin
     Result := ''
   else
     SetString(Result, P, Len);
+end;
+
+{ TViewAccessory }
+
+procedure TViewAccessory.Assign(Source: TPersistent);
+begin
+  if Source is TViewAccessory then begin
+    Self.FAccessoryType := TViewAccessory(Source).FAccessoryType;
+    Self.FAccessoryColor := TViewAccessory(Source).FAccessoryColor;
+    DoChanged;
+  end else
+    inherited;
+end;
+
+constructor TViewAccessory.Create;
+begin
+  FAccessoryBmp := nil;
+  FAccessoryColor := TAlphaColorRec.White;
+end;
+
+destructor TViewAccessory.Destroy;
+begin
+  FreeAndNil(FAccessoryBmp);
+  inherited;
+end;
+
+procedure TViewAccessory.DoChanged;
+begin
+  if FUseIcon then begin
+    DoIconChanged;
+  end else begin
+    if FAccessoryType <> TViewAccessoryType.None then begin
+      if not Assigned(FAccessoryBmp) then
+        FAccessoryBmp := TBitmap.Create;
+      FAccessoryBmp.Assign(FAccessoryImages.GetAccessoryImage(FAccessoryType));
+      if FAccessoryColor <> TAlphaColorRec.Null then
+        ReplaceOpaqueColor(FAccessoryBmp, FAccessoryColor);
+    end else
+      FreeAndNil(FAccessoryBmp);
+  end;
+  if Assigned(FOnChanged) then
+    FOnChanged(Self);
+end;
+
+procedure TViewAccessory.DoIconChanged;
+var
+  AStream: TResourceStream;
+  AEnumName: string;
+begin
+  if FIcon = TViewIconType.None then
+    FreeAndNil(FAccessoryBmp)
+  else begin
+    try
+      AEnumName := GetENumName(TypeInfo(TViewIconType), Ord(FIcon));
+      AStream := TResourceStream.Create(HInstance, AEnumName, RT_RCDATA);
+      try
+        if not Assigned(FAccessoryBmp) then
+          FAccessoryBmp := TBitmap.Create
+        else
+          FAccessoryBmp.Clear(claNull);
+        FAccessoryBmp.LoadFromStream(AStream);
+        if Color = 0 then
+          ReplaceOpaqueColor(FAccessoryBmp, TAlphaColors.Dodgerblue)
+        else
+          ReplaceOpaqueColor(FAccessoryBmp, Color);
+      finally
+        FreeAndNil(AStream);
+      end;
+    except
+      FreeAndNil(FAccessoryBmp)
+    end;
+  end;
+end;
+
+function TViewAccessory.GetIsEmpty: Boolean;
+begin
+  Result := (not Assigned(Self)) or (FAccessoryBmp = nil);
+end;
+
+procedure TViewAccessory.SetAccessoryColor(const Value: TAlphaColor);
+begin
+  if FAccessoryColor <> Value then begin
+    FAccessoryColor := Value;
+    DoChanged;
+  end;
+end;
+
+procedure TViewAccessory.SetAccessoryType(const Value: TViewAccessoryType);
+begin
+  if FAccessoryType <> Value then begin
+    FAccessoryType := Value;
+    DoChanged;
+  end;
+end;
+
+procedure TViewAccessory.SetIcon(const Value: TViewIconType);
+begin
+  if FIcon <> Value then begin
+    FIcon := Value;
+    DoChanged;
+  end;
+end;
+
+procedure TViewAccessory.SetUseIcon(const Value: Boolean);
+begin
+  if FUseIcon <> Value then begin
+    FUseIcon := Value;
+    DoChanged;
+  end;
 end;
 
 initialization

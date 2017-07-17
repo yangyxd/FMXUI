@@ -82,7 +82,7 @@ object Frame3: TFrame3
       Hint = #27979#35797'hint'
       ShowHint = True
       TextSettings.Gravity = Center
-      HtmlText = #25105#20351#29992#20102'<font color="blue">HtmlText</font><b>'#23646'</b>'#24615
+      HtmlText = #25105#20351#29992#20102'<font color="blue">HtmlText</font><b>'#23646#24615'</b>'
     end
     object ButtonView2: TButtonView
       Layout.Below = ButtonView1
@@ -101,6 +101,12 @@ object Frame3: TFrame3
       OnClick = ButtonView2Click
       Text = 'ButtonView2'
       TextSettings.Gravity = Center
+      Drawable.SizeWidth = 24
+      Drawable.SizeHeight = 24
+      Drawable.ItemDefault.Kind = AccessoryBitmap
+      Drawable.ItemDefault.Accessory.Icon = Settings
+      Drawable.ItemDefault.Accessory.Color = claSlateblue
+      Drawable.ItemDefault.Accessory.UseIcon = True
     end
   end
   object LinearLayout1: TLinearLayout
@@ -139,8 +145,7 @@ object Frame3: TFrame3
       TextSettings.Gravity = Center
       Drawable.Position = Center
       Drawable.ItemDefault.Kind = AccessoryBitmap
-      Drawable.ItemDefault.AccessoryType = Back
-      Drawable.ItemDefault.AccessoryColor = claWhite
+      Drawable.ItemDefault.Accessory.Accessory = Back
     end
     object tvTitle: TTextView
       Background.Border.Color.Default = xBFC0C0C0

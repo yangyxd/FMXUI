@@ -133,8 +133,7 @@ object FrameGridView: TFrameGridView
       TextSettings.Gravity = Center
       Drawable.Position = Center
       Drawable.ItemDefault.Kind = AccessoryBitmap
-      Drawable.ItemDefault.AccessoryType = Back
-      Drawable.ItemDefault.AccessoryColor = claWhite
+      Drawable.ItemDefault.Accessory.Accessory = Back
     end
     object tvTitle: TTextView
       Background.Border.Color.Default = xBFC0C0C0
@@ -195,7 +194,6 @@ object FrameGridView: TFrameGridView
     FixedSettings.Brush.ItemDefault.Gradient.StartPosition.Y = 1.000000000000000000
     FixedSettings.Brush.ItemDefault.Gradient.StopPosition.X = 0.499999970197677600
     FixedSettings.Brush.ItemDefault.Gradient.StopPosition.Y = 0.000000000000000000
-    FixedSettings.Brush.ItemDefault.AccessoryType = Prior
     FixedSettings.RowHeight = 22.000000000000000000
     FixedSettings.ColWidth = 50.000000000000000000
     FixedSettings.Footer = #21512#35745

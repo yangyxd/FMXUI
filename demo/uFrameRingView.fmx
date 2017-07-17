@@ -38,8 +38,7 @@ object FrameRingView: TFrameRingView
       TextSettings.Gravity = Center
       Drawable.Position = Center
       Drawable.ItemDefault.Kind = AccessoryBitmap
-      Drawable.ItemDefault.AccessoryType = Back
-      Drawable.ItemDefault.AccessoryColor = claWhite
+      Drawable.ItemDefault.Accessory.Accessory = Back
     end
     object tvTitle: TTextView
       Background.Border.Color.Default = xBFC0C0C0
