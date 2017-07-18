@@ -458,6 +458,12 @@ type
 
 type
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TVertScrollView = class(TScrollView)
+
+  end;
+
+type
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TTextView = class(TScrollView, ICaption{$IF CompilerVersion > 30.0}, IAcceleratorKeyReceiver{$ENDIF})
   private
     FText: UI.Base.TTextSettings;

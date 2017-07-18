@@ -108,14 +108,6 @@ type
     procedure GetValues(Proc: TGetStrProc); override;
   end;
 
-  TShareImageListProperty = class(TComponentProperty)
-  public
-    function GetValue: string; override;
-    procedure GetValues(Proc: TGetStrProc); override;
-    procedure SetValue(const Value: string); override;
-  end;
-
-
 {$IFDEF MSWINDOWS}
 // 设置环境变量
 procedure SetEnvPath(const sName, sValue: string);
@@ -145,6 +137,7 @@ begin
   RegisterComponents(PageName, [TImageView]);
   RegisterComponents(PageName, [TImageViewerEx]);
   RegisterComponents(PageName, [TTextView]);
+  RegisterComponents(PageName, [TEditView]);
   RegisterComponents(PageName, [TButtonView]);
   RegisterComponents(PageName, [TBadgeView]);
   RegisterComponents(PageName, [TProgressView]);
@@ -152,28 +145,27 @@ begin
   RegisterComponents(PageName, [TMultiPathView]);
   RegisterComponents(PageName, [TCameraViewer]);
 
-  RegisterComponents(PageName, [TDateView]);
-  RegisterComponents(PageName, [TTimeView]);
-
-  RegisterComponents(PageName, [TEditView]);
+  RegisterComponents(PageName, [TVertScrollView]);
   RegisterComponents(PageName, [TListViewEx]);
 
   RegisterComponents(PageName, [TGridView]);
   RegisterComponents(PageName, [TDBGridView]);
   RegisterComponents(PageName, [TStringGridView]);
 
+  RegisterComponents(PageName, [TDateView]);
+  RegisterComponents(PageName, [TTimeView]);
+
   RegisterComponents(PageName, [TDialogStyleManager]);
   RegisterComponents(PageName, [TToastManager]);
 
   RegisterComponents(PageName, [TDrawableBrush]);
-  RegisterComponents(PageName, [TShareImageList]);
 
   RegisterComponentEditor(TView, TViewControlEditor);
   RegisterPropertyEditor(TypeInfo(TPatchBounds), TPersistent, '', TPatchBoundsProperty);
   RegisterPropertyEditor(TypeInfo(TGridColumnsSetting), TGridBase, '', TGridColumnsSettingsProperty);
   RegisterPropertyEditor(TypeInfo(TControl), TViewLayout, '', TLayoutComponentProperty);
 
-  RegisterPropertyEditor(TypeInfo(TCustomImageList), TPersistent, '', TShareImageListProperty);
+  //RegisterPropertyEditor(TypeInfo(TCustomImageList), TPersistent, '', TShareImageListProperty);
 
   //RegisterPropertyEditor(TypeInfo(TImageIndex), TViewImagesBrush, '', TAlphaColorProperty);
   //RegisterSelectionEditor(TView, TLayoutFilter);
@@ -541,57 +533,57 @@ begin
   end;
 end;
 
-{ TShareImageListProperty }
-
-function TShareImageListProperty.GetValue: string;
-begin
-  Result := Designer.GetComponentName(GetComponentReference);
-end;
-
-procedure TShareImageListProperty.GetValues(Proc: TGetStrProc);
-var
-  I: Integer;
-  AList: TList<TShareImageList>;
-begin
-  Designer.GetComponentNames(GetTypeData(GetPropType), Proc);
-  AList := TShareImageList.GetShareImageList;
-  if Assigned(AList) then begin
-    for I := 0 to AList.Count - 1 do
-      if Assigned(AList[I].Owner) then
-        Proc(AList[I].Owner.ClassName + ':' + AList[I].Name);
-  end;
-end;
-
-procedure TShareImageListProperty.SetValue(const Value: string);
-var
-  Component: TComponent;
-  I: Integer;
-  AList: TList<TShareImageList>;
-  V: string;
-begin
-  AList := TShareImageList.GetShareImageList;
-  Component := nil;
-  if Value <> '' then begin
-    if Assigned(AList) and (Pos(':', Value) > 0) then begin
-      for I := 0 to AList.Count - 1 do begin
-        if Assigned(AList[I].Owner) then
-          V := LowerCase(AList[I].Owner.ClassName + ':' + AList[I].Name)
-        else
-          V := '';
-        if V = LowerCase(Value) then begin
-          Component := AList[I];
-          Break;
-        end;
-      end;
-    end;
-
-    if Component = nil then
-      Component := Designer.GetComponent(Value);
-    if not (Component is GetTypeData(GetPropType)^.ClassType) then
-      raise EDesignPropertyError.CreateRes(@SInvalidPropertyValue);
-  end;
-  SetOrdValue(LongInt(Component));
-end;
+//{ TShareImageListProperty }
+//
+//function TShareImageListProperty.GetValue: string;
+//begin
+//  Result := Designer.GetComponentName(GetComponentReference);
+//end;
+//
+//procedure TShareImageListProperty.GetValues(Proc: TGetStrProc);
+//var
+//  I: Integer;
+//  AList: TList<TShareImageList>;
+//begin
+//  Designer.GetComponentNames(GetTypeData(GetPropType), Proc);
+//  AList := TShareImageList.GetShareImageList;
+//  if Assigned(AList) then begin
+//    for I := 0 to AList.Count - 1 do
+//      if Assigned(AList[I].Owner) then
+//        Proc(AList[I].Owner.ClassName + ':' + AList[I].Name);
+//  end;
+//end;
+//
+//procedure TShareImageListProperty.SetValue(const Value: string);
+//var
+//  Component: TComponent;
+//  I: Integer;
+//  AList: TList<TShareImageList>;
+//  V: string;
+//begin
+//  AList := TShareImageList.GetShareImageList;
+//  Component := nil;
+//  if Value <> '' then begin
+//    if Assigned(AList) and (Pos(':', Value) > 0) then begin
+//      for I := 0 to AList.Count - 1 do begin
+//        if Assigned(AList[I].Owner) then
+//          V := LowerCase(AList[I].Owner.ClassName + ':' + AList[I].Name)
+//        else
+//          V := '';
+//        if V = LowerCase(Value) then begin
+//          Component := AList[I];
+//          Break;
+//        end;
+//      end;
+//    end;
+//
+//    if Component = nil then
+//      Component := Designer.GetComponent(Value);
+//    if not (Component is GetTypeData(GetPropType)^.ClassType) then
+//      raise EDesignPropertyError.CreateRes(@SInvalidPropertyValue);
+//  end;
+//  SetOrdValue(LongInt(Component));
+//end;
 
 { TGridColumnsSettingsProperty }
 

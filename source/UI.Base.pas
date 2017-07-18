@@ -1740,18 +1740,6 @@ type
     property ForceColumnSize: Boolean read FForceColumnSize write SetForceColumnSize default False;
   end;
 
-type
-  /// <summary>
-  /// 多窗口共用的 ImageList
-  /// </summary>
-  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
-  TShareImageList = class(TImageList)
-  public
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
-    class function GetShareImageList: TList<TShareImageList>;
-  end;
-
 
 // 处理消息
 procedure ProcessMessages;
@@ -1796,9 +1784,6 @@ var
   {$IFDEF ANDROID}
   FAudioManager: JAudioManager = nil;
   {$ENDIF}
-
-var
-  FShareImageList: TList<TShareImageList>;    
 
 function ComponentStateToString(const State: TComponentState): string;
 
@@ -3899,7 +3884,7 @@ begin
       Result := TView(Parent).GetParentMaxHeight - Margins.Top - Margins.Bottom
     else begin
       if HeightSize = TViewSize.WrapContent then begin
-        if Parent is TControl then
+        if (not (csDesigning in ComponentState)) and (Parent is TControl) then
           Result := TControl(Parent).Height
         else
           Result := 0
@@ -5211,10 +5196,7 @@ var
   IsAW, IsAH, IsASW, IsASH: Boolean;
   V: Single;
 begin
-  //if IsUpdating or (csDestroying in ComponentState) then
-  if (csDestroying in ComponentState) or (csLoading in ComponentState) then
-    Exit;
-  if FDisableAlign then
+  if IsUpdating or (csDestroying in ComponentState) or (csLoading in ComponentState) then
     Exit;
   if not Assigned(ParentView) then begin
     P := ParentControl;
@@ -8104,26 +8086,6 @@ begin
   FImageLink.Images := Value;
 end;
 
-{ TShareImageList }
-
-constructor TShareImageList.Create(AOwner: TComponent);
-begin
-  inherited;
-  if Assigned(Self) and (FShareImageList.IndexOf(Self) < 0) then
-    FShareImageList.Add(Self);
-end;
-
-destructor TShareImageList.Destroy;
-begin
-  FShareImageList.Remove(Self);
-  inherited;
-end;
-
-class function TShareImageList.GetShareImageList: TList<TShareImageList>;
-begin
-  Result := FShareImageList;
-end;
-
 { TRectFHelper }
 
 procedure TRectFHelper.Clear;
@@ -9138,7 +9100,6 @@ begin
 end;
 
 initialization
-  FShareImageList := TList<TShareImageList>.Create;
   FAccessoryImages := TViewAccessoryImageList.Create;
   {$IFDEF ANDROID}
   TView.InitAudioManager();
@@ -9150,7 +9111,6 @@ finalization
   {$IFDEF ANDROID}
   FAudioManager := nil;
   {$ENDIF}
-  FreeAndNil(FShareImageList);
   FreeAndNil(FAccessoryImages);
 
 end.
