@@ -5,7 +5,9 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
+  {$IF CompilerVersion >= 31}
   FMX.DialogService,
+  {$ENDIF}
   UI.Standard, UI.Base, UI.Grid, UI.Frame, FireDAC.Stan.Intf,
   FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf,
   FireDAC.Stan.Def, FireDAC.Phys, FireDAC.Stan.Pool, FireDAC.Stan.Async,
@@ -73,22 +75,30 @@ end;
 
 procedure TFrameGridView.ButtonView3Click(Sender: TObject);
 begin
+  {$IF CompilerVersion >= 31}
   TDialogService.InputQuery('输入新行数', ['新行数'], [IntToStr(GridView1.RowCount)],
     procedure(const AResult: TModalResult; const AValues: array of string)
     begin
       GridView1.RowCount := StrToIntDef(AValues[0], GridView1.RowCount);
     end
   );
+  {$ELSE}
+  GridView1.RowCount := StrToIntDef(InputBox('输入新行数', '新行数', IntToStr(GridView1.RowCount)), GridView1.RowCount);
+  {$ENDIF}
 end;
 
 procedure TFrameGridView.ButtonView4Click(Sender: TObject);
 begin
+  {$IF CompilerVersion >= 31}
   TDialogService.InputQuery('输入新列数', ['新列数'], [IntToStr(GridView1.RowCount)],
     procedure(const AResult: TModalResult; const AValues: array of string)
     begin
       GridView1.ColCount := StrToIntDef(AValues[0], GridView1.ColCount);
     end
   );
+  {$ELSE}
+  GridView1.ColCount := StrToIntDef(InputBox('输入新列数', '新列数', IntToStr(GridView1.ColCount)), GridView1.ColCount);
+  {$ENDIF}
 end;
 
 procedure TFrameGridView.ButtonView5Click(Sender: TObject);
