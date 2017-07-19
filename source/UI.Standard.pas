@@ -11,10 +11,13 @@ unit UI.Standard;
 interface
 
 uses
-  UI.Base, UI.Utils, UI.Ani,
+  UI.Base, UI.Utils, UI.Ani, FMX.Effects, FMX.Text,
   {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
   {$IF CompilerVersion > 30.0}
   FMX.AcceleratorKey,
+  {$ENDIF}
+  {$IFDEF MSWINDOWS}
+  Windows, FMX.Platform.Win,
   {$ENDIF}
   FMX.BehaviorManager, FMX.Forms, System.Messaging, FMX.Styles,
   FMX.Pickers, FMX.Media,
@@ -299,7 +302,7 @@ type
   /// <summary>
   /// 滚动视图
   /// </summary>
-  TScrollView = class(TView)
+  TScrollView = class(TView, IViewTouch)
   private const
     ChangeRepaintedIncidentDelay = 0.1; // seconds
     PhysicsProcessingInterval = 8; // 8 ms for ~120 frames per second
@@ -371,6 +374,7 @@ type
     procedure ScrollStretchChanged; virtual;
     procedure UpdateScrollStretchStrength(const NewValue: Single);
 
+    function IsCanTouch: Boolean; virtual;
   protected
     procedure Resize; override;
     procedure DoRealign; override;
@@ -418,7 +422,14 @@ type
     procedure DoUpdateScrollingLimits(NeedUpdateScroll: Boolean = False; const ValueOffset: Double = 0); virtual;
     procedure UpdateScrollBar(AScroll: TScrollBar; AScrollBar: TViewScroll; const ValueOffset: Double = 0); virtual;
 
+    procedure ContentAddObject(const AObject: TFmxObject); virtual;
+    procedure ContentInsertObject(Index: Integer; const AObject: TFmxObject); virtual;
+    procedure ContentBeforeRemoveObject(AObject: TFmxObject); virtual;
+    procedure ContentRemoveObject(const AObject: TFmxObject); virtual;
+
     function IsStoredScrollSmallChangeFraction: Boolean; virtual;
+
+    property InInternalAlign: Boolean read FInInternalAlign;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -457,9 +468,141 @@ type
   end;
 
 type
+  TVertScrollView = class;
+
+  TViewScrollContent = class(TLinearLayout, IContent)
+  private
+    [weak] FScrollBox: TScrollView;
+    FIsContentChanged: Boolean;
+  protected
+    function GetClipRect: TRectF; override;
+    function GetChildrenRect: TRectF; override;
+    function ObjectAtPoint(P: TPointF): IControl; override;
+    function DoGetUpdateRect: TRectF; override;
+    procedure DoAddObject(const AObject: TFmxObject); override;
+    procedure DoInsertObject(Index: Integer; const AObject: TFmxObject); override;
+    procedure DoRemoveObject(const AObject: TFmxObject); override;
+    procedure DoRealign; override;
+    procedure ContentChanged; virtual;
+    procedure IContent.Changed = ContentChanged;
+    /// <summary> This flag is set in the method ContentChanged. Used to optimize ScrollBox </summary>
+    property IsContentChanged: Boolean read FIsContentChanged write FIsContentChanged;
+  public
+    constructor Create(AOwner: TComponent); override;
+    property ScrollBox: TScrollView read FScrollBox;
+    function PointInObjectLocal(X, Y: Single): Boolean; override;
+  end;
+
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TVertScrollView = class(TScrollView)
+  private const
+    CSContentName = 'ContentLayout';
+  private
+    FContent: TViewScrollContent;
+    FEnablePullRefresh: Boolean;
+    FEnablePullLoad: Boolean;
 
+    // 下拉刷新，上拉加载更多
+    FState: TListViewState;      // 列表视图状态
+    FHeader: IListViewHeader;    // 头部下拉刷新列表视图
+    FFooter: IListViewHeader;    // 尾部上拉加载更多视图
+
+    FLastScrollValue: Double; // 上次滚动条位置
+
+    FOnInitFooter: TOnInitHeader;
+    FOnInitHeader: TOnInitHeader;
+    FOnPullRefresh: TNotifyEvent;
+    FOnPullLoad: TNotifyEvent;
+    procedure SetEnablePullLoad(const Value: Boolean);
+    procedure SetEnablePullRefresh(const Value: Boolean);
+  protected
+    function CreateScroll: TScrollBar; override;
+    procedure InvalidateContentSize(); override; // 计算内容区大小
+    procedure VScrollChange(Sender: TObject); override;
+    function AllowInitScrollbar: Boolean; override;
+    procedure DoPullLoad(Sender: TObject);
+    procedure AniMouseUp(const Touch: Boolean; const X, Y: Single); override;
+
+  protected
+    {$IFNDEF NEXTGEN}
+    FDownPos, FMovePos: TPointF;
+    {$ENDIF}
+    {$IFNDEF NEXTGEN}
+    [Weak] FPointTarget: IControl;
+    FMouseEnter, FMouseDown: Boolean;
+    {$ENDIF}
+    function ObjectAtPoint(AScreenPoint: TPointF): IControl; override;
+    procedure Click; override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
+    procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
+    procedure DoMouseEnter; override;
+    procedure DoMouseLeave; override;
+    procedure CheckMouseLeftState;
+
+  protected
+    procedure Resize; override;
+    procedure Loaded; override;
+    procedure DoRealign; override;
+    procedure DoInVisibleChange; override;
+
+    procedure CreateContentView(); virtual;
+    function IsAddToContent(const AObject: TFmxObject): Boolean; virtual;
+    procedure DoAddObject(const AObject: TFmxObject); override;
+    procedure MousePosToAni(var X, Y: Single);
+
+    procedure InitFooter(); virtual;
+    procedure InitHeader(); virtual;
+    procedure FreeHeader(); virtual;
+    procedure FreeFooter(); virtual;
+    procedure DoPullLoadComplete; virtual;
+    procedure DoPullRefreshComplete; virtual;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+
+    // 刷新完成
+    procedure PullRefreshComplete();
+    // 加载更多完成
+    procedure PullLoadComplete();
+
+  published
+    property HitTest default True;
+    property Clickable default True;
+    property CanFocus default True;
+    property DragScroll;
+    property ShowScrollBars;
+    property ScrollbarWidth;
+    property ScrollStretchGlowColor;
+    property ScrollSmallChangeFraction;
+
+    /// <summary>
+    /// 是否启用下拉刷新
+    /// </summary>
+    property EnablePullRefresh: Boolean read FEnablePullRefresh write SetEnablePullRefresh default False;
+    /// <summary>
+    /// 是否启用上拉加载更多
+    /// </summary>
+    property EnablePullLoad: Boolean read FEnablePullLoad write SetEnablePullLoad default False;
+
+    /// <summary>
+    /// 加载 Footer 事件, 如果不设置，将在需要时加载默认的 Footer
+    /// </summary>
+    property OnInitFooter: TOnInitHeader read FOnInitFooter write FOnInitFooter;
+    /// <summary>
+    /// 加载 Header 事件, 如果不设置，将在需要时加载默认的 Header
+    /// </summary>
+    property OnInitHeader: TOnInitHeader read FOnInitHeader write FOnInitHeader;
+    /// <summary>
+    /// 下拉刷新事件
+    /// </summary>
+    property OnPullRefresh: TNotifyEvent read FOnPullRefresh write FOnPullRefresh;
+    /// <summary>
+    /// 上拉加载更多事件
+    /// </summary>
+    property OnPullLoad: TNotifyEvent read FOnPullLoad write FOnPullLoad;
+
+    property OnScrollChange;
   end;
 
 type
@@ -1086,10 +1229,11 @@ type
 
 implementation
 
-{$IFDEF MSWINDOWS}
 uses
-  UI.Dialog;
+{$IFDEF MSWINDOWS}
+  UI.Dialog,
 {$ENDIF}
+  UI.ListView.Header, UI.ListView.Footer;
 
 procedure DisableHitTestForControl(const AControl: TControl);
 var
@@ -1964,6 +2108,27 @@ begin
     inherited CMGesture(EventInfo);
 end;
 
+procedure TScrollView.ContentAddObject(const AObject: TFmxObject);
+begin
+  RealignContent;
+end;
+
+procedure TScrollView.ContentBeforeRemoveObject(AObject: TFmxObject);
+begin
+  RealignContent;
+end;
+
+procedure TScrollView.ContentInsertObject(Index: Integer;
+  const AObject: TFmxObject);
+begin
+  RealignContent;
+end;
+
+procedure TScrollView.ContentRemoveObject(const AObject: TFmxObject);
+begin
+  RealignContent;
+end;
+
 constructor TScrollView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -2393,6 +2558,11 @@ procedure TScrollView.InvalidateContentSize;
 begin
 end;
 
+function TScrollView.IsCanTouch: Boolean;
+begin
+  Result := HitTest and (FCanScrollV or FCanScrollH or FDragScroll);
+end;
+
 function TScrollView.IsOpaque: Boolean;
 begin
   Result := False;
@@ -2484,7 +2654,7 @@ var
   Offset, ANewPos: Single;
 begin
   inherited;
-  if (not (Handled or FDisableMouseWheel)) and (not FInVisible) then begin
+  if (not (Handled or FDisableMouseWheel)) and (not FInVisible) and (Assigned(FAniCalculations)) then begin
     if (FCanScrollV and (not (ssShift in Shift))) then begin
       FAniCalculations.UpdatePosImmediately(True);
       if VScrollBar <> nil then
@@ -5166,6 +5336,655 @@ begin
 
     end;
   end;
+end;
+
+{ TVertScrollView }
+
+function TVertScrollView.AllowInitScrollbar: Boolean;
+begin
+  Result := True;
+end;
+
+procedure TVertScrollView.AniMouseUp(const Touch: Boolean; const X, Y: Single);
+begin
+  inherited AniMouseUp(Touch, X, Y);
+
+  // 下拉刷新处理
+  if FEnablePullRefresh then begin
+    if Assigned(FHeader) and (FState = TListViewState.PullDownOK) then begin
+      FHeader.DoUpdateState(TListViewState.PullDownFinish, 0);
+      FState := TListViewState.PullDownFinish;
+      if Assigned(FOnPullRefresh) then
+        FOnPullRefresh(Self);
+      Exit;
+    end;
+  end;
+
+  // 上拉加载更多
+  if FEnablePullLoad then begin
+    if (FState = TListViewState.PullUpOK) then
+      DoPullLoad(Self);
+  end;
+end;
+
+procedure TVertScrollView.CheckMouseLeftState;
+begin
+  {$IFNDEF NEXTGEN}
+  // 检查鼠标左键是否松开
+  if DragScroll and (not FMouseEnter) then begin
+    {$IFDEF MSWINDOWS}
+    if GetAsyncKeyState(VK_LBUTTON) = 0 then
+      MouseUp(TMouseButton.mbLeft, [], FMovePos.X, FMovePos.Y)
+    else
+      TFrameAnimator.DelayExecute(Self,
+        procedure(Sender: TObject)
+        begin
+          CheckMouseLeftState;
+        end,
+      0.1);
+    {$ENDIF}
+  end;
+  {$ENDIF}
+end;
+
+procedure TVertScrollView.Click;
+begin
+  inherited Click;
+  {$IFNDEF NEXTGEN}
+  if DragScroll and Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then
+    TVertScrollView(FPointTarget as TControl).Click;
+  {$ENDIF}
+end;
+
+constructor TVertScrollView.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  New(FContentBounds);
+  CreateContentView();
+  ScrollBars := TViewScroll.Vertical;
+  DisableFocusEffect := True;
+  AutoCapture := True;
+  ClipChildren := True;
+  CanFocus := True;
+  HitTest := True;
+  SetAcceptsControls(True);
+end;
+
+procedure TVertScrollView.CreateContentView;
+var
+  Item: TComponent;
+begin
+  Item := Self.FindComponent(CSContentName);
+  if Assigned(Item) then
+    FContent := Item as TViewScrollContent
+  else begin
+    FContent := TViewScrollContent.Create(Self);
+    FContent.Visible := True;
+    FContent.Stored := False;
+    FContent.Locked := True;
+    FContent.Name := CSContentName;
+    FContent.WidthSize := TViewSize.FillParent;
+    FContent.HeightSize := TViewSize.WrapContent;
+    FContent.Orientation := TOrientation.Vertical;
+    FContent.DisableDisappear := True;
+    FContent.Parent := Self;
+  end;
+  SetAcceptsControls(True);
+  RealignContent;
+end;
+
+function TVertScrollView.CreateScroll: TScrollBar;
+begin
+  {$IFNDEF NEXTGEN}
+  if DragScroll then
+    Result := TSmallScrollBar.Create(Self)
+  else
+    Result := TScrollBar.Create(Self);
+  {$ELSE}
+  Result := TSmallScrollBar.Create(Self);
+  {$ENDIF}
+end;
+
+destructor TVertScrollView.Destroy;
+begin
+  FContent := nil;
+  FreeHeader;
+  FreeFooter;
+  inherited Destroy;
+end;
+
+procedure TVertScrollView.DoAddObject(const AObject: TFmxObject);
+begin
+  if IsAddToContent(AObject) then
+    FContent.AddObject(AObject)
+  else
+    inherited;
+end;
+
+procedure TVertScrollView.DoInVisibleChange;
+begin
+  inherited DoInVisibleChange;
+  FContent.InVisible := InVisible;
+end;
+
+procedure TVertScrollView.DoMouseEnter;
+begin
+  inherited;
+  {$IFNDEF NEXTGEN}
+  FMouseEnter := True;
+  if DragScroll and Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then
+    FPointTarget.DoMouseEnter;
+  {$ENDIF}
+end;
+
+procedure TVertScrollView.DoMouseLeave;
+begin
+  inherited;
+  {$IFNDEF NEXTGEN}
+  FMouseEnter := False;
+  if DragScroll and Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then
+    FPointTarget.DoMouseLeave;
+  if FMouseDown then
+    CheckMouseLeftState;
+  {$ENDIF}
+end;
+
+procedure TVertScrollView.DoPullLoad(Sender: TObject);
+begin
+  if not Assigned(FFooter) then
+    Exit;
+  FFooter.DoUpdateState(TListViewState.PullUpFinish, 0);
+  FState := TListViewState.PullUpFinish;
+  if Assigned(FOnPullLoad) then
+    FOnPullLoad(Self);
+end;
+
+procedure TVertScrollView.DoPullLoadComplete;
+begin
+  if Assigned(FFooter) then begin
+    if FState = TListViewState.PullUpComplete then
+      Exit;
+    FFooter.DoUpdateState(TListViewState.PullUpComplete, 0);
+
+    // 加载完成，回弹
+    TFrameAnimator.DelayExecute(Self,
+      procedure (Sender: TObject)
+      var
+        H: Single;
+      begin
+        try
+          if (FState = TListViewState.PullUpFinish) then begin
+            H := 0;
+            if Assigned(FHeader) then begin
+              H := (FHeader as TControl).Height;
+              FHeader.DoUpdateState(TListViewState.None, 0);
+            end;
+
+            FState := TListViewState.None;
+            if not FEnablePullLoad then
+              FContentBounds.Bottom := FContentBounds.Bottom - H;
+            DoUpdateScrollingLimits(True, 0);
+            DoRealign;
+          end;
+        except
+        end;
+      end
+    , 0.5);
+  end;
+end;
+
+procedure TVertScrollView.DoPullRefreshComplete;
+begin
+  if Assigned(FHeader) then begin
+    if FState = TListViewState.PullDownComplete then
+      Exit;
+    FHeader.DoUpdateState(TListViewState.PullDownComplete, 0);
+    // 刷新完成，回弹
+    TFrameAnimator.DelayExecute(Self,
+      procedure (Sender: TObject)
+      var
+        H: Single;
+      begin
+        try
+          if (FState = TListViewState.PullDownFinish) then begin
+            H := 0;
+            if Assigned(FHeader) then
+              H := (FHeader as TControl).Height;
+            if H > 0 then begin
+              FHeader.DoUpdateState(TListViewState.None, 0);
+
+              FContentBounds.Bottom := FContentBounds.Bottom - H;
+              DoUpdateScrollingLimits(True, 0);
+
+              FState := TListViewState.None;
+              FLastScrollValue := FLastScrollValue - H;
+              VScrollBarValue := VScrollBarValue - H;
+            end;
+          end;
+        except
+        end;
+      end
+    , 0.5);
+  end;
+end;
+
+procedure TVertScrollView.DoRealign;
+var
+  LDisablePaint: Boolean;
+  W: Single;
+begin
+  if FDisableAlign or IsUpdating or (not Assigned(FContent)) then
+    Exit;
+  if (csDestroying in ComponentState) then
+    Exit;
+  LDisablePaint := FDisablePaint;
+  try
+    FDisablePaint := True;
+
+    {$IFDEF MSWINDOWS}
+    if Assigned(FScrollV) and (FScrollV.Visible) then
+      W := Width - Padding.Right - Padding.Left{$IFDEF MSWINDOWS} - FScrollV.Width{$ENDIF}
+    else
+      W := Width - Padding.Right - Padding.Left;
+    {$ELSE}
+    W := Width - Padding.Right - Padding.Left;
+    {$ENDIF}
+
+    if Assigned(FContent) then
+      FContent.SetBounds(Padding.Left, Padding.Top - VScrollBarValue, W,
+        Height - Padding.Bottom - Padding.Top);
+
+    inherited DoRealign;
+
+  finally
+    FDisablePaint := LDisablePaint;
+    FContent.Invalidate;
+  end;
+end;
+
+procedure TVertScrollView.FreeFooter;
+begin
+  if Assigned(FFooter) then begin
+    RemoveObject(FFooter as TControl);
+    FFooter := nil;
+  end;
+end;
+
+procedure TVertScrollView.FreeHeader;
+begin
+  if Assigned(FHeader) then begin
+    RemoveObject(FHeader as TControl);
+    FHeader := nil;
+  end;
+end;
+
+procedure TVertScrollView.InitFooter;
+begin
+  if csDesigning in ComponentState then
+    Exit;
+  if not Assigned(FFooter) then begin
+    if Assigned(FOnInitFooter) then
+      FOnInitFooter(Self, FFooter);
+    if not Assigned(FFooter) then
+      FFooter := TListViewDefaultFooter.Create(Self);
+    (FFooter as TControl).Parent := Self;
+    (FFooter as TControl).Stored := False;
+    (FFooter as TControl).Visible := False;
+  end;
+end;
+
+procedure TVertScrollView.InitHeader;
+begin
+  if csDesigning in ComponentState then
+    Exit;
+  if not Assigned(FHeader) then begin
+    if Assigned(FOnInitHeader) then
+      FOnInitHeader(Self, FHeader);
+    if not Assigned(FHeader) then
+      FHeader := TListViewDefaultHeader.Create(Self);
+    (FHeader as TControl).Parent := Self;
+    (FHeader as TControl).Stored := False;
+    (FHeader as TControl).Index := 0;
+    (FHeader as TControl).Visible := False;
+  end;
+end;
+
+procedure TVertScrollView.InvalidateContentSize;
+begin
+  if not Assigned(FContent) then begin
+    FContentBounds.Left := 0;
+    FContentBounds.Top := 0;
+    FContentBounds.Right := 0;
+    FContentBounds.Bottom := 0;
+    Exit;
+  end;
+  FContentBounds.Left := 0;
+  FContentBounds.Right := FContent.Width;
+  FContentBounds.Top := 0;
+  FContentBounds.Bottom := FContent.Height;
+end;
+
+function TVertScrollView.IsAddToContent(const AObject: TFmxObject): Boolean;
+begin
+  Result := (FContent <> nil)
+    and (AObject <> FContent)
+    and not (AObject is TEffect)
+    and not (AObject is TAnimation)
+    and not ((AObject = FScrollV) or
+             (AObject = FScrollH));
+end;
+
+procedure TVertScrollView.Loaded;
+begin
+  inherited Loaded;
+  FContent.Loaded;
+  RealignContent;
+end;
+
+procedure TVertScrollView.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+{$IFNDEF NEXTGEN}
+var
+  P: TPointF;
+{$ENDIF}
+begin
+  {$IFDEF NEXTGEN}
+  inherited;
+  {$ELSE}
+  FMouseDown := True;
+  if DragScroll then begin
+    FDownPos.X := X;
+    FDownPos.Y := Y;
+    FMovePos := FDownPos;
+    AniMouseDown(True, X, Y);
+
+    if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
+      TFrameAnimator.DelayExecute(Self,
+        procedure (Sender: TObject)
+        begin
+          try
+            if FMovePos <> FDownPos then Exit;
+            if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
+              P := (FPointTarget as TControl).AbsoluteToLocal(LocalToAbsolute(PointF(X, Y)));
+              FPointTarget.MouseDown(Button, Shift, P.X, P.Y);
+            end;
+          except
+          end;
+        end,
+      0.05);
+    end;
+
+  end else
+    inherited;
+  {$ENDIF}
+end;
+
+procedure TVertScrollView.MouseMove(Shift: TShiftState; X, Y: Single);
+{$IFNDEF NEXTGEN}
+var
+  P: TPointF;
+{$ENDIF}
+begin
+  {$IFDEF NEXTGEN}
+  inherited;
+  {$ELSE}
+  if DragScroll then begin
+    if ssLeft in Shift then begin
+      FMovePos.X := X;
+      FMovePos.Y := Y;
+      AniMouseMove(True, X, Y);
+    end else
+      if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
+        P := (FPointTarget as TControl).AbsoluteToLocal(LocalToAbsolute(PointF(X, Y)));
+        FPointTarget.MouseMove(Shift, P.X, P.Y);
+      end;
+  end else
+    inherited;
+  {$ENDIF}
+end;
+
+procedure TVertScrollView.MousePosToAni(var X, Y: Single);
+var
+  LPoint: TPointF;
+begin
+  LPoint := PointF(X, Y);
+  if FContent <> nil then
+  begin
+    LPoint := FContent.AbsoluteToLocal(LocalToAbsolute(LPoint));
+    X := LPoint.X;
+    Y := LPoint.Y;
+  end;
+end;
+
+procedure TVertScrollView.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Single);
+{$IFNDEF NEXTGEN}
+var
+  P: TPointF;
+{$ENDIF}
+begin
+  {$IFDEF NEXTGEN}
+  inherited;
+  {$ELSE}
+  FMouseDown := False;
+  if DragScroll then begin
+    if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
+      if FMovePos = FDownPos then begin
+        Sleep(30);
+        P := (FPointTarget as TControl).AbsoluteToLocal(LocalToAbsolute(PointF(X, Y)));
+        FPointTarget.MouseUp(Button, Shift, P.X, P.Y);
+      end;
+    end;
+    if (Button = TMouseButton.mbLeft) then begin
+      FMovePos := TPointF.Zero;
+      AniMouseUp(True, X, Y);
+    end;
+  end else
+    inherited;
+  {$ENDIF}
+end;
+
+function TVertScrollView.ObjectAtPoint(AScreenPoint: TPointF): IControl;
+{$IFNDEF NEXTGEN}var P: TPointF; IT: IViewTouch;{$ENDIF}
+begin
+  Result := inherited;
+  {$IFNDEF NEXTGEN}
+  if DragScroll and (not (csDesigning in ComponentState)) then begin // 如果允许拖动
+    if (not FMouseDown) and Assigned(Result) then begin
+      if Supports(Result, ITextInput) then begin
+        FPointTarget := nil;
+        Exit;
+      end;
+      if Supports(Result, IViewTouch, IT) and (IT.IsCanTouch) then begin
+        FPointTarget := nil;
+        Exit;
+      end;
+    end;
+    P := ScreenToLocal(AScreenPoint);
+    if Assigned(Result) and (P.X < Width - 10) then begin
+      FPointTarget := Result;
+      Result := Self;
+    end else
+      FPointTarget := nil;
+  end;
+  {$ENDIF}
+end;
+
+procedure TVertScrollView.PullLoadComplete;
+begin
+  if Assigned(FContent) and (FState = TListViewState.PullUpFinish) then
+    DoPullLoadComplete;
+end;
+
+procedure TVertScrollView.PullRefreshComplete;
+begin
+  if Assigned(FContent) and (FState = TListViewState.PullDownFinish) then
+    DoPullRefreshComplete;
+end;
+
+procedure TVertScrollView.Resize;
+begin
+  if (csLoading in ComponentState) or
+    (csDestroying in ComponentState) then
+    Exit;
+  inherited Resize;
+  UpdateScrollBar(FScrollV, FScrollbar);
+  RealignContent;
+end;
+
+procedure TVertScrollView.SetEnablePullLoad(const Value: Boolean);
+begin
+  if FEnablePullLoad <> Value then begin
+    FEnablePullLoad := Value;
+    if (not Value) then begin
+      if csDesigning in ComponentState then
+        FreeFooter
+      else
+        DoPullLoadComplete;
+    end else begin
+      InitFooter;
+      if Assigned(FFooter) then begin
+        FContentBounds.Bottom := FContentBounds.Bottom + (FFooter as TControl).Height;
+        DoUpdateScrollingLimits(True);
+      end;
+      DoRealign;
+    end;
+  end;
+end;
+
+procedure TVertScrollView.SetEnablePullRefresh(const Value: Boolean);
+begin
+  if FEnablePullRefresh <> Value then begin
+    FEnablePullRefresh := Value;
+    if (not Value) then begin
+      if csDesigning in ComponentState then
+        FreeHeader
+      else
+        DoPullRefreshComplete;
+    end else begin
+      InitHeader;
+      if Assigned(FHeader) then begin
+        FContentBounds.Bottom := FContentBounds.Bottom + (FHeader as TControl).Height;
+        DoUpdateScrollingLimits(True);
+      end;
+      DoRealign;
+    end;
+  end;
+end;
+
+procedure TVertScrollView.VScrollChange(Sender: TObject);
+begin
+  if FScrolling then Exit;
+  inherited VScrollChange(Sender);
+  if Assigned(FContent) then
+    FContent.Position.Y := Padding.Top - VScrollBarValue;
+end;
+
+{ TViewScrollContent }
+
+procedure TViewScrollContent.ContentChanged;
+begin
+  if (FScrollBox <> nil) and not FScrollBox.Released and ([csLoading, csDestroying] * FScrollBox.ComponentState = [])
+    and not ScrollBox.InInternalAlign then
+  begin
+    FIsContentChanged := True;
+    FScrollBox.InvalidateContentSize;
+    if not IsUpdating then
+      FScrollBox.Realign;
+  end;
+end;
+
+constructor TViewScrollContent.Create(AOwner: TComponent);
+begin
+  inherited;
+  if AOwner is TScrollView then
+    FScrollBox := TScrollView(AOwner);
+  ClipChildren := True;
+  FIsContentChanged := True;
+  SetAcceptsControls(False);
+end;
+
+procedure TViewScrollContent.DoAddObject(const AObject: TFmxObject);
+begin
+  inherited;
+  if FScrollBox <> nil then
+    FScrollBox.ContentAddObject(AObject);
+end;
+
+function TViewScrollContent.DoGetUpdateRect: TRectF;
+begin
+  if ParentControl is TScrollView then
+    Result := TScrollView(ParentControl).UpdateRect
+  else
+    Result := inherited DoGetUpdateRect;
+end;
+
+procedure TViewScrollContent.DoInsertObject(Index: Integer;
+  const AObject: TFmxObject);
+begin
+  inherited;
+  if FScrollBox <> nil then
+    FScrollBox.ContentInsertObject(Index, AObject);
+end;
+
+procedure TViewScrollContent.DoRealign;
+begin
+  if ScrollBox <> nil then
+    inherited;
+  FLastWidth := Width;
+  FLastHeight := Height;
+end;
+
+procedure TViewScrollContent.DoRemoveObject(const AObject: TFmxObject);
+begin
+  if FScrollBox <> nil then
+    FScrollBox.ContentBeforeRemoveObject(AObject);
+  inherited;
+  if FScrollBox <> nil then
+    FScrollBox.ContentRemoveObject(AObject);
+end;
+
+function TViewScrollContent.GetChildrenRect: TRectF;
+begin
+  Result := GetUpdateRect;
+end;
+
+function TViewScrollContent.GetClipRect: TRectF;
+var
+  P: TPointD;
+begin
+  if FScrollBox <> nil then begin
+    Result := RectF(0, 0, FScrollBox.Width, FScrollBox.Height);
+    if Assigned(FScrollBox.FAniCalculations) then begin
+      P := FScrollBox.ViewportPosition;
+      Result.Offset(P.X, P.Y);
+    end;
+  end else
+    Result := inherited GetClipRect;
+end;
+
+function TViewScrollContent.ObjectAtPoint(P: TPointF): IControl;
+begin
+  Result := inherited ObjectAtPoint(P);
+//  if Result <> nil then
+//  begin
+//    if FScene <> nil then
+//      P := FScene.ScreenToLocal(P);
+//    P := AbsoluteToLocal(P);
+//    if not ClipRect.Contains(P) then
+//      Result := nil;
+//  end;
+end;
+
+function TViewScrollContent.PointInObjectLocal(X, Y: Single): Boolean;
+var
+  ClipRect: TRectF;
+begin
+  ClipRect := GetClipRect;
+  Result := (X >= (ClipRect.TopLeft.X - TouchTargetExpansion.Left)) and
+    (X <= (ClipRect.TopLeft.X + ClipRect.Width + TouchTargetExpansion.Right)) and
+    (Y >= (ClipRect.TopLeft.Y + TouchTargetExpansion.Top)) and
+    (Y <= (ClipRect.TopLeft.Y + ClipRect.Height + TouchTargetExpansion.Bottom));
 end;
 
 initialization

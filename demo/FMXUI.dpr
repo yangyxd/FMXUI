@@ -27,7 +27,8 @@ uses
   uFrameListViewGroup in 'uFrameListViewGroup.pas' {FrameListViewGroup: TFrame},
   uFrameImageViewer in 'uFrameImageViewer.pas' {FrameImageViewer: TFrame},
   uFrameGridView in 'uFrameGridView.pas' {FrameGridView: TFrame},
-  uFrameCameraViewer in 'uFrameCameraViewer.pas' {FrameCameraViewer: TFrame};
+  uFrameCameraViewer in 'uFrameCameraViewer.pas' {FrameCameraViewer: TFrame},
+  uFrameVertScrollView in 'uFrameVertScrollView.pas' {FrameVertScrollView: TFrame};
 
 {$R *.res}
 

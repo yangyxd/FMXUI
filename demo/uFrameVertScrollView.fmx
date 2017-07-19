@@ -1,0 +1,261 @@
+object FrameVertScrollView: TFrameVertScrollView
+  Size.Width = 425.000000000000000000
+  Size.Height = 563.000000000000000000
+  Size.PlatformDefault = False
+  object LinearLayout1: TLinearLayout
+    Align = Top
+    Background.ItemDefault.Color = claPurple
+    Background.ItemDefault.Kind = Solid
+    Gravity = None
+    Size.Width = 425.000000000000000000
+    Size.Height = 50.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Orientation = Horizontal
+    object btnBack: TTextView
+      Background.ItemPressed.Color = x7F000000
+      Background.ItemPressed.Kind = Solid
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      Clickable = True
+      HeightSize = FillParent
+      HitTest = True
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 3
+      OnClick = btnBackClick
+      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
+      Drawable.Position = Center
+      Drawable.ItemDefault.Kind = AccessoryBitmap
+      Drawable.ItemDefault.Accessory.Accessory = Back
+    end
+    object tvTitle: TTextView
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      Clickable = True
+      Weight = 1.000000000000000000
+      Margins.Right = 50.000000000000000000
+      HitTest = True
+      Size.Width = 325.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 50.000000000000000000
+      TabOrder = 1
+      Text = #22402#30452#28378#21160#21306#22495
+      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
+    end
+  end
+  object VertScrollView1: TVertScrollView
+    Align = Client
+    Gravity = None
+    Size.Width = 425.000000000000000000
+    Size.Height = 513.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    DragScroll = True
+    ScrollbarWidth = 12.000000000000000000
+    ScrollSmallChangeFraction = 100.000000000000000000
+    EnablePullRefresh = True
+    EnablePullLoad = True
+    OnPullRefresh = VertScrollView1PullRefresh
+    OnPullLoad = VertScrollView1PullLoad
+    object EditView1: TEditView
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      Align = Client
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claNull
+      Background.Border.Color.Focused = xFF0066CC
+      Background.Border.Color.Hovered = claSilver
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      ClipChildren = True
+      WidthSize = FillParent
+      Padding.Left = 6.000000000000000000
+      Padding.Top = 2.000000000000000000
+      Padding.Right = 6.000000000000000000
+      Padding.Bottom = 2.000000000000000000
+      Margins.Left = 8.000000000000000000
+      Margins.Top = 8.000000000000000000
+      Margins.Right = 8.000000000000000000
+      Margins.Bottom = 8.000000000000000000
+      Size.Width = 397.000000000000000000
+      Size.Height = 57.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      Text = 'EditView1'
+      TextSettings.Gravity = CenterVertical
+      DisableFocusEffect = True
+    end
+    object TextView1: TTextView
+      Clickable = True
+      WidthSize = FillParent
+      Padding.Left = 8.000000000000000000
+      Padding.Top = 8.000000000000000000
+      Padding.Right = 8.000000000000000000
+      Padding.Bottom = 8.000000000000000000
+      HitTest = True
+      Size.Width = 413.000000000000000000
+      Size.Height = 104.000000000000000000
+      Size.PlatformDefault = False
+      Position.Y = 73.000000000000000000
+      TabOrder = 2
+      DragScroll = True
+      Text = 
+        #22914#26524#23383#31526#20018#20013#24050#32463#23384#22312#20110#20840#23616#21407#23376#34920#20013#65292#21017#36820#22238#29616#26377#30340#23383#31526#20018#30340#21407#23376#65292#24182#19988#21407#23376#30340#24341#29992#35745#25968#21152'1'#12290#13#19982#21407#23376#30456#20851#30340#23383#31526#20018#19981#20250#20174#20869#23384#20013#21024#38500#65292#30452#21040 +
+        #23427#30340#24341#29992#35745#25968#20026#38646#12290#27442#20102#35299#26356#22810#20449#24687#65292#35831#21442#38405'GlobalDeleteAtom'#20989#25968#12290#13#20840#23616#21407#23376#19981#20250#22312#24212#29992#31243#24207#32456#27490#26102#33258#21160#21024#38500#12290#27599#27425#35843#29992'G' +
+        'lobalAddAtom'#20989#25968#65292#24517#39035#30456#24212#30340#35843#29992'GlobalDeleteAtom'#20989#25968#21024#38500#21407#23376#12290#13#22914#26524'lpString'#30340#24418#24335#20026'"#12' +
+        '34"'#65292'GlobalAddAtom'#36820#22238#19968#20010#25972#25968#21407#23376#65292#20854#20540#26159#36825#20010#21313#36827#21046#25968#25351#23450#30340#23383#31526#20018#65288#22312#36825#20010#20363#23376#20013#20026'0x04D2'#65289#12290#22914#26524#25351#23450#30340#21313#36827 +
+        #21046#20540#26159'0x0000'#25110#22823#20110#31561#20110'0xC000'#65292#36820#22238#20540#20026#38646#65292#25805#20316#22833#36133#12290#22914#26524'lpString'#20351#29992'MAKEINTATOM'#23439#21019#24314#30340#23383#31526#20018#65292#20302 +
+        '16'#20301#20540#30340#33539#22260#26159'0x0001'#21040'0xBFFF'#12290#22914#26524#20540#19981#22312#27492#33539#22260#20869#65292#21017#25805#20316#22833#36133#12290#22914#26524'lpString'#26159#20854#20182#24418#24335#30340#23383#31526#20018#65292#21017'Globa' +
+        'lAddAtom'#36820#22238#36825#20010#23383#31526#20018#21407#23376#12290'[1] '#13
+      TextSettings.WordWrap = True
+      ScrollBars = Vertical
+    end
+    object EditView2: TEditView
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claNull
+      Background.Border.Color.Focused = xFF0066CC
+      Background.Border.Color.Hovered = claSilver
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      ClipChildren = True
+      WidthSize = FillParent
+      Padding.Left = 6.000000000000000000
+      Padding.Top = 2.000000000000000000
+      Padding.Right = 6.000000000000000000
+      Padding.Bottom = 2.000000000000000000
+      Size.Width = 413.000000000000000000
+      Size.Height = 120.000000000000000000
+      Size.PlatformDefault = False
+      Position.Y = 177.000000000000000000
+      TabOrder = 3
+      Text = 'EditView2'
+      TextSettings.Gravity = CenterVertical
+      DisableFocusEffect = True
+    end
+    object Button1: TButton
+      Margins.Top = 10.000000000000000000
+      Margins.Bottom = 10.000000000000000000
+      Position.X = 16.000000000000000000
+      Position.Y = 307.000000000000000000
+      Size.Width = 225.000000000000000000
+      Size.Height = 75.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 5
+      Text = 'Button1'
+    end
+    object ButtonView1: TButtonView
+      Background.XRadius = 3.000000000000000000
+      Background.YRadius = 3.000000000000000000
+      Background.ItemDefault.Color = claChocolate
+      Background.ItemDefault.Accessory.UseIcon = True
+      Background.ItemPressed.Color = claCrimson
+      Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      Background.Border.Style = None
+      WidthSize = FillParent
+      Padding.Left = 4.000000000000000000
+      Padding.Top = 4.000000000000000000
+      Padding.Right = 4.000000000000000000
+      Padding.Bottom = 4.000000000000000000
+      Size.Width = 413.000000000000000000
+      Size.Height = 36.000000000000000000
+      Size.PlatformDefault = False
+      Position.Y = 392.000000000000000000
+      TabOrder = 14
+      Text = #25353#38062
+      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Pressed = claWhitesmoke
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Checked = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Font.Size = 16.000000000000000000
+      TextSettings.Gravity = Center
+      Drawable.SizeWidth = 22
+      Drawable.SizeHeight = 22
+      Drawable.ItemDefault.Kind = AccessoryBitmap
+      Drawable.ItemDefault.Accessory.Icon = Note
+      Drawable.ItemDefault.Accessory.UseIcon = True
+    end
+    object TextView2: TTextView
+      WidthSize = FillParent
+      HeightSize = WrapContent
+      Padding.Left = 8.000000000000000000
+      Padding.Top = 8.000000000000000000
+      Padding.Right = 8.000000000000000000
+      Padding.Bottom = 8.000000000000000000
+      Size.Width = 413.000000000000000000
+      Size.Height = 225.000000000000000000
+      Size.PlatformDefault = False
+      Position.Y = 428.000000000000000000
+      TabOrder = 1
+      DragScroll = True
+      Text = 
+        #22914#26524#23383#31526#20018#20013#24050#32463#23384#22312#20110#20840#23616#21407#23376#34920#20013#65292#21017#36820#22238#29616#26377#30340#23383#31526#20018#30340#21407#23376#65292#24182#19988#21407#23376#30340#24341#29992#35745#25968#21152'1'#12290#13#19982#21407#23376#30456#20851#30340#23383#31526#20018#19981#20250#20174#20869#23384#20013#21024#38500#65292#30452#21040 +
+        #23427#30340#24341#29992#35745#25968#20026#38646#12290#27442#20102#35299#26356#22810#20449#24687#65292#35831#21442#38405'GlobalDeleteAtom'#20989#25968#12290#13#20840#23616#21407#23376#19981#20250#22312#24212#29992#31243#24207#32456#27490#26102#33258#21160#21024#38500#12290#27599#27425#35843#29992'G' +
+        'lobalAddAtom'#20989#25968#65292#24517#39035#30456#24212#30340#35843#29992'GlobalDeleteAtom'#20989#25968#21024#38500#21407#23376#12290#13#22914#26524'lpString'#30340#24418#24335#20026'"#12' +
+        '34"'#65292'GlobalAddAtom'#36820#22238#19968#20010#25972#25968#21407#23376#65292#20854#20540#26159#36825#20010#21313#36827#21046#25968#25351#23450#30340#23383#31526#20018#65288#22312#36825#20010#20363#23376#20013#20026'0x04D2'#65289#12290#22914#26524#25351#23450#30340#21313#36827 +
+        #21046#20540#26159'0x0000'#25110#22823#20110#31561#20110'0xC000'#65292#36820#22238#20540#20026#38646#65292#25805#20316#22833#36133#12290#22914#26524'lpString'#20351#29992'MAKEINTATOM'#23439#21019#24314#30340#23383#31526#20018#65292#20302 +
+        '16'#20301#20540#30340#33539#22260#26159'0x0001'#21040'0xBFFF'#12290#22914#26524#20540#19981#22312#27492#33539#22260#20869#65292#21017#25805#20316#22833#36133#12290#22914#26524'lpString'#26159#20854#20182#24418#24335#30340#23383#31526#20018#65292#21017'Globa' +
+        'lAddAtom'#36820#22238#36825#20010#23383#31526#20018#21407#23376#12290'[1] '#13
+      TextSettings.WordWrap = True
+      ScrollBars = Vertical
+    end
+    object EditView3: TEditView
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claNull
+      Background.Border.Color.Focused = xFF0066CC
+      Background.Border.Color.Hovered = claSilver
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      ClipChildren = True
+      WidthSize = FillParent
+      Padding.Left = 6.000000000000000000
+      Padding.Top = 2.000000000000000000
+      Padding.Right = 6.000000000000000000
+      Padding.Bottom = 2.000000000000000000
+      Margins.Left = 16.000000000000000000
+      Margins.Top = 16.000000000000000000
+      Margins.Right = 16.000000000000000000
+      Margins.Bottom = 16.000000000000000000
+      Size.Width = 381.000000000000000000
+      Size.Height = 196.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 16.000000000000000000
+      Position.Y = 669.000000000000000000
+      TabOrder = 4
+      Text = 'EditView3'
+      TextSettings.Gravity = CenterVertical
+      DisableFocusEffect = True
+    end
+  end
+end

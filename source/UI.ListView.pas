@@ -58,40 +58,6 @@ type
     property Items[const Index: Integer]: Pointer read GetItem; default;
   end;
 
-  /// <summary>
-  /// 列表视图状态
-  /// </summary>
-  TListViewState = (None {无},
-    PullDownStart {下拉开始}, PullDownOK {下拉到位}, PullDownFinish {下拉松开}, PullDownComplete {下拉完成},
-    PullUpStart {上拉开始}, PullUpOK {下拉到位}, PullUpFinish {上拉松开}, PullUpComplete {上拉完成}
-  );
-
-  /// <summary>
-  /// 列表 Header 或 Footer 接口
-  /// </summary>
-  IListViewHeader = interface
-    ['{44F6F649-D173-4BEC-A38D-F03436ED55BC}']
-    /// <summary>
-    /// 更新状态
-    /// </summary>
-    procedure DoUpdateState(const State: TListViewState;
-      const ScrollValue: Double);
-    /// <summary>
-    /// 设置各种状态要显示的消息
-    /// </summary>
-    procedure SetStateHint(const State: TListViewState; const Msg: string);
-    function GetVisible: Boolean;
-    /// <summary>
-    /// 可视状态
-    /// </summary>
-    property Visible: Boolean read GetVisible;
-  end;
-
-  /// <summary>
-  /// 加载 Header 或 Footer 事件
-  /// </summary>
-  TOnInitHeader = procedure (Sender: TObject; var NewFooter: IListViewHeader) of object;
-
   PListItemPoint = ^TListItemPoint;
   TListItemPoint = record
     H: Single;
@@ -220,7 +186,6 @@ type
     FState: TListViewState;      // 列表视图状态
     FHeader: IListViewHeader;    // 头部下拉刷新列表视图
     FFooter: IListViewHeader;    // 尾部上拉加载更多视图
-    FPullOffset: Single;         // 超出边界的大小
 
     FColumnCount: Integer;       // 用户设置的列数
     FColumnWidth: Single;        // 用户设置的列度

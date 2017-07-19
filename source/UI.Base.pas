@@ -126,6 +126,41 @@ type
     procedure FocusToNext();
   end;
 
+
+  /// <summary>
+  /// 列表视图状态
+  /// </summary>
+  TListViewState = (None {无},
+    PullDownStart {下拉开始}, PullDownOK {下拉到位}, PullDownFinish {下拉松开}, PullDownComplete {下拉完成},
+    PullUpStart {上拉开始}, PullUpOK {下拉到位}, PullUpFinish {上拉松开}, PullUpComplete {上拉完成}
+  );
+
+  /// <summary>
+  /// 列表 Header 或 Footer 接口
+  /// </summary>
+  IListViewHeader = interface
+    ['{44F6F649-D173-4BEC-A38D-F03436ED55BC}']
+    /// <summary>
+    /// 更新状态
+    /// </summary>
+    procedure DoUpdateState(const State: TListViewState;
+      const ScrollValue: Double);
+    /// <summary>
+    /// 设置各种状态要显示的消息
+    /// </summary>
+    procedure SetStateHint(const State: TListViewState; const Msg: string);
+    function GetVisible: Boolean;
+    /// <summary>
+    /// 可视状态
+    /// </summary>
+    property Visible: Boolean read GetVisible;
+  end;
+
+  /// <summary>
+  /// 加载 Header 或 Footer 事件
+  /// </summary>
+  TOnInitHeader = procedure (Sender: TObject; var NewFooter: IListViewHeader) of object;
+
   { 感谢  KernowSoftwareFMX }
   TViewAccessoryImageList = class(TObjectList<TBitmap>)
   private
@@ -878,6 +913,14 @@ type
     function GetAbsoluteInVisible: Boolean;
   end;
 
+  /// <summary>
+  /// 触摸事件支持
+  /// </summary>
+  IViewTouch = interface(IInterface)
+    ['{ADA36492-479A-468E-A813-59CC1940612A}']
+    function IsCanTouch: Boolean;
+  end;
+
   TTextSettingsBase = class(TPersistent)
   private
     [Weak] FOwner: TControl;
@@ -1393,6 +1436,8 @@ type
     class function GetRttiObject(Instance: TObject; const Name: string): TObject;
     class procedure SetRttiValue(Instance: TObject; const Name: string; const Value: TValue); overload;
     class procedure SetRttiValue<T>(Instance: TObject; const Name: string; const Value: T); overload;
+    class procedure InvokeMethod(Instance: TObject; const Name: string; const Args: array of TValue); overload;
+    class function InvokeMethod<T>(Instance: TObject; const Name: string; const Args: array of TValue): T; overload;
 
     property ParentView: IViewGroup read GetParentView;
     /// <summary>
@@ -4147,6 +4192,49 @@ begin
   begin
     InvalidateRect(LocalRect);
     FInvaliding := True;
+  end;
+end;
+
+class procedure TView.InvokeMethod(Instance: TObject; const Name: string;
+  const Args: array of TValue);
+var
+  FMethod: TRttiMethod;
+  FType: TRttiType;
+  FContext: TRttiContext;
+begin
+  FContext := TRttiContext.Create;
+  try
+    FType := FContext.GetType(Instance.ClassType);
+    FMethod := FType.GetMethod(Name);
+    if Assigned(FMethod) then
+      FMethod.Invoke(Instance, Args);
+  finally
+    FContext.Free;
+  end;
+end;
+
+class function TView.InvokeMethod<T>(Instance: TObject; const Name: string;
+  const Args: array of TValue): T;
+var
+  FMethod: TRttiMethod;
+  FType: TRttiType;
+  FContext: TRttiContext;
+  FResult: TValue;
+begin
+  FContext := TRttiContext.Create;
+  try
+    FType := FContext.GetType(Instance.ClassType);
+    FMethod := FType.GetMethod(Name);
+    if Assigned(FMethod) then begin
+      FResult := FMethod.Invoke(Instance, Args);
+      if not FResult.IsEmpty then
+        Result := FResult.AsType<T>
+      else
+        Result := T(nil);
+    end else
+      Result := T(nil);
+  finally
+    FContext.Free;
   end;
 end;
 
