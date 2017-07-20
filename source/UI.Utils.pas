@@ -1155,7 +1155,7 @@ begin
   P := Find(Key)^;
   if P <> nil then begin
     Result := True;
-    Data := P^.AsPointer
+    Data := TObject(P^.AsPointer)
   end else begin
     Result := False;
     Data := nil;

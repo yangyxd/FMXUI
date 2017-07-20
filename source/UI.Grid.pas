@@ -5793,9 +5793,9 @@ var
   I, J: Integer;
 begin
   if Assigned(Sender) and (Sender is TGridColumnItem) then begin
-    UpdateWeight;
     if TGridColumnItem(Sender).GetRowCol(J, I) then
       DoItemChangeEx(TGridColumnItem(Sender), J, I);
+    UpdateWeight;
   end;
 end;
 
@@ -6118,6 +6118,7 @@ begin
 
   // 计算出总的比重和比重所占的宽度
   for I := 0 to ColsCount - 1 do begin
+    Item := nil;
     if FData.TryGetValue(TGridBase.GetKey(I, 0), TObject(Item)) then begin
       if Item.Visible then begin
         if Item.FWeight > 0 then begin
@@ -7379,7 +7380,7 @@ begin
           end;
         end;
 
-        for I := 0 to RowsCount - 1 do begin
+        for I := RowsCount - 1 downto 0 do begin
           for J := 0 to ColsCount - 1 do begin
             KeyStr := Format('Item_%d_%d', [J, I]);
             DataItem := List.O[KeyStr];
@@ -7392,6 +7393,10 @@ begin
       end;
     end;
   finally
+    if Assigned(FColumns) then begin
+      FColumns.UpdateColsWidth;
+      FColumns.UpdateWeight;
+    end;
     FreeAndNil(List);
   end;
 end;
