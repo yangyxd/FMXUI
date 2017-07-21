@@ -5381,7 +5381,7 @@ begin
         begin
           CheckMouseLeftState;
         end,
-      0.1);
+      0.05);
     {$ENDIF}
   end;
   {$ENDIF}
@@ -5484,7 +5484,7 @@ begin
   FMouseEnter := False;
   if DragScroll and Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then
     FPointTarget.DoMouseLeave;
-  if FMouseDown then
+  if not IsPressed then
     CheckMouseLeftState;
   {$ENDIF}
 end;
@@ -5683,15 +5683,11 @@ end;
 
 procedure TVertScrollView.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
-{$IFNDEF NEXTGEN}
-var
-  P: TPointF;
-{$ENDIF}
 begin
+  //LogD('MouseDown');
   {$IFDEF NEXTGEN}
   inherited;
   {$ELSE}
-  FMouseDown := True;
   if DragScroll then begin
     FDownPos.X := X;
     FDownPos.Y := Y;
@@ -5701,18 +5697,22 @@ begin
     if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
       TFrameAnimator.DelayExecute(Self,
         procedure (Sender: TObject)
+        var
+          P: TPointF;
         begin
           try
             if FMovePos <> FDownPos then Exit;
             if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
               P := (FPointTarget as TControl).AbsoluteToLocal(LocalToAbsolute(PointF(X, Y)));
+              FMouseDown := True;
               FPointTarget.MouseDown(Button, Shift, P.X, P.Y);
             end;
           except
           end;
         end,
       0.05);
-    end;
+    end else
+      FMouseDown := True;
 
   end else
     inherited;
@@ -5763,6 +5763,7 @@ var
   P: TPointF;
 {$ENDIF}
 begin
+  //LogD('MouseUp');
   {$IFDEF NEXTGEN}
   inherited;
   {$ELSE}
@@ -5790,7 +5791,10 @@ begin
   Result := inherited;
   {$IFNDEF NEXTGEN}
   if DragScroll and (not (csDesigning in ComponentState)) then begin // 如果允许拖动
-    if (not FMouseDown) and Assigned(Result) then begin
+    if FMouseDown then
+      Exit;
+    //LogD('FMouseDown: ' + BoolToStr(FMouseDown));
+    if Assigned(Result) then begin
       if Supports(Result, ITextInput) then begin
         FPointTarget := nil;
         Exit;

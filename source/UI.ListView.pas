@@ -942,7 +942,7 @@ begin
   FMouseEnter := False;
   if DragScroll and Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then
     FPointTarget.DoMouseLeave;
-  if FMouseDown then
+  if not IsPressed then
     CheckMouseLeftState;
   {$ENDIF}
 end;
@@ -1125,6 +1125,8 @@ begin
   Result := inherited;
   {$IFNDEF NEXTGEN}
   if DragScroll then begin // 如果允许拖动
+    if FMouseDown then
+      Exit;
     P := ScreenToLocal(AScreenPoint);
     if Assigned(Result) and (P.X < Width - 10) then begin
       FPointTarget := Result;
@@ -1269,7 +1271,6 @@ begin
   {$IFDEF NEXTGEN}
   inherited;
   {$ELSE}
-  FMouseDown := True;
   if DragScroll then begin
     FDownPos.X := X;
     FDownPos.Y := Y;
@@ -1279,16 +1280,22 @@ begin
     if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
       TFrameAnimator.DelayExecute(Self,
         procedure (Sender: TObject)
+        var
+          P: TPointF;
         begin
           try
             if FMovePos <> FDownPos then Exit;
-            if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then
-              FPointTarget.MouseDown(Button, Shift, X, Y);
+            if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
+              P := (FPointTarget as TControl).AbsoluteToLocal(LocalToAbsolute(PointF(X, Y)));
+              FMouseDown := True;
+              FPointTarget.MouseDown(Button, Shift, P.X, P.Y);
+            end;
           except
           end;
         end,
       0.05);
-    end;
+    end else
+      FMouseDown := True;
 
   end else
     inherited;
@@ -1296,6 +1303,10 @@ begin
 end;
 
 procedure TListViewEx.MouseMove(Shift: TShiftState; X, Y: Single);
+{$IFNDEF NEXTGEN}
+var
+  P: TPointF;
+{$ENDIF}
 begin
   {$IFDEF NEXTGEN}
   inherited;
@@ -1307,7 +1318,8 @@ begin
       AniMouseMove(True, X, Y);
     end else
       if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
-        FPointTarget.MouseMove(Shift, X, Y);
+        P := (FPointTarget as TControl).AbsoluteToLocal(LocalToAbsolute(PointF(X, Y)));
+        FPointTarget.MouseMove(Shift, P.X, P.Y);
       end;
   end else
     inherited;
@@ -1316,6 +1328,10 @@ end;
 
 procedure TListViewEx.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
+{$IFNDEF NEXTGEN}
+var
+  P: TPointF;
+{$ENDIF}
 begin
   {$IFDEF NEXTGEN}
   inherited;
@@ -1325,7 +1341,8 @@ begin
     if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
       if FMovePos = FDownPos then begin
         Sleep(30);
-        FPointTarget.MouseUp(Button, Shift, X, Y);
+        P := (FPointTarget as TControl).AbsoluteToLocal(LocalToAbsolute(PointF(X, Y)));
+        FPointTarget.MouseUp(Button, Shift, P.X, P.Y);
       end;
     end;
     if (Button = TMouseButton.mbLeft) then begin
@@ -1742,7 +1759,7 @@ begin
     if FItemClick.ContainsKey(Sender) and Assigned(FItemClick[Sender]) then
       FItemClick[Sender](Sender);
     if Assigned(ListView.FOnItemClick) then
-      ListView.FOnItemClick(ListView, ItemIndex, TView(Sender));
+      ListView.FOnItemClick(ListView, ItemIndex,  TView(FViews[ItemIndex]));
   end;
 end;
 

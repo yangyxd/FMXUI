@@ -41,9 +41,11 @@ type
     procedure ListViewPullRefresh(Sender: TObject);
     procedure ListViewPullLoad(Sender: TObject);
     procedure btnBackClick(Sender: TObject);
+    procedure ListViewItemClick(Sender: TObject; ItemIndex: Integer;
+      const ItemView: TControl);
   private
     { Private declarations }
-    FAdapter: IListAdapter;
+    FAdapter: TCustomListDataAdapter;
     FList: TList<TDataItem>;
   protected
     procedure DoCreate(); override;
@@ -124,6 +126,13 @@ end;
 procedure TCustomListview.DoShow;
 begin
   inherited;
+end;
+
+procedure TCustomListview.ListViewItemClick(Sender: TObject; ItemIndex: Integer;
+  const ItemView: TControl);
+begin
+  Hint(Format('µã»÷ÁË%d. Name£º%s', [ItemIndex, FAdapter.FList.Items[ItemIndex].Name]));
+  Hint(TCustomListView_ListItem(ItemView).TextView1.Text);
 end;
 
 procedure TCustomListview.ListViewPullLoad(Sender: TObject);
