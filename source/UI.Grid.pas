@@ -3550,7 +3550,7 @@ begin
     V := 0- GridView.HScrollBarValue;
     Item := FBaseColumnsList[ACell.Col];
     Result.Left := Item.X + V;
-    Result.Right := Result.Left + Item.Width;
+    Result.Right := Result.Left + Item.RealWidth;
   end;
 end;
 
@@ -6007,7 +6007,7 @@ end;
 
 procedure TGridColumns.InitColumnWidth(const AWidth: Single);
 var
-  W: Single;
+  W, X: Single;
   I: Integer;
   Item: TGridColumnItem;
   DH: Single;
@@ -6022,12 +6022,17 @@ begin
       DH := 1;
     W := AWidth - FMaxWeightWidth;
     if W > 0 then begin
+      X := 0;
       for I := 0 to ColsCount - 1 do begin
         if FData.TryGetValue(TGridBase.GetKey(I, 0), TObject(Item)) then begin
           if Item.Visible and (Item.FWeight > 0) then begin
-            Item.RealWidth := Item.Weight / FMaxWeight * W - DH
-          end;
-        end;
+            Item.X := X;
+            Item.RealWidth := Item.Weight / FMaxWeight * W - DH;
+          end else
+            Item.X := X;
+          X := X + Item.RealWidth;
+        end else
+          X := X + TGridBase.CDefaultFixedColWidth;
       end;
     end;
   end;

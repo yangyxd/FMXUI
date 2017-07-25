@@ -1,5 +1,5 @@
 object FrameVertScrollView: TFrameVertScrollView
-  Size.Width = 425.000000000000000000
+  Size.Width = 399.000000000000000000
   Size.Height = 563.000000000000000000
   Size.PlatformDefault = False
   object LinearLayout1: TLinearLayout
@@ -7,7 +7,7 @@ object FrameVertScrollView: TFrameVertScrollView
     Background.ItemDefault.Color = claPurple
     Background.ItemDefault.Kind = Solid
     Gravity = None
-    Size.Width = 425.000000000000000000
+    Size.Width = 399.000000000000000000
     Size.Height = 50.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
@@ -51,7 +51,7 @@ object FrameVertScrollView: TFrameVertScrollView
       Weight = 1.000000000000000000
       Margins.Right = 50.000000000000000000
       HitTest = True
-      Size.Width = 325.000000000000000000
+      Size.Width = 299.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       Position.X = 50.000000000000000000
@@ -69,12 +69,11 @@ object FrameVertScrollView: TFrameVertScrollView
   object VertScrollView1: TVertScrollView
     Align = Client
     Gravity = None
-    Size.Width = 425.000000000000000000
+    Size.Width = 399.000000000000000000
     Size.Height = 513.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
     DragScroll = True
-    ScrollbarWidth = 12.000000000000000000
     ScrollSmallChangeFraction = 100.000000000000000000
     EnablePullRefresh = True
     EnablePullLoad = True
@@ -100,7 +99,7 @@ object FrameVertScrollView: TFrameVertScrollView
       Margins.Top = 8.000000000000000000
       Margins.Right = 8.000000000000000000
       Margins.Bottom = 8.000000000000000000
-      Size.Width = 397.000000000000000000
+      Size.Width = 375.000000000000000000
       Size.Height = 57.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
@@ -116,7 +115,7 @@ object FrameVertScrollView: TFrameVertScrollView
       Padding.Right = 8.000000000000000000
       Padding.Bottom = 8.000000000000000000
       HitTest = True
-      Size.Width = 413.000000000000000000
+      Size.Width = 391.000000000000000000
       Size.Height = 104.000000000000000000
       Size.PlatformDefault = False
       Position.Y = 73.000000000000000000
@@ -148,7 +147,7 @@ object FrameVertScrollView: TFrameVertScrollView
       Padding.Top = 2.000000000000000000
       Padding.Right = 6.000000000000000000
       Padding.Bottom = 2.000000000000000000
-      Size.Width = 413.000000000000000000
+      Size.Width = 391.000000000000000000
       Size.Height = 120.000000000000000000
       Size.PlatformDefault = False
       Position.Y = 177.000000000000000000
@@ -184,7 +183,7 @@ object FrameVertScrollView: TFrameVertScrollView
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
-      Size.Width = 413.000000000000000000
+      Size.Width = 391.000000000000000000
       Size.Height = 36.000000000000000000
       Size.PlatformDefault = False
       Position.Y = 392.000000000000000000
@@ -211,7 +210,7 @@ object FrameVertScrollView: TFrameVertScrollView
       Padding.Top = 8.000000000000000000
       Padding.Right = 8.000000000000000000
       Padding.Bottom = 8.000000000000000000
-      Size.Width = 413.000000000000000000
+      Size.Width = 391.000000000000000000
       Size.Height = 225.000000000000000000
       Size.PlatformDefault = False
       Position.Y = 428.000000000000000000
@@ -247,7 +246,7 @@ object FrameVertScrollView: TFrameVertScrollView
       Margins.Top = 16.000000000000000000
       Margins.Right = 16.000000000000000000
       Margins.Bottom = 16.000000000000000000
-      Size.Width = 381.000000000000000000
+      Size.Width = 359.000000000000000000
       Size.Height = 196.000000000000000000
       Size.PlatformDefault = False
       Position.X = 16.000000000000000000
