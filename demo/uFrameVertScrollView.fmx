@@ -99,7 +99,7 @@ object FrameVertScrollView: TFrameVertScrollView
       Margins.Top = 8.000000000000000000
       Margins.Right = 8.000000000000000000
       Margins.Bottom = 8.000000000000000000
-      Size.Width = 375.000000000000000000
+      Size.Width = 367.000000000000000000
       Size.Height = 57.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
@@ -115,7 +115,7 @@ object FrameVertScrollView: TFrameVertScrollView
       Padding.Right = 8.000000000000000000
       Padding.Bottom = 8.000000000000000000
       HitTest = True
-      Size.Width = 391.000000000000000000
+      Size.Width = 383.000000000000000000
       Size.Height = 104.000000000000000000
       Size.PlatformDefault = False
       Position.Y = 73.000000000000000000
@@ -147,7 +147,7 @@ object FrameVertScrollView: TFrameVertScrollView
       Padding.Top = 2.000000000000000000
       Padding.Right = 6.000000000000000000
       Padding.Bottom = 2.000000000000000000
-      Size.Width = 391.000000000000000000
+      Size.Width = 383.000000000000000000
       Size.Height = 120.000000000000000000
       Size.PlatformDefault = False
       Position.Y = 177.000000000000000000
@@ -183,7 +183,7 @@ object FrameVertScrollView: TFrameVertScrollView
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
-      Size.Width = 391.000000000000000000
+      Size.Width = 383.000000000000000000
       Size.Height = 36.000000000000000000
       Size.PlatformDefault = False
       Position.Y = 392.000000000000000000
@@ -210,8 +210,8 @@ object FrameVertScrollView: TFrameVertScrollView
       Padding.Top = 8.000000000000000000
       Padding.Right = 8.000000000000000000
       Padding.Bottom = 8.000000000000000000
-      Size.Width = 391.000000000000000000
-      Size.Height = 225.000000000000000000
+      Size.Width = 383.000000000000000000
+      Size.Height = 241.000000000000000000
       Size.PlatformDefault = False
       Position.Y = 428.000000000000000000
       TabOrder = 1
@@ -246,11 +246,11 @@ object FrameVertScrollView: TFrameVertScrollView
       Margins.Top = 16.000000000000000000
       Margins.Right = 16.000000000000000000
       Margins.Bottom = 16.000000000000000000
-      Size.Width = 359.000000000000000000
+      Size.Width = 351.000000000000000000
       Size.Height = 196.000000000000000000
       Size.PlatformDefault = False
       Position.X = 16.000000000000000000
-      Position.Y = 669.000000000000000000
+      Position.Y = 685.000000000000000000
       TabOrder = 4
       Text = 'EditView3'
       TextSettings.Gravity = CenterVertical

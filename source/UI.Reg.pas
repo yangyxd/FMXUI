@@ -145,6 +145,7 @@ begin
   RegisterComponents(PageName, [TMultiPathView]);
   RegisterComponents(PageName, [TCameraViewer]);
 
+  RegisterComponents(PageName, [THorzScrollView]);
   RegisterComponents(PageName, [TVertScrollView]);
   RegisterComponents(PageName, [TListViewEx]);
 

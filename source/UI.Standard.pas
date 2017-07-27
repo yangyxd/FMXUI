@@ -470,6 +470,9 @@ type
 type
   TVertScrollView = class;
 
+  /// <summary>
+  /// 滚动视图内容
+  /// </summary>
   TViewScrollContent = class(TLinearLayout, IContent)
   private
     [weak] FScrollBox: TScrollView;
@@ -493,6 +496,9 @@ type
     function PointInObjectLocal(X, Y: Single): Boolean; override;
   end;
 
+  /// <summary>
+  /// 垂直滚动视图
+  /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TVertScrollView = class(TScrollView)
   private const
@@ -522,7 +528,6 @@ type
     function AllowInitScrollbar: Boolean; override;
     procedure DoPullLoad(Sender: TObject);
     procedure AniMouseUp(const Touch: Boolean; const X, Y: Single); override;
-
   protected
     {$IFNDEF NEXTGEN}
     FDownPos, FMovePos: TPointF;
@@ -546,6 +551,8 @@ type
     procedure DoRealign; override;
     procedure DoInVisibleChange; override;
 
+    procedure DoRealignContent; virtual;
+    procedure DoSetDefaulatScrollBars; virtual;
     procedure CreateContentView(); virtual;
     function IsAddToContent(const AObject: TFmxObject): Boolean; virtual;
     procedure DoAddObject(const AObject: TFmxObject); override;
@@ -603,6 +610,22 @@ type
     property OnPullLoad: TNotifyEvent read FOnPullLoad write FOnPullLoad;
 
     property OnScrollChange;
+  end;
+
+type
+  /// <summary>
+  /// 水平滚动视图
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  THorzScrollView = class(TVertScrollView)
+  protected
+    procedure InvalidateContentSize(); override; // 计算内容区大小
+    procedure HScrollChange(Sender: TObject); override;
+
+    procedure DoRealignContent; override;
+    procedure DoSetDefaulatScrollBars; override;
+    procedure CreateContentView(); override;
+  public
   end;
 
 type
@@ -2348,7 +2371,7 @@ end;
 
 function TScrollView.GetHScrollBarValue: Double;
 begin
-  if (FAniCalculations <> nil) and Assigned(FScrollH) and (FCanScrollH) then
+  if (FAniCalculations <> nil) and Assigned(FScrollH) and (FCanScrollH{$IFNDEF NEXTGEN} or FDragScroll{$ENDIF}) then
     Result := ViewportPosition.X
   else
     Result := 0;
@@ -5401,7 +5424,7 @@ begin
   inherited Create(AOwner);
   New(FContentBounds);
   CreateContentView();
-  ScrollBars := TViewScroll.Vertical;
+  DoSetDefaulatScrollBars;
   DisableFocusEffect := True;
   AutoCapture := True;
   ClipChildren := True;
@@ -5571,7 +5594,6 @@ end;
 procedure TVertScrollView.DoRealign;
 var
   LDisablePaint: Boolean;
-  W: Single;
 begin
   if FDisableAlign or IsUpdating or (not Assigned(FContent)) then
     Exit;
@@ -5581,18 +5603,7 @@ begin
   try
     FDisablePaint := True;
 
-    {$IFDEF MSWINDOWS}
-    if Assigned(FScrollV) and (FScrollV.Visible) then
-      W := Width - Padding.Right - Padding.Left{$IFDEF MSWINDOWS} - FScrollV.Width{$ENDIF}
-    else
-      W := Width - Padding.Right - Padding.Left;
-    {$ELSE}
-    W := Width - Padding.Right - Padding.Left;
-    {$ENDIF}
-
-    if Assigned(FContent) then
-      FContent.SetBounds(Padding.Left, Padding.Top - VScrollBarValue, W,
-        Height - Padding.Bottom - Padding.Top);
+    DoRealignContent();
 
     inherited DoRealign;
 
@@ -5600,6 +5611,29 @@ begin
     FDisablePaint := LDisablePaint;
     FContent.Invalidate;
   end;
+end;
+
+procedure TVertScrollView.DoRealignContent;
+var
+  W: Single;
+begin
+  {$IFDEF MSWINDOWS}
+  if Assigned(FScrollV) and (FScrollV.Visible) then
+    W := Width - Padding.Right - Padding.Left{$IFDEF MSWINDOWS} - FScrollV.Width{$ENDIF}
+  else
+    W := Width - Padding.Right - Padding.Left;
+  {$ELSE}
+  W := Width - Padding.Right - Padding.Left;
+  {$ENDIF}
+
+  if Assigned(FContent) then
+    FContent.SetBounds(Padding.Left, Padding.Top - VScrollBarValue, W,
+      Height - Padding.Bottom - Padding.Top);
+end;
+
+procedure TVertScrollView.DoSetDefaulatScrollBars;
+begin
+  ScrollBars := TViewScroll.Vertical;
 end;
 
 procedure TVertScrollView.FreeFooter;
@@ -5989,6 +6023,77 @@ begin
     (X <= (ClipRect.TopLeft.X + ClipRect.Width + TouchTargetExpansion.Right)) and
     (Y >= (ClipRect.TopLeft.Y + TouchTargetExpansion.Top)) and
     (Y <= (ClipRect.TopLeft.Y + ClipRect.Height + TouchTargetExpansion.Bottom));
+end;
+
+{ THorzScrollView }
+
+procedure THorzScrollView.CreateContentView;
+var
+  Item: TComponent;
+begin
+  Item := Self.FindComponent(CSContentName);
+  if Assigned(Item) then
+    FContent := Item as TViewScrollContent
+  else begin
+    FContent := TViewScrollContent.Create(Self);
+    FContent.Visible := True;
+    FContent.Stored := False;
+    FContent.Locked := True;
+    FContent.Name := CSContentName;
+    FContent.WidthSize := TViewSize.WrapContent;
+    FContent.HeightSize := TViewSize.FillParent;
+    FContent.Orientation := TOrientation.Horizontal;
+    FContent.DisableDisappear := True;
+    FContent.Parent := Self;
+  end;
+  SetAcceptsControls(True);
+  RealignContent;
+end;
+
+procedure THorzScrollView.DoRealignContent;
+var
+  H: Single;
+begin
+  if Assigned(FContent) then begin
+    {$IFDEF MSWINDOWS}
+    if Assigned(FScrollH) and (FScrollH.Visible) then
+      H := Height - Padding.Bottom - Padding.Top{$IFDEF MSWINDOWS} - FScrollH.Height{$ENDIF}
+    else
+      H := Height - Padding.Bottom - Padding.Top;
+    {$ELSE}
+    H := Height - Padding.Bottom - Padding.Top;
+    {$ENDIF}
+
+    FContent.SetBounds(Padding.Left - HScrollBarValue, Padding.Top, Width - Padding.Right - Padding.Left, H);
+  end;
+end;
+
+procedure THorzScrollView.DoSetDefaulatScrollBars;
+begin
+  ScrollBars := TViewScroll.Horizontal;
+end;
+
+procedure THorzScrollView.HScrollChange(Sender: TObject);
+begin
+  if FScrolling then Exit;
+  inherited HScrollChange(Sender);
+  if Assigned(FContent) then
+    FContent.Position.X := Padding.Left - HScrollBarValue;
+end;
+
+procedure THorzScrollView.InvalidateContentSize;
+begin
+  if not Assigned(FContent) then begin
+    FContentBounds.Left := 0;
+    FContentBounds.Top := 0;
+    FContentBounds.Right := 0;
+    FContentBounds.Bottom := 0;
+    Exit;
+  end;
+  FContentBounds.Left := 0;
+  FContentBounds.Right := FContent.Width;
+  FContentBounds.Top := 0;
+  FContentBounds.Bottom := FContent.Height;
 end;
 
 initialization
