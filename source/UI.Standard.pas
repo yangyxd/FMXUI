@@ -375,6 +375,7 @@ type
     procedure UpdateScrollStretchStrength(const NewValue: Single);
 
     function IsCanTouch: Boolean; virtual;
+    function GetScrollOffset: TPointF; virtual;
   protected
     procedure Resize; override;
     procedure DoRealign; override;
@@ -514,6 +515,7 @@ type
     FFooter: IListViewHeader;    // 尾部上拉加载更多视图
 
     FLastScrollValue: Double; // 上次滚动条位置
+    FOffsetScroll: Single;
 
     FOnInitFooter: TOnInitHeader;
     FOnInitHeader: TOnInitHeader;
@@ -537,6 +539,7 @@ type
     FMouseEnter, FMouseDown: Boolean;
     {$ENDIF}
     function ObjectAtPoint(AScreenPoint: TPointF): IControl; override;
+    function GetScrollOffset: TPointF; override;
     procedure Click; override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
@@ -553,6 +556,7 @@ type
 
     procedure DoRealignContent; virtual;
     procedure DoSetDefaulatScrollBars; virtual;
+    procedure DoUpdateHeaderFooter(const V: Single); virtual;
     procedure CreateContentView(); virtual;
     function IsAddToContent(const AObject: TFmxObject): Boolean; virtual;
     procedure DoAddObject(const AObject: TFmxObject); override;
@@ -2399,6 +2403,11 @@ begin
     else
       Result := [];
   end;
+end;
+
+function TScrollView.GetScrollOffset: TPointF;
+begin
+  Result := PointF(0, 0);
 end;
 
 function TScrollView.GetScrollSmallChangeFraction: Single;
@@ -5374,13 +5383,18 @@ begin
 
   // 下拉刷新处理
   if FEnablePullRefresh then begin
-    if Assigned(FHeader) and (FState = TListViewState.PullDownOK) then begin
+    if Assigned(FHeader) and (FState = TListViewState.PullDownOK) and Assigned(FOnPullRefresh) then begin
       FHeader.DoUpdateState(TListViewState.PullDownFinish, 0);
       FState := TListViewState.PullDownFinish;
-      if Assigned(FOnPullRefresh) then
-        FOnPullRefresh(Self);
+
+      InvalidateContentSize;
+      DoUpdateScrollingLimits(True, 0);
+
+      FOffsetScroll := (FHeader as TControl).Height;
+      FOnPullRefresh(Self);
       Exit;
-    end;
+    end else if FState = TListViewState.PullDownOK then
+      DoPullRefreshComplete;
   end;
 
   // 上拉加载更多
@@ -5514,12 +5528,14 @@ end;
 
 procedure TVertScrollView.DoPullLoad(Sender: TObject);
 begin
-  if not Assigned(FFooter) then
-    Exit;
-  FFooter.DoUpdateState(TListViewState.PullUpFinish, 0);
-  FState := TListViewState.PullUpFinish;
-  if Assigned(FOnPullLoad) then
+  if Assigned(FFooter) and Assigned(FOnPullLoad) then begin
+    FFooter.DoUpdateState(TListViewState.PullUpFinish, 0);
+    FState := TListViewState.PullUpFinish;
     FOnPullLoad(Self);
+    InvalidateContentSize;
+    DoUpdateScrollingLimits(True, 0);
+  end else
+    DoPullLoadComplete;
 end;
 
 procedure TVertScrollView.DoPullLoadComplete;
@@ -5538,16 +5554,20 @@ begin
         try
           if (FState = TListViewState.PullUpFinish) then begin
             H := 0;
-            if Assigned(FHeader) then begin
+            if Assigned(FHeader) then
               H := (FHeader as TControl).Height;
-              FHeader.DoUpdateState(TListViewState.None, 0);
-            end;
 
-            FState := TListViewState.None;
-            if not FEnablePullLoad then
-              FContentBounds.Bottom := FContentBounds.Bottom - H;
+            FContentBounds.Bottom := FContentBounds.Bottom - H;
             DoUpdateScrollingLimits(True, 0);
-            DoRealign;
+
+            // 延时还原
+            TFrameAnimator.DelayExecute(Self,
+              procedure (Sender: TObject)
+              begin
+                FHeader.DoUpdateState(TListViewState.None, 0);
+                FState := TListViewState.None;
+              end, 0.6);
+
           end;
         except
         end;
@@ -5561,7 +5581,10 @@ begin
   if Assigned(FHeader) then begin
     if FState = TListViewState.PullDownComplete then
       Exit;
+
+    FOffsetScroll := 0;
     FHeader.DoUpdateState(TListViewState.PullDownComplete, 0);
+
     // 刷新完成，回弹
     TFrameAnimator.DelayExecute(Self,
       procedure (Sender: TObject)
@@ -5574,14 +5597,19 @@ begin
             if Assigned(FHeader) then
               H := (FHeader as TControl).Height;
             if H > 0 then begin
-              FHeader.DoUpdateState(TListViewState.None, 0);
-
               FContentBounds.Bottom := FContentBounds.Bottom - H;
               DoUpdateScrollingLimits(True, 0);
-
-              FState := TListViewState.None;
               FLastScrollValue := FLastScrollValue - H;
               VScrollBarValue := VScrollBarValue - H;
+
+              // 延时还原
+              TFrameAnimator.DelayExecute(Self,
+                procedure (Sender: TObject)
+                begin
+                  FHeader.DoUpdateState(TListViewState.None, 0);
+                  FState := TListViewState.None;
+                end, 0.6);
+
             end;
           end;
         except
@@ -5636,6 +5664,97 @@ begin
   ScrollBars := TViewScroll.Vertical;
 end;
 
+procedure TVertScrollView.DoUpdateHeaderFooter(const V: Single);
+var
+  View: TControl;
+  ScrollValue, LV: Single;
+begin
+  ScrollValue := VScrollBarValue;
+
+  // 下拉刷新
+  if Assigned(FHeader) and FEnablePullRefresh then begin
+    View := FHeader as TControl;
+    if (V > 0) or (FState = TListViewState.PullDownFinish) then begin
+      View.SetBounds(0, V - View.Height + FOffsetScroll, FContent.Width, View.Height);
+      View.HitTest := True;
+      View.Visible := True;
+
+      if FState = TListViewState.PullDownFinish then begin
+        LV := - ScrollValue;
+      end else
+        LV := -View.Height - ScrollValue;
+
+      case FState of
+        TListViewState.None:
+          begin
+            FHeader.DoUpdateState(TListViewState.PullDownStart, ScrollValue);
+            FState := TListViewState.PullDownStart;
+            FOffsetScroll := 0;
+          end;
+        TListViewState.PullDownStart:
+          begin
+            if (LV >= 0) then begin
+              FHeader.DoUpdateState(TListViewState.PullDownOK, ScrollValue);
+              FState := TListViewState.PullDownOK;
+              FOffsetScroll := 0;
+            end;
+          end;
+        TListViewState.PullDownOK:
+          begin
+            if (LV < 0) then begin
+              FHeader.DoUpdateState(TListViewState.PullDownStart, ScrollValue);
+              FState := TListViewState.PullDownStart;
+              FOffsetScroll := 0;
+            end;
+          end;
+      end
+    end else begin
+      View.Visible := False;
+      FOffsetScroll := 0;
+      if FState = TListViewState.PullDownStart then
+        FState := TListViewState.None;
+    end;
+  end;
+
+  // 上拉加载更多
+  if Assigned(FFooter) and FEnablePullLoad then begin
+    View := FFooter as TControl;
+    if V + FContent.Height < Height - Padding.Bottom - FOffsetScroll then begin
+      View.SetBounds(0, V + FContent.Height + FOffsetScroll, FContent.Width, View.Height);
+      View.Visible := True;
+      View.HitTest := True;
+
+      case FState of
+        TListViewState.None:
+          begin
+            FFooter.DoUpdateState(TListViewState.PullUpStart, ScrollValue);
+            FState := TListViewState.PullUpStart;
+          end;
+        TListViewState.PullUpStart:
+          begin
+            if (View.Position.Y + View.Height + 8 <= Height) then begin
+              FFooter.DoUpdateState(TListViewState.PullUpOK, ScrollValue);
+              FState := TListViewState.PullUpOK;
+            end;
+          end;
+        TListViewState.PullUpOK:
+          begin
+            if (View.Position.Y + View.Height > Height - 6) then begin
+              FFooter.DoUpdateState(TListViewState.PullUpStart, ScrollValue);
+              FState := TListViewState.PullUpStart;
+            end;
+          end;
+      end;
+
+
+    end else begin
+      View.Visible := False;
+      if FState in [TListViewState.PullUpOK, TListViewState.PullUpStart] then
+        FState := TListViewState.None;
+    end;
+  end;
+end;
+
 procedure TVertScrollView.FreeFooter;
 begin
   if Assigned(FFooter) then begin
@@ -5652,6 +5771,12 @@ begin
   end;
 end;
 
+function TVertScrollView.GetScrollOffset: TPointF;
+begin
+  Result.Y := FOffsetScroll;
+  Result.X := 0;
+end;
+
 procedure TVertScrollView.InitFooter;
 begin
   if csDesigning in ComponentState then
@@ -5664,6 +5789,7 @@ begin
     (FFooter as TControl).Parent := Self;
     (FFooter as TControl).Stored := False;
     (FFooter as TControl).Visible := False;
+    FFooter.SetStateHint(TListViewState.None, '上拉加载更多');
   end;
 end;
 
@@ -5696,12 +5822,19 @@ begin
   FContentBounds.Right := FContent.Width;
   FContentBounds.Top := 0;
   FContentBounds.Bottom := FContent.Height;
+
+  if Assigned(FHeader) and FHeader.Visible then
+    FContentBounds.Bottom := FContentBounds.Bottom + (FHeader as TControl).Height;
+  if Assigned(FFooter) and FFooter.Visible then
+    FContentBounds.Bottom := FContentBounds.Bottom + (FFooter as TControl).Height;
 end;
 
 function TVertScrollView.IsAddToContent(const AObject: TFmxObject): Boolean;
 begin
   Result := (FContent <> nil)
     and (AObject <> FContent)
+    and (AObject <> FHeader as TObject)
+    and (AObject <> FFooter as TObject)
     and not (AObject is TEffect)
     and not (AObject is TAnimation)
     and not ((AObject = FScrollV) or
@@ -5911,11 +6044,16 @@ begin
 end;
 
 procedure TVertScrollView.VScrollChange(Sender: TObject);
+var
+  V: Single;
 begin
   if FScrolling then Exit;
   inherited VScrollChange(Sender);
-  if Assigned(FContent) then
-    FContent.Position.Y := Padding.Top - VScrollBarValue;
+  if Assigned(FContent) then begin
+    V := Padding.Top - VScrollBarValue;
+    DoUpdateHeaderFooter(V);
+    FContent.Position.Y := V + FOffsetScroll;
+  end;
 end;
 
 { TViewScrollContent }
@@ -5990,12 +6128,14 @@ end;
 function TViewScrollContent.GetClipRect: TRectF;
 var
   P: TPointD;
+  OP: TPointF;
 begin
   if FScrollBox <> nil then begin
     Result := RectF(0, 0, FScrollBox.Width, FScrollBox.Height);
     if Assigned(FScrollBox.FAniCalculations) then begin
       P := FScrollBox.ViewportPosition;
-      Result.Offset(P.X, P.Y);
+      OP := FScrollBox.GetScrollOffset;
+      Result.Offset(P.X - OP.X, P.Y - OP.Y);
     end;
   end else
     Result := inherited GetClipRect;

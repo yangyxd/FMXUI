@@ -28,6 +28,7 @@ implementation
 {$R *.fmx}
 
 uses
+  UI.Async,
   UI.Frame,
   uFrame1,
   uFrame2;

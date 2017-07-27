@@ -58,7 +58,7 @@ begin
         tvText.Checked := False;
         vImg.Visible := True;
         vImg.Checked := False;
-        Visible := True;
+        Visible := State <> TListViewState.None;
       end;
 
     TListViewState.PullDownOK:
@@ -69,7 +69,6 @@ begin
         tvText.Checked := False;
         vImg.Visible := True;
         vImg.Checked := True;
-
       end;
 
     TListViewState.PullDownFinish:
