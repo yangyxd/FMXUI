@@ -1,13 +1,13 @@
 object Frame1: TFrame1
-  Size.Width = 320.000000000000000000
-  Size.Height = 495.000000000000000000
+  Size.Width = 298.000000000000000000
+  Size.Height = 470.000000000000000000
   Size.PlatformDefault = False
   object LinearLayout1: TLinearLayout
     Align = Top
     Background.ItemDefault.Color = claPurple
     Background.ItemDefault.Kind = Solid
     Gravity = None
-    Size.Width = 320.000000000000000000
+    Size.Width = 298.000000000000000000
     Size.Height = 50.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
@@ -40,27 +40,27 @@ object Frame1: TFrame1
       Drawable.ItemDefault.Bitmap.Bitmap.PNG = {
         89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
         03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
-        0293494441545847CD985B52DB301486C33E28842CA079864597551468E1AD85
-        0C1D280F3030996601B9BBFF271F6792831CECF812FE19468A746EFE2C0BD99D
-        24490E96CBE5D7C562F14DFD5E670F222FF955479F7A3A7466B3D9E3603058CE
-        E7F35F1AEC9A6D2B221F79C94F1DD4D35185E70C6832D38D264ECCA75191877C
-        69DA24A10EEA09E88C5090557C2B8763F36D44C427CF3A10D5F15B4DBA84D4E9
-        EAEFC6195C37458CB8C4B75401841A886D2E1D0CA93C584946ECBE6E6246E87E
-        1D807EDFE502D03C8BEEDA11BB5253CBE2278EC50B228F11DB1E5F063DAE2478
-        4946ECA12A3123F4E008FD51536C1B9261B8A2BA88E11721F443DD72F1B8C75C
-        591A6645ECAFBA47665248D8E3E708B11FEDF610813C42ECA2E8AD34FF0B730D
-        225E51FF5C294ED708AD349D4E9FD56C25C6BCD9ADA4384F6A6A7968F2AE1862
-        5FCC64438C47EC2F2B13F222A0BFF2C964F2E60BE337E3661224BF97DA0BCAA4
-        F8471102DF95F090795A7EDB541084D4947A384ACB48BCA629538DC7E37F1A3F
-        A5B5A1A018C9C644224F64341A8DAD1B6404DB292813093D994C1A1FB55E5026
-        253EF38486C3E184713369574A7CB885146BACFD5BE7D71484AC1BD4EA9A2251
-        E4E9630D9D7972D8355E98118AED5321B1CDFB7D0AFB66F62925ACB2A33FE36F
-        26F54871633B39FFCBA2B786F1887DE1D3C58752BCD829E145CD2EA704E2543B
-        25280084FC79AAF07F7BECD689D98973F7F3941CA327CFB201B1C7CF9D3C39F3
-        973B79122842A8EE337AF17846E8DDDB8CBA95D602FEC471C4C8B3FD6DC608FD
-        F4844AA3CE117122C4F2DFFB8CD0BEDE90F976B179E11AFF5CDF12CCE0DD5717
-        752BADA18F447CF23810D4D1FB9CDFA734C197BCB08F58A58D12F2221F79ED0E
-        B10FF619E49B679F0AD5DFE737CF73EA4892E4E03FACEFA5552FA585D3000000
+        0293494441545847CD98D94EDB401486C37BB0843C00B92E0F5D9E02CA76D780
+        04A2ED05A855D43C4076F37FE3E328398C831D2FE197D04C66CEE6CFE361EC4E
+        922407CBE5F26CB1587C57BFD7D983C84B7ED5D1A79E0E9DD96CF66B30182CE7
+        F3F94F0D76CDB615918FBCE4A70EEAE9A8C20B063499E95E13A7E6D3A8C843BE
+        346D925007F504744628C82A7E90C389F93622E293671D88EA18A84997903A5D
+        FDDD3B83BBA6881197F8962A805003B1CDA5832195072BC9883DD54DCC083DAD
+        03D0EFC75C009A67D1DD3962D76A6A59FCC4B17841E43162DBE3CBA0C795042F
+        C988BD542566845E1CA16735C5B62119862BAA8B187E114237EA968BC73DE6CA
+        D2302B62BFD53D369342C21E3F4788FD68B78708E4116257456FA5F95F996B10
+        F18AFAE74A71BA4668A5E974FAAA662B31E6CD6E25C5F9A3A6968726EF8A2176
+        64261B623C62FFA332212F02FA2B9F4C26FF7C61FC66DC4C82E4F7567B419914
+        FF3842E052090F99A7E5B74D0541484DA987A3B48CC4DF3465AAF178FC5FE3DF
+        686D282846B23191C813198D4663EB0619C1760ACA44424F2693C647AD179449
+        89CF3DA1E1703861DC4CDA95121F6E21C51A6BFFD6F9350521EB06B5BAA64814
+        79FA5843E79E1C768D17668462FB54486CF37E9FC2BE997D4A09ABECE8AFF89B
+        493D52DCD84ECEFFB2E8AD613C625FF874F1A9142F764A7853B3CB298138D54E
+        090A00217F9E2AFCDF1EBB756276E2DCFD3C25C7E8C9B36C40ECF173274FCEFC
+        E54E9E048A10AAFB8C5E3C9E11FAF036A36EA5B5803F711C31F26C7F9B3142B7
+        9E5069D439224E8458FE7B9F11DAD71B32DF2E362F5CE35FEB5B82197CF8EAA2
+        6EA535F499884F1E07823A7A5FF3FB9426F89217F611ABB451425EE423AFDD21
+        F6C13E837CF3EC53A1FAFBFCE679411D49921CBC0310A6A3F651498023000000
         0049454E44AE426082}
       Drawable.ItemDefault.Bitmap.WrapMode = TileStretch
       Drawable.ItemDefault.Kind = Bitmap
@@ -76,7 +76,7 @@ object Frame1: TFrame1
       CaptureDragForm = True
       Weight = 1.000000000000000000
       HitTest = True
-      Size.Width = 220.000000000000000000
+      Size.Width = 198.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       Position.X = 50.000000000000000000
@@ -105,7 +105,7 @@ object Frame1: TFrame1
       Size.Width = 50.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 270.000000000000000000
+      Position.X = 248.000000000000000000
       TabOrder = 3
       OnClick = TextView1Click
       TextSettings.Color.Default = claWhite
@@ -123,515 +123,541 @@ object Frame1: TFrame1
   object VertScrollBox1: TVertScrollView
     Align = Client
     Gravity = None
-    Padding.Left = 8.000000000000000000
-    Padding.Top = 8.000000000000000000
-    Padding.Right = 8.000000000000000000
-    Padding.Bottom = 8.000000000000000000
-    Size.Width = 320.000000000000000000
-    Size.Height = 445.000000000000000000
+    Size.Width = 298.000000000000000000
+    Size.Height = 420.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
     DragScroll = True
     ShowScrollBars = False
     ScrollSmallChangeFraction = 10.000000000000000000
-    object ButtonView1: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claChocolate
-      Background.ItemDefault.Accessory.UseIcon = True
-      Background.ItemPressed.Color = claCrimson
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
+    object LinearLayout2: TLinearLayout
       WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
+      HeightSize = WrapContent
+      Gravity = None
+      Padding.Left = 8.000000000000000000
+      Padding.Top = 8.000000000000000000
+      Padding.Right = 8.000000000000000000
+      Padding.Bottom = 8.000000000000000000
+      Size.Width = 298.000000000000000000
+      Size.Height = 668.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 14
-      OnClick = ButtonView1Click
-      Text = 'GridsLayout Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      Drawable.SizeWidth = 22
-      Drawable.SizeHeight = 22
-      Drawable.ItemDefault.Kind = AccessoryBitmap
-      Drawable.ItemDefault.Accessory.Icon = Note
-      Drawable.ItemDefault.Accessory.UseIcon = True
-      ShowScrollBars = False
-    end
-    object ButtonView10: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claDeepskyblue
-      Background.ItemPressed.Color = claDarkorchid
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 44.000000000000000000
-      TabOrder = 7
-      OnClick = ButtonView10Click
-      Text = #36793#26639#33756#21333' Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
-    end
-    object ButtonView11: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claDeepskyblue
-      Background.ItemPressed.Color = claDarkorchid
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 88.000000000000000000
-      TabOrder = 4
-      OnClick = ButtonView11Click
-      Text = 'ImageView Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
-    end
-    object ButtonView12: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claDarkorchid
-      Background.ItemPressed.Color = claDarkcyan
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 132.000000000000000000
-      TabOrder = 11
-      OnClick = ButtonView12Click
-      Text = #20998#32452' ListView Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
-    end
-    object ButtonView13: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claDeepskyblue
-      Background.ItemPressed.Color = claDarkorchid
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 176.000000000000000000
-      TabOrder = 3
-      OnClick = ButtonView13Click
-      Text = 'ImageViewer Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
-    end
-    object ButtonView14: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claDeepskyblue
-      Background.ItemPressed.Color = claDarkorchid
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 220.000000000000000000
-      TabOrder = 2
-      OnClick = ButtonView14Click
-      Text = 'DBGridView Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
-    end
-    object ButtonView15: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claDeepskyblue
-      Background.ItemPressed.Color = claDarkorchid
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 264.000000000000000000
-      TabOrder = 1
-      OnClick = ButtonView15Click
-      Text = 'CameraViewer Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
-    end
-    object ButtonView2: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claDeepskyblue
-      Background.ItemPressed.Color = claDarkorchid
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 308.000000000000000000
-      TabOrder = 10
-      OnClick = ButtonView2Click
-      Text = #20061#23467#26684#32972#26223#22270
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
-    end
-    object ButtonView3: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claChocolate
-      Background.ItemPressed.Color = claCrimson
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 352.000000000000000000
-      TabOrder = 13
-      OnClick = ButtonView3Click
-      Text = 'Dialog Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
-    end
-    object ButtonView4: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claHotpink
-      Background.ItemPressed.Color = claDarkcyan
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 396.000000000000000000
-      TabOrder = 12
-      OnClick = ButtonView4Click
-      Text = #33258#23450#20041' ListView Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
-    end
-    object ButtonView5: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claFirebrick
-      Background.ItemPressed.Color = claDarkorchid
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 440.000000000000000000
       TabOrder = 0
-      OnClick = ButtonView5Click
-      Text = #22402#30452' ScrollView Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
-    end
-    object ButtonView6: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claDeepskyblue
-      Background.ItemPressed.Color = claDarkorchid
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 484.000000000000000000
-      TabOrder = 9
-      OnClick = ButtonView6Click
-      Text = 'ProgressView Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
-    end
-    object ButtonView7: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claDeepskyblue
-      Background.ItemPressed.Color = claDarkorchid
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 528.000000000000000000
-      TabOrder = 8
-      OnClick = ButtonView7Click
-      Text = #20998#26639#39029#38754' Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
-    end
-    object ButtonView8: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claDeepskyblue
-      Background.ItemPressed.Color = claDarkorchid
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 572.000000000000000000
-      TabOrder = 6
-      OnClick = ButtonView8Click
-      Text = 'RingView Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
-    end
-    object ButtonView9: TButtonView
-      Background.XRadius = 3.000000000000000000
-      Background.YRadius = 3.000000000000000000
-      Background.ItemDefault.Color = claDeepskyblue
-      Background.ItemPressed.Color = claDarkorchid
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Background.Border.Style = None
-      WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
-      Margins.Top = 8.000000000000000000
-      Size.Width = 288.000000000000000000
-      Size.Height = 36.000000000000000000
-      Size.PlatformDefault = False
-      Position.Y = 616.000000000000000000
-      TabOrder = 5
-      OnClick = ButtonView9Click
-      Text = 'MultiPathView Demo'
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Pressed = claWhitesmoke
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Checked = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 16.000000000000000000
-      TextSettings.Gravity = Center
-      ShowScrollBars = False
+      Orientation = Vertical
+      object ButtonView1: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claChocolate
+        Background.ItemDefault.Accessory.UseIcon = True
+        Background.ItemPressed.Color = claCrimson
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 8.000000000000000000
+        TabOrder = 14
+        OnClick = ButtonView1Click
+        Text = 'GridsLayout Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        Drawable.SizeWidth = 22
+        Drawable.SizeHeight = 22
+        Drawable.ItemDefault.Kind = AccessoryBitmap
+        Drawable.ItemDefault.Accessory.Icon = Note
+        Drawable.ItemDefault.Accessory.UseIcon = True
+        ShowScrollBars = False
+      end
+      object ButtonView10: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 52.000000000000000000
+        TabOrder = 7
+        OnClick = ButtonView10Click
+        Text = #36793#26639#33756#21333' Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView11: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 96.000000000000000000
+        TabOrder = 4
+        OnClick = ButtonView11Click
+        Text = 'ImageView Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView12: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDarkorchid
+        Background.ItemPressed.Color = claDarkcyan
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 140.000000000000000000
+        TabOrder = 11
+        OnClick = ButtonView12Click
+        Text = #20998#32452' ListView Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView13: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 184.000000000000000000
+        TabOrder = 3
+        OnClick = ButtonView13Click
+        Text = 'ImageViewer Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView14: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 228.000000000000000000
+        TabOrder = 2
+        OnClick = ButtonView14Click
+        Text = 'DBGridView Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView15: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 272.000000000000000000
+        TabOrder = 1
+        OnClick = ButtonView15Click
+        Text = 'CameraViewer Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView2: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 316.000000000000000000
+        TabOrder = 10
+        OnClick = ButtonView2Click
+        Text = #20061#23467#26684#32972#26223#22270
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView3: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claChocolate
+        Background.ItemPressed.Color = claCrimson
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 360.000000000000000000
+        TabOrder = 13
+        OnClick = ButtonView3Click
+        Text = 'Dialog Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView4: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claHotpink
+        Background.ItemPressed.Color = claDarkcyan
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 404.000000000000000000
+        TabOrder = 12
+        OnClick = ButtonView4Click
+        Text = #33258#23450#20041' ListView Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView5: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claFirebrick
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 448.000000000000000000
+        TabOrder = 0
+        OnClick = ButtonView5Click
+        Text = #22402#30452' ScrollView Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView6: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 492.000000000000000000
+        TabOrder = 9
+        OnClick = ButtonView6Click
+        Text = 'ProgressView Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView7: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 536.000000000000000000
+        TabOrder = 8
+        OnClick = ButtonView7Click
+        Text = #20998#26639#39029#38754' Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView8: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 580.000000000000000000
+        TabOrder = 6
+        OnClick = ButtonView8Click
+        Text = 'RingView Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView9: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claDeepskyblue
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 282.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 624.000000000000000000
+        TabOrder = 5
+        OnClick = ButtonView9Click
+        Text = 'MultiPathView Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
     end
   end
 end

@@ -2137,22 +2137,35 @@ end;
 
 procedure TScrollView.ContentAddObject(const AObject: TFmxObject);
 begin
+  if csDestroying in ComponentState then
+    Exit;
+  if FDisableAlign then
+    Exit;
   RealignContent;
 end;
 
 procedure TScrollView.ContentBeforeRemoveObject(AObject: TFmxObject);
 begin
-  RealignContent;
 end;
 
 procedure TScrollView.ContentInsertObject(Index: Integer;
   const AObject: TFmxObject);
 begin
+  if csDestroying in ComponentState then
+    Exit;
+  if FDisableAlign then
+    Exit;
   RealignContent;
 end;
 
 procedure TScrollView.ContentRemoveObject(const AObject: TFmxObject);
 begin
+  if csDestroying in ComponentState then
+    Exit;
+  if FDisableAlign then
+    Exit;
+  if IsUpdating then
+    Exit;
   RealignContent;
 end;
 
@@ -2983,11 +2996,14 @@ begin
     AScroll.Width := ScrollbarWidth;
     AScroll.Height := ScrollbarWidth;
   end else begin
-    {$IFDEF MSWINDOWS}
+    {$IFNDEF NEXTGEN}
     if not DragScroll then begin
       AScroll.Width := 16;
       AScroll.Height := 16;
     end;
+    {$ELSE}
+    AScroll.Width := 6;
+    AScroll.Height := 6;
     {$ENDIF}
   end;
 end;
@@ -5408,15 +5424,16 @@ procedure TVertScrollView.CheckMouseLeftState;
 begin
   {$IFNDEF NEXTGEN}
   // 检查鼠标左键是否松开
-  if DragScroll and (not FMouseEnter) then begin
+  if Assigned(Self) and DragScroll and (not FMouseEnter) then begin
     {$IFDEF MSWINDOWS}
     if GetAsyncKeyState(VK_LBUTTON) = 0 then
       MouseUp(TMouseButton.mbLeft, [], FMovePos.X, FMovePos.Y)
-    else
+    else if (not (csDestroying in ComponentState)) then
       TFrameAnimator.DelayExecute(Self,
         procedure(Sender: TObject)
         begin
-          CheckMouseLeftState;
+          if (not (csDestroying in ComponentState)) then
+            CheckMouseLeftState;
         end,
       0.05);
     {$ENDIF}
@@ -5492,9 +5509,9 @@ end;
 
 procedure TVertScrollView.DoAddObject(const AObject: TFmxObject);
 begin
-  if IsAddToContent(AObject) then
-    FContent.AddObject(AObject)
-  else
+  if IsAddToContent(AObject) then begin
+    FContent.AddObject(AObject);
+  end else
     inherited;
 end;
 
@@ -5632,9 +5649,7 @@ begin
     FDisablePaint := True;
 
     DoRealignContent();
-
     inherited DoRealign;
-
   finally
     FDisablePaint := LDisablePaint;
     FContent.Invalidate;
@@ -5773,8 +5788,8 @@ end;
 
 function TVertScrollView.GetScrollOffset: TPointF;
 begin
-  Result.Y := FOffsetScroll;
   Result.X := 0;
+  Result.Y := FOffsetScroll;
 end;
 
 procedure TVertScrollView.InitFooter;
@@ -5786,10 +5801,10 @@ begin
       FOnInitFooter(Self, FFooter);
     if not Assigned(FFooter) then
       FFooter := TListViewDefaultFooter.Create(Self);
+    FFooter.SetStateHint(TListViewState.None, '上拉加载更多');
     (FFooter as TControl).Parent := Self;
     (FFooter as TControl).Stored := False;
     (FFooter as TControl).Visible := False;
-    FFooter.SetStateHint(TListViewState.None, '上拉加载更多');
   end;
 end;
 
@@ -6143,7 +6158,7 @@ end;
 
 function TViewScrollContent.ObjectAtPoint(P: TPointF): IControl;
 begin
-  Result := inherited ObjectAtPoint(P);
+  Result := inherited ObjectAtPoint(P)
 //  if Result <> nil then
 //  begin
 //    if FScene <> nil then

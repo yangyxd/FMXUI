@@ -271,6 +271,7 @@ begin
   CreateDestroyer;
 
   Animation := TDelayExecute.Create(nil);
+
   FDestroyer.Add(Animation, AOnFinish);
   Animation.Parent := Owner;
   Animation.AnimationType := TAnimationType.In;
@@ -312,7 +313,7 @@ begin
     Exit;
   Item.OnFinishA := AOnFinish;
   Item.OnFinish := nil;
-  FOnFinishs.Add(Sender.GetHashCode, Item);
+  FOnFinishs.AddOrSetValue(Sender.GetHashCode, Item);
 end;
 
 constructor TFrameAnimator.TAnimationDestroyer.Create;

@@ -79,6 +79,8 @@ object FrameVertScrollView: TFrameVertScrollView
     OnPullRefresh = VertScrollView1PullRefresh
     OnPullLoad = VertScrollView1PullLoad
     object LinearLayout2: TLinearLayout
+      Background.ItemDefault.Color = claThistle
+      Background.ItemDefault.Kind = Solid
       WidthSize = FillParent
       HeightSize = WrapContent
       Gravity = None

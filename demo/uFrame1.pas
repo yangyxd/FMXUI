@@ -14,6 +14,7 @@ type
     tvTitle: TTextView;
     VertScrollBox1: TVertScrollView;
     TextView1: TTextView;
+    LinearLayout2: TLinearLayout;
     ButtonView1: TButtonView;
     ButtonView10: TButtonView;
     ButtonView11: TButtonView;
