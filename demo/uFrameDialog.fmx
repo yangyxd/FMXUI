@@ -69,7 +69,7 @@ object FrmaeDialog: TFrmaeDialog
     Size.Height = 583.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
-    Viewport.Width = 320.000000000000000000
+    Viewport.Width = 304.000000000000000000
     Viewport.Height = 583.000000000000000000
     object LinearLayout2: TLinearLayout
       Align = Top
@@ -81,8 +81,8 @@ object FrmaeDialog: TFrmaeDialog
       Padding.Top = 12.000000000000000000
       Padding.Right = 12.000000000000000000
       Padding.Bottom = 12.000000000000000000
-      Size.Width = 320.000000000000000000
-      Size.Height = 50.000000000000000000
+      Size.Width = 304.000000000000000000
+      Size.Height = 600.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
       Orientation = Vertical
@@ -100,7 +100,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -124,7 +124,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -148,7 +148,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -172,7 +172,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -196,7 +196,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -220,7 +220,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -245,7 +245,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -271,7 +271,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -298,7 +298,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -322,7 +322,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -346,7 +346,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -371,7 +371,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -397,7 +397,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
@@ -421,7 +421,7 @@ object FrmaeDialog: TFrmaeDialog
         Padding.Right = 4.000000000000000000
         Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
-        Size.Width = 296.000000000000000000
+        Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000

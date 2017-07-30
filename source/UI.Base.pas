@@ -3925,9 +3925,11 @@ begin
   if FMaxHeight > 0 then
     Result := FMaxHeight
   else begin
-    if Assigned(ParentView) then
-      Result := TView(Parent).GetParentMaxHeight - Margins.Top - Margins.Bottom
-    else begin
+    if Assigned(ParentView) then begin
+      Result := TView(Parent).GetParentMaxHeight;
+      if Result > 0 then
+        Result := Result - Margins.Top - Margins.Bottom
+    end else begin
       Result := 0;
 //      if HeightSize = TViewSize.WrapContent then begin
 //        if (not (csDesigning in ComponentState)) and (Parent is TControl) then
@@ -3945,9 +3947,11 @@ begin
   if FMaxWidth > 0 then
     Result := FMaxWidth
   else begin
-    if Assigned(ParentView) then
-      Result := TView(Parent).GetParentMaxWidth - Margins.Left - Margins.Right
-    else
+    if Assigned(ParentView) then begin
+      Result := TView(Parent).GetParentMaxWidth;
+      if Result > 0 then
+        Result := Result - Margins.Left - Margins.Right
+    end else
       Result := 0;
   end;
 end;

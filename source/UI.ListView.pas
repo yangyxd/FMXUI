@@ -1001,10 +1001,10 @@ begin
         DoColumnCountChange(I);
     end;
 
-    if (HeightSize = TViewSize.WrapContent) and (Height > FContentViews.Height) then begin
+    if (HeightSize = TViewSize.WrapContent) and (FContentViews.FViewBottom > 0) and (Height <> FContentViews.FViewBottom) then begin
       FDisableAlign := True;
       BeginUpdate;
-      SetSize(Width, FContentViews.Height + Padding.Top + Padding.Bottom);
+      SetSize(Width, FContentViews.FViewBottom + Padding.Top + Padding.Bottom);
       EndUpdate;
       FDisableAlign := False;
     end;

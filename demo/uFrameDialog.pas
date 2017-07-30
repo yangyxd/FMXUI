@@ -273,6 +273,7 @@ end;
 procedure TFrmaeDialog.ButtonView9Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
+    .SetTitle('多列列表')
     .SetItems(['列表项 - 1', '列表项 - 2', '列表项 - 3', '列表项 - 4', '列表项 - 5'],
       procedure (Dialog: IDialog; Which: Integer) begin
         Hint(Dialog.Builder.ItemArray[Which]);
@@ -281,7 +282,7 @@ begin
     .SetOnInitListAdapterA(
       procedure (Dialog: IDialog; Builder: TDialogBuilder; var Adapter: IListAdapter)
       begin
-        TDialogView(Dialog.ViewRoot).ListView.ColumnCount := 2;
+        TDialogView(Dialog.ViewRoot).ListView.ColumnCount := 3;
       end
     )
     .Show;

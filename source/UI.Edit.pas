@@ -21,7 +21,7 @@ uses
   System.Math, System.Actions, System.Rtti, FMX.Consts,
   System.TypInfo, System.SysUtils, System.Character, System.RTLConsts,
   FMX.Graphics, System.Generics.Collections, FMX.TextLayout,
-  System.Classes, System.Types, System.UITypes, System.Math.Vectors,
+  System.Classes, System.Types, System.UITypes, System.Math.Vectors, System.Analytics,
   FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls;
 
 type
@@ -270,6 +270,7 @@ type
   protected
     function GetText: string; override;
     procedure SetText(const Value: string); override;
+    function ParentFrame: TFrame;
     { Messages From Model}
     procedure MMSelLenghtChanged(var AMessage: TDispatchMessageWithValue<Integer>); message MM_EDIT_SELLENGTH_CHANGED;
     procedure MMSelStartChanged(var AMessage: TDispatchMessageWithValue<Integer>); message MM_EDIT_SELSTART_CHANGED;
@@ -2524,6 +2525,21 @@ begin
     FTextService.EndSelection;
   SelectionMode := TSelectionMode.None;
   UpdateSelectionPointPositions;
+end;
+
+function TCustomEditView.ParentFrame: TFrame;
+var
+  P: TFmxObject;
+begin
+  Result := nil;
+  P := Self;
+  while P <> nil do begin
+    if P is TFrame then begin
+      Result := P as TFrame;
+      Break;
+    end else
+      P := P.Parent;
+  end;
 end;
 
 procedure TCustomEditView.PasteFromClipboard;

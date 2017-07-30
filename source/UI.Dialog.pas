@@ -2916,7 +2916,7 @@ begin
   FMsgBody.Parent := FLayBubble;
   FMsgBody.ClipChildren := True;
   FMsgBody.Weight := 1;
-  FMsgBody.MinHeight := 52;
+  FMsgBody.MinHeight := 24;
   FMsgBody.WidthSize := TViewSize.FillParent;
   FMsgBody.HeightSize := TViewSize.WrapContent;
   FMsgBody.Orientation := TOrientation.Vertical;

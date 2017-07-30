@@ -6512,7 +6512,7 @@ end;
 
 procedure TDBGridView.DoFilterDataChange(Item: TGridColumnItem);
 var
-  I: Integer;
+  I, J: Integer;
   DataSet: TDataSet;
   FilterValue: TStringBuilder;
 begin
@@ -6540,6 +6540,7 @@ begin
     end;
 
   finally
+    J := Dataset.RecordCount;
     if FilterValue.Length > 0 then begin
       Dataset.Filter := FilterValue.ToString;
       DataSet.Filtered := True;
@@ -6548,6 +6549,8 @@ begin
       Dataset.Filter := '';
     end;
     FreeAndNil(FilterValue);
+    if J = DataSet.RecordCount then
+      NotifyDataChanged;
   end;
 end;
 
