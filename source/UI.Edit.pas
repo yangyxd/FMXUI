@@ -14,6 +14,10 @@ uses
   UI.Base, UI.Standard,
   {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
   FMX.KeyMapping,
+  {$IFDEF ANDROID}
+  FMX.VirtualKeyboard,
+  FMX.VirtualKeyboard.Android,
+  {$ENDIF}
   FMX.BehaviorManager, FMX.Forms, System.Messaging,
   FMX.Menus, FMX.Presentation.Messages, FMX.Controls.Presentation,
   FMX.Text, FMX.Edit, FMX.Edit.Style, FMX.Controls.Model, FMX.MagnifierGlass,
@@ -184,6 +188,9 @@ type
     FFirstVisibleChar: Integer;
     FInvisibleTextWidth: Single;
     FContentRect: TRectF;
+    {$IFDEF ANDROID}
+    FVKState: PByte;
+    {$ENDIF}
     { Selection }
     FLeftSelPt: TSelectionPoint;
     FRightSelPt: TSelectionPoint;
@@ -232,7 +239,9 @@ type
     function ITextInput.GetSelectionRect = GetSelRect;
     function GetSelectionBounds: TRect;
     function HasText: Boolean;
-
+    {$IFDEF ANDROID}
+    procedure UpdateAndroidKeyboardServiceState;
+    {$ENDIF}
     function GetMaxLength: Integer;
     function GetPassword: Boolean;
     function GetReadOnly: Boolean;
@@ -1276,6 +1285,10 @@ begin
       TLinkObservers.ControlValueUpdate(Observers);
     inherited DoExit;
     UpdateSelectionPointPositions;
+    {$IFDEF ANDROID}
+    UpdateAndroidKeyboardServiceState;
+    Self.FocusToNext;
+    {$ENDIF}
   end else
     inherited DoExit;
 end;
@@ -1847,6 +1860,36 @@ function TCustomEditView.GetSelLength: Integer;
 begin
   Result := Abs(Model.SelLength);
 end;
+
+{$IFDEF ANDROID}
+procedure TCustomEditView.UpdateAndroidKeyboardServiceState;
+var
+  ASvc: IFMXVirtualKeyboardService;
+  AContext: TRttiContext;
+  AType: TRttiType;
+  AField: TRttiField;
+  AInst: TVirtualKeyboardAndroid;
+begin
+  if not Assigned(FVKState) then begin
+    if (not Assigned(Screen.FocusControl)) and
+      TPlatformServices.Current.SupportsPlatformService
+      (IFMXVirtualKeyboardService, ASvc) then
+    begin
+      AInst := ASvc as TVirtualKeyboardAndroid;
+      AContext := TRttiContext.Create;
+      AType := AContext.GetType(TVirtualKeyboardAndroid);
+      AField := AType.GetField('FState');
+      if AField.GetValue(AInst).AsOrdinal <> 0 then
+      begin
+        FVKState := PByte(AInst);
+        Inc(FVKState, AField.Offset);
+      end;
+    end;
+  end;
+  if Assigned(FVKState) and (FVKState^ <> 0) then
+    FVKState^ := 0;
+end;
+{$ENDIF}
 
 function TCustomEditView.GetSelRect: TRectF;
 var

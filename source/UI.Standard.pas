@@ -5560,6 +5560,7 @@ begin
   if Assigned(FFooter) then begin
     if FState = TListViewState.PullUpComplete then
       Exit;
+
     FFooter.DoUpdateState(TListViewState.PullUpComplete, 0);
 
     // 加载完成，回弹
@@ -5576,58 +5577,44 @@ begin
 
             FContentBounds.Bottom := FContentBounds.Bottom - H;
             DoUpdateScrollingLimits(True, 0);
-
-            // 延时还原
-            TFrameAnimator.DelayExecute(Self,
-              procedure (Sender: TObject)
-              begin
-                FHeader.DoUpdateState(TListViewState.None, 0);
-                FState := TListViewState.None;
-              end, 0.6);
-
+            FHeader.DoUpdateState(TListViewState.None, 0);
+            FState := TListViewState.None;
           end;
         except
         end;
       end
-    , 0.5);
+    , 0.3);
   end;
 end;
 
 procedure TVertScrollView.DoPullRefreshComplete;
+var
+  H: Single;
 begin
   if Assigned(FHeader) then begin
     if FState = TListViewState.PullDownComplete then
       Exit;
 
-    FOffsetScroll := 0;
     FHeader.DoUpdateState(TListViewState.PullDownComplete, 0);
+    FOffsetScroll := 0;
+    H := 0;
+    if Assigned(FHeader) then
+      H := (FHeader as TControl).Height;
+    if H > 0 then begin
+      FContentBounds.Bottom := FContentBounds.Bottom - H;
+      DoUpdateScrollingLimits(True, 0);
+      FLastScrollValue := FLastScrollValue - H;
+      VScrollBarValue := VScrollBarValue - H;
+    end;
 
     // 刷新完成，回弹
     TFrameAnimator.DelayExecute(Self,
       procedure (Sender: TObject)
-      var
-        H: Single;
       begin
         try
           if (FState = TListViewState.PullDownFinish) then begin
-            H := 0;
-            if Assigned(FHeader) then
-              H := (FHeader as TControl).Height;
-            if H > 0 then begin
-              FContentBounds.Bottom := FContentBounds.Bottom - H;
-              DoUpdateScrollingLimits(True, 0);
-              FLastScrollValue := FLastScrollValue - H;
-              VScrollBarValue := VScrollBarValue - H;
-
-              // 延时还原
-              TFrameAnimator.DelayExecute(Self,
-                procedure (Sender: TObject)
-                begin
-                  FHeader.DoUpdateState(TListViewState.None, 0);
-                  FState := TListViewState.None;
-                end, 0.6);
-
-            end;
+            FHeader.DoUpdateState(TListViewState.None, 0);
+            FState := TListViewState.None;
           end;
         except
         end;
@@ -5639,6 +5626,7 @@ end;
 procedure TVertScrollView.DoRealign;
 var
   LDisablePaint: Boolean;
+  LDisableAlign: Boolean;
 begin
   if FDisableAlign or IsUpdating or (not Assigned(FContent)) then
     Exit;
@@ -5648,8 +5636,14 @@ begin
   try
     FDisablePaint := True;
 
-    DoRealignContent();
     inherited DoRealign;
+    DoRealignContent();
+    if Assigned(FAniCalculations) then begin
+      LDisableAlign := FDisableAlign;
+      FDisableAlign := True;
+      RealignContent;
+      FDisableAlign := LDisableAlign;
+    end;
   finally
     FDisablePaint := LDisablePaint;
     FContent.Invalidate;
@@ -5669,9 +5663,10 @@ begin
   W := Width - Padding.Right - Padding.Left;
   {$ENDIF}
 
-  if Assigned(FContent) then
+  if Assigned(FContent) then begin
     FContent.SetBounds(Padding.Left, Padding.Top - VScrollBarValue, W,
       Height - Padding.Bottom - Padding.Top);
+  end;
 end;
 
 procedure TVertScrollView.DoSetDefaulatScrollBars;
@@ -5859,7 +5854,6 @@ end;
 procedure TVertScrollView.Loaded;
 begin
   inherited Loaded;
-  FContent.Loaded;
   RealignContent;
 end;
 

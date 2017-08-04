@@ -28,7 +28,8 @@ uses
   uFrameImageViewer in 'uFrameImageViewer.pas' {FrameImageViewer: TFrame},
   uFrameGridView in 'uFrameGridView.pas' {FrameGridView: TFrame},
   uFrameCameraViewer in 'uFrameCameraViewer.pas' {FrameCameraViewer: TFrame},
-  uFrameVertScrollView in 'uFrameVertScrollView.pas' {FrameVertScrollView: TFrame};
+  uFrameVertScrollView in 'uFrameVertScrollView.pas' {FrameVertScrollView: TFrame},
+  uFrameHorzScrollView in 'uFrameHorzScrollView.pas' {FrameHorzScrollView: TFrame};
 
 {$R *.res}
 

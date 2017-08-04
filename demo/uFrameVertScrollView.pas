@@ -16,10 +16,7 @@ type
     ButtonView2: TButtonView;
     ButtonView3: TButtonView;
     ButtonView4: TButtonView;
-    ButtonView5: TButtonView;
-    ButtonView6: TButtonView;
     ButtonView7: TButtonView;
-    ButtonView8: TButtonView;
     ButtonView9: TButtonView;
     ButtonView10: TButtonView;
     ButtonView11: TButtonView;

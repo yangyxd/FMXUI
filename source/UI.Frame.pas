@@ -777,6 +777,8 @@ end;
 
 procedure TFrameView.OnFinishOrClose(Sender: TObject);
 begin
+  if not Assigned(Self) then
+    Exit;
   FNeedFinish := False;
   if FNeedHide then
     InternalHide;
@@ -939,6 +941,8 @@ var
   V: TFmxObject;
 begin
   Result := nil;
+  if not Assigned(Self) then
+    Exit;
   V := Parent;
   while Assigned(V) do begin
     if V is TCustomForm then begin
@@ -2005,21 +2009,24 @@ var
   Ctrl: TControl;
   I: Integer;
 begin
-  for I := 0 to Self.ChildrenCount - 1 do begin
-    Item := Children.Items[I];
-    if (Item is TControl) then begin
-      Ctrl := Item as TControl;
-      if (Ctrl.Visible) and (Ctrl.Enabled) and (Ctrl.CanFocus) then begin
-        LControl := Root.NewFocusedControl(Ctrl);
-        if LControl <> nil then begin
-          Root.SetFocused(LControl);
-          Break;
+  try
+    for I := 0 to Self.ChildrenCount - 1 do begin
+      Item := Children.Items[I];
+      if (Item is TControl) then begin
+        Ctrl := Item as TControl;
+        if (Ctrl.Visible) and (Ctrl.Enabled) and (Ctrl.CanFocus) then begin
+          LControl := Root.NewFocusedControl(Ctrl);
+          if LControl <> nil then begin
+            Root.SetFocused(LControl);
+            Break;
+          end;
+        end else if Ctrl.ControlsCount > 0 then begin
+          if Ctrl.SetFocusObject(Ctrl) then
+            Break;
         end;
-      end else if Ctrl.ControlsCount > 0 then begin
-        if Ctrl.SetFocusObject(Ctrl) then
-          Break;
       end;
     end;
+  except
   end;
 end;
 

@@ -1,6 +1,6 @@
 object FrameVertScrollView: TFrameVertScrollView
   Size.Width = 399.000000000000000000
-  Size.Height = 563.000000000000000000
+  Size.Height = 556.000000000000000000
   Size.PlatformDefault = False
   object LinearLayout1: TLinearLayout
     Align = Top
@@ -70,12 +70,11 @@ object FrameVertScrollView: TFrameVertScrollView
     Align = Client
     Gravity = None
     Size.Width = 399.000000000000000000
-    Size.Height = 513.000000000000000000
+    Size.Height = 506.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
     DragScroll = True
     EnablePullRefresh = True
-    EnablePullLoad = True
     OnPullRefresh = VertScrollView1PullRefresh
     OnPullLoad = VertScrollView1PullLoad
     object LinearLayout2: TLinearLayout
@@ -88,7 +87,7 @@ object FrameVertScrollView: TFrameVertScrollView
       Padding.Top = 8.000000000000000000
       Padding.Right = 8.000000000000000000
       Size.Width = 383.000000000000000000
-      Size.Height = 1123.000000000000000000
+      Size.Height = 973.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
       Orientation = Vertical
@@ -104,7 +103,7 @@ object FrameVertScrollView: TFrameVertScrollView
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 8.000000000000000000
-        TabOrder = 14
+        TabOrder = 11
         Text = 'ButtonView1'
         TextSettings.Gravity = Center
       end
@@ -136,40 +135,8 @@ object FrameVertScrollView: TFrameVertScrollView
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 108.000000000000000000
-        TabOrder = 13
+        TabOrder = 10
         Text = 'ButtonView3'
-        TextSettings.Gravity = Center
-      end
-      object ButtonView5: TButtonView
-        WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
-        Margins.Bottom = 8.000000000000000000
-        Size.Width = 367.000000000000000000
-        Size.Height = 42.000000000000000000
-        Size.PlatformDefault = False
-        Position.X = 8.000000000000000000
-        Position.Y = 158.000000000000000000
-        TabOrder = 12
-        Text = 'ButtonView4'
-        TextSettings.Gravity = Center
-      end
-      object ButtonView6: TButtonView
-        WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
-        Margins.Bottom = 8.000000000000000000
-        Size.Width = 367.000000000000000000
-        Size.Height = 42.000000000000000000
-        Size.PlatformDefault = False
-        Position.X = 8.000000000000000000
-        Position.Y = 208.000000000000000000
-        TabOrder = 11
-        Text = 'ButtonView5'
         TextSettings.Gravity = Center
       end
       object ButtonView7: TButtonView
@@ -183,25 +150,9 @@ object FrameVertScrollView: TFrameVertScrollView
         Size.Height = 42.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 258.000000000000000000
-        TabOrder = 10
-        Text = 'ButtonView6'
-        TextSettings.Gravity = Center
-      end
-      object ButtonView8: TButtonView
-        WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
-        Margins.Bottom = 8.000000000000000000
-        Size.Width = 367.000000000000000000
-        Size.Height = 42.000000000000000000
-        Size.PlatformDefault = False
-        Position.X = 8.000000000000000000
-        Position.Y = 308.000000000000000000
+        Position.Y = 158.000000000000000000
         TabOrder = 9
-        Text = 'ButtonView7'
+        Text = 'ButtonView6'
         TextSettings.Gravity = Center
       end
       object ButtonView9: TButtonView
@@ -215,7 +166,7 @@ object FrameVertScrollView: TFrameVertScrollView
         Size.Height = 42.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 358.000000000000000000
+        Position.Y = 208.000000000000000000
         TabOrder = 8
         Text = 'ButtonView8'
         TextSettings.Gravity = Center
@@ -231,7 +182,7 @@ object FrameVertScrollView: TFrameVertScrollView
         Size.Height = 42.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 408.000000000000000000
+        Position.Y = 258.000000000000000000
         TabOrder = 6
         Text = 'ButtonView9'
         TextSettings.Gravity = Center
@@ -247,7 +198,7 @@ object FrameVertScrollView: TFrameVertScrollView
         Size.Height = 42.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 458.000000000000000000
+        Position.Y = 308.000000000000000000
         TabOrder = 5
         Text = 'ButtonView10'
         TextSettings.Gravity = Center
@@ -263,7 +214,7 @@ object FrameVertScrollView: TFrameVertScrollView
         Size.Height = 42.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 508.000000000000000000
+        Position.Y = 358.000000000000000000
         TabOrder = 4
         Text = 'ButtonView11'
         TextSettings.Gravity = Center
@@ -280,7 +231,7 @@ object FrameVertScrollView: TFrameVertScrollView
         Size.Height = 104.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 558.000000000000000000
+        Position.Y = 408.000000000000000000
         TabOrder = 1
         DragScroll = True
         Text = 
@@ -342,8 +293,8 @@ object FrameVertScrollView: TFrameVertScrollView
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 735.000000000000000000
-        TabOrder = 18
+        Position.Y = 585.000000000000000000
+        TabOrder = 15
         Text = #25353#38062
         TextSettings.Color.Default = claWhite
         TextSettings.Color.Pressed = claWhitesmoke
@@ -370,7 +321,7 @@ object FrameVertScrollView: TFrameVertScrollView
         Size.Height = 257.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
-        Position.Y = 771.000000000000000000
+        Position.Y = 621.000000000000000000
         TabOrder = 3
         DragScroll = True
         Text = 
@@ -388,7 +339,7 @@ object FrameVertScrollView: TFrameVertScrollView
         Margins.Top = 10.000000000000000000
         Margins.Bottom = 10.000000000000000000
         Position.X = 8.000000000000000000
-        Position.Y = 1038.000000000000000000
+        Position.Y = 888.000000000000000000
         Size.Width = 225.000000000000000000
         Size.Height = 75.000000000000000000
         Size.PlatformDefault = False
