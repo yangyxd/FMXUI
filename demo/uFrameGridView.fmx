@@ -1,6 +1,6 @@
 object FrameGridView: TFrameGridView
-  Size.Width = 376.000000000000000000
-  Size.Height = 656.000000000000000000
+  Size.Width = 423.000000000000000000
+  Size.Height = 616.000000000000000000
   Size.PlatformDefault = False
   object GridView1: TStringGridView
     Align = Client
@@ -22,8 +22,8 @@ object FrameGridView: TFrameGridView
     Background.ItemPressed.Kind = Solid
     Gravity = None
     Margins.Top = 4.000000000000000000
-    Size.Width = 376.000000000000000000
-    Size.Height = 345.000000000000000000
+    Size.Width = 423.000000000000000000
+    Size.Height = 356.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 14
     Divider = x3FE3E4E5
@@ -69,14 +69,14 @@ object FrameGridView: TFrameGridView
       end
       item
         Color = x7FECE8E8
-        Offset = 0.838509321212768500
+        Offset = 0.838509321212768600
       end
       item
         Color = claWhite
         Offset = 1.000000000000000000
       end>
     FixedSettings.Brush.ItemDefault.Gradient.StartPosition.X = 1.000000000000000000
-    FixedSettings.Brush.ItemDefault.Gradient.StartPosition.Y = 0.733153879642486500
+    FixedSettings.Brush.ItemDefault.Gradient.StartPosition.Y = 0.733153879642486600
     FixedSettings.Brush.ItemDefault.Gradient.StopPosition.Y = 0.266846120357513400
     FixedSettings.ColCount = 2
     FixedSettings.RowCount = 2
@@ -102,7 +102,7 @@ object FrameGridView: TFrameGridView
     Background.ItemDefault.Color = claPurple
     Background.ItemDefault.Kind = Solid
     Gravity = None
-    Size.Width = 376.000000000000000000
+    Size.Width = 423.000000000000000000
     Size.Height = 50.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
@@ -144,7 +144,7 @@ object FrameGridView: TFrameGridView
       Background.Border.Color.Enabled = claNull
       Weight = 1.000000000000000000
       Margins.Right = 50.000000000000000000
-      Size.Width = 276.000000000000000000
+      Size.Width = 323.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       Position.X = 50.000000000000000000
@@ -164,22 +164,23 @@ object FrameGridView: TFrameGridView
     Background.ItemPressed.Color = xFFD9D9D9
     Background.ItemPressed.Kind = Solid
     Gravity = None
-    Size.Width = 376.000000000000000000
-    Size.Height = 233.000000000000000000
+    Size.Width = 423.000000000000000000
+    Size.Height = 182.000000000000000000
     Size.PlatformDefault = False
-    Position.Y = 423.000000000000000000
+    Position.Y = 434.000000000000000000
     TabOrder = 15
     ScrollBars = Both
     ReadOnly = False
-    Options = [gvEditing, gvIndicator, gvRowIndex, gvColLines, gvRowLines, gvTwoColor, gvCancelOnExit, gvEscCancelEdit, gvColumnBestWidth, gvColumnResize, gvColumnMove, gvFixedFooter]
+    Options = [gvEditing, gvIndicator, gvRowIndex, gvColLines, gvRowLines, gvRowSelect, gvCancelOnExit, gvEscCancelEdit, gvColumnBestWidth, gvColumnResize, gvColumnMove, gvFixedFooter]
     ColumnsSettings.ColumnsData = 
-      '{"RowsCount":1,"ColsCount":3,"Item_0_0":{"Width":159,"ColIndex":' +
+      '{"RowsCount":1,"ColsCount":3,"Item_0_0":{"Width":202,"ColIndex":' +
       '0,"Gravity":5,"Padding":[3,3,3,3],"Locked":true,"DataFilter":tru' +
       'e,"Title":"Name","FieldName":"Name"},"Item_1_0":{"Width":102,"We' +
       'ight":0.800000011920929,"ColIndex":1,"Gravity":5,"Padding":[3,3,' +
-      '3,3],"DataFilter":true,"Title":"Title","FieldName":"Title"},"Ite' +
-      'm_2_0":{"Width":427,"Weight":1,"ColIndex":2,"Gravity":8,"Padding' +
-      '":[3,3,3,3],"Title":"Total","FieldName":"Total"}}'
+      '3,3],"DataFilter":true,"Visible":false,"Title":"Title","FieldNam' +
+      'e":"Title"},"Item_2_0":{"Width":427,"Weight":1,"ColIndex":2,"Gra' +
+      'vity":8,"Padding":[3,3,3,3],"Title":"Total","FieldName":"Total"}' +
+      '}'
     FixedSettings.Brush.ItemDefault.Kind = Gradient
     FixedSettings.Brush.ItemDefault.Gradient.Points = <
       item
@@ -207,7 +208,7 @@ object FrameGridView: TFrameGridView
     HeightSize = WrapContent
     Gravity = None
     Margins.Top = 2.000000000000000000
-    Size.Width = 376.000000000000000000
+    Size.Width = 423.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
     Position.Y = 52.000000000000000000
@@ -219,7 +220,7 @@ object FrameGridView: TFrameGridView
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
-      Size.Width = 75.199996948242190000
+      Size.Width = 84.599998474121090000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 10
@@ -233,10 +234,10 @@ object FrameGridView: TFrameGridView
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
-      Size.Width = 75.199996948242190000
+      Size.Width = 84.599998474121090000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 75.199996948242190000
+      Position.X = 84.599998474121090000
       TabOrder = 16
       OnClick = ButtonView3Click
       Text = #20462#25913#34892#25968
@@ -248,10 +249,10 @@ object FrameGridView: TFrameGridView
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
-      Size.Width = 75.200004577636720000
+      Size.Width = 84.599998474121090000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 150.399993896484400000
+      Position.X = 169.199996948242200000
       TabOrder = 11
       OnClick = ButtonView4Click
       Text = #20462#25913#21015#25968
@@ -263,10 +264,10 @@ object FrameGridView: TFrameGridView
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
-      Size.Width = 75.200004577636720000
+      Size.Width = 84.599998474121090000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 225.600006103515600000
+      Position.X = 253.799987792968800000
       TabOrder = 12
       OnClick = ButtonView2Click
       Text = #21462#28040#36873#20013
@@ -278,10 +279,10 @@ object FrameGridView: TFrameGridView
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
-      Size.Width = 75.200012207031240000
+      Size.Width = 84.600006103515630000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 300.799987792968800000
+      Position.X = 338.399993896484400000
       TabOrder = 13
       OnClick = ButtonView1Click
       Text = #28165#31354#34920#26684

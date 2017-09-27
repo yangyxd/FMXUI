@@ -889,7 +889,7 @@ type
     function GetCellBrush: TGridViewCellBrush;
     procedure SetCellBrush(const Value: TGridViewCellBrush);
     procedure SetOptions(const Value: TGridOptions);
-    function GetFixedIndicatorWidth: Single;
+    function GetFixedIndicatorWidth: Single;  // 计算固定列宽度
     procedure SetTextRowIndex(const Value: string);
     procedure SetSelectionAnchor(const Value: Integer);
     function GetSelectIndex: Integer;
@@ -2583,6 +2583,12 @@ begin
     end else
       FLastFixedIndicatorWidth := FLastFixedIndicatorWidth + Item.Padding.Left + Item.Padding.Right;
 
+    if gvFixedFooter in FOptions then begin
+      if FFixedSetting.FFooterText <> '' then
+        FLastFixedIndicatorWidth := Max(FLastFixedIndicatorWidth,
+          FFixedText.CalcTextWidth(FFixedSetting.FFooterText, Scene.GetSceneScale) + Item.Padding.Left + Item.Padding.Right);
+    end;
+
     FLastFixedIndicatorWidth := Max(8, FLastFixedIndicatorWidth);
     Item.FWidth := FLastFixedIndicatorWidth;
   end;
@@ -3781,7 +3787,7 @@ begin
   if ACol < 0 then Exit;  
 
   Item := FColumnsList[ACol];
-  if not Assigned(Item) then
+  if (not Assigned(Item)) then
     Exit;
     
   LExistAdapter := Assigned(FAdapter);
@@ -3896,7 +3902,7 @@ begin
           
           FGridRes.Drawable.Draw(Canvas, GetIconDrawRect(Item, R, CSelectIconSize, CSelectIconSize), 0, 0, [], LOpacity * Item.Opacity);
         end;
-      RadioButton:
+      RadioButton: // 画单选按钮
         begin
           if LExistAdapter then
             B := ARow = FAdapter.ItemIndex
@@ -4143,6 +4149,8 @@ begin
   // 画竖线
   if LS.ShowColLine and (LS.DividerH > 0) then begin
     LS.Top := FViewTop;
+    if LS.Top > 0 then
+      LS.Top := 0;
     LS.Bottom := FViewBottom;
 
     V := LS.XOffset;
