@@ -1302,10 +1302,14 @@ type
     procedure SetColCount(const Value: Integer);
     procedure SetShowColIndex(const Value: Boolean);
     function GetShowColIndex: Boolean;
+    function GetFixedCells(const ACol, ARow: Integer): string;
+    procedure SetFixedCells(const ACol, ARow: Integer; const Value: string);
   protected
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    property FixedCells[const ACol, ARow: Integer]: string read GetFixedCells write SetFixedCells;
   published
     property ColCount: Integer read GetColCount write SetColCount default 5;
     property RowCount: Integer read GetRowCount write SetRowCount default 5;
@@ -1519,6 +1523,7 @@ type
   TStringGridAdapter = class(TGridAdapterBase)
   private
     FData: TDictionary<Int64, string>;
+    FFixedData: TDictionary<Int64, string>;
     FRowCount: Integer;
   protected
     procedure DoInitData; override;
@@ -1528,6 +1533,9 @@ type
 
     function GetCellData(const ACol, ARow: Integer): Pointer; override;
     procedure SetCellData(const ACol, ARow: Integer; const Value: Pointer); override;
+
+    function GetFixedCells(const ACol, ARow: Integer): string; override;
+    procedure SetFixedCells(const ACol, ARow: Integer; const Value: string); override;
 
     function GetCells(const ACol, ARow: Integer): string; override;
     procedure SetCells(const ACol, ARow: Integer; const Value: string); override;
@@ -1544,6 +1552,7 @@ type
   private
     FFieldMap: TIntHash;
     FData: TDictionary<Int64, string>;
+    FFixedData: TDictionary<Int64, string>;
     FEditMap: TList<TGridCell>;
     FRowCount: Integer;
     FIsOutDataRow: Boolean;
@@ -1563,6 +1572,9 @@ type
 
     function GetCellData(const ACol, ARow: Integer): Pointer; override;
     procedure SetCellData(const ACol, ARow: Integer; const Value: Pointer); override;
+
+    function GetFixedCells(const ACol, ARow: Integer): string; override;
+    procedure SetFixedCells(const ACol, ARow: Integer; const Value: string); override;
 
     function GetCells(const ACol, ARow: Integer): string; override;
     procedure SetCells(const ACol, ARow: Integer; const Value: string); override;
@@ -6270,11 +6282,14 @@ begin
   inherited;
   if FData.Count > 0 then
     FData.Clear;
+  if FFixedData.Count > 0 then
+    FFixedData.Clear;
 end;
 
 destructor TStringGridAdapter.Destroy;
 begin
   FreeAndNil(FData);
+  FreeAndNil(FFixedData);
   inherited;
 end;
 
@@ -6282,6 +6297,7 @@ procedure TStringGridAdapter.DoInitData;
 begin
   inherited;
   FData := TDictionary<Int64, string>.Create();
+  FFixedData := TDictionary<Int64, string>.Create();
 end;
 
 function TStringGridAdapter.GetCellData(const ACol, ARow: Integer): Pointer;
@@ -6292,6 +6308,12 @@ end;
 function TStringGridAdapter.GetCells(const ACol, ARow: Integer): string;
 begin
   if not FData.TryGetValue(TGridBase.GetKey(ACol, ARow), Result) then
+    Result := '';
+end;
+
+function TStringGridAdapter.GetFixedCells(const ACol, ARow: Integer): string;
+begin
+  if not FFixedData.TryGetValue(TGridBase.GetKey(ACol, ARow), Result) then
     Result := '';
 end;
 
@@ -6310,6 +6332,12 @@ procedure TStringGridAdapter.SetCells(const ACol, ARow: Integer;
   const Value: string);
 begin
   FData.AddOrSetValue(TGridBase.GetKey(ACol, ARow), Value);
+end;
+
+procedure TStringGridAdapter.SetFixedCells(const ACol, ARow: Integer;
+  const Value: string);
+begin
+  FFixedData.AddOrSetValue(TGridBase.GetKey(ACol, ARow), Value);
 end;
 
 procedure TStringGridAdapter.SetRowCount(const Value: Integer);
@@ -6336,6 +6364,14 @@ begin
   inherited;
 end;
 
+function TStringGridView.GetFixedCells(const ACol, ARow: Integer): string;
+begin
+  if Assigned(FAdapter) then
+    Result := FAdapter.FixedCells[ACol, ARow]
+  else
+    Result := '';
+end;
+
 function TStringGridView.GetShowColIndex: Boolean;
 begin
   Result := FColumns.FShowColIndex;
@@ -6348,6 +6384,13 @@ begin
     if not (csLoading in ComponentState) then
       NotifyDataChanged;
   end;
+end;
+
+procedure TStringGridView.SetFixedCells(const ACol, ARow: Integer;
+  const Value: string);
+begin
+  if Assigned(FAdapter) then
+    FAdapter.FixedCells[ACol, ARow] := Value;
 end;
 
 procedure TStringGridView.SetRowCount(const Value: Integer);
@@ -7045,6 +7088,8 @@ procedure TDBGridAdapter.Clear;
 begin
   inherited Clear;
   FRowCount := FMinRowCount;
+  if FFixedData.Count > 0 then
+    FFixedData.Clear;
 end;
 
 constructor TDBGridAdapter.Create;
@@ -7052,6 +7097,7 @@ begin
   FEditMap := TList<TGridCell>.Create;
   FFieldMap := TIntHash.Create;
   FData := TDictionary<Int64, string>.Create();
+  FFixedData := TDictionary<Int64, string>.Create();
   inherited;
 end;
 
@@ -7060,6 +7106,7 @@ begin
   FreeAndNil(FFieldMap);
   FreeAndNil(FEditMap);
   FreeAndNil(FData);
+  FreeAndNil(FFixedData);
   inherited;
 end;
 
@@ -7093,6 +7140,12 @@ begin
       Result := '';
   end else
     FData.TryGetValue(TGridBase.GetKey(ACol, ARow), Result);
+end;
+
+function TDBGridAdapter.GetFixedCells(const ACol, ARow: Integer): string;
+begin
+  if not FFixedData.TryGetValue(TGridBase.GetKey(ACol, ARow), Result) then
+    Result := '';
 end;
 
 function TDBGridAdapter.GetFooterCells(Item: TGridColumnItem): string;
@@ -7143,6 +7196,12 @@ begin
     end;
   end else
     FIsOutDataRow := True;
+end;
+
+procedure TDBGridAdapter.SetFixedCells(const ACol, ARow: Integer;
+  const Value: string);
+begin
+  FFixedData.AddOrSetValue(TGridBase.GetKey(ACol, ARow), Value);
 end;
 
 procedure TDBGridAdapter.SetRowCount(const Value: Integer);
