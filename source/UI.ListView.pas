@@ -2204,7 +2204,7 @@ procedure TListViewContent.DoRealign;
   var
     First, Last: Double;
     V, H: Double;
-    S, I, J, K, N: Integer;
+    S, I, J, K, N, M: Integer;
 
     AL, MH, LMH: Double;
     IsMultiCol: Boolean;
@@ -2248,11 +2248,21 @@ procedure TListViewContent.DoRealign;
     MH := 0;
     LMH := 0;
     AL := 0;
+    M := 0;
     IsMultiCol := LS.ColumnCount > 1;
 
     // 从指定位置开始，生成并调整列表项
     for I := S to FCount - 1 do begin
       if I < 0 then Continue;
+
+      if M > 0 then begin
+        // 多列时，第一行不显示时跳过同行的其它列。并删除相应的View
+        Dec(M);
+        if LS.CheckViews and FViews.ContainsKey(I) then
+          RemoveItemView(I, FViews[I]);
+        Continue;
+      end;
+
       Item := @ListView.FItemsPoints[I];
 
       // 列数大于1时，换行时将AL坐标归0
@@ -2260,7 +2270,7 @@ procedure TListViewContent.DoRealign;
         if (I mod LS.ColumnCount = 0) then begin
           AL := 0;
           // 计算出下一项的位置
-          if J > 0 then begin
+          if I <> S then begin
             V := V + MH + LS.DividerH;
           end;
           // 高度变化时，更新调整大小
@@ -2298,7 +2308,11 @@ procedure TListViewContent.DoRealign;
             RemoveItemView(I, FViews[I]);
           // 计算出下一项的位置
           if not IsMultiCol then
-            V := V + LMH + LS.DividerH;
+            V := V + LMH + LS.DividerH
+          else begin
+            M := LS.ColumnCount - 1;
+            MH := LMH;
+          end;
           Continue;
         end else if V > Last then begin
           // 超出尾部可视区域
@@ -2405,10 +2419,10 @@ procedure TListViewContent.DoRealign;
   begin
     // 计算出当前可显示的第一行位置和最后一行位置
     First := FLastScrollValue;
-    if LS.IsAutoSize then
-      Last := First + FMaxParentHeight   // 使用父级视图的最大高度为列表项的底部位置
-    else
-      Last := First + LS.Height;         // 使用当前视图的高度作为底部位置
+    //if LS.IsAutoSize then
+    //  Last := First + FMaxParentHeight   // 使用父级视图的最大高度为列表项的底部位置
+    //else
+    Last := First + LS.Height;         // 使用当前视图的高度作为底部位置
 
     // 计算出最后行显示位置
     S := FLastRowIndex;
