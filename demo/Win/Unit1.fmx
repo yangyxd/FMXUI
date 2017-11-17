@@ -1,0 +1,210 @@
+object Form1: TForm1
+  Left = 0
+  Top = 0
+  BorderStyle = None
+  Caption = 'Form1'
+  ClientHeight = 618
+  ClientWidth = 1097
+  Fill.Color = claSilver
+  Fill.Kind = Solid
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  DesignerMasterStyle = 0
+  object layBackground: TLinearLayout
+    Align = Client
+    Background.ItemDefault.Color = claWhitesmoke
+    Background.ItemDefault.Kind = Solid
+    Gravity = None
+    Margins.Left = 1.000000000000000000
+    Margins.Top = 1.000000000000000000
+    Margins.Right = 1.000000000000000000
+    Margins.Bottom = 1.000000000000000000
+    Size.Width = 1095.000000000000000000
+    Size.Height = 616.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Orientation = Vertical
+    object layTitle: TLinearLayout
+      Align = Top
+      Background.ItemDefault.Color = claWhite
+      Background.ItemDefault.Kind = Solid
+      Background.Border.Color.Default = x1F000000
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Enabled = claNull
+      Background.Border.Style = LineBottom
+      Clickable = True
+      CaptureDragForm = True
+      WidthSize = FillParent
+      Gravity = None
+      HitTest = True
+      Size.Width = 1095.000000000000000000
+      Size.Height = 32.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      Orientation = Horizontal
+      object tvTitle: TTextView
+        HeightSize = FillParent
+        Weight = 1.000000000000000000
+        Padding.Left = 8.000000000000000000
+        Padding.Right = 8.000000000000000000
+        Margins.Bottom = 0.500000000000000000
+        Size.Width = 999.000000000000000000
+        Size.Height = 31.500000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Text = 'tvTitle'
+        TextSettings.Color.Default = xFF303030
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Trimming = Character
+        TextSettings.Gravity = CenterVertical
+      end
+      object btnMin: TTextView
+        Background.ItemHovered.Color = x00E3E3E3
+        Background.ItemHovered.Kind = Solid
+        Clickable = True
+        HeightSize = FillParent
+        Margins.Bottom = 0.500000000000000000
+        HitTest = True
+        Size.Width = 32.000000000000000000
+        Size.Height = 31.500000000000000000
+        Size.PlatformDefault = False
+        Position.X = 999.000000000000000000
+        TabOrder = 4
+        OnMouseEnter = btnCloseMouseEnter
+        OnMouseLeave = btnCloseMouseLeave
+        Hint = #26368#23567#21270
+        ShowHint = True
+        Drawable.SizeWidth = 12
+        Drawable.SizeHeight = 10
+        Drawable.Position = Center
+        Drawable.ItemDefault.Kind = AccessoryBitmap
+        Drawable.ItemDefault.Accessory.Color = xFF303030
+        Drawable.ItemDefault.Accessory.PathData = 'M64,448 L960,448 L960,576 L64,576 Z '
+        Drawable.ItemDefault.Accessory.Style = Path
+      end
+      object btnMax: TTextView
+        Background.ItemHovered.Color = x00E3E3E3
+        Background.ItemHovered.Kind = Solid
+        Clickable = True
+        HeightSize = FillParent
+        Margins.Bottom = 0.500000000000000000
+        HitTest = True
+        Size.Width = 32.000000000000000000
+        Size.Height = 31.500000000000000000
+        Size.PlatformDefault = False
+        Position.X = 1031.000000000000000000
+        TabOrder = 3
+        OnMouseEnter = btnCloseMouseEnter
+        OnMouseLeave = btnCloseMouseLeave
+        Hint = #26368#22823#21270
+        ShowHint = True
+        Drawable.SizeWidth = 12
+        Drawable.SizeHeight = 12
+        Drawable.Position = Center
+        Drawable.ItemDefault.Kind = AccessoryBitmap
+        Drawable.ItemDefault.Accessory.Color = xFF303030
+        Drawable.ItemDefault.Accessory.PathData = 
+          'M844.700012207031,179.300003051758 L844.700012207031,844.7000122' +
+          '07031 L179.300003051758,844.700012207031 L179.300003051758,179.3' +
+          '00003051758 L844.700012207031,179.300003051758 M927.900024414063' +
+          ',96.1000061035156 L96.0999984741211,96.1000061035156 L96.0999984' +
+          '741211,927.900024414063 L927.899963378906,927.900024414063 L927.' +
+          '899963378906,96.0999984741211 Z '
+        Drawable.ItemDefault.Accessory.Style = Path
+      end
+      object btnRestore: TTextView
+        Background.ItemHovered.Color = x00E3E3E3
+        Background.ItemHovered.Kind = Solid
+        Clickable = True
+        HeightSize = FillParent
+        Margins.Bottom = 0.500000000000000000
+        Visible = False
+        HitTest = True
+        Size.Width = 32.000000000000000000
+        Size.Height = 31.500000000000000000
+        Size.PlatformDefault = False
+        Position.X = 1023.000000000000000000
+        TabOrder = 2
+        OnMouseEnter = btnCloseMouseEnter
+        OnMouseLeave = btnCloseMouseLeave
+        Hint = #36824#21407
+        ShowHint = True
+        Drawable.SizeWidth = 12
+        Drawable.SizeHeight = 12
+        Drawable.Position = Center
+        Drawable.ItemDefault.Kind = AccessoryBitmap
+        Drawable.ItemDefault.Accessory.Color = xFF303030
+        Drawable.ItemDefault.Accessory.PathData = 
+          'M984.615356445313,0 L313.343994140625,0 C291.64306640625,0 273.9' +
+          '59381103516,17.6836929321289 273.959381103516,39.3846168518066 L' +
+          '273.959381103516,294.793853759766 L39.3846168518066,294.79385375' +
+          '9766 C17.6836929321289,294.793853759766 0,312.4775390625 0,334.1' +
+          '78466796875 L0,984.615356445313 C0,1006.31628417969 17.683692932' +
+          '1289,1024 39.3846168518066,1024 L710.656005859375,1024 C732.3569' +
+          '3359375,1024 750.040649414063,1006.31628417969 750.040649414063,' +
+          '984.615356445313 L750.040649414063,729.206115722656 L984.6153564' +
+          '45313,729.206176757813 C1006.31628417969,729.206176757813 1024,7' +
+          '11.5224609375 1024,689.821533203125 L1024,39.3846168518066 C1024' +
+          ',17.6836929321289 1006.31628417969,0 984.615356445313,0 Z M671.2' +
+          '31994628906,945.230773925781 L78.7692337036133,945.230773925781 ' +
+          'L78.7692337036133,373.563079833984 L671.231994628906,373.5630798' +
+          '33984 L671.231994628906,945.230773925781 Z M945.19140625,650.436' +
+          '950683594 L750.040649414063,650.436950683594 L750.040588378906,3' +
+          '34.178466796875 C750.040588378906,312.4775390625 732.35687255859' +
+          '4,294.793853759766 710.655944824219,294.793853759766 L352.728607' +
+          '177734,294.793853759766 L352.728607177734,78.7692337036133 L945.' +
+          '19140625,78.7692337036133 L945.19140625,650.436950683594 Z '
+        Drawable.ItemDefault.Accessory.Style = Path
+      end
+      object btnClose: TTextView
+        Background.ItemHovered.Color = x00F45454
+        Background.ItemHovered.Kind = Solid
+        Clickable = True
+        HeightSize = FillParent
+        Margins.Bottom = 0.500000000000000000
+        HitTest = True
+        Size.Width = 32.000000000000000000
+        Size.Height = 31.500000000000000000
+        Size.PlatformDefault = False
+        Position.X = 1063.000000000000000000
+        TabOrder = 1
+        OnClick = btnCloseClick
+        OnMouseEnter = btnCloseMouseEnter
+        OnMouseLeave = btnCloseMouseLeave
+        Hint = #20851#38381
+        ShowHint = True
+        Drawable.SizeWidth = 13
+        Drawable.SizeHeight = 13
+        Drawable.Position = Center
+        Drawable.ItemDefault.Kind = AccessoryBitmap
+        Drawable.ItemDefault.Accessory.Accessory = Back
+        Drawable.ItemDefault.Accessory.Icon = AlarmClock
+        Drawable.ItemDefault.Accessory.Color = xFF303030
+        Drawable.ItemDefault.Accessory.PathData = 
+          'M926.046997070313,851.642028808594 L587.408996582031,513.0050048' +
+          '82813 L926.099975585938,174.311996459961 L850.180969238281,98.39' +
+          '39971923828 L511.492980957031,437.088989257813 L172.813995361328' +
+          ',98.4100036621094 L96.8949966430664,174.328002929688 L435.573974' +
+          '609375,513.006958007813 L96.8939819335938,851.686950683594 L172.' +
+          '809982299805,927.602966308594 L511.492004394531,588.922973632813' +
+          ' L850.130004882813,927.56298828125 L926.046997070313,851.6419677' +
+          '73438 Z '
+        Drawable.ItemDefault.Accessory.Style = Path
+      end
+    end
+    object ShadowEffect1: TShadowEffect
+      Distance = 1.000000000000000000
+      Direction = 90.000000000000000000
+      Softness = 0.300000011920929000
+      Opacity = 0.300000011920929000
+      ShadowColor = claBlack
+      Enabled = False
+    end
+  end
+end

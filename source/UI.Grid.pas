@@ -1012,7 +1012,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    class function GetKey(const ACol, ARow: Integer): Int64; inline;
+    class function GetKey(const ACol, ARow: Integer): UInt64; inline;
 
     // Çå¿ÕÊý¾Ý
     procedure Clear;
@@ -2121,7 +2121,7 @@ begin
         if (Item.ColsPan > 1) or (M > 1) then begin
           for N := 0 to Item.ColsPan - 1 do begin
             for K := 0 to M - 1 do
-              FFixedMergeMap.Add(GetKey(LI + N, J + K), 1);
+              FFixedMergeMap.Add(GetKey(LI + N, J + K), Int64(1));
           end;
         end;
 
@@ -2636,7 +2636,7 @@ begin
     Result := -1;
 end;
 
-class function TGridBase.GetKey(const ACol, ARow: Integer): Int64;
+class function TGridBase.GetKey(const ACol, ARow: Integer): UInt64;
 begin
   TGridCell(Result).Row := ARow;
   TGridCell(Result).Col := ACol;

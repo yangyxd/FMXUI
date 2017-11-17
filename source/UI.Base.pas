@@ -87,6 +87,11 @@ type
   TViewBrushKind = (None, Solid, Gradient, Bitmap, Resource, Patch9Bitmap, AccessoryBitmap);
 
   /// <summary>
+  /// 附件样式
+  /// </summary>
+  TViewAccessoryStyle = (Accessory, Icon, Path);
+
+  /// <summary>
   /// 附图类型
   /// </summary>
   TViewAccessoryType = (None, More, Checkmark, Detail, Ellipses, Flag, Back, Refresh,
@@ -210,19 +215,23 @@ type
   TViewAccessory = class(TPersistent)
   private
     FIcon: TViewIconType;
-    FUseIcon: Boolean;
+    FStyle: TViewAccessoryStyle;
     FAccessoryType: TViewAccessoryType;
     FAccessoryColor: TAlphaColor;
     FAccessoryBmp: TBitmap;
+    FPathData: TPathData;
     FOnChanged: TNotifyEvent;
     procedure SetAccessoryType(const Value: TViewAccessoryType);
     procedure SetAccessoryColor(const Value: TAlphaColor);
     function GetIsEmpty: Boolean;
     procedure SetIcon(const Value: TViewIconType);
-    procedure SetUseIcon(const Value: Boolean);
+    procedure SetStyle(const Value: TViewAccessoryStyle);
+    function GetPathData: string;
+    procedure SetPathData(const Value: string);
   protected
     procedure DoChanged();
     procedure DoIconChanged();
+    procedure DoPathChanged(Sender: TObject);
   public
     constructor Create;
     destructor Destroy; override;
@@ -233,7 +242,8 @@ type
     property Accessory: TViewAccessoryType read FAccessoryType write SetAccessoryType default TViewAccessoryType.None;
     property Icon: TViewIconType read FIcon write SetIcon default TViewIconType.None;
     property Color: TAlphaColor read FAccessoryColor write SetAccessoryColor default TAlphaColorRec.White;
-    property UseIcon: Boolean read FUseIcon write SetUseIcon default False;
+    property PathData: string read GetPathData write SetPathData;
+    property Style: TViewAccessoryStyle read FStyle write SetStyle default TViewAccessoryStyle.Accessory;
   end;
 
   TViewBrushBase = class(TBrush)
@@ -9104,22 +9114,28 @@ end;
 destructor TViewAccessory.Destroy;
 begin
   FreeAndNil(FAccessoryBmp);
+  FreeAndNil(FPathData);
   inherited;
 end;
 
 procedure TViewAccessory.DoChanged;
 begin
-  if FUseIcon then begin
-    DoIconChanged;
-  end else begin
-    if FAccessoryType <> TViewAccessoryType.None then begin
-      if not Assigned(FAccessoryBmp) then
-        FAccessoryBmp := TBitmap.Create;
-      FAccessoryBmp.Assign(FAccessoryImages.GetAccessoryImage(FAccessoryType));
-      if FAccessoryColor <> TAlphaColorRec.Null then
-        ReplaceOpaqueColor(FAccessoryBmp, FAccessoryColor);
-    end else
-      FreeAndNil(FAccessoryBmp);
+  case FStyle of
+    TViewAccessoryStyle.Icon:
+      DoIconChanged;
+    TViewAccessoryStyle.Path:
+      DoPathChanged(Self);
+    TViewAccessoryStyle.Accessory:
+      begin
+        if FAccessoryType <> TViewAccessoryType.None then begin
+          if not Assigned(FAccessoryBmp) then
+            FAccessoryBmp := TBitmap.Create;
+          FAccessoryBmp.Assign(FAccessoryImages.GetAccessoryImage(FAccessoryType));
+          if FAccessoryColor <> TAlphaColorRec.Null then
+            ReplaceOpaqueColor(FAccessoryBmp, FAccessoryColor);
+        end else
+          FreeAndNil(FAccessoryBmp);
+      end;
   end;
   if Assigned(FOnChanged) then
     FOnChanged(Self);
@@ -9155,9 +9171,64 @@ begin
   end;
 end;
 
+procedure TViewAccessory.DoPathChanged(Sender: TObject);
+
+  procedure UpdateSize(Path: TPathData);
+  var
+    I: Integer;
+    MW, MH: Single;
+  begin
+    MW := 0;
+    MH := 0;
+    for I := 0 to Path.Count - 1 do begin
+      with Path.Points[I] do begin
+        if Kind = TPathPointKind.Close then
+          Continue;
+        MW := Max(Point.X, MW);
+        MH := Max(Point.Y, MH);
+      end;
+    end;
+
+    FAccessoryBmp.SetSize(Round(MW), Round(MH));
+  end;
+
+begin
+  if Assigned(FPathData) then begin
+    try
+      if not Assigned(FAccessoryBmp) then
+        FAccessoryBmp := TBitmap.Create
+      else
+        FAccessoryBmp.Clear(claNull);
+      UpdateSize(FPathData);
+      FAccessoryBmp.Canvas.BeginScene();
+      try
+        FAccessoryBmp.Canvas.Fill.Color := claBlack;
+        FAccessoryBmp.Canvas.Fill.Kind := TBrushKind.Solid;
+        FAccessoryBmp.Canvas.FillPath(FPathData, 1);
+      finally
+        FAccessoryBmp.Canvas.EndScene;
+      end;
+      if Color = 0 then
+        ReplaceOpaqueColor(FAccessoryBmp, TAlphaColors.Dodgerblue)
+      else
+        ReplaceOpaqueColor(FAccessoryBmp, Color);
+    except
+      FreeAndNil(FAccessoryBmp);
+    end;
+  end;
+end;
+
 function TViewAccessory.GetIsEmpty: Boolean;
 begin
   Result := (not Assigned(Self)) or (FAccessoryBmp = nil);
+end;
+
+function TViewAccessory.GetPathData: string;
+begin
+  if Assigned(FPathData) then
+    Result := FPathData.Data
+  else
+    Result := '';
 end;
 
 procedure TViewAccessory.SetAccessoryColor(const Value: TAlphaColor);
@@ -9184,10 +9255,25 @@ begin
   end;
 end;
 
-procedure TViewAccessory.SetUseIcon(const Value: Boolean);
+procedure TViewAccessory.SetPathData(const Value: string);
 begin
-  if FUseIcon <> Value then begin
-    FUseIcon := Value;
+  if Value = '' then begin
+    if Assigned(FPathData) then begin
+      FreeAndNil(FPathData);
+      DoChanged;
+    end;
+  end else begin
+    if not Assigned(FPathData) then
+      FPathData := TPathData.Create;
+    FPathData.Data := Value;
+    DoChanged;
+  end;
+end;
+
+procedure TViewAccessory.SetStyle(const Value: TViewAccessoryStyle);
+begin
+  if FStyle <> Value then begin
+    FStyle := Value;
     DoChanged;
   end;
 end;
