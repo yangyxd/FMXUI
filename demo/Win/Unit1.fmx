@@ -5,7 +5,7 @@ object Form1: TForm1
   Caption = 'Form1'
   ClientHeight = 618
   ClientWidth = 1097
-  Fill.Color = claSilver
+  Fill.Color = claWhitesmoke
   Fill.Kind = Solid
   FormFactor.Width = 320
   FormFactor.Height = 480
@@ -14,15 +14,18 @@ object Form1: TForm1
   DesignerMasterStyle = 0
   object layBackground: TLinearLayout
     Align = Client
-    Background.ItemDefault.Color = claWhitesmoke
-    Background.ItemDefault.Kind = Solid
+    Background.Border.Color.Default = xFF00CCFF
+    Background.Border.Color.Focused = claNull
+    Background.Border.Color.Selected = claNull
+    Background.Border.Color.Enabled = claNull
+    Background.Border.Style = RectBorder
     Gravity = None
-    Margins.Left = 1.000000000000000000
-    Margins.Top = 1.000000000000000000
-    Margins.Right = 1.000000000000000000
-    Margins.Bottom = 1.000000000000000000
-    Size.Width = 1095.000000000000000000
-    Size.Height = 616.000000000000000000
+    Padding.Left = 1.000000000000000000
+    Padding.Top = 1.000000000000000000
+    Padding.Right = 1.000000000000000000
+    Padding.Bottom = 1.000000000000000000
+    Size.Width = 1097.000000000000000000
+    Size.Height = 618.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
     Orientation = Vertical
@@ -43,6 +46,8 @@ object Form1: TForm1
       Size.Width = 1095.000000000000000000
       Size.Height = 32.000000000000000000
       Size.PlatformDefault = False
+      Position.X = 1.000000000000000000
+      Position.Y = 1.000000000000000000
       TabOrder = 0
       Orientation = Horizontal
       object tvTitle: TTextView
@@ -76,12 +81,12 @@ object Form1: TForm1
         Size.PlatformDefault = False
         Position.X = 999.000000000000000000
         TabOrder = 4
+        OnClick = btnMinClick
         OnMouseEnter = btnCloseMouseEnter
-        OnMouseLeave = btnCloseMouseLeave
         Hint = #26368#23567#21270
         ShowHint = True
         Drawable.SizeWidth = 12
-        Drawable.SizeHeight = 10
+        Drawable.SizeHeight = 5
         Drawable.Position = Center
         Drawable.ItemDefault.Kind = AccessoryBitmap
         Drawable.ItemDefault.Accessory.Color = xFF303030
@@ -100,8 +105,8 @@ object Form1: TForm1
         Size.PlatformDefault = False
         Position.X = 1031.000000000000000000
         TabOrder = 3
+        OnClick = btnMaxClick
         OnMouseEnter = btnCloseMouseEnter
-        OnMouseLeave = btnCloseMouseLeave
         Hint = #26368#22823#21270
         ShowHint = True
         Drawable.SizeWidth = 12
@@ -112,9 +117,9 @@ object Form1: TForm1
         Drawable.ItemDefault.Accessory.PathData = 
           'M844.700012207031,179.300003051758 L844.700012207031,844.7000122' +
           '07031 L179.300003051758,844.700012207031 L179.300003051758,179.3' +
-          '00003051758 L844.700012207031,179.300003051758 M927.900024414063' +
+          '00003051758 L844.700012207031,179.300003051758 M927.900024414062' +
           ',96.1000061035156 L96.0999984741211,96.1000061035156 L96.0999984' +
-          '741211,927.900024414063 L927.899963378906,927.900024414063 L927.' +
+          '741211,927.900024414062 L927.899963378906,927.900024414062 L927.' +
           '899963378906,96.0999984741211 Z '
         Drawable.ItemDefault.Accessory.Style = Path
       end
@@ -131,8 +136,8 @@ object Form1: TForm1
         Size.PlatformDefault = False
         Position.X = 1023.000000000000000000
         TabOrder = 2
+        OnClick = btnRestoreClick
         OnMouseEnter = btnCloseMouseEnter
-        OnMouseLeave = btnCloseMouseLeave
         Hint = #36824#21407
         ShowHint = True
         Drawable.SizeWidth = 12
@@ -147,15 +152,15 @@ object Form1: TForm1
           '9766 C17.6836929321289,294.793853759766 0,312.4775390625 0,334.1' +
           '78466796875 L0,984.615356445313 C0,1006.31628417969 17.683692932' +
           '1289,1024 39.3846168518066,1024 L710.656005859375,1024 C732.3569' +
-          '3359375,1024 750.040649414063,1006.31628417969 750.040649414063,' +
-          '984.615356445313 L750.040649414063,729.206115722656 L984.6153564' +
-          '45313,729.206176757813 C1006.31628417969,729.206176757813 1024,7' +
+          '3359375,1024 750.040649414062,1006.31628417969 750.040649414062,' +
+          '984.615356445313 L750.040649414062,729.206115722656 L984.6153564' +
+          '45313,729.206176757812 C1006.31628417969,729.206176757812 1024,7' +
           '11.5224609375 1024,689.821533203125 L1024,39.3846168518066 C1024' +
           ',17.6836929321289 1006.31628417969,0 984.615356445313,0 Z M671.2' +
           '31994628906,945.230773925781 L78.7692337036133,945.230773925781 ' +
           'L78.7692337036133,373.563079833984 L671.231994628906,373.5630798' +
           '33984 L671.231994628906,945.230773925781 Z M945.19140625,650.436' +
-          '950683594 L750.040649414063,650.436950683594 L750.040588378906,3' +
+          '950683594 L750.040649414062,650.436950683594 L750.040588378906,3' +
           '34.178466796875 C750.040588378906,312.4775390625 732.35687255859' +
           '4,294.793853759766 710.655944824219,294.793853759766 L352.728607' +
           '177734,294.793853759766 L352.728607177734,78.7692337036133 L945.' +
@@ -176,7 +181,6 @@ object Form1: TForm1
         TabOrder = 1
         OnClick = btnCloseClick
         OnMouseEnter = btnCloseMouseEnter
-        OnMouseLeave = btnCloseMouseLeave
         Hint = #20851#38381
         ShowHint = True
         Drawable.SizeWidth = 13
@@ -187,24 +191,16 @@ object Form1: TForm1
         Drawable.ItemDefault.Accessory.Icon = AlarmClock
         Drawable.ItemDefault.Accessory.Color = xFF303030
         Drawable.ItemDefault.Accessory.PathData = 
-          'M926.046997070313,851.642028808594 L587.408996582031,513.0050048' +
-          '82813 L926.099975585938,174.311996459961 L850.180969238281,98.39' +
-          '39971923828 L511.492980957031,437.088989257813 L172.813995361328' +
-          ',98.4100036621094 L96.8949966430664,174.328002929688 L435.573974' +
-          '609375,513.006958007813 L96.8939819335938,851.686950683594 L172.' +
+          'M926.046997070312,851.642028808594 L587.408996582031,513.0050048' +
+          '82812 L926.099975585938,174.311996459961 L850.180969238281,98.39' +
+          '39971923828 L511.492980957031,437.088989257812 L172.813995361328' +
+          ',98.4100036621094 L96.8949966430664,174.328002929687 L435.573974' +
+          '609375,513.006958007812 L96.8939819335938,851.686950683594 L172.' +
           '809982299805,927.602966308594 L511.492004394531,588.922973632813' +
-          ' L850.130004882813,927.56298828125 L926.046997070313,851.6419677' +
-          '73438 Z '
+          ' L850.130004882813,927.56298828125 L926.046997070312,851.6419677' +
+          '73437 Z '
         Drawable.ItemDefault.Accessory.Style = Path
       end
-    end
-    object ShadowEffect1: TShadowEffect
-      Distance = 1.000000000000000000
-      Direction = 90.000000000000000000
-      Softness = 0.300000011920929000
-      Opacity = 0.300000011920929000
-      ShadowColor = claBlack
-      Enabled = False
     end
   end
 end

@@ -16,12 +16,13 @@ type
     btnMax: TTextView;
     btnClose: TTextView;
     layBackground: TLinearLayout;
-    ShadowEffect1: TShadowEffect;
     btnRestore: TTextView;
     procedure FormCreate(Sender: TObject);
     procedure btnCloseMouseEnter(Sender: TObject);
-    procedure btnCloseMouseLeave(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
+    procedure btnMaxClick(Sender: TObject);
+    procedure btnRestoreClick(Sender: TObject);
+    procedure btnMinClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -60,9 +61,28 @@ begin
   AniTextViewBackgroundColor(Sender, True);
 end;
 
-procedure TForm1.btnCloseMouseLeave(Sender: TObject);
+procedure TForm1.btnMaxClick(Sender: TObject);
 begin
-  AniTextViewBackgroundColor(Sender, False);
+  btnMax.Visible := False;
+  btnRestore.Visible := True;
+  Self.WindowState := TWindowState.wsMaximized;
+  layTitle.CaptureDragForm := False;
+end;
+
+procedure TForm1.btnMinClick(Sender: TObject);
+begin
+  btnRestore.Visible := False;
+  btnMax.Visible := True;
+  Self.WindowState := TWindowState.wsMinimized;
+  layTitle.CaptureDragForm := True;
+end;
+
+procedure TForm1.btnRestoreClick(Sender: TObject);
+begin
+  btnRestore.Visible := False;
+  btnMax.Visible := True;
+  Self.WindowState := TWindowState.wsNormal;
+  layTitle.CaptureDragForm := True;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);

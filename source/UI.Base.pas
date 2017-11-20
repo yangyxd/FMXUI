@@ -9107,8 +9107,10 @@ end;
 
 constructor TViewAccessory.Create;
 begin
+  FPathData := nil;
   FAccessoryBmp := nil;
   FAccessoryColor := TAlphaColorRec.White;
+  FStyle := TViewAccessoryStyle.Accessory;
 end;
 
 destructor TViewAccessory.Destroy;
@@ -9202,16 +9204,12 @@ begin
       UpdateSize(FPathData);
       FAccessoryBmp.Canvas.BeginScene();
       try
-        FAccessoryBmp.Canvas.Fill.Color := claBlack;
+        FAccessoryBmp.Canvas.Fill.Color := Color;
         FAccessoryBmp.Canvas.Fill.Kind := TBrushKind.Solid;
         FAccessoryBmp.Canvas.FillPath(FPathData, 1);
       finally
         FAccessoryBmp.Canvas.EndScene;
       end;
-      if Color = 0 then
-        ReplaceOpaqueColor(FAccessoryBmp, TAlphaColors.Dodgerblue)
-      else
-        ReplaceOpaqueColor(FAccessoryBmp, Color);
     except
       FreeAndNil(FAccessoryBmp);
     end;
