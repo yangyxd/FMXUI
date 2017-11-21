@@ -6069,8 +6069,13 @@ end;
 
 procedure TViewScrollContent.ContentChanged;
 begin
+  {$IF CompilerVersion >= 32.0}
+  if (FScrollBox <> nil) and ([csLoading, csDestroying] * FScrollBox.ComponentState = [])
+    and not ScrollBox.InInternalAlign then
+  {$ELSE}
   if (FScrollBox <> nil) and not FScrollBox.Released and ([csLoading, csDestroying] * FScrollBox.ComponentState = [])
     and not ScrollBox.InInternalAlign then
+  {$ENDIF}
   begin
     FIsContentChanged := True;
     FScrollBox.InvalidateContentSize;

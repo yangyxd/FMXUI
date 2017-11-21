@@ -6,7 +6,7 @@ uses
   UI.SizeForm, UI.Ani, UI.Frame,
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, UI.Base,
-  UI.Standard, FMX.Effects;
+  UI.Standard, FMX.Effects, FMX.Controls.Presentation, FMX.StdCtrls;
 
 type
   TForm1 = class(TSizeForm)
@@ -23,6 +23,8 @@ type
     procedure btnMaxClick(Sender: TObject);
     procedure btnRestoreClick(Sender: TObject);
     procedure btnMinClick(Sender: TObject);
+    procedure btnMinMouseLeave(Sender: TObject);
+    procedure layTitleDblClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -77,6 +79,11 @@ begin
   layTitle.CaptureDragForm := True;
 end;
 
+procedure TForm1.btnMinMouseLeave(Sender: TObject);
+begin
+  AniTextViewBackgroundColor(Sender, False);
+end;
+
 procedure TForm1.btnRestoreClick(Sender: TObject);
 begin
   btnRestore.Visible := False;
@@ -88,6 +95,20 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   tvTitle.Text := Self.Caption;
+  ShowShadow := True;  // ´ò¿ªÒõÓ°
+end;
+
+procedure TForm1.layTitleDblClick(Sender: TObject);
+begin
+  if btnMax.Visible then
+    btnMaxClick(Sender)
+  else begin
+    TFrameAnimator.DelayExecute(Self,
+      procedure (Sender: TObject)
+      begin
+        btnRestoreClick(Sender);
+      end, 0.08);
+  end;
 end;
 
 end.

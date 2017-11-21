@@ -15,9 +15,12 @@ unit UI.SizeForm;
 interface
 
 uses
+  {$IFDEF MSWINDOWS}
+  Winapi.Windows, Winapi.Messages, FMX.Platform.Win,
+  {$ENDIF}
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, UI.Base,
-  FMX.StdCtrls;
+  FMX.StdCtrls, FMX.Effects;
 
 type
   TResizeMode = (Normal, LTop, RTop, LBottom, RBottom, Top, Bottom, Left, Right);
@@ -25,8 +28,11 @@ type
   TSizeForm = class(TForm)
   private
     { Private declarations }
+    FShadowForm: TCustomForm;
     FCaptureDragForm: Boolean;
     FMouseDraging: Boolean;
+    FShowShadow: Boolean;
+    procedure SetShowShadow(const Value: Boolean);
   protected
     FSizeWH: Single;   // 可调节区域大小
     FMousePos, FDownPos, FResizeSize, FDownSize: TPointF;
@@ -34,19 +40,70 @@ type
     function PointInDragBorder(const X, Y: Single): Boolean;
     function CalcResizeMode(const X, Y: Single): TResizeMode;
     procedure UpdateCurror(const AResizeMode: TResizeMode);
+
+    procedure DoShow; override;
+
+    procedure InitShadowForm();
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+
     function ObjectAtPoint(AScreenPoint: TPointF): IControl; override;
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single; DoClick: Boolean = True); override;
+
+    property ShadowForm: TCustomForm read FShadowForm;
   published
     property CaptureDragForm: Boolean read FCaptureDragForm write FCaptureDragForm;
     property SizeWH: Single read FSizeWH write FSizeWH;
+    /// <summary>
+    /// 是否显示阴影
+    /// </summary>
+    property ShowShadow: Boolean read FShowShadow write SetShowShadow default False;
   end;
 
+
 implementation
+
+uses
+  System.Generics.Collections;
+
+type
+  TColorView = class(TControl)
+  protected
+    procedure Paint; override;
+  end;
+
+  TShadowForm = class(TCustomForm)
+  private
+    [Weak] FOwner: TForm;
+    FShadowSize: Integer;
+    FView: TColorView;
+    FShadow: TShadowEffect;
+
+    {$IFDEF MSWINDOWS}
+    FHwnd, FMHwnd: HWND; // 保存窗口句柄
+    FOldWndProc: LONG; // 保存原始的消息处理函数
+    {$ENDIF}
+  protected
+    procedure InitializeNewForm; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+
+    {$IFDEF MSWINDOWS}
+    function ParentWindowProc(Wnd: HWND; Msg: UINT; wParam: wParam; lParam: lParam): LRESULT;
+    {$ENDIF}
+
+    procedure DoShow; override;
+    procedure UpdateBounds(ALeft, ATop, AWidth, AHeight: Integer);
+
+    property Owner: TForm read FOwner;
+    property ShadowSize: Integer read FShadowSize write FShadowSize;
+    property Shadow: TShadowEffect read FShadow;
+  end;
 
 function TSizeForm.CalcResizeMode(const X, Y: Single): TResizeMode;
 begin
@@ -77,6 +134,31 @@ constructor TSizeForm.Create(AOwner: TComponent);
 begin
   inherited;
   FSizeWH := 10;
+  FShadowForm := nil;
+end;
+
+destructor TSizeForm.Destroy;
+begin
+  FreeAndNil(FShadowForm);
+  inherited;
+end;
+
+procedure TSizeForm.DoShow;
+begin
+  inherited DoShow;
+  InitShadowForm;
+end;
+
+procedure TSizeForm.InitShadowForm;
+begin
+  if Assigned(FShadowForm) or (not FShowShadow) then
+    Exit;
+  if (csLoading in ComponentState) then
+    Exit;
+
+  FShadowForm := TShadowForm.Create(nil);
+  TShadowForm(FShadowForm).FOwner := Self;
+  FShadowForm.Show;
 end;
 
 procedure TSizeForm.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
@@ -214,6 +296,17 @@ begin
   Result := (FSizeWH > 1) and ((X < FSizeWH) or (X >= Width - FSizeWH) or (Y < FSizeWH) or (Y >= Height - FSizeWH));
 end;
 
+procedure TSizeForm.SetShowShadow(const Value: Boolean);
+begin
+  if FShowShadow <> Value then begin
+    FShowShadow := Value;
+    if (csDesigning in ComponentState) then
+      Exit;
+    if not Value then
+      FreeAndNil(FShadowForm);
+  end;
+end;
+
 procedure TSizeForm.UpdateCurror(const AResizeMode: TResizeMode);
 const
   CCursor: array [TResizeMode] of Integer = (
@@ -222,5 +315,139 @@ const
 begin
   Cursor := CCursor[AResizeMode]
 end;
+
+{ TShadowForm }
+
+var
+  FormMap: TDictionary<HWND, TShadowForm> = nil;
+
+{$IFDEF MSWINDOWS}
+function WindowProc(wnd: HWND; Msg: UINT; wParam: wParam; lParam: lParam): LRESULT; stdcall;
+var
+  F: TShadowForm;
+begin
+  if FormMap.TryGetValue(wnd, F) then
+    Result := F.ParentWindowProc(wnd, Msg, wParam, lParam)
+  else
+    Result := 0;
+end;
+{$ENDIF}
+
+constructor TShadowForm.Create(AOwner: TComponent);
+begin
+  FShadowSize := 12;
+  FHwnd := 0;
+  inherited;
+  SetDesigning(False, False);
+  Self.BorderStyle := TFmxFormBorderStyle.None;
+  Self.Visible := False;
+  Self.Transparency := True;
+  Self.WindowState := TWindowState.wsNormal;
+
+  FView := TColorView.Create(Self);
+  FView.Margins.Rect := RectF(FShadowSize, FShadowSize, FShadowSize, FShadowSize);
+  FView.Align := TAlignLayout.Client;
+  FView.Parent := Self;
+
+  FShadow := TShadowEffect.Create(Self);
+  FShadow.Direction := 90;
+  FShadow.Opacity := 1;
+  FShadow.Softness := 0.5;
+  FShadow.Distance := 1;
+  FShadow.Parent := FView;
+  FShadow.Enabled := True;
+end;
+
+destructor TShadowForm.Destroy;
+begin
+  inherited;
+  {$IFDEF MSWINDOWS}
+  if FormMap.ContainsKey(FHwnd) then
+    FormMap.Remove(FHwnd);
+  {$ENDIF}
+end;
+
+procedure TShadowForm.DoShow;
+begin
+  inherited;
+
+  {$IFDEF MSWINDOWS}
+  FMHwnd := FmxHandleToHWND(Handle);
+  SetWindowLong(FMHwnd, GWL_EXSTYLE, GetWindowLong(FMHwnd, GWL_EXSTYLE)
+    or WS_EX_LAYERED or WS_EX_TRANSPARENT or WS_EX_TOPMOST or WS_EX_NOACTIVATE or WS_EX_TOOLWINDOW);
+  {$ENDIF}
+
+  if Assigned(FOwner) then begin
+
+    UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height);
+
+    {$IFDEF MSWINDOWS}
+    FHwnd := FmxHandleToHWND(FOwner.Handle);
+    FormMap.AddOrSetValue(FHwnd, Self);
+
+    FOldWndProc := GetWindowLongPtr(FHwnd, GWL_WNDPROC);
+    SetWindowLongPtr(FHwnd, GWL_WNDPROC, NativeInt(@WindowProc));
+    {$ENDIF}
+
+  end;
+end;
+
+procedure TShadowForm.InitializeNewForm;
+begin
+  inherited;
+  SetDesigning(True, False);
+end;
+
+procedure TShadowForm.UpdateBounds(ALeft, ATop, AWidth, AHeight: Integer);
+var
+  R: TRect;
+begin
+  R.Left := ALeft - FShadowSize;
+  R.Top := ATop - FShadowSize;
+  R.Right := R.Left + FShadowSize * 2 + AWidth;
+  R.Bottom := R.Top + FShadowSize * 2 + AHeight;
+  SetBounds(R);
+end;
+
+{$IFDEF MSWINDOWS}
+function TShadowForm.ParentWindowProc(Wnd: HWND; Msg: UINT; wParam: wParam;
+  lParam: lParam): LRESULT;
+begin
+  Result := CallWindowProc(Ptr(FOldWndProc), Wnd, Msg, wParam, lParam);
+  case Msg of
+    WM_MOVE:
+      SetWindowPos(FMHwnd, HWND_TOP, FOwner.Left - FShadowSize, FOwner.Top - FShadowSize, 0, 0,
+        SWP_NOSIZE or SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE);
+    WM_SIZE:
+      UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height);
+    WM_ACTIVATE, WM_NCACTIVATE:
+      UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height);
+    WM_SHOWWINDOW:
+      begin
+        if wParam = 0 then begin
+          ShowWindow(FMHwnd, SW_HIDE);
+        end else begin
+          ShowWindow(FMHwnd, SW_SHOW);
+        end;
+      end;
+  end;
+end;
+{$ENDIF}
+
+{ TColorView }
+
+procedure TColorView.Paint;
+begin
+  inherited Paint;
+  Canvas.Fill.Color := $8f000000;
+  Canvas.Fill.Kind := TBrushKind.Solid;
+  Canvas.FillRect(ClipRect, 0, 0, [], 1);
+end;
+
+initialization
+  FormMap := TDictionary<HWND, TShadowForm>.Create();
+
+finalization
+  FreeAndNil(FormMap);
 
 end.

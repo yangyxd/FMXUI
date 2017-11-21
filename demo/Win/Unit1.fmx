@@ -14,16 +14,11 @@ object Form1: TForm1
   DesignerMasterStyle = 0
   object layBackground: TLinearLayout
     Align = Client
-    Background.Border.Color.Default = xFF00CCFF
+    Background.Border.Color.Default = x3F0011FF
     Background.Border.Color.Focused = claNull
     Background.Border.Color.Selected = claNull
     Background.Border.Color.Enabled = claNull
-    Background.Border.Style = RectBorder
     Gravity = None
-    Padding.Left = 1.000000000000000000
-    Padding.Top = 1.000000000000000000
-    Padding.Right = 1.000000000000000000
-    Padding.Bottom = 1.000000000000000000
     Size.Width = 1097.000000000000000000
     Size.Height = 618.000000000000000000
     Size.PlatformDefault = False
@@ -31,24 +26,24 @@ object Form1: TForm1
     Orientation = Vertical
     object layTitle: TLinearLayout
       Align = Top
-      Background.ItemDefault.Color = claWhite
+      Background.ItemDefault.Color = x4FFFFFFF
       Background.ItemDefault.Kind = Solid
       Background.Border.Color.Default = x1F000000
       Background.Border.Color.Focused = claNull
       Background.Border.Color.Selected = claNull
       Background.Border.Color.Enabled = claNull
+      Background.Border.Width = 0.500000000000000000
       Background.Border.Style = LineBottom
       Clickable = True
       CaptureDragForm = True
       WidthSize = FillParent
       Gravity = None
       HitTest = True
-      Size.Width = 1095.000000000000000000
+      Size.Width = 1097.000000000000000000
       Size.Height = 32.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 1.000000000000000000
-      Position.Y = 1.000000000000000000
       TabOrder = 0
+      OnDblClick = layTitleDblClick
       Orientation = Horizontal
       object tvTitle: TTextView
         HeightSize = FillParent
@@ -56,7 +51,7 @@ object Form1: TForm1
         Padding.Left = 8.000000000000000000
         Padding.Right = 8.000000000000000000
         Margins.Bottom = 0.500000000000000000
-        Size.Width = 999.000000000000000000
+        Size.Width = 1001.000000000000000000
         Size.Height = 31.500000000000000000
         Size.PlatformDefault = False
         TabOrder = 0
@@ -79,10 +74,11 @@ object Form1: TForm1
         Size.Width = 32.000000000000000000
         Size.Height = 31.500000000000000000
         Size.PlatformDefault = False
-        Position.X = 999.000000000000000000
+        Position.X = 1001.000000000000000000
         TabOrder = 4
         OnClick = btnMinClick
         OnMouseEnter = btnCloseMouseEnter
+        OnMouseLeave = btnMinMouseLeave
         Hint = #26368#23567#21270
         ShowHint = True
         Drawable.SizeWidth = 12
@@ -103,10 +99,11 @@ object Form1: TForm1
         Size.Width = 32.000000000000000000
         Size.Height = 31.500000000000000000
         Size.PlatformDefault = False
-        Position.X = 1031.000000000000000000
+        Position.X = 1033.000000000000000000
         TabOrder = 3
         OnClick = btnMaxClick
         OnMouseEnter = btnCloseMouseEnter
+        OnMouseLeave = btnMinMouseLeave
         Hint = #26368#22823#21270
         ShowHint = True
         Drawable.SizeWidth = 12
@@ -177,10 +174,11 @@ object Form1: TForm1
         Size.Width = 32.000000000000000000
         Size.Height = 31.500000000000000000
         Size.PlatformDefault = False
-        Position.X = 1063.000000000000000000
+        Position.X = 1065.000000000000000000
         TabOrder = 1
         OnClick = btnCloseClick
         OnMouseEnter = btnCloseMouseEnter
+        OnMouseLeave = btnMinMouseLeave
         Hint = #20851#38381
         ShowHint = True
         Drawable.SizeWidth = 13
