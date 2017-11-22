@@ -3700,23 +3700,28 @@ end;
 procedure TBadgeView.Paint;
 var
   R: TRectF;
+  LOpacity: Single;
 begin
   if IsVisibleView then begin
+    if Assigned(FTargetView) then
+      LOpacity := FTargetView.Opacity
+    else
+      LOpacity := Opacity;
     R := RectF(0, 0, Width, Height);
     if FStyle = TBadgeStyle.Icon then begin
       if Assigned(FIcon) then begin
         with FBackground do begin
-          Canvas.FillRect(R, FXRadius, FYRadius, FCorners, FTargetView.Opacity, FIcon);
+          Canvas.FillRect(R, FXRadius, FYRadius, FCorners, LOpacity, FIcon);
         end;
       end;
     end else begin
       if Assigned(FBackground) then
         with FBackground do begin
           Canvas.Fill.Color := FColor;
-          Canvas.FillRect(R, FXRadius, FYRadius, FCorners, FTargetView.Opacity);
+          Canvas.FillRect(R, FXRadius, FYRadius, FCorners, LOpacity);
         end;
       if Assigned(FText) and (FText.TextLength > 0) then
-        FText.Draw(Canvas, R, FTargetView.Opacity, TViewState.None);
+        FText.Draw(Canvas, R, LOpacity, TViewState.None);
     end;
   end;
   if (csDesigning in ComponentState) and not Locked then
