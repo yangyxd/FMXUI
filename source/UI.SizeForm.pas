@@ -16,7 +16,7 @@ interface
 
 uses
   {$IFDEF MSWINDOWS}
-  Winapi.Windows, Winapi.Messages, FMX.Platform.Win,
+  Winapi.Windows, Winapi.Messages, FMX.Platform.Win, Winapi.MultiMon,
   {$ENDIF}
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, UI.Base,
@@ -32,7 +32,11 @@ type
     FCaptureDragForm: Boolean;
     FMouseDraging: Boolean;
     FShowShadow: Boolean;
+    {$IFDEF MSWINDOWS}
+    FHwnd: HWND;
+    {$ENDIF}
     procedure SetShowShadow(const Value: Boolean);
+    function GetMonitorIndex: Integer;
   protected
     FSizeWH: Single;   // 可调节区域大小
     FMousePos, FDownPos, FResizeSize, FDownSize: TPointF;
@@ -55,6 +59,7 @@ type
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single; DoClick: Boolean = True); override;
 
     property ShadowForm: TCustomForm read FShadowForm;
+    property MonitorIndex: Integer read GetMonitorIndex;
   published
     property CaptureDragForm: Boolean read FCaptureDragForm write FCaptureDragForm;
     property SizeWH: Single read FSizeWH write FSizeWH;
@@ -78,10 +83,12 @@ type
 
   TShadowForm = class(TCustomForm)
   private
-    [Weak] FOwner: TForm;
+    [Weak] FOwner: TSizeForm;
     FShadowSize: Integer;
     FView: TColorView;
     FShadow: TShadowEffect;
+
+    FIsShow: Boolean;
 
     {$IFDEF MSWINDOWS}
     FHwnd, FMHwnd: HWND; // 保存窗口句柄
@@ -100,15 +107,57 @@ type
     procedure DoShow; override;
     procedure UpdateBounds(ALeft, ATop, AWidth, AHeight: Integer);
 
-    property Owner: TForm read FOwner;
+    property Owner: TSizeForm read FOwner;
     property ShadowSize: Integer read FShadowSize write FShadowSize;
     property Shadow: TShadowEffect read FShadow;
   end;
+
+{$IFDEF MSWINDOWS}
+const
+  WM_SYNC_SIZE = WM_USER + 920;
+type
+
+  TMonitor = record
+    Handle: HMONITOR;
+    MonitorNum: Integer;
+  end;
+
+var
+  MonitorList: TList<TMonitor>;
+  FormMap: TDictionary<HWND, TShadowForm> = nil;
+
+function EnumMonitorsProc(hm: HMONITOR; dc: HDC; r: PRect; Data: Pointer): Boolean; stdcall;
+var
+  M: TMonitor;
+begin
+  M.Handle := hm;
+  M.MonitorNum := MonitorList.Count;
+  MonitorList.Add(M);
+  Result := True;
+end;
+
+function WindowProc(wnd: HWND; Msg: UINT; wParam: wParam; lParam: lParam): LRESULT; stdcall;
+var
+  F: TShadowForm;
+begin
+  if FormMap.TryGetValue(wnd, F) then
+    Result := F.ParentWindowProc(wnd, Msg, wParam, lParam)
+  else
+    Result := 0;
+end;
+
+procedure InitMonitorList();
+begin
+  EnumDisplayMonitors(0, nil, @EnumMonitorsProc, 0);
+end;
+{$ENDIF}
 
 function TSizeForm.CalcResizeMode(const X, Y: Single): TResizeMode;
 begin
   Result := TResizeMode.Normal;
   if (X < 0) and (Y < 0) then
+    Exit;
+  if WindowState <> TWindowState.wsNormal then
     Exit;
   if (X > FSizeWH) and (X <= Width - FSizeWH) then begin
     if (Y < FSizeWH) then
@@ -146,7 +195,28 @@ end;
 procedure TSizeForm.DoShow;
 begin
   inherited DoShow;
+  {$IFDEF MSWINDOWS}
+  FHwnd := FmxHandleToHWND(Handle);
+  {$ENDIF}
   InitShadowForm;
+end;
+
+function TSizeForm.GetMonitorIndex: Integer;
+{$IFDEF MSWINDOWS}
+var
+  HM: HMonitor;
+  I: Integer;
+{$ENDIF}
+begin
+  Result := 0;
+  {$IFDEF MSWINDOWS}
+  HM := MonitorFromWindow(FHwnd, MONITOR_DEFAULTTONEAREST);
+  for I := 0 to MonitorList.Count - 1 do
+    if MonitorList[I].Handle = HM then begin
+      Result := I;
+      Exit;
+    end;
+  {$ENDIF}
 end;
 
 procedure TSizeForm.InitShadowForm;
@@ -243,7 +313,19 @@ begin
             FResizeSize.X := Round(FResizeSize.X + (X - FMousePos.X));
           end;
       end;
+      {$IFDEF MSWINDOWS}
+      if Assigned(FShadowForm) then begin
+        Lockwindowupdate(FHwnd);
+        SetWindowPos(FHwnd, HWND_TOP, Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y),
+          SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE);
+        Lockwindowupdate(0);
+        TShadowForm(FShadowForm).UpdateBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y));
+        UpdateWindow(FHwnd);
+      end else
+        SetBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y));
+      {$ELSE}
       SetBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y));
+      {$ENDIF}
       FMousePos := PointF(X, Y);
     finally
       Disengage;
@@ -318,21 +400,6 @@ end;
 
 { TShadowForm }
 
-var
-  FormMap: TDictionary<HWND, TShadowForm> = nil;
-
-{$IFDEF MSWINDOWS}
-function WindowProc(wnd: HWND; Msg: UINT; wParam: wParam; lParam: lParam): LRESULT; stdcall;
-var
-  F: TShadowForm;
-begin
-  if FormMap.TryGetValue(wnd, F) then
-    Result := F.ParentWindowProc(wnd, Msg, wParam, lParam)
-  else
-    Result := 0;
-end;
-{$ENDIF}
-
 constructor TShadowForm.Create(AOwner: TComponent);
 begin
   FShadowSize := 12;
@@ -352,8 +419,9 @@ begin
   FShadow := TShadowEffect.Create(Self);
   FShadow.Direction := 90;
   FShadow.Opacity := 1;
-  FShadow.Softness := 0.5;
-  FShadow.Distance := 1;
+  FShadow.Softness := 0.35;
+  FShadow.Distance := 0;
+  FShadow.ShadowColor := $7f000000;
   FShadow.Parent := FView;
   FShadow.Enabled := True;
 end;
@@ -371,6 +439,7 @@ procedure TShadowForm.DoShow;
 begin
   inherited;
 
+  FIsShow := True;
   {$IFDEF MSWINDOWS}
   FMHwnd := FmxHandleToHWND(Handle);
   SetWindowLong(FMHwnd, GWL_EXSTYLE, GetWindowLong(FMHwnd, GWL_EXSTYLE)
@@ -406,20 +475,40 @@ begin
   R.Top := ATop - FShadowSize;
   R.Right := R.Left + FShadowSize * 2 + AWidth;
   R.Bottom := R.Top + FShadowSize * 2 + AHeight;
+  {$IFDEF MSWINDOWS}
+  SetWindowPos(FMHwnd, HWND_TOP, R.Left, R.Top, R.Width, R.Height,
+      SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE);
+  //UpdateWindow(FMHwnd);
+  {$ELSE}
   SetBounds(R);
+  {$ENDIF}
 end;
 
 {$IFDEF MSWINDOWS}
 function TShadowForm.ParentWindowProc(Wnd: HWND; Msg: UINT; wParam: wParam;
   lParam: lParam): LRESULT;
 begin
+  case Msg of
+    WM_GETMINMAXINFO:
+      begin
+        if (FOwner.MonitorIndex = 0) then begin
+          PMinMaxInfo(lParam).ptMaxSize.X := Screen.WorkAreaWidth;
+          PMinMaxInfo(lParam).ptMaxSize.Y := Screen.WorkAreaHeight; 
+          Result := 0;
+          Exit;
+        end;
+      end;  
+  end;
   Result := CallWindowProc(Ptr(FOldWndProc), Wnd, Msg, wParam, lParam);
   case Msg of
     WM_MOVE:
-      SetWindowPos(FMHwnd, HWND_TOP, FOwner.Left - FShadowSize, FOwner.Top - FShadowSize, 0, 0,
-        SWP_NOSIZE or SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE);
-    WM_SIZE:
-      UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height);
+      begin
+        if (FOwner.WindowState = TWindowState.wsNormal) and (Abs(Self.Width - FOwner.Width) > FShadowSize * 2) then
+          UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height)
+        else
+          SetWindowPos(FMHwnd, HWND_TOP, FOwner.Left - FShadowSize, FOwner.Top - FShadowSize, 0, 0,
+            SWP_NOSIZE or SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE);
+      end;
     WM_ACTIVATE, WM_NCACTIVATE:
       UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height);
     WM_SHOWWINDOW:
@@ -438,16 +527,23 @@ end;
 
 procedure TColorView.Paint;
 begin
-  inherited Paint;
-  Canvas.Fill.Color := $8f000000;
+  //inherited Paint;
+  Canvas.Fill.Color := $ffffffff;
   Canvas.Fill.Kind := TBrushKind.Solid;
   Canvas.FillRect(ClipRect, 0, 0, [], 1);
 end;
 
 initialization
+  {$IFDEF MSWINDOWS}
   FormMap := TDictionary<HWND, TShadowForm>.Create();
+  MonitorList := TList<TMonitor>.Create;
+  InitMonitorList();
+  {$ENDIF}
 
 finalization
+  {$IFDEF MSWINDOWS}
   FreeAndNil(FormMap);
+  FreeAndNil(MonitorList);
+  {$ENDIF}
 
 end.
