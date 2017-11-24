@@ -18,7 +18,6 @@ FMXUI  (YangYxd)
   TProgressView 进度条视图
   TFrameView Frame视图扩展类
   TListViewEx 列表框视图
-  TListExView ListView扩展类(Delphi官方列表框)
   TBadgeView 未读消息提示小红点
   
   TGridView 格子视图，可通过数据适配器实现各种功能

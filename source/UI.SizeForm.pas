@@ -223,7 +223,7 @@ procedure TSizeForm.InitShadowForm;
 begin
   if Assigned(FShadowForm) or (not FShowShadow) then
     Exit;
-  if (csLoading in ComponentState) then
+  if (csLoading in ComponentState) or (csDesigning in ComponentState) then
     Exit;
 
   FShadowForm := TShadowForm.Create(nil);

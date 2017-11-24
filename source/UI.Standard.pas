@@ -777,8 +777,8 @@ type
     FColor: TAlphaColor;
     FColorChange: Boolean;
     procedure SetColor(const Value: TAlphaColor);
-    function IsColorStored: Boolean;
   protected
+    function IsColorStored: Boolean;
   public
     constructor Create(AOwner: TComponent);
     function GetStateColor(const State: TViewState): TAlphaColor; override;
@@ -3837,7 +3837,7 @@ begin
   inherited Create(AOwner);
   Gravity := TLayoutGravity.Center;
   FColor := TAlphaColorRec.Black;
-  FColorChange := False;
+  IsColorChange := False;
 end;
 
 function TSimpleTextSettings.GetStateColor(const State: TViewState): TAlphaColor;
@@ -3852,7 +3852,11 @@ end;
 
 procedure TSimpleTextSettings.SetColor(const Value: TAlphaColor);
 begin
-  FColor := Value;
+  if FColor <> Value then begin
+    FColor := Value;
+    FColorChange := True;
+    DoColorChanged(Self);
+  end;
 end;
 
 { TBadgeBackground }
