@@ -2634,9 +2634,11 @@ begin
     Dialog.Cancel;
     Key := 0;
   end else if Assigned(FDialog) then begin
-    if Assigned(FDialog.Builder) and Assigned(FDialog.Builder.View) then
+    // 入云龙反馈在一些情况下会有问题，
+    // 所以判断Key < 80时才传递事件
+    if Assigned(FDialog.Builder) and Assigned(FDialog.Builder.View) and (Key < $80) then
       TMyControl(FDialog.Builder.View).KeyDown(Key, Char(Key), Shift)
-    else if (ControlsCount = 1) and (not Assigned(FAnilndictor)) then
+    else if (ControlsCount = 1) and (not Assigned(FAnilndictor)) and (Key < $80) then
       TMyControl(Controls[0]).KeyDown(Key, Char(Key), Shift)
     else
       Key := 0;
