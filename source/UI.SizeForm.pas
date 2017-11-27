@@ -47,6 +47,9 @@ type
 
     procedure DoShow; override;
 
+    function GetShadowColor: TAlphaColor; virtual;
+    function GetShadowBackgroundColor: TAlphaColor; virtual;
+
     procedure InitShadowForm();
   public
     { Public declarations }
@@ -57,6 +60,24 @@ type
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single; DoClick: Boolean = True); override;
+
+    /// <summary>
+    /// 最小化
+    /// </summary>
+    procedure ShowMin();
+    /// <summary>
+    /// 最大化
+    /// </summary>
+    procedure ShowMax();
+    /// <summary>
+    /// 恢复
+    /// </summary>
+    procedure ShowReSize();
+
+    /// <summary>
+    /// 双击标题栏
+    /// </summary>
+    procedure DBClickTitle(Sender: TObject);
 
     property ShadowForm: TCustomForm read FShadowForm;
     property MonitorIndex: Integer read GetMonitorIndex;
@@ -78,6 +99,7 @@ uses
 type
   TColorView = class(TControl)
   protected
+    FColor: TAlphaColor;
     procedure Paint; override;
   end;
 
@@ -96,6 +118,7 @@ type
     {$ENDIF}
   protected
     procedure InitializeNewForm; override;
+    procedure InitView(const BgColor, ShadowColor: TAlphaColor);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -105,7 +128,7 @@ type
     {$ENDIF}
 
     procedure DoShow; override;
-    procedure UpdateBounds(ALeft, ATop, AWidth, AHeight: Integer);
+    procedure UpdateBounds(ALeft, ATop, AWidth, AHeight: Integer; Flags: Integer = 0);
 
     property Owner: TSizeForm read FOwner;
     property ShadowSize: Integer read FShadowSize write FShadowSize;
@@ -186,6 +209,15 @@ begin
   FShadowForm := nil;
 end;
 
+procedure TSizeForm.DBClickTitle(Sender: TObject);
+begin
+  if WindowState = TWindowState.wsNormal then begin
+    ShowMax();
+  end else begin
+    ShowReSize();
+  end;
+end;
+
 destructor TSizeForm.Destroy;
 begin
   FreeAndNil(FShadowForm);
@@ -225,9 +257,11 @@ begin
     Exit;
   if (csLoading in ComponentState) or (csDesigning in ComponentState) then
     Exit;
-
+  if BorderStyle <> TFmxFormBorderStyle.None then
+    Exit;
   FShadowForm := TShadowForm.Create(nil);
   TShadowForm(FShadowForm).FOwner := Self;
+  TShadowForm(FShadowForm).InitView(GetShadowBackgroundColor, GetShadowColor);
   FShadowForm.Show;
 end;
 
@@ -316,8 +350,7 @@ begin
       {$IFDEF MSWINDOWS}
       if Assigned(FShadowForm) then begin
         Lockwindowupdate(FHwnd);
-        SetWindowPos(FHwnd, HWND_TOP, Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y),
-          SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE);
+        SetWindowPos(FHwnd, HWND_TOP, Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y), SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE);
         Lockwindowupdate(0);
         TShadowForm(FShadowForm).UpdateBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y));
         UpdateWindow(FHwnd);
@@ -389,6 +422,39 @@ begin
   end;
 end;
 
+procedure TSizeForm.ShowMax;
+begin
+  Self.WindowState := TWindowState.wsMaximized;
+  {$IFDEF MSWINDOWS}
+  //PostMessage(FHwnd, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
+  {$ELSE}
+  {$ENDIF}
+end;
+
+procedure TSizeForm.ShowMin;
+begin
+  {$IFDEF MSWINDOWS}
+  PostMessage(FHwnd, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+  {$ELSE}
+  Self.WindowState := TWindowState.wsMinimized;
+  {$ENDIF}
+end;
+
+procedure TSizeForm.ShowReSize;
+begin
+  Self.WindowState := TWindowState.wsNormal;
+end;
+
+function TSizeForm.GetShadowBackgroundColor: TAlphaColor;
+begin
+  Result := $ffffffff;
+end;
+
+function TSizeForm.GetShadowColor: TAlphaColor;
+begin
+  Result := $7f000000;
+end;
+
 procedure TSizeForm.UpdateCurror(const AResizeMode: TResizeMode);
 const
   CCursor: array [TResizeMode] of Integer = (
@@ -410,20 +476,6 @@ begin
   Self.Visible := False;
   Self.Transparency := True;
   Self.WindowState := TWindowState.wsNormal;
-
-  FView := TColorView.Create(Self);
-  FView.Margins.Rect := RectF(FShadowSize, FShadowSize, FShadowSize, FShadowSize);
-  FView.Align := TAlignLayout.Client;
-  FView.Parent := Self;
-
-  FShadow := TShadowEffect.Create(Self);
-  FShadow.Direction := 90;
-  FShadow.Opacity := 1;
-  FShadow.Softness := 0.35;
-  FShadow.Distance := 0;
-  FShadow.ShadowColor := $7f000000;
-  FShadow.Parent := FView;
-  FShadow.Enabled := True;
 end;
 
 destructor TShadowForm.Destroy;
@@ -467,7 +519,25 @@ begin
   SetDesigning(True, False);
 end;
 
-procedure TShadowForm.UpdateBounds(ALeft, ATop, AWidth, AHeight: Integer);
+procedure TShadowForm.InitView(const BgColor, ShadowColor: TAlphaColor);
+begin
+  FView := TColorView.Create(Self);
+  FView.FColor := BgColor;
+  FView.Margins.Rect := RectF(FShadowSize, FShadowSize, FShadowSize, FShadowSize);
+  FView.Align := TAlignLayout.Client;
+  FView.Parent := Self;
+
+  FShadow := TShadowEffect.Create(Self);
+  FShadow.Direction := 90;
+  FShadow.Opacity := 1;
+  FShadow.Softness := 0.35;
+  FShadow.Distance := 0;
+  FShadow.ShadowColor := ShadowColor;
+  FShadow.Parent := FView;
+  FShadow.Enabled := True;
+end;
+
+procedure TShadowForm.UpdateBounds(ALeft, ATop, AWidth, AHeight, Flags: Integer);
 var
   R: TRect;
 begin
@@ -476,8 +546,8 @@ begin
   R.Right := R.Left + FShadowSize * 2 + AWidth;
   R.Bottom := R.Top + FShadowSize * 2 + AHeight;
   {$IFDEF MSWINDOWS}
-  SetWindowPos(FMHwnd, HWND_TOP, R.Left, R.Top, R.Width, R.Height,
-      SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE);
+  Flags := Flags or SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE;
+  SetWindowPos(FMHwnd, HWND_TOP, R.Left, R.Top, R.Width, R.Height, Flags);
   //UpdateWindow(FMHwnd);
   {$ELSE}
   SetBounds(R);
@@ -497,7 +567,7 @@ begin
           Result := 0;
           Exit;
         end;
-      end;  
+      end;
   end;
   Result := CallWindowProc(Ptr(FOldWndProc), Wnd, Msg, wParam, lParam);
   case Msg of
@@ -510,14 +580,12 @@ begin
             SWP_NOSIZE or SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE);
       end;
     WM_ACTIVATE, WM_NCACTIVATE:
-      UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height);
+      begin
+        UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height, 0);
+      end;
     WM_SHOWWINDOW:
       begin
-        if wParam = 0 then begin
-          ShowWindow(FMHwnd, SW_HIDE);
-        end else begin
-          ShowWindow(FMHwnd, SW_SHOW);
-        end;
+        SendMessage(FMHwnd, MSG, wParam, lParam);
       end;
   end;
 end;
@@ -528,7 +596,7 @@ end;
 procedure TColorView.Paint;
 begin
   //inherited Paint;
-  Canvas.Fill.Color := $ffffffff;
+  Canvas.Fill.Color := FColor;
   Canvas.Fill.Kind := TBrushKind.Solid;
   Canvas.FillRect(ClipRect, 0, 0, [], 1);
 end;

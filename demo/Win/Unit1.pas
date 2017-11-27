@@ -17,6 +17,8 @@ type
     btnClose: TTextView;
     layBackground: TLinearLayout;
     btnRestore: TTextView;
+    layBody: TRelativeLayout;
+    Timer1: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure btnCloseMouseEnter(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
@@ -25,8 +27,12 @@ type
     procedure btnMinClick(Sender: TObject);
     procedure btnMinMouseLeave(Sender: TObject);
     procedure layTitleDblClick(Sender: TObject);
+    procedure ButtonView1Click(Sender: TObject);
   private
     { Private declarations }
+  protected
+    function GetShadowBackgroundColor: TAlphaColor; override;
+    function GetShadowColor: TAlphaColor; override;
   public
     { Public declarations }
     procedure AniTextViewBackgroundColor(Sender: TObject; IsIn: Boolean);
@@ -67,16 +73,13 @@ procedure TForm1.btnMaxClick(Sender: TObject);
 begin
   btnMax.Visible := False;
   btnRestore.Visible := True;
-  Self.WindowState := TWindowState.wsMaximized;
+  ShowMax();
   layTitle.CaptureDragForm := False;
 end;
 
 procedure TForm1.btnMinClick(Sender: TObject);
 begin
-  btnRestore.Visible := False;
-  btnMax.Visible := True;
-  Self.WindowState := TWindowState.wsMinimized;
-  layTitle.CaptureDragForm := True;
+  ShowMin();
 end;
 
 procedure TForm1.btnMinMouseLeave(Sender: TObject);
@@ -88,8 +91,13 @@ procedure TForm1.btnRestoreClick(Sender: TObject);
 begin
   btnRestore.Visible := False;
   btnMax.Visible := True;
-  Self.WindowState := TWindowState.wsNormal;
+  ShowReSize();
   layTitle.CaptureDragForm := True;
+end;
+
+procedure TForm1.ButtonView1Click(Sender: TObject);
+begin
+  Timer1.Enabled := not Timer1.Enabled;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
@@ -98,11 +106,21 @@ begin
   ShowShadow := True;  // ´ò¿ªÒõÓ°
 end;
 
+function TForm1.GetShadowBackgroundColor: TAlphaColor;
+begin
+  Result := Fill.Color;
+end;
+
+function TForm1.GetShadowColor: TAlphaColor;
+begin
+  Result := $7f101010;
+end;
+
 procedure TForm1.layTitleDblClick(Sender: TObject);
 begin
-  if btnMax.Visible then
-    btnMaxClick(Sender)
-  else begin
+  if btnMax.Visible then begin
+    btnMaxClick(Sender);
+  end else begin
     TFrameAnimator.DelayExecute(Self,
       procedure (Sender: TObject)
       begin
