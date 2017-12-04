@@ -84,6 +84,7 @@ function CharCount(const S: string): Integer;
 
 // 字符串指针转为数字
 function PCharToIntDef(const S: pchar; Len: Integer; def: NativeInt = 0): NativeInt;
+function PHexToIntDef(const S: pchar; Len: Integer; def: NativeInt = 0): NativeInt;
 
 // Html颜色转为Color
 function HtmlColorToColor(const V: string): TAlphaColor;
@@ -637,6 +638,22 @@ begin
       Exit;
     end;
     result := (result * 10) + V;
+  end;
+end;
+
+function PHexToIntDef(const S: pchar; Len: Integer; def: NativeInt = 0): NativeInt;
+var
+  I: Integer;
+  v: Integer;
+begin
+  Result := 0;
+  for I := 0 to len-1 do begin
+    V := Convert[ord(s[i])];
+    if V<0 then begin
+      Result := def;
+      Exit;
+    end;
+    result := (result * 16) + V;
   end;
 end;
 

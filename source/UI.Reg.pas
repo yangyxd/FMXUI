@@ -20,7 +20,7 @@ implementation
 uses
   UI.Debug,
   System.SysUtils, System.Actions,
-  UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.Grid,
+  UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.Grid, UI.Calendar,
   UI.ListView,
   // UI.ListViewEx,
   UI.Toast,
@@ -153,6 +153,7 @@ begin
   RegisterComponents(PageName, [TDBGridView]);
   RegisterComponents(PageName, [TStringGridView]);
 
+  RegisterComponents(PageName, [TCalendarView]);
   RegisterComponents(PageName, [TDateView]);
   RegisterComponents(PageName, [TTimeView]);
 

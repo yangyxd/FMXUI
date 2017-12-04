@@ -633,6 +633,9 @@ type
   end;
 
 type
+  /// <summary>
+  /// 文本视图
+  /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TTextView = class(TScrollView, ICaption{$IF CompilerVersion > 30.0}, IAcceleratorKeyReceiver{$ENDIF})
   private
@@ -743,6 +746,9 @@ type
   end;
 
 type
+  /// <summary>
+  /// 按钮视图
+  /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TButtonView = class(TStyleView)
   private
