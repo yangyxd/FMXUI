@@ -156,6 +156,7 @@ begin
   RegisterComponents(PageName, [TCalendarView]);
   RegisterComponents(PageName, [TDateView]);
   RegisterComponents(PageName, [TTimeView]);
+  RegisterComponents(PageName, [TCalendarLanguage_CN]);
 
   RegisterComponents(PageName, [TDialogStyleManager]);
   RegisterComponents(PageName, [TToastManager]);
