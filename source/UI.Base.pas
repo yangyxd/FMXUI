@@ -259,6 +259,7 @@ type
   public
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
+    procedure ChangeToSolidColor(const AColor: TAlphaColor; IsDefault: Boolean = True);
   published
     property Accessory: TViewAccessory read GetAccessory write SetAccessory;
     property Kind: TViewBrushKind read GetKind write SetKind stored IsKindStored;
@@ -6852,6 +6853,15 @@ begin
     end else
       Accessory.Assign(TViewBrushBase(Source).FAccessory);
   end;
+end;
+
+procedure TViewBrushBase.ChangeToSolidColor(const AColor: TAlphaColor;
+  IsDefault: Boolean);
+begin
+  Color := AColor;
+  DefaultColor := AColor;
+  Kind := TViewBrushKind.Solid;
+  DefaultKind := TBrushKind.Solid;
 end;
 
 destructor TViewBrushBase.Destroy;
