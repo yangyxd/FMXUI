@@ -338,14 +338,14 @@ type
     procedure SetCornerType(const Value: TCornerType);
   protected
     [Weak] FView: IView;
-    FDefault: TBrush;
-    FPressed: TBrush;
-    FFocused: TBrush;
-    FHovered: TBrush;
-    FSelected: TBrush;
-    FChecked: TBrush;
-    FEnabled: TBrush;
-    FActivated: TBrush;
+    FDefault: TBrush;  // 0
+    FPressed: TBrush;  // 1
+    FFocused: TBrush;  // 2
+    FHovered: TBrush;  // 3
+    FSelected: TBrush; // 4
+    FChecked: TBrush;  // 5
+    FEnabled: TBrush;  // 6
+    FActivated: TBrush;// 7
 
     function GetEmpty: Boolean; virtual;
     function GetDrawRect(const ALeft, ATop, ARight, ABottom: Single): TRectF; virtual;

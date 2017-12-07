@@ -13,7 +13,7 @@ interface
 uses
   UI.Base, UI.Utils, UI.Ani, UI.Standard, UI.Calendar.Data,
   FMX.Effects, FMX.Text,
-  {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
+  {$IFDEF MSWINDOWS}Windows, UI.Debug, {$ENDIF}
   FMX.Objects, System.Math, System.Actions, System.DateUtils, FMX.Consts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, FMX.TextLayout,
   System.Classes, System.Types, System.UITypes, System.SysUtils, System.Math.Vectors,
@@ -26,17 +26,19 @@ type
   /// </summary>
   TCalendarOption = (
      coShowNavigation, {显示导航}
-     coShowWeek, {显示星期}
-     coSingle, {只显示一行日期}
-     coShowBeforeAfter, {显示满行，如果指定日期不在本月则显示为灰色}
+     coShowWeek, {显示星期行}
+     coShowBeforeAfter, {显示整行的日期，如果指定日期不在本月则显示为灰色}
      coCalendarWeeks, {显示周数}
      coTodayHighlight, {高亮今天}
      coShowTodayButton, {显示今天按钮}
+     coShowClearButton, {显示清除按钮}
      coShowLunar, {显示农历}
      coShowTerm, {显示节气，需要开启 coShowLunar}
      coShowRowLines, {显示行线}
      coShowCosLines, {显示列线}
-     coShowWeekLine {在星期行与日期行之间显示分隔线}
+     coCosLinesOut, {当启用coShowCosLines时，启用本项时，列线延伸至星期行}
+     coShowWeekLine, {在星期行与日期行之间显示分隔线}
+     coEllipseSelect {当Drawable的IsCircle为True时，选中和今天的背景画成椭圆}
   );
   TCalendarOptions = set of TCalendarOption;
 
@@ -67,6 +69,8 @@ type
     function WeekStrList: TArray<string>;
     function MonthsStrList: TArray<string>;
     function DateToStr(const Value: TDate): string;
+    function TodayStr: string;
+    function ClearStr: string;
   end;
 
 type
@@ -78,6 +82,8 @@ type
     function WeekStrList: TArray<string>;
     function MonthsStrList: TArray<string>;
     function DateToStr(const Value: TDate): string;
+    function TodayStr: string;
+    function ClearStr: string;
   end;
 
   /// <summary>
@@ -88,6 +94,8 @@ type
     function WeekStrList: TArray<string>;
     function MonthsStrList: TArray<string>;
     function DateToStr(const Value: TDate): string;
+    function TodayStr: string;
+    function ClearStr: string;
   end;
 
 type
@@ -100,6 +108,7 @@ type
 
     FDefault: TAlphaColor;      // 默认
     FHovered: TAlphaColor;      // 默认悬停
+    FPressed: TAlphaColor;      // 按下
     FToday: TAlphaColor;        // 今天
     FTodayHot: TAlphaColor;     // 今天悬停
     FSelected: TAlphaColor;     // 选中
@@ -109,6 +118,7 @@ type
     FWeekendHot: TAlphaColor;   // 周末悬停
     FOutMonth: TAlphaColor;     // 非本月
     FOutMonthHot: TAlphaColor;  // 非本月悬停
+    FHighlight: TAlphaColor;    // 高亮
 
     FColorStoreState: Cardinal;
     function GetColorStoreState(const Index: Integer): Boolean;
@@ -136,6 +146,10 @@ type
     procedure SetOutMonth(const Value: TAlphaColor);
     procedure SetOutMonthHot(const Value: TAlphaColor);
     procedure SetWeekendHot(const Value: TAlphaColor);
+    function ColorHighlightStored: Boolean;
+    procedure SetHighlight(const Value: TAlphaColor);
+    function ColorPressedStored: Boolean;
+    procedure SetPressed(const Value: TAlphaColor);
   protected
     procedure DoChange(Sender: TObject);
   public
@@ -155,11 +169,13 @@ type
     property WeekendHotChange: Boolean index 9 read GetColorStoreState write SetColorStoreState;
     property OutMonthChange: Boolean index 10 read GetColorStoreState write SetColorStoreState;
     property OutMonthHotChange: Boolean index 11 read GetColorStoreState write SetColorStoreState;
-
+    property HighlightChange: Boolean index 12 read GetColorStoreState write SetColorStoreState;
+    property PressedChange: Boolean index 13 read GetColorStoreState write SetColorStoreState;
 
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
   published
     property Default: TAlphaColor read FDefault write SetDefault stored ColorDefaultStored;
+    property Pressed: TAlphaColor read FPressed write SetPressed stored ColorPressedStored;
     property Hovered: TAlphaColor read FHovered write SetHovered stored ColorHoveredStored;
     property Today: TAlphaColor read FToday write SetToday stored ColorTodayStored;
     property TodayHot: TAlphaColor read FTodayHot write SetTodayHot stored ColorTodayHotStored;
@@ -170,6 +186,7 @@ type
     property WeekendHot: TAlphaColor read FWeekendHot write SetWeekendHot stored ColorWeekendHotStored;
     property OutMonth: TAlphaColor read FOutMonth write SetOutMonth stored ColorOutMonthStored;
     property OutMonthHot: TAlphaColor read FOutMonthHot write SetOutMonthHot stored ColorOutMonthHotStored;
+    property Highlight: TAlphaColor read FHighlight write SetHighlight stored ColorHighlightStored;
   end;
 
   TCalendarTextSettings = class(TTextSettingsBase)
@@ -208,19 +225,21 @@ type
     property ItemTodayHot: TViewBrush index 2 read GetValue write SetValue;
     property ItemSelected: TViewBrush index 3 read GetValue write SetValue;
     property ItemSelectedHot: TViewBrush index 4 read GetValue write SetValue;
+    property ItemHighlight: TViewBrush index 5 read GetValue write SetValue;
+    property ItemWeekNav: TViewBrush index 6 read GetValue write SetValue;
   end;
 
 type
   TCalendarViewBase = class(TView)
   private const
-    CDefaultRowPadding = 4;
     CDefaultRowHeihgt = 45;
     CDefaultRowLunarHeight = 20;
-    CDefaultRowLunarPadding = 2;
     CDefaultWeeksWidth = 40;  // 周数列宽度
     CDefaultDividerColor = $ffc0c0c0;
+    CDefaultNextUpW = 30;
   private
     [Weak] FLanguage: ICalendarLanguage;
+    [Weak] FInnerLanguage: ICalendarLanguage;
     FOptions: TCalendarOptions;
     FStartView: TCalendarViewType;
     FStartDate: TDate;
@@ -235,6 +254,7 @@ type
     FTextSettingsOfWeeks: TSimpleTextSettings;
 
     FDrawable: TCalendarDrawable;
+    FDividerBrush: TBrush;
 
     FRowPadding: Single;
     FRowHeihgt: Single;
@@ -244,17 +264,10 @@ type
     FDivider: TAlphaColor; // 分隔线颜色
     FInFitSize: Boolean;
 
-    FValue: TDate;
-
-    FCurDayOfWeek: Integer; // 本月第一天的星期数
-    FCurFirst: Integer;  // 当前显示的第一天
-    FCurLast: Integer;   // 当前显示的最后一天
-    FCurWeekOffset: Integer; // 星期偏移
-    FCurRows: Integer; // 需要显示的行数
-
-    FCurHotDate: Integer; // 当前鼠标指向的日期
-
     FOnValueChange: TNotifyEvent;
+
+    FRangeOfNavigation: TRectF;
+    FRangeOfDays: TRectF;
 
     procedure SetOptions(const Value: TCalendarOptions);
     procedure SetEndDate(const Value: TDate);
@@ -285,6 +298,16 @@ type
     procedure SetValue(const Value: TDate);
     procedure SetDivider(const Value: TAlphaColor);
   protected
+    FValue: TDate;
+
+    FCurDayOfWeek: Integer; // 本月第一天的星期数
+    FCurFirst: Integer;  // 当前显示的第一天
+    FCurLast: Integer;   // 当前显示的最后一天
+    FCurRows: Integer; // 需要显示的行数
+    FCurDrawS: Integer; // 当前绘制的第一天
+
+    FCurHotDate: Integer; // 当前鼠标指向的日期
+
     function IsAutoSize: Boolean; override;
     procedure DoOptionsChange; virtual;
     procedure DoChange; virtual;
@@ -293,19 +316,26 @@ type
     procedure DoDateChange(); virtual;
 
     procedure DoAutoSize;
+    procedure InitDividerBrush;
 
     procedure ParseValue(const Value: TDate); virtual;
   protected
     procedure Loaded; override;
     procedure Resize; override;
     procedure DoRecalcSize(var AWidth, AHeight: Single); override;
+
+    function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
+    procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
+    procedure DoMouseLeave; override;
     
     procedure PaintBackground; override;
     procedure PaintToCanvas(Canvas: TCanvas);
 
     procedure DoDrawNavigation(Canvas: TCanvas; const R: TRectF);
     procedure DoDrawWeekRow(Canvas: TCanvas; const R: TRectF);
-    procedure DoDrawDatesRow(Canvas: TCanvas; const R: TRectF);
+    procedure DoDrawDatesRow(Canvas: TCanvas; const R: TRectF; WeekRowTop: Single);
+    procedure DoDrawItemBackground(Canvas: TCanvas; ABrush: TBrush; const R: TRectF; IsCircle: Boolean);
+    procedure DoDrawButton(Canvas: TCanvas; const R: TRectF; const Text: string; const ID: Integer);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -413,6 +443,10 @@ type
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TCalendarView = class(TCalendarViewBase)
   published
+    property CanFocus default True;
+    property HitTest default True;
+    property Clickable default True;
+
     property AutoSize;
     property Options default CDefaultCalendarOptions;
     property StartView default TCalendarViewType.Days;
@@ -442,10 +476,25 @@ type
 
 implementation
 
+const
+  BID_Today = -5;
+  BID_Next = -1;
+  BID_Up = -2;
+  BID_Navigation = -3;
+  BID_Clear = -4;
+
+type
+  TTmpSimpleTextSettings = class(TSimpleTextSettings);
+
 var
   DefaultLanguage: TCalendarLanguage_EN;
 
 { TCalendarLanguage_CN }
+
+function TCalendarLanguage_CN.ClearStr: string;
+begin
+  Result := '清除';
+end;
 
 function TCalendarLanguage_CN.DateToStr(const Value: TDate): string;
 begin
@@ -458,12 +507,22 @@ begin
     '7月', '8月', '9月', '10月', '11月', '12月'];
 end;
 
+function TCalendarLanguage_CN.TodayStr: string;
+begin
+  Result := '今天';
+end;
+
 function TCalendarLanguage_CN.WeekStrList: TArray<string>;
 begin
   Result := ['日', '一', '二', '三', '四', '五', '六'];
 end;
 
 { TCalendarLanguage_EN }
+
+function TCalendarLanguage_EN.ClearStr: string;
+begin
+  Result := 'Clear';
+end;
 
 function TCalendarLanguage_EN.DateToStr(const Value: TDate): string;
 const
@@ -475,13 +534,18 @@ var
   Y, M, D: Word;
 begin
   DecodeDate(Value, Y, M, D);
-  Result := Format('%s %d', [LMonths[M], Y]);
+  Result := Format('%s %d', [LMonths[M - 1], Y]);
 end;
 
 function TCalendarLanguage_EN.MonthsStrList: TArray<string>;
 begin
   Result := ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+end;
+
+function TCalendarLanguage_EN.TodayStr: string;
+begin
+  Result := 'Today';
 end;
 
 function TCalendarLanguage_EN.WeekStrList: TArray<string>;
@@ -491,11 +555,16 @@ end;
 
 { TCalendarViewBase }
 
+function TCalendarViewBase.CanRePaintBk(const View: IView;
+  State: TViewState): Boolean;
+begin
+  Result := (FTextSettings.FColor.FPressed <> 0) or inherited;
+end;
+
 constructor TCalendarViewBase.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  if not (csDesigning in ComponentState) then  
-    FLanguage := DefaultLanguage;
+  FLanguage := nil;
   FOptions := CDefaultCalendarOptions;
 
   FTextSettings := TCalendarTextSettings.Create(Self);
@@ -508,19 +577,22 @@ begin
 
   FDrawable := TCalendarDrawable.Create(Self);
   FDrawable.ItemToday.ChangeToSolidColor($ffffdb99);
+  FDrawable.ItemSelected.ChangeToSolidColor($ff286090);
   FDrawable.ItemHovered.ChangeToSolidColor($fff5f5f5);
   FDrawable.ItemTodayHot.ChangeToSolidColor($ffffc966);
-  FDrawable.ItemSelected.ChangeToSolidColor($ff286090);
   FDrawable.ItemSelectedHot.ChangeToSolidColor($ff204d74);
+  FDrawable.ItemHighlight.ChangeToSolidColor($bfd9edf7);
 
-  FRowPadding := CDefaultRowPadding;
+  FRowPadding := 0;
   FRowHeihgt := CDefaultRowHeihgt;
   FRowLunarHeight := CDefaultRowLunarHeight;
-  FRowLunarPadding := CDefaultRowLunarPadding;
+  FRowLunarPadding := 0;
 
   FDivider := CDefaultDividerColor;
 
   SetAcceptsControls(False);
+  Clickable := True;
+  CanFocus := True;
 end;
 
 destructor TCalendarViewBase.Destroy;
@@ -530,6 +602,7 @@ begin
   FreeAndNil(FTextSettingsOfTitle);
   FreeAndNil(FTextSettingsOfWeeks);
   FreeAndNil(FDrawable);
+  FreeAndNil(FDividerBrush);
   inherited Destroy;
 end;
 
@@ -576,16 +649,37 @@ end;
 
 procedure TCalendarViewBase.DoDrawableChange(Sender: TObject);
 begin
-  DoChange;
+  if IsAutoSize and (csDesigning in ComponentState) then begin
+    DoAutoSize;
+  end else
+    DoChange;
 end;
 
-procedure TCalendarViewBase.DoDrawDatesRow(Canvas: TCanvas; const R: TRectF);
+procedure TCalendarViewBase.DoDrawButton(Canvas: TCanvas; const R: TRectF;
+  const Text: string; const ID: Integer);
 var
-  X, Y, W, LX: Single;
-  S, E, LS, LE, LSelect, LToday, Offset: Integer;
-  I, J, D: Integer;
-  Lunar, BeforeAfter: Boolean;
   LColor: TAlphaColor;
+begin
+  LColor := FTextSettingsOfTitle.Color;
+  if FCurHotDate = ID then begin
+    DoDrawItemBackground(Canvas, FDrawable.FDefault, R, False);
+    if (DrawState = TViewState.Pressed) and (FTextSettings.FColor.FPressed <> 0) then
+      TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := FTextSettings.FColor.FPressed
+    else if FTextSettings.FColor.FHovered <> 0 then
+      TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := FTextSettings.FColor.FHovered;
+  end;
+  FTextSettingsOfTitle.Draw(Canvas, Text, R, Opacity, TViewState.None, TLayoutGravity.Center);
+  TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := LColor;
+end;
+
+procedure TCalendarViewBase.DoDrawDatesRow(Canvas: TCanvas; const R: TRectF; WeekRowTop: Single);
+var
+  X, Y, W, LX, LunarHeight: Single;
+  S, LS, LE, LSelect, LToday, Offset, Week: Integer;
+  I, J, D, L: Integer;
+  Lunar, BeforeAfter, IsEnd: Boolean;
+  LColor: TAlphaColor;
+  LR: TRectF;
 begin
   W := R.Width;
   LX := R.Left;
@@ -596,12 +690,20 @@ begin
   end;
   W := W / 7;
 
+  if coShowLunar in FOptions then
+    LunarHeight := FRowLunarHeight + FRowLunarPadding
+  else
+    LunarHeight := 0;
+
   LS := FCurFirst;
   LE := FCurLast;
-  Offset := (FCurDayOfWeek + FWeekStart) mod 7;
+  Offset := (FCurDayOfWeek - FWeekStart) mod 7;
+  if Offset < 0 then
+    Inc(Offset, 7);
   S := LS - Offset;
-  E := LE;
   D := DayOf(TDateTime(S));
+
+  FCurDrawS := S;  // 记录当前显示的开始日期
 
   LSelect := Trunc(FValue);
   LToday := Trunc(Now);
@@ -609,67 +711,184 @@ begin
   BeforeAfter := coShowBeforeAfter in FOptions;
   Lunar := coShowLunar in FOptions;
 
-  for J := 0 to FCurRows do begin
+  if (coShowRowLines in FOptions) then begin
+    L := 1;
+  end else
+    L := 0;
+
+  if Assigned(FDividerBrush) then
+    FDividerBrush.Color := FDivider
+  else
+    L := 0;
+
+  IsEnd := False;
+
+  for J := 1 to FCurRows do begin
     X := LX;
     for I := 0 to 6 do begin
       if BeforeAfter or ((S >= LS) and (S <= LE)) then begin
 
+        Week := (I + FWeekStart) mod 7;
+        LColor := 0;
+        LR := RectF(X, Y, X + W - 1, Y + FRowHeihgt + LunarHeight);
+
+        // 高亮显示背景
+        if (TCalendarWeekItem(Week) in DaysOfWeekHighlighted) and Assigned(FDrawable.FChecked) then
+          FDrawable.FillRect(Canvas, LR, 0, 0, FDrawable.Corners, GetAbsoluteOpacity, FDrawable.FChecked);
+
         // 画日期
-        if S = LSelect then begin  // 选中
-          if (FCurHotDate = S) and (FTextSettings.FColor.FSelectedHot <> 0) then
-            LColor := FTextSettings.FColor.FSelectedHot
-          else
+        if TCalendarWeekItem(Week) in DaysOfWeekDisabled then begin  // 禁止选择
+          LColor := FTextSettings.FColor.FEnabled
+        end else if S = LSelect then begin  // 选中
+          if (FCurHotDate = S) then begin
+            DoDrawItemBackground(Canvas, FDrawable.FHovered, LR, FDrawable.IsCircle);
+            LColor := FTextSettings.FColor.FSelectedHot;
+          end else begin
+            DoDrawItemBackground(Canvas, FDrawable.FSelected,  LR, FDrawable.IsCircle);
             LColor := FTextSettings.FColor.FSelected;
+          end;
         end else if (S = LToday) and (coTodayHighlight in FOptions) then begin // 今天
-          if (FCurHotDate = S) and (FTextSettings.FColor.FTodayHot <> 0) then
-            LColor := FTextSettings.FColor.FTodayHot
-          else
+          if (FCurHotDate = S) then begin
+            DoDrawItemBackground(Canvas, FDrawable.FFocused, LR, FDrawable.IsCircle);
+            LColor := FTextSettings.FColor.FTodayHot;
+          end else begin
+            DoDrawItemBackground(Canvas, FDrawable.FPressed, LR, FDrawable.IsCircle);
             LColor := FTextSettings.FColor.FToday;
+          end;
         end else if (S < LS) or (S > LE) then begin  // 不是本月
-          if (FCurHotDate = S) and (FTextSettings.FColor.FOutMonthHot <> 0) then
-            LColor := FTextSettings.FColor.FOutMonthHot
-          else
+          if (FCurHotDate = S) then begin
+            DoDrawItemBackground(Canvas, FDrawable.FDefault, LR, FDrawable.IsCircle);
+            LColor := FTextSettings.FColor.FOutMonthHot;
+          end else
             LColor := FTextSettings.FColor.FOutMonth;
-        end else begin                           // 其它
-          if (FCurHotDate = S) and (FTextSettings.FColor.FHovered <> 0) then
-            LColor := FTextSettings.FColor.FHovered
+        end else if (Week = 0) or (Week = 6) then begin // 周末
+          if (FCurHotDate = S) then begin
+            DoDrawItemBackground(Canvas, FDrawable.FDefault, LR, FDrawable.IsCircle);
+            if IsPressed then
+              LColor := FTextSettings.FColor.FPressed
+            else
+              LColor := FTextSettings.FColor.FWeekendHot;
+          end else
+            LColor := FTextSettings.FColor.FWeekend;
+        end else if (FCurHotDate = S) then begin   // 悬停
+          DoDrawItemBackground(Canvas, FDrawable.FDefault, LR, FDrawable.IsCircle);
+          if IsPressed then
+            LColor := FTextSettings.FColor.FPressed
           else
-            LColor := FTextSettings.FColor.FDefault;
+            LColor := FTextSettings.FColor.FHovered;
+        end else if TCalendarWeekItem(Week) in DaysOfWeekHighlighted then begin  // 高亮显示
+          LColor := FTextSettings.FColor.FHighlight;
         end;
 
-        FTextSettings.FillText(Canvas, RectF(X, Y, X + W, Y + FRowHeihgt),
-          IntToStr(D), Opacity, LColor, FTextSettings.FillTextFlags, nil, 0,
-          TTextAlign.Center, TTextAlign.Center
-        );
+        if LColor = 0 then
+          LColor := FTextSettings.FColor.FDefault;
+
+        FTextSettings.FillText(Canvas, RectF(X, Y, X + W, Y + FRowHeihgt - L),
+          IntToStr(D), Opacity, LColor,
+          FTextSettings.FillTextFlags, nil, 0, TTextAlign.Center);
 
       end;
       Inc(S);
       X := X + W;
 
-      if (S = LS) or (S > LE) then begin
+      if (not IsEnd) and ((S = LS) or (S > LE)) then begin
         D := 1;
         if S > LE then
-          S := 0;
+          IsEnd := True;
       end else
         Inc(D);
     end;
 
+
     Y := Y + FRowHeihgt + FRowPadding;
     if Lunar then
       Y := Y + FRowLunarHeight + FRowLunarPadding;
+
+    if L > 0 then // 画行线
+      Canvas.FillRect(RectF(R.Left, Y - L, R.Right, Y), 0, 0, [], Opacity, FDividerBrush);
+  end;
+
+  // 画列线
+  if Assigned(FDividerBrush) and (coShowCosLines in FOptions) then begin
+    X := LX;
+    Y := R.Top;
+    if (coCosLinesOut in FOptions) and (WeekRowTop <> -$FFFF) then
+      Y := WeekRowTop;
+    for I := 1 to 6 do begin
+      X := X + W;
+      Canvas.FillRect(RectF(X - 1, Y, X, R.Bottom), 0, 0, [], Opacity, FDividerBrush);
+    end;
   end;
 end;
 
-procedure TCalendarViewBase.DoDrawNavigation(Canvas: TCanvas; const R: TRectF);
+procedure TCalendarViewBase.DoDrawItemBackground(Canvas: TCanvas;
+  ABrush: TBrush; const R: TRectF; IsCircle: Boolean);
+var
+  LW, LH, LR: Single;
 begin
-  
+  if ABrush = nil then
+    Exit;
+  if IsCircle then begin
+    LW := R.Width;
+    LH := R.Height;
+    if coEllipseSelect in FOptions then begin
+      FDrawable.FillArc(Canvas, PointF(R.Left + LW * 0.5, R.Top + LH * 0.5), PointF(LW * 0.5, LH * 0.5), 0, 360, Opacity, ABrush);
+    end else  begin
+      LR := Min(LW, LH) * 0.5;
+      FDrawable.FillArc(Canvas, PointF(R.Left + LW * 0.5, R.Top + LH * 0.5), PointF(LR, LR), 0, 360, Opacity, ABrush);
+    end;
+  end else
+    FDrawable.DrawBrushTo(Canvas, ABrush, R);
+end;
+
+procedure TCalendarViewBase.DoDrawNavigation(Canvas: TCanvas; const R: TRectF);
+var
+  LR: TRectF;
+  LColor, SColor: TAlphaColor;
+  LOpacity: Single;
+begin
+  LOpacity := Opacity;
+  LColor := FTextSettingsOfTitle.Color;
+  LR := RectF(R.Left, R.Top, R.Left + CDefaultNextUpW, R.Bottom - 1);
+
+  if (DrawState = TViewState.Pressed) and (FTextSettings.FColor.FPressed <> 0) then
+    SColor := FTextSettings.FColor.FPressed
+  else if FTextSettings.FColor.FHovered <> 0 then
+    SColor := FTextSettings.FColor.FHovered
+  else
+    SColor := LColor;
+
+  if FCurHotDate = BID_Up then begin
+    DoDrawItemBackground(Canvas, FDrawable.FDefault, LR, FDrawable.IsCircle);
+    TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := SColor;
+  end;
+  FTextSettingsOfTitle.Draw(Canvas, #$00ab, LR, LOpacity, TViewState.None, TLayoutGravity.Center);
+
+  LR := RectF(LR.Right, R.Top, R.Right - CDefaultNextUpW, R.Bottom - 1);
+  if FCurHotDate = BID_Navigation then begin
+    DoDrawItemBackground(Canvas, FDrawable.FDefault, LR, False);
+    TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := SColor;
+  end else
+    TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := LColor;
+  FTextSettingsOfTitle.Draw(Canvas, FInnerLanguage.DateToStr(FValue), LR, LOpacity, TViewState.None, TLayoutGravity.Center);
+
+  LR := RectF(LR.Right, R.Top, R.Right, R.Bottom - 1);
+  if FCurHotDate = BID_Next then begin
+    DoDrawItemBackground(Canvas, FDrawable.FDefault, LR, FDrawable.IsCircle);
+    TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := SColor;
+  end else
+    TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := LColor;
+  FTextSettingsOfTitle.Draw(Canvas, #$00bb, LR, LOpacity, TViewState.None, TLayoutGravity.Center);
+
+  TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := LColor;
 end;
 
 procedure TCalendarViewBase.DoDrawWeekRow(Canvas: TCanvas; const R: TRectF);
 var
-  X, W: Single;
-  I: Integer;
+  X, W, L: Single;
+  I, J: Integer;
   Items: TArray<string>;
+  LColor: TAlphaColor;
 begin
   W := R.Width;
   X := R.Left;
@@ -678,20 +897,47 @@ begin
     X := X + CDefaultWeeksWidth;
   end;
   W := W / 7;
-  if Assigned(FLanguage) then
-    Items := Language.WeekStrList
+  Items := FInnerLanguage.WeekStrList;
+  if Assigned(FDividerBrush) and ((coShowWeekLine in FOptions) or (coShowRowLines in FOptions)) then
+    L := 1
   else
-    Items := DefaultLanguage.WeekStrList;
+    L := 0;
+
+  if Assigned(FDrawable.FEnabled) then
+    FDrawable.DrawBrushTo(Canvas, FDrawable.FEnabled, R);
+
+  LColor := FTextSettingsOfTitle.Color;
   for I := 0 to 6 do begin
-    FTextSettingsOfTitle.Draw(Canvas, Items[(I + FWeekStart) mod 7], 
-      RectF(X, R.Top, X + W, R.Bottom), Opacity, TViewState.None, TLayoutGravity.Center);
+    J := (I + FWeekStart) mod 7;
+    if ((J = 0) or (J = 6)) and (FTextSettings.FColor.FWeekend <> 0) then
+      TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := FTextSettings.FColor.FWeekend
+    else
+      TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := LColor;
+    FTextSettingsOfTitle.Draw(Canvas, Items[J],
+      RectF(X, R.Top, X + W, R.Bottom - L), Opacity, TViewState.None, TLayoutGravity.Center);
     X := X + W;
-  end;        
+  end;
+  TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := LColor;
+
+  if L > 0 then begin
+    FDividerBrush.Color := FDivider;
+    Canvas.FillRect(RectF(R.Left, R.Bottom - L, R.Right, R.Bottom), 0, 0, [], Opacity, FDividerBrush);
+  end;
+end;
+
+procedure TCalendarViewBase.DoMouseLeave;
+begin
+  FCurHotDate := 0;
+  inherited DoMouseLeave;
 end;
 
 procedure TCalendarViewBase.DoOptionsChange;
 begin
-  Invalidate;
+  InitDividerBrush();
+  if IsAutoSize then
+    DoAutoSize
+  else
+    Invalidate;
 end;
 
 procedure TCalendarViewBase.DoRecalcSize(var AWidth, AHeight: Single);
@@ -701,13 +947,21 @@ begin
   if FInFitSize or (Scene = nil) or (not Assigned(FTextSettings)) or (not AutoSize) then
     Exit;
   FInFitSize := True;
-  W := 350 + Padding.Left + Padding.Right;
+  H := Padding.Top + Padding.Bottom;
+  W := 300 + Padding.Left + Padding.Right;
   if coCalendarWeeks in FOptions then
     W := W + CDefaultWeeksWidth;
+
+  if Assigned(FBackground) and Assigned(TDrawableBorder(FBackground)._Border) and
+    (TDrawableBorder(FBackground)._Border.Style <> TViewBorderStyle.None) then
+  begin
+    H := H + TDrawableBorder(FBackground)._Border.Width * 2;
+    W := W + TDrawableBorder(FBackground)._Border.Width * 2;
+  end;
+
   if AWidth > W then
     W := AWidth;
 
-  H := Padding.Top + Padding.Bottom; 
   if coShowNavigation in FOptions then
     H := H + FRowHeihgt + FRowPadding;
   if coShowWeek in FOptions then
@@ -717,13 +971,10 @@ begin
   if coShowLunar in FOptions then
     V := V + FRowLunarHeight + FRowLunarPadding;
     
-  if coSingle in FOptions then
-    H := H + V
-  else 
-    H := H + V * FCurRows;
+  H := H + V * FCurRows;
 
-  if coShowTodayButton in FOptions then
-    H := H + FRowHeihgt + FRowPadding; 
+  if (coShowTodayButton in FOptions) or (coShowClearButton in FOptions) then
+    H := H + FRowHeihgt + FRowPadding;
 
   AWidth := W;
   AHeight := H;
@@ -748,9 +999,18 @@ end;
 
 function TCalendarViewBase.GetLanguage: ICalendarLanguage;
 begin
-  if (not Assigned(FLanguage)) and (not (csDesigning in ComponentState)) then
-    FLanguage := DefaultLanguage;
   Result := FLanguage;
+end;
+
+procedure TCalendarViewBase.InitDividerBrush;
+begin
+  if ((coShowWeekLine in FOptions) or (coShowRowLines in FOptions) or (coShowCosLines in FOptions)) and
+    (FDivider and $FF000000 <> 0)
+  then begin
+    if not Assigned(FDividerBrush) then
+      FDividerBrush := TBrush.Create(TBrushKind.Solid, TAlphaColorRec.Null);
+  end else
+    FreeAndNil(FDividerBrush);
 end;
 
 function TCalendarViewBase.IsAutoSize: Boolean;
@@ -780,12 +1040,12 @@ end;
 
 function TCalendarViewBase.IsStoredRowLunarPadding: Boolean;
 begin
-  Result := FRowLunarPadding <> CDefaultRowLunarPadding;
+  Result := FRowLunarPadding <> 0;
 end;
 
 function TCalendarViewBase.IsStoredRowPadding: Boolean;
 begin
-  Result := FRowPadding <> CDefaultRowPadding;
+  Result := FRowPadding <> 0;
 end;
 
 procedure TCalendarViewBase.Loaded;
@@ -800,49 +1060,144 @@ begin
     DoAutoSize;
 end;
 
+procedure TCalendarViewBase.MouseMove(Shift: TShiftState; X, Y: Single);
+var
+  P: TPointF;
+  ID, LX, LY: Integer;
+begin
+  if (csDesigning in ComponentState) then begin
+    inherited;
+    Exit;
+  end;
+
+  P.X := X;
+  P.Y := Y;
+  ID := 0;
+
+  if IsPointInRect(P, FRangeOfDays) then begin
+    // 在日期区域内
+    X := FRangeOfDays.Width / 7;
+    Y := FRangeOfDays.Height / FCurRows;
+    LX := Trunc((P.X - FRangeOfDays.Left) / X);
+    LY := Trunc((P.Y - FRangeOfDays.Top) / Y);
+    ID := FCurDrawS + LY * 7 + LX;
+  end else if IsPointInRect(P, FRangeOfNavigation) then begin
+    // 在导航区域内
+    if P.X < FRangeOfNavigation.Left + CDefaultNextUpW then
+      ID := BID_Up
+    else if P.X > FRangeOfNavigation.Right - CDefaultNextUpW then
+      ID := BID_Next
+    else
+      ID := BID_Navigation;
+  end else begin
+    LY := 0;
+    if (coShowTodayButton in FOptions) then
+      Inc(LY);
+    if (coShowClearButton in FOptions) then
+      Inc(LY, 2);
+    if (LY > 0) and (P.Y > FRangeOfDays.Bottom) and (P.Y < FRangeOfDays.Bottom + FRowHeihgt) and
+      (P.X > FRangeOfDays.Left) and (P.X < FRangeOfDays.Right) then
+    begin
+      // 在按钮区域内
+      if LY = 3 then begin
+        if P.X > FRangeOfDays.Left + FRangeOfDays.Width * 0.5 then
+          ID := BID_Clear
+        else
+          ID := BID_Today;
+      end else if LY = 1 then
+        ID := BID_Today
+      else
+        ID := BID_Clear;
+    end;
+  end;
+
+  if FCurHotDate <> ID then begin
+    FCurHotDate := ID;
+    Invalidate;
+  end;
+
+  inherited;
+end;
+
 procedure TCalendarViewBase.PaintBackground;
 begin
   if AbsoluteInVisible or (csLoading in ComponentState) then
     Exit;
+  if (FLanguage <> nil) then
+    FInnerLanguage := FLanguage
+  else
+    FInnerLanguage := DefaultLanguage;
   PaintToCanvas(Canvas);
 end;
 
 procedure TCalendarViewBase.PaintToCanvas(Canvas: TCanvas);
 var
   R, LR: TRectF;
-  ItemHeight: Single;
+  LH, LT: Single;
 begin
-  if Assigned(FBackground) then
+  LH := 0;
+  if Assigned(FBackground) then begin
     FBackground.Draw(Canvas);
+    if Assigned(TDrawableBorder(FBackground)._Border) and (TDrawableBorder(FBackground)._Border.Style <> TViewBorderStyle.None) then
+      LH := TDrawableBorder(FBackground)._Border.Width;
+  end;
 
-  R := RectF(Padding.Left, Padding.Top, Width - Padding.Right, Height - Padding.Bottom);
+  R := RectF(Padding.Left + LH, Padding.Top + LH, Width - Padding.Right - LH, Height - Padding.Bottom - LH);
 
   // 导航栏
   if coShowNavigation in FOptions then begin  
     LR := RectF(R.Left, R.Top, R.Right, R.Top + FRowHeihgt); 
     R.Top := LR.Bottom;
-    DoDrawNavigation(Canvas, LR);  
-  end;
+    DoDrawNavigation(Canvas, LR);
+    FRangeOfNavigation := LR;
+  end else
+    FRangeOfNavigation.Clear;
 
   // 星期
+  LT := -$FFFF;
   if coShowWeek in FOptions then begin
+    if coCosLinesOut in FOptions then
+      LT := R.Top;
     LR := RectF(R.Left, R.Top, R.Right, R.Top + FRowHeihgt); 
     R.Top := LR.Bottom;
     DoDrawWeekRow(Canvas, LR);
   end;
 
   // 日期
-  ItemHeight := FRowHeihgt + FRowPadding;
+  LH := FRowHeihgt + FRowPadding;
   if coShowLunar in FOptions then
-    ItemHeight := ItemHeight + FRowLunarHeight + FRowLunarPadding;
-  LR := RectF(R.Left, R.Top, R.Right, R.Top + FCurRows * ItemHeight);
+    LH := LH + FRowLunarHeight + FRowLunarPadding;
+  LR := RectF(R.Left, R.Top, R.Right, R.Top + FCurRows * LH);
   R.Top := LR.Bottom;
-  DoDrawDatesRow(Canvas, LR);
+  DoDrawDatesRow(Canvas, LR, LT);
+  FRangeOfDays := LR;
+
+  // 今天按钮
+  if coShowTodayButton in FOptions then begin
+    if not (coShowClearButton in FOptions) then begin
+      LR := RectF(R.Left, R.Top + 1, R.Right, R.Top + FRowHeihgt - 1);
+      R.Top := LR.Bottom + 1;
+    end else
+      LR := RectF(R.Left, R.Top + 1, R.Left + (R.Right - R.Left) * 0.5, R.Top + FRowHeihgt - 1);
+    DoDrawButton(Canvas, LR, FInnerLanguage.TodayStr, BID_Today);
+  end;
+
+  // 清除按钮
+  if coShowClearButton in FOptions then begin
+    if not (coShowTodayButton in FOptions) then begin
+      LR := RectF(R.Left, R.Top + 1, R.Right, R.Top + FRowHeihgt - 1);
+    end else begin
+      LR.Left := LR.Right;
+      LR.Right := R.Right;
+    end;
+    R.Top := LR.Bottom + 1;
+    DoDrawButton(Canvas, LR, FInnerLanguage.ClearStr, BID_Clear);
+  end;
 end;
 
 procedure TCalendarViewBase.ParseValue(const Value: TDate);
 var
-  S, E: Integer;
+  S, E, Offset: Integer;
   Y, M, D: Word;
 begin
   DecodeDate(Value, Y, M, D);
@@ -856,9 +1211,11 @@ begin
   FCurLast := Trunc(EncodeDateTime(Y, M, 1, 0, 0, 0, 0)) - 1;
 
   FCurDayOfWeek := DayOfWeek(FCurFirst) - 1;
-  FCurWeekOffset := (FCurDayOfWeek + FWeekStart) mod 7;
+  Offset := (FCurDayOfWeek - FWeekStart) mod 7;
+  if Offset < 0 then
+    Inc(Offset, 7);
 
-  S := FCurFirst - FCurWeekOffset;
+  S := FCurFirst - Offset;
   E := FCurLast;
   FCurRows := (E - S + 1) div 7;
   if (E - S + 1) mod 7 > 0 then
@@ -896,6 +1253,7 @@ procedure TCalendarViewBase.SetDivider(const Value: TAlphaColor);
 begin
   if FDivider <> Value then begin
     FDivider := Value;
+    InitDividerBrush();
     Invalidate;  
   end;
 end;
@@ -933,22 +1291,46 @@ end;
 
 procedure TCalendarViewBase.SetRowHeihgt(const Value: Single);
 begin
-  FRowHeihgt := Value;
+  if FRowHeihgt <> Value then begin
+    FRowHeihgt := Value;
+    if IsAutoSize then
+      DoAutoSize
+    else
+      DoChange;
+  end;
 end;
 
 procedure TCalendarViewBase.SetRowLunarHeight(const Value: Single);
 begin
-  FRowLunarHeight := Value;
+  if FRowLunarHeight <> Value then begin
+    FRowLunarHeight := Value;
+    if IsAutoSize and (coShowLunar in FOptions) then
+      DoAutoSize
+    else
+      DoChange;
+  end;
 end;
 
 procedure TCalendarViewBase.SetRowLunarPadding(const Value: Single);
 begin
-  FRowLunarPadding := Value;
+  if FRowLunarPadding <> Value then begin
+    FRowLunarPadding := Value;
+    if AutoSize and (coShowLunar in FOptions) then
+      DoAutoSize
+    else
+      DoChange;
+  end;
 end;
 
 procedure TCalendarViewBase.SetRowPadding(const Value: Single);
 begin
-  FRowPadding := Value;
+  if FRowPadding <> Value then begin
+    FRowPadding := Value;
+    if IsAutoSize then
+      DoAutoSize
+    else
+      DoChange;
+  end;
 end;
 
 procedure TCalendarViewBase.SetStartDate(const Value: TDate);
@@ -1007,16 +1389,22 @@ begin
       D := 0;
     FValue := Value;
     ParseValue(Value);  
-    if D <> 0 then 
-      DoAutoSize;           
+    if D <> 0 then
+      DoAutoSize;
     DoDateChange;
   end;
 end;
 
 procedure TCalendarViewBase.SetWeekStart(const Value: TWeekStart);
+var
+  LRows: Integer;
 begin
   if FWeekStart <> Value then begin
     FWeekStart := Value;
+    LRows := FCurRows;
+    ParseValue(FValue);
+    if (FCurRows <> LRows) and IsAutoSize then
+      DoAutoSize;
     DoChange;
   end;
 end;
@@ -1036,6 +1424,11 @@ begin
     Self.FSelectedHot := TAlphaColorRec.Null;
     Self.FEnabled := TAlphaColorRec.Null;
     Self.FWeekend := TAlphaColorRec.Null;
+    Self.FWeekendHot := TAlphaColorRec.Null;
+    Self.FOutMonth := TAlphaColorRec.Null;
+    Self.FOutMonthHot := TAlphaColorRec.Null;
+    Self.FPressed := TAlphaColorRec.Null;
+    Self.FHighlight := TAlphaColorRec.Null;
     if Assigned(FOnChanged) then
       FOnChanged(Self);
   end else if Source is TViewColor then begin
@@ -1048,6 +1441,11 @@ begin
     Self.FSelectedHot := Src.FSelectedHot;
     Self.FEnabled := Src.FEnabled;
     Self.FWeekend := Src.FWeekend;
+    Self.FWeekendHot := Src.FWeekendHot;
+    Self.FOutMonth := Src.FOutMonth;
+    Self.FOutMonthHot := Src.FOutMonthHot;
+    Self.FPressed := Src.FPressed;
+    Self.FHighlight := Src.FHighlight;
     if Assigned(FOnChanged) then
       FOnChanged(Self);
   end else
@@ -1064,6 +1462,11 @@ begin
   Result := GetColorStoreState(7);
 end;
 
+function TCalendarColor.ColorHighlightStored: Boolean;
+begin
+  Result := GetColorStoreState(12);
+end;
+
 function TCalendarColor.ColorHoveredStored: Boolean;
 begin
   Result := GetColorStoreState(2);
@@ -1077,6 +1480,11 @@ end;
 function TCalendarColor.ColorOutMonthStored: Boolean;
 begin
   Result := GetColorStoreState(10);
+end;
+
+function TCalendarColor.ColorPressedStored: Boolean;
+begin
+  Result := GetColorStoreState(13);
 end;
 
 function TCalendarColor.ColorSelectedHotStored: Boolean;
@@ -1122,6 +1530,8 @@ begin
   FWeekendHot := $ff777777;
   FOutMonth := $ffc0c1c2;
   FOutMonthHot := FOutMonth;
+  FPressed := $ff000000;
+  FHighlight := 0;
 end;
 
 destructor TCalendarColor.Destroy;
@@ -1167,6 +1577,15 @@ begin
   end;
 end;
 
+procedure TCalendarColor.SetHighlight(const Value: TAlphaColor);
+begin
+  if Value <> FHighlight then begin
+    FHighlight := Value;
+    HighlightChange := True;
+    DoChange(Self);
+  end;
+end;
+
 procedure TCalendarColor.SetHovered(const Value: TAlphaColor);
 begin
   if Value <> FHovered then begin
@@ -1184,6 +1603,15 @@ end;
 procedure TCalendarColor.SetOutMonthHot(const Value: TAlphaColor);
 begin
   FOutMonthHot := Value;
+end;
+
+procedure TCalendarColor.SetPressed(const Value: TAlphaColor);
+begin
+  if Value <> FPressed then begin
+    FPressed := Value;
+    PressedChange := True;
+    DoChange(Self);
+  end;
 end;
 
 procedure TCalendarColor.SetSelected(const Value: TAlphaColor);

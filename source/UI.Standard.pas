@@ -780,10 +780,10 @@ type
 type
   TSimpleTextSettings = class(TTextSettingsBase)
   private
-    FColor: TAlphaColor;
-    FColorChange: Boolean;
     procedure SetColor(const Value: TAlphaColor);
   protected
+    FColor: TAlphaColor;
+    FColorChange: Boolean;
     function IsColorStored: Boolean;
   public
     constructor Create(AOwner: TComponent);
