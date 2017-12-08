@@ -1003,7 +1003,7 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
-    procedure Click; override;
+    procedure DoClickEvent; override;
     procedure DblClick; override;
 
     procedure ShowEditor; virtual;
@@ -1673,27 +1673,6 @@ begin
   end;
 end;
 
-procedure TGridBase.Click;
-begin
-  if (not Assigned(FAdjuestItem)) and ((FDragView = nil) or (not FDragView.Visible)) then begin
-    if Assigned(FHotItem) and FHotItem.Enabled then begin
-      if FHotItem.DataFilter and (FDownPos.X > FHotItem.X + FContentViews.Left + FColumns.FColumnWidths[FHotItem.ColIndex] - CDefaultFilterIconWH - 4) then
-        DoFilterData(FHotItem)
-      else if Assigned(FOnTitleClickEvent) then
-        FOnTitleClickEvent(Self, FHotItem);
-    end else begin
-      if (FMovePos.X >= FContentViews.Left) then
-        Exit;
-      if (FDownFixedRowIndex <> -2) or (FDownFixedColIndex <> -2) then begin
-        if FDownFixedRowIndex >= 0 then
-          SelectionAnchor := FDownFixedRowIndex;
-        DoClickFixedCell(FDownFixedColIndex, FDownFixedRowIndex);
-      end;
-    end;
-  end;
-  inherited Click;
-end;
-
 constructor TGridBase.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -1879,6 +1858,26 @@ begin
   if Assigned(FAdapter) and (gvColumnBestWidth in FOptions) then begin
     Item.Width := FAdapter.GetBestColumnWidth(ColIndex);
     FContentViews.InitColumnList;
+  end;
+end;
+
+procedure TGridBase.DoClickEvent;
+begin
+  if (not Assigned(FAdjuestItem)) and ((FDragView = nil) or (not FDragView.Visible)) then begin
+    if Assigned(FHotItem) and FHotItem.Enabled then begin
+      if FHotItem.DataFilter and (FDownPos.X > FHotItem.X + FContentViews.Left + FColumns.FColumnWidths[FHotItem.ColIndex] - CDefaultFilterIconWH - 4) then
+        DoFilterData(FHotItem)
+      else if Assigned(FOnTitleClickEvent) then
+        FOnTitleClickEvent(Self, FHotItem);
+    end else begin
+      if (FMovePos.X >= FContentViews.Left) then
+        Exit;
+      if (FDownFixedRowIndex <> -2) or (FDownFixedColIndex <> -2) then begin
+        if FDownFixedRowIndex >= 0 then
+          SelectionAnchor := FDownFixedRowIndex;
+        DoClickFixedCell(FDownFixedColIndex, FDownFixedRowIndex);
+      end;
+    end;
   end;
 end;
 

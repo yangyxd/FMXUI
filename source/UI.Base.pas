@@ -1333,6 +1333,7 @@ type
     procedure DoLinkClick(const Text, URL: string); virtual;
     procedure HandleSizeChanged; override;
     procedure Click; override;
+    procedure DoClickEvent; virtual;
 
 
     // 限制组件最大和最小大小
@@ -3581,6 +3582,7 @@ begin
   if Assigned(OnClick) then
     PlayClickEffect;
   {$ENDIF}
+  DoClickEvent();
   inherited Click;
 end;
 
@@ -3681,6 +3683,10 @@ begin
 end;
 
 procedure TView.DoCheckedChange;
+begin
+end;
+
+procedure TView.DoClickEvent;
 begin
 end;
 

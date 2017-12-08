@@ -20,6 +20,8 @@ FMXUI  (YangYxd)
   TListViewEx 列表框视图
   TBadgeView 未读消息提示小红点
   
+  TCalendarView 日历组件，支持农历显示
+  
   TGridView 格子视图，可通过数据适配器实现各种功能
   TStringGridView 字符串格子视图
   TDBGridView 数据集格子视图
