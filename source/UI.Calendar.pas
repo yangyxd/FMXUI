@@ -1309,7 +1309,7 @@ end;
 
 procedure TCalendarViewBase.DoMouseLeave;
 begin
-  FCurHotDate := 0;
+  FCurHotDate := InvaludeDate;
   inherited DoMouseLeave;
 end;
 
@@ -1400,7 +1400,7 @@ begin
   if (FCurHotDate >= InvaludeDate) or (FCurViewType <> TCalendarViewType.Days) then
     Result := 0
   else
-    Result := TDate(FCurHotDate);
+    Result := (FCurHotDate);
 end;
 
 function TCalendarViewBase.GetLanguage: ICalendarLanguage;
@@ -1415,7 +1415,7 @@ begin
     Result.IsTerm := False;
     Result.IsHoliday := False;
     Result.IsLunarHoliday := False;
-    FOnGetLunarData(Self, TDate(LDate), Result)
+    FOnGetLunarData(Self, (LDate), Result)
   end else begin
     if LDate - FCurDrawS < Length(FLunarDataList) then
       Result := FLunarDataList[LDate - FCurDrawS]
@@ -1526,7 +1526,7 @@ begin
           LY := Trunc((P.Y - FRangeOfDays.Top) / Y);
           ID := FCurDrawS + LY * 7 + LX;
           if FDaysOfWeekDisabled <> [] then begin          
-            if TCalendarWeekItem(DayOfWeek(TDateTime(ID)) - 1) in FDaysOfWeekDisabled then
+            if TCalendarWeekItem(DayOfWeek((ID)) - 1) in FDaysOfWeekDisabled then
               ID := InvaludeDate;
           end;
           if ID <> InvaludeDate then begin  // 检测是否超出范围
@@ -1704,7 +1704,7 @@ begin
   if M = 1 then
     FCurWeeks := 1
   else
-    FCurWeeks := WeekOfTheYear(TDateTime(FCurFirst));
+    FCurWeeks := WeekOfTheYear((FCurFirst));
 
   if M < 12 then
     Inc(M)
@@ -1726,7 +1726,7 @@ begin
     Inc(FCurRows);
 
   FCurDrawS := S;  // 记录当前显示的开始日期
-  FCurDrawSD := DayOf(TDateTime(S));
+  FCurDrawSD := DayOf((S));
 
   if (coShowLunar in FOptions) and (FCurViewType = TCalendarViewType.Days) then 
     ParseValueLunar()
@@ -1743,7 +1743,7 @@ begin
   SetLength(FLunarDataList, FCurRows * 7);
   S := 0;
   for I := FCurDrawS to (FCurDrawS + E - 1) do begin
-    Item := SolarToLunar(TDateTime(I));
+    Item := SolarToLunar((I));
     if Item.Year > 0 then begin
       if (coShowTerm in FOptions) and (Item.IsTerm) then begin  // 节气
         FLunarDataList[S].Text := ShortString(Item.Term);
