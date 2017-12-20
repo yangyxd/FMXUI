@@ -12,13 +12,22 @@ interface
 
 uses
   UI.Base, UI.Utils, UI.Ani, UI.Standard, UI.Calendar.Data,
-  FMX.Effects, FMX.Text,
+  FMX.Effects, FMX.Text, FMX.Pickers,
   {$IFDEF MSWINDOWS}Windows, UI.Debug, {$ENDIF}
+  {$IFDEF MSWINDOWS} FMX.DateTimeCtrls, {$ENDIF}
   FMX.Objects, System.Math, System.Actions, System.DateUtils, FMX.Consts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, FMX.TextLayout,
   System.Classes, System.Types, System.UITypes, System.SysUtils, System.Math.Vectors,
   FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls, FMX.InertialMovement,
   FMX.Ani, FMX.StdActns;
+
+const
+  InvaludeDate = $FFFFFF0;
+  BID_Today = $FFFFFF1;
+  BID_Next = $FFFFFF2;
+  BID_Up = $FFFFFF3;
+  BID_Navigation = $FFFFFF4;
+  BID_Clear = $FFFFFF5;
 
 type
   /// <summary>
@@ -272,6 +281,8 @@ type
 
 type
   TOnGetLunarData = procedure (Sender: TObject; const Date: TDate; var Text: TCalendarDateItem) of object;
+  TOnOwnerDrawCalendar = procedure (Sender: TObject; Canvas: TCanvas; const R: TRectF; const Date: TDate; var DrawDefault: Boolean) of object;
+  TOnClickView = procedure (Sender: TObject; const ID: Integer) of object;
 
 type
   TCalendarViewBase = class(TView)
@@ -319,6 +330,8 @@ type
 
     FOnValueChange: TNotifyEvent;
     FOnGetLunarData: TOnGetLunarData;
+    FOnOwnerDrawCalendar: TOnOwnerDrawCalendar;
+    FOnClickView: TOnClickView;
 
     procedure SetOptions(const Value: TCalendarOptions);
     procedure SetEndDate(const Value: TDate);
@@ -355,8 +368,10 @@ type
     procedure SetCurViewType(const Value: TCalendarViewType);
     procedure SetViewTypeMax(const Value: TCalendarViewType);
     procedure SetViewTypeMin(const Value: TCalendarViewType);
+    function GetValue: TDate;
   protected
     FValue: TDate;
+    FSelected: Boolean;
 
     FCurDayOfWeek: Integer; // 本月第一天的星期数
     FCurMonth, FCurYear: Word; // 当前选中日期的年，月
@@ -381,9 +396,10 @@ type
     procedure InitDividerBrush;
     procedure ClearLunarDataList;
 
-    procedure SwitchDate(const Value: TDate = 0; const OffsetMonth: Integer = 0);
+    procedure SwitchDate(const Value: TDate = InvaludeDate; const OffsetMonth: Integer = 0);
     procedure ParseValue(const Value: TDate); virtual;
     procedure ParseValueLunar(); virtual;
+    function IsInvalidValue(const Value: Integer): Boolean;
   protected
     procedure Loaded; override;
     procedure Resize; override;
@@ -410,6 +426,14 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    procedure Clear;
+    procedure Today;
+
+    /// <summary>
+    /// 是否已经选择了一个日期
+    /// </summary>
+    property IsSelected: Boolean read FSelected;
 
     /// <summary>
     /// 当前指向的日期
@@ -455,7 +479,7 @@ type
     /// <summary>
     /// 当前选择时间
     /// </summary>
-    property DateTime: TDate read FValue write SetValue;
+    property DateTime: TDate read GetValue write SetValue;
 
     /// <summary>
     /// 选项
@@ -531,8 +555,92 @@ type
     /// 获取农历数据
     /// </summary>
     property OnOwnerLunarData: TOnGetLunarData read FOnGetLunarData write FOnGetLunarData;
+    /// <summary>
+    /// 自绘日历
+    /// </summary>
+    property OnOwnerDrawCalendar: TOnOwnerDrawCalendar read FOnOwnerDrawCalendar write FOnOwnerDrawCalendar;
+    /// <summary>
+    /// 点击事件
+    /// </summary>
+    property OnClickView: TOnClickView read FOnClickView write FOnClickView;
   published
     property EnableExecuteAction default True;
+  end;
+
+type
+  /// <summary>
+  /// 日期时间显示组件 （感谢： 入云龙）
+  /// </summary>
+  TCustomDateTimeView = class(TTextView)
+  strict private
+  private
+    FDateTime: TDateTime;
+    FDateTimeFormat: string;
+    function GetDateTime: TDateTime;
+    procedure SetDateTime(const Value: TDateTime);
+  protected
+    {$IFDEF NEXTGEN}
+    FDateTimePicker: TCustomDateTimePicker;
+    {$ELSE}
+    [Weak] FLanguage: ICalendarLanguage;
+    FDateTimePicker: TCalendarViewBase;
+    FIsShow: Boolean;
+    procedure DoDateChange(Sender: TObject);
+    procedure DoClickDateTimeView(Sender: TObject; const ID: Integer);
+    {$ENDIF}
+    procedure HandlerPickerClosed(Sender: TObject);
+    procedure HandlerPickerOpened(Sender: TObject);
+    procedure HandlerPickerDateTimeChanged(Sender: TObject; const ADate: TDateTime);
+    procedure InitPicker; virtual;
+    procedure Click; override;
+    function IsShow(): Boolean;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    {Pickers}
+    procedure OpenPicker; virtual;
+    procedure ClosePicker; virtual;
+    function IsPickerOpened: Boolean; virtual;
+    function HasPicker: Boolean;
+    {Value}
+    property DateTime: TDateTime read GetDateTime write SetDateTime;
+  published
+    property DateTimeFormat: string read FDateTimeFormat write FDateTimeFormat;
+
+    property CanFocus default True;
+    property HitTest default True;
+    property Clickable default True;
+  end;
+
+type
+  /// <summary>
+  /// 日期视图 (日期选择)
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TDateView = class(TCustomDateTimeView)
+  private
+    function GetLanguage: ICalendarLanguage;
+    procedure SetLanguage(const Value: ICalendarLanguage);
+  public
+    constructor Create(AOwner: TComponent); override;
+  published
+    property Language: ICalendarLanguage read GetLanguage write SetLanguage;
+  end;
+
+type
+  /// <summary>
+  /// 时间视图 (弹出时间选择对话框)
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TTimeView = class(TCustomDateTimeView)
+  protected
+  public
+    constructor Create(AOwner: TComponent); override;
+    {$IFNDEF NEXTGEN}
+    procedure DoTimeChange(Sender: TObject);
+    procedure OpenPicker; override;
+    procedure ClosePicker; override;
+    {$ENDIF}
   end;
 
 type
@@ -579,13 +687,8 @@ type
 
 implementation
 
-const
-  InvaludeDate = $FFFFFF0;
-  BID_Today = $FFFFFF1;
-  BID_Next = $FFFFFF2;
-  BID_Up = $FFFFFF3;
-  BID_Navigation = $FFFFFF4;
-  BID_Clear = $FFFFFF5;
+uses
+  FMX.Forms, UI.Dialog;
 
 type
   TTmpSimpleTextSettings = class(TSimpleTextSettings);
@@ -670,6 +773,12 @@ function TCalendarViewBase.CanRePaintBk(const View: IView;
   State: TViewState): Boolean;
 begin
   Result := (FTextSettings.FColor.FPressed <> 0) or inherited;
+end;
+
+procedure TCalendarViewBase.Clear;
+begin
+  FSelected := False;
+  DoDateChange;
 end;
 
 procedure TCalendarViewBase.ClearLunarDataList;
@@ -770,26 +879,27 @@ begin
     BID_Up:
       begin
         case FCurViewType of
-          TCalendarViewType.Days: SwitchDate(0, -1);
-          TCalendarViewType.Months: SwitchDate(0, -12);
-          TCalendarViewType.Years: SwitchDate(0, -120);
-          TCalendarViewType.Decades: SwitchDate(0, -1200);
-          TCalendarViewType.Centuries: SwitchDate(0, -12000);
+          TCalendarViewType.Days: SwitchDate(InvaludeDate, -1);
+          TCalendarViewType.Months: SwitchDate(InvaludeDate, -12);
+          TCalendarViewType.Years: SwitchDate(InvaludeDate, -120);
+          TCalendarViewType.Decades: SwitchDate(InvaludeDate, -1200);
+          TCalendarViewType.Centuries: SwitchDate(InvaludeDate, -12000);
         end;
       end;
     BID_Next:
       begin
         case FCurViewType of
-          TCalendarViewType.Days: SwitchDate(0, 1);
-          TCalendarViewType.Months: SwitchDate(0, 12);
-          TCalendarViewType.Years: SwitchDate(0, 120);
-          TCalendarViewType.Decades: SwitchDate(0, 1200);
-          TCalendarViewType.Centuries: SwitchDate(0, 12000);
+          TCalendarViewType.Days: SwitchDate(InvaludeDate, 1);
+          TCalendarViewType.Months: SwitchDate(InvaludeDate, 12);
+          TCalendarViewType.Years: SwitchDate(InvaludeDate, 120);
+          TCalendarViewType.Decades: SwitchDate(InvaludeDate, 1200);
+          TCalendarViewType.Centuries: SwitchDate(InvaludeDate, 12000);
         end;
       end;
     BID_Today:
       begin
-        SwitchDate(Now, 0);         
+        DateTime := Now;
+        if Assigned(FOnClickView) then FOnClickView(Self, FCurHotDate);
       end;
     BID_Navigation:
       begin
@@ -802,8 +912,8 @@ begin
       end;
     BID_Clear:
       begin
-        FValue := 1;
-        SwitchDate(0, -1);
+        Clear;
+        if Assigned(FOnClickView) then FOnClickView(Self, FCurHotDate);
       end
   else
     begin
@@ -811,25 +921,32 @@ begin
         Days: 
           begin
             DateTime := HoverDate;
+            if Assigned(FOnClickView) then
+              FOnClickView(Self, FCurHotDate);
             Exit;
           end;
         Months: 
           begin
+            FSelected := True;
             SwitchDate(FValue, FCurHotDate - FCurMonth);
           end;
         Years: 
-          begin            
+          begin
+            FSelected := True;
             SwitchDate(FValue, ((FCurYear div 10 * 10 + FCurHotDate - 2) - FCurYear) * 12);
           end;
         Decades: 
           begin
+            FSelected := True;
             SwitchDate(FValue, ((FCurYear div 100 * 100 + FCurHotDate * 10 - 20) - FCurYear) * 12);
           end;
         Centuries: 
           begin
+            FSelected := True;
             SwitchDate(FValue, ((FCurYear div 1000 * 1000 + FCurHotDate * 100 - 200) - FCurYear) * 12);
           end;
       end;
+      if Assigned(FOnClickView) then FOnClickView(Self, FCurHotDate);
       Viewtype := TCalendarViewType(Ord(Viewtype) - 1);
     end;
   end;
@@ -872,12 +989,12 @@ var
   X, Y, W, LX, LY, LunarHeight, LOpacity: Single;
   S, LS, LE, LSelect, LToday, Week, ColorIndex, LES, LEE: Integer;
   I, J, D, L: Integer;
-  Lunar, BeforeAfter, IsEnd: Boolean;
+  Lunar, BeforeAfter, IsEnd, IsDrawDefault: Boolean;
   LColor: TAlphaColor;
   LR: TRectF;
   LItem: TCalendarDateItem;
 begin
-  W := R.Width;
+  W := R.Width + 1; // 因为画格子时，会将每项宽度减1，所以总宽度+1
   LX := R.Left;
   Y := R.Top;
   if coCalendarWeeks in FOptions then begin
@@ -898,7 +1015,10 @@ begin
   LES := Trunc(FStartDate);
   LEE := Trunc(FEndDate);
 
-  LSelect := Trunc(FValue);
+  if FSelected then
+    LSelect := Trunc(FValue)
+  else
+    LSelect := InvaludeDate;
   LToday := Trunc(Now);
   LOpacity := Opacity;
 
@@ -928,120 +1048,131 @@ begin
     end;
   end;
 
-
   for J := 1 to FCurRows do begin
     X := LX;
     for I := 0 to 6 do begin
       if BeforeAfter or ((S >= LS) and (S <= LE)) then begin
 
-        Week := (I + FWeekStart) mod 7;
-        LColor := 0;
-        ColorIndex := 0;
         LR := RectF(X, Y, X + W - 1, Y + FRowHeihgt + LunarHeight);
 
-        // 高亮显示背景
-        if (TCalendarWeekItem(Week) in DaysOfWeekHighlighted) and Assigned(FDrawable.FChecked) then
-          FDrawable.FillRect(Canvas, LR, 0, 0, FDrawable.Corners, LOpacity, FDrawable.FChecked);
+        if Assigned(FOnOwnerDrawCalendar) then begin
+          // 自绘
+          IsDrawDefault := False;
+          FOnOwnerDrawCalendar(Self, Canvas, LR, S, IsDrawDefault);
+        end else
+          IsDrawDefault := True;
 
-        // 画日期
-        if (TCalendarWeekItem(Week) in DaysOfWeekDisabled) or
-          ((LES <> 0) and (S < LES)) or ((LEE <> 0) and (S > LEE))
-        then begin  // 禁止选择
-          LColor := FTextSettings.FColor.FEnabled;
-          ColorIndex := 7;
-        end else if S = LSelect then begin  // 选中
-          if (FCurHotDate = S) then begin
-            DoDrawItemBackground(Canvas, FDrawable.FHovered, LR, FDrawable.IsCircle);
-            LColor := FTextSettings.FColor.FSelectedHot;
-            ColorIndex := 6;
-          end else begin
-            DoDrawItemBackground(Canvas, FDrawable.FSelected,  LR, FDrawable.IsCircle);
-            LColor := FTextSettings.FColor.FSelected;
-            ColorIndex := 5;
-          end;
-        end else if (S = LToday) and (coTodayHighlight in FOptions) then begin // 今天
-          if (FCurHotDate = S) then begin
-            DoDrawItemBackground(Canvas, FDrawable.FFocused, LR, FDrawable.IsCircle);
-            LColor := FTextSettings.FColor.FTodayHot;
-            ColorIndex := 4;
-          end else begin
-            DoDrawItemBackground(Canvas, FDrawable.FPressed, LR, FDrawable.IsCircle);
-            LColor := FTextSettings.FColor.FToday;
-            ColorIndex := 3;
-          end;
-        end else if (S < LS) or (S > LE) then begin  // 不是本月
-          if (FCurHotDate = S) then begin
+        if IsDrawDefault then begin
+
+          Week := (I + FWeekStart) mod 7;
+          LColor := 0;
+          ColorIndex := 0;
+
+          // 高亮显示背景
+          if (TCalendarWeekItem(Week) in DaysOfWeekHighlighted) and Assigned(FDrawable.FChecked) then
+            FDrawable.FillRect(Canvas, LR, 0, 0, FDrawable.Corners, LOpacity, FDrawable.FChecked);
+
+          // 画日期
+          if (TCalendarWeekItem(Week) in DaysOfWeekDisabled) or
+            ((LES <> 0) and (S < LES)) or ((LEE <> 0) and (S > LEE))
+          then begin  // 禁止选择
+            LColor := FTextSettings.FColor.FEnabled;
+            ColorIndex := 7;
+          end else if S = LSelect then begin  // 选中
+            if (FCurHotDate = S) then begin
+              DoDrawItemBackground(Canvas, FDrawable.FHovered, LR, FDrawable.IsCircle);
+              LColor := FTextSettings.FColor.FSelectedHot;
+              ColorIndex := 6;
+            end else begin
+              DoDrawItemBackground(Canvas, FDrawable.FSelected,  LR, FDrawable.IsCircle);
+              LColor := FTextSettings.FColor.FSelected;
+              ColorIndex := 5;
+            end;
+          end else if (S = LToday) and (coTodayHighlight in FOptions) then begin // 今天
+            if (FCurHotDate = S) then begin
+              DoDrawItemBackground(Canvas, FDrawable.FFocused, LR, FDrawable.IsCircle);
+              LColor := FTextSettings.FColor.FTodayHot;
+              ColorIndex := 4;
+            end else begin
+              DoDrawItemBackground(Canvas, FDrawable.FPressed, LR, FDrawable.IsCircle);
+              LColor := FTextSettings.FColor.FToday;
+              ColorIndex := 3;
+            end;
+          end else if (S < LS) or (S > LE) then begin  // 不是本月
+            if (FCurHotDate = S) then begin
+              DoDrawItemBackground(Canvas, FDrawable.FDefault, LR, FDrawable.IsCircle);
+              if IsPressed then begin
+                LColor := FTextSettings.FColor.FPressed;
+                ColorIndex := 13;
+              end else begin
+                LColor := FTextSettings.FColor.FOutMonthHot;
+                ColorIndex := 11;
+              end;
+            end else begin
+              LColor := FTextSettings.FColor.FOutMonth;
+              ColorIndex := 10;
+            end;
+          end else if (Week = 0) or (Week = 6) then begin // 周末
+            if (FCurHotDate = S) then begin
+              DoDrawItemBackground(Canvas, FDrawable.FDefault, LR, FDrawable.IsCircle);
+              if IsPressed then begin
+                LColor := FTextSettings.FColor.FPressed;
+                ColorIndex := 13;
+              end else begin
+                LColor := FTextSettings.FColor.FWeekendHot;
+                ColorIndex := 9;
+              end;
+            end else begin
+              LColor := FTextSettings.FColor.FWeekend;
+              ColorIndex := 8;
+            end;
+          end else if (FCurHotDate = S) then begin   // 悬停
             DoDrawItemBackground(Canvas, FDrawable.FDefault, LR, FDrawable.IsCircle);
             if IsPressed then begin
               LColor := FTextSettings.FColor.FPressed;
               ColorIndex := 13;
             end else begin
-              LColor := FTextSettings.FColor.FOutMonthHot;
-              ColorIndex := 11;
+              LColor := FTextSettings.FColor.FHovered;
+              ColorIndex := 2;
             end;
-          end else begin
-            LColor := FTextSettings.FColor.FOutMonth;
-            ColorIndex := 10;
+          end else if TCalendarWeekItem(Week) in DaysOfWeekHighlighted then begin  // 高亮显示
+            LColor := FTextSettings.FColor.FHighlight;
+            ColorIndex := 12;
           end;
-        end else if (Week = 0) or (Week = 6) then begin // 周末
-          if (FCurHotDate = S) then begin
-            DoDrawItemBackground(Canvas, FDrawable.FDefault, LR, FDrawable.IsCircle);
-            if IsPressed then begin
-              LColor := FTextSettings.FColor.FPressed;
-              ColorIndex := 13;
-            end else begin
-              LColor := FTextSettings.FColor.FWeekendHot;
-              ColorIndex := 9;
-            end;
-          end else begin
-            LColor := FTextSettings.FColor.FWeekend;
-            ColorIndex := 8;
-          end;
-        end else if (FCurHotDate = S) then begin   // 悬停
-          DoDrawItemBackground(Canvas, FDrawable.FDefault, LR, FDrawable.IsCircle);
-          if IsPressed then begin
-            LColor := FTextSettings.FColor.FPressed;
-            ColorIndex := 13;
-          end else begin
-            LColor := FTextSettings.FColor.FHovered;
-            ColorIndex := 2;
-          end;
-        end else if TCalendarWeekItem(Week) in DaysOfWeekHighlighted then begin  // 高亮显示
-          LColor := FTextSettings.FColor.FHighlight;
-          ColorIndex := 12;
-        end;
 
-        if LColor = 0 then
-          LColor := FTextSettings.FColor.FDefault;
+          if LColor = 0 then
+            LColor := FTextSettings.FColor.FDefault;
 
-        LY := Y + FRowHeihgt - L;
-        FTextSettings.FillText(Canvas, RectF(X, Y, X + W, LY),
-          IntToStr(D), LOpacity, LColor,
-          FTextSettings.FillTextFlags, nil, 0, TTextAlign.Center);
+          LY := Y + FRowHeihgt - L;
+          FTextSettings.FillText(Canvas, RectF(X, Y, X + W, LY),
+            IntToStr(D), LOpacity, LColor,
+            FTextSettings.FillTextFlags, nil, 0, TTextAlign.Center);
 
-        // 画农历或节气
-        if Lunar then begin
-          LItem := GetLunarData(S);
-          if LItem.Text <> '' then begin
-            LColor := 0;
-            if (ColorIndex = 0) or (ColorIndex = 1) or (ColorIndex = 12) then begin            
-              if LItem.IsTerm then
-                LColor := TCalendarLunarColor(FTextSettingsOfLunar.FColor).FTerm
-              else if LItem.IsHoliday then
-                LColor := TCalendarLunarColor(FTextSettingsOfLunar.FColor).FHoliday
-              else if LItem.IsLunarHoliday then
-                LColor := TCalendarLunarColor(FTextSettingsOfLunar.FColor).FHolidayLunar;
-              if LColor = 0 then
+          // 画农历或节气
+          if Lunar then begin
+            LItem := GetLunarData(S);
+            if LItem.Text <> '' then begin
+              LColor := 0;
+              if (ColorIndex = 0) or (ColorIndex = 1) or (ColorIndex = 12) then begin
+                if LItem.IsTerm then
+                  LColor := TCalendarLunarColor(FTextSettingsOfLunar.FColor).FTerm
+                else if LItem.IsHoliday then
+                  LColor := TCalendarLunarColor(FTextSettingsOfLunar.FColor).FHoliday
+                else if LItem.IsLunarHoliday then
+                  LColor := TCalendarLunarColor(FTextSettingsOfLunar.FColor).FHolidayLunar;
+                if LColor = 0 then
+                  LColor := FTextSettingsOfLunar.FColor.GetColor(ColorIndex);
+              end else
                 LColor := FTextSettingsOfLunar.FColor.GetColor(ColorIndex);
-            end else
-              LColor := FTextSettingsOfLunar.FColor.GetColor(ColorIndex);
-            if LColor = 0 then
-              LColor := FTextSettingsOfLunar.FColor.FDefault;
-            LY := LY + FRowLunarPadding;
-            FTextSettingsOfLunar.FillText(Canvas, RectF(X, LY, X + W, LY + FRowLunarHeight),
-              string(LItem.Text), LOpacity, LColor,
-              FTextSettingsOfLunar.FillTextFlags, nil, 0, TTextAlign.Center);
+              if LColor = 0 then
+                LColor := FTextSettingsOfLunar.FColor.FDefault;
+              LY := LY + FRowLunarPadding;
+              FTextSettingsOfLunar.FillText(Canvas, RectF(X, LY, X + W, LY + FRowLunarHeight),
+                string(LItem.Text), LOpacity, LColor,
+                FTextSettingsOfLunar.FillTextFlags, nil, 0, TTextAlign.Center);
+            end;
           end;
+
         end;
 
       end;
@@ -1331,7 +1462,7 @@ begin
     Exit;
   FInFitSize := True;
   H := Padding.Top + Padding.Bottom;
-  W := 300 + Padding.Left + Padding.Right;
+  W := 210 + Padding.Left + Padding.Right;
   if coCalendarWeeks in FOptions then
     W := W + FWeeksWidth;
 
@@ -1432,6 +1563,14 @@ begin
   Result := Max(Result * 2, 42);
 end;
 
+function TCalendarViewBase.GetValue: TDate;
+begin
+  if FSelected then
+    Result := FValue
+  else
+    Result := 0;
+end;
+
 procedure TCalendarViewBase.InitDividerBrush;
 begin
   if ((coShowWeekLine in FOptions) or (coShowRowLines in FOptions) or (coShowCosLines in FOptions)) and
@@ -1451,6 +1590,20 @@ end;
 function TCalendarViewBase.IsEndDateStored: Boolean;
 begin
   Result := FEndDate <> 0;
+end;
+
+function TCalendarViewBase.IsInvalidValue(const Value: Integer): Boolean;
+begin
+  Result := True;
+  if FDaysOfWeekDisabled <> [] then begin
+    if TCalendarWeekItem(DayOfWeek((Value)) - 1) in FDaysOfWeekDisabled then
+      Exit;
+  end;
+  if ((FStartDate <> 0) and (Value < Trunc(FStartDate))) or
+    ((FEndDate <> 0) and (Value > Trunc(FEndDate)))
+  then
+    Exit;
+  Result := False;
 end;
 
 function TCalendarViewBase.IsStartDateStored: Boolean;
@@ -1525,15 +1678,11 @@ begin
             Exit;
           LY := Trunc((P.Y - FRangeOfDays.Top) / Y);
           ID := FCurDrawS + LY * 7 + LX;
-          if FDaysOfWeekDisabled <> [] then begin          
-            if TCalendarWeekItem(DayOfWeek((ID)) - 1) in FDaysOfWeekDisabled then
+          if IsInvalidValue(ID) then
+            ID := InvaludeDate;
+          if (ID <> InvaludeDate) and (not (coShowBeforeAfter in FOptions)) then begin
+            if (ID < FCurFirst) or (ID > FCurLast) then
               ID := InvaludeDate;
-          end;
-          if ID <> InvaludeDate then begin  // 检测是否超出范围
-            if ((FStartDate <> 0) and (ID < Trunc(FStartDate))) or 
-              ((FEndDate <> 0) and (ID > Trunc(FEndDate)))
-            then
-              ID := InvaludeDate;                      
           end;
         end;
     else
@@ -1934,8 +2083,10 @@ end;
 
 procedure TCalendarViewBase.SetValue(const Value: TDate);
 begin
-  if FValue <> Value then
+  if (FValue <> Value) or (not FSelected) then begin
+    FSelected := not IsInvalidValue(Trunc(Value));
     SwitchDate(Value);
+  end;
 end;
 
 procedure TCalendarViewBase.SetViewTypeMax(const Value: TCalendarViewType);
@@ -1993,10 +2144,10 @@ begin
     
   DecodeDate(FValue, Y, M, D);
   
-  if Value <> 0 then
+  if Value <> InvaludeDate then
     FValue := Value;
-    
-  if Value = 0 then begin
+
+  if Value = InvaludeDate then begin
     YY := Y;
     M2 := M;
     D2 := D;
@@ -2015,7 +2166,7 @@ begin
       Inc(M2, 12);
     end;
   end;
-  if (Value = 0) or (OffsetMonth <> 0) then begin
+  if (Value = InvaludeDate) or (OffsetMonth <> 0) then begin
     if D2 > 28 then begin  // 大于28时可能存在日期超出本月最大天数的情况  
       D := DaysInMonth(EncodeDate(Y2, M2, 1));
       if D2 > D then
@@ -2034,6 +2185,11 @@ begin
   end;
   if LChange then
     DoDateChange;
+end;
+
+procedure TCalendarViewBase.Today;
+begin
+  DateTime := Now;
 end;
 
 { TCalendarColor }
@@ -2447,6 +2603,253 @@ begin
   FColor := TCalendarLunarColor.Create();
   FColor.OnChanged := DoColorChanged;
 end;
+
+{ TCustomDateTimeView }
+
+procedure TCustomDateTimeView.Click;
+begin
+  inherited Click;
+
+  OpenPicker;
+end;
+
+procedure TCustomDateTimeView.ClosePicker;
+begin
+  if HasPicker and IsShow then begin
+    {$IFDEF NEXTGEN}
+    FDateTimePicker.Hide;
+    {$ELSE}
+    TDialog.CloseDialog(FDateTimePicker);
+    {$ENDIF}
+  end;
+end;
+
+constructor TCustomDateTimeView.Create(AOwner: TComponent);
+{$IFDEF NEXTGEN}
+var
+  PickerService: IFMXPickerService;
+{$ENDIF}
+begin
+  inherited;
+
+  FDateTime := 0;
+  FDateTimeFormat := FormatSettings.ShortDateFormat;
+
+  if not (csDesigning in ComponentState) then begin
+
+    {$IFDEF NEXTGEN}
+    if TPlatformServices.Current.SupportsPlatformService(IFMXPickerService, PickerService)
+    then
+    begin
+      FDateTimePicker := PickerService.CreateDateTimePicker;
+      FDateTimePicker.Parent := Self;
+      FDateTimePicker.OnHide := HandlerPickerClosed;
+      FDateTimePicker.OnShow := HandlerPickerOpened;
+      FDateTimePicker.OnDateChanged := HandlerPickerDateTimeChanged;
+    end;
+    {$ELSE}
+    {$ENDIF}
+
+  end;
+
+  HitTest := True;
+  CanFocus := True;
+end;
+
+destructor TCustomDateTimeView.Destroy;
+begin
+  {$IFNDEF NEXTGEN}
+  ClosePicker;
+  {$ELSE}
+  ClosePicker;
+  FreeAndNil(FDateTimePicker);
+  {$ENDIF}
+  inherited;
+end;
+
+{$IFNDEF NEXTGEN}
+procedure TCustomDateTimeView.DoClickDateTimeView(Sender: TObject;
+  const ID: Integer);
+begin
+  if (ID >= InvaludeDate) and (ID <> BID_Today) then
+    Exit;
+  if FDateTimePicker.ViewType = TCalendarViewType.Days then
+    ClosePicker;
+end;
+
+procedure TCustomDateTimeView.DoDateChange(Sender: TObject);
+begin
+  HandlerPickerDateTimeChanged(Sender, FDateTimePicker.DateTime);
+end;
+{$ENDIF}
+
+function TCustomDateTimeView.GetDateTime: TDateTime;
+begin
+  Result := FDateTime;
+end;
+
+procedure TCustomDateTimeView.HandlerPickerClosed(Sender: TObject);
+begin
+end;
+
+procedure TCustomDateTimeView.HandlerPickerDateTimeChanged(Sender: TObject;
+  const ADate: TDateTime);
+begin
+  DateTime := ADate;
+end;
+
+procedure TCustomDateTimeView.HandlerPickerOpened(Sender: TObject);
+begin
+end;
+
+function TCustomDateTimeView.HasPicker: Boolean;
+begin
+  Result := FDateTimePicker <> nil;
+end;
+
+procedure TCustomDateTimeView.InitPicker;
+begin
+  {$IFDEF NEXTGEN}
+  FDateTimePicker.Date := DateTime;
+  {$ELSE}
+  if FDateTimePicker = nil then begin
+    FDateTimePicker := TCalendarView.Create(Self);
+    FDateTimePicker.Background.ItemDefault.Color := TAlphaColorRec.White;
+    FDateTimePicker.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+    TDrawableBorder(FDateTimePicker.Background).Border.Color.Default := TAlphaColorRec.Teal;
+    TDrawableBorder(FDateTimePicker.Background).Border.Kind := TBrushKind.Solid;
+    TDrawableBorder(FDateTimePicker.Background).Border.Style := TViewBorderStyle.RectBorder;
+    FDateTimePicker.Width := 220;
+    FDateTimePicker.Height := 200;
+    FDateTimePicker.Options := [coShowNavigation, coShowWeek, coTodayHighlight, coShowTodayButton];
+    FDateTimePicker.RowHeihgt := 22;
+    FDateTimePicker.WeekStart := 1;
+    FDateTimePicker.AutoSize := True;
+    if Assigned(FLanguage) then      
+      FDateTimePicker.Language := FLanguage;
+    FDateTimePicker.OnChange := DoDateChange;
+    FDateTimePicker.OnClickView := DoClickDateTimeView;
+  end;
+  FDateTimePicker.DateTime := DateTime;
+  {$ENDIF}
+end;
+
+function TCustomDateTimeView.IsPickerOpened: Boolean;
+begin
+  Result := HasPicker and IsShow;
+end;
+
+function TCustomDateTimeView.IsShow: Boolean;
+begin
+  Result := {$IFDEF NEXTGEN}FDateTimePicker.IsShown{$ELSE}FIsShow{$ENDIF};
+end;
+
+procedure TCustomDateTimeView.OpenPicker;
+{$IFNDEF NEXTGEN}
+var
+  Dlg: TDialog;
+{$ENDIF}
+begin
+  if not IsShow then
+    InitPicker;
+  if HasPicker and not IsShow then
+  begin
+    {$IFDEF NEXTGEN}
+    FDateTimePicker.PreferedDisplayIndex :=
+      Screen.DisplayFromPoint(Screen.MousePos).Index;
+    FDateTimePicker.Show;
+    {$ELSE}
+    Dlg := TDialog.ShowView(Self, Self, FDateTimePicker, False, 0, 0,
+      TDialogViewPosition.LeftBottom, True, TFrameAniType.None, False);
+    Dlg.OnDismissListenerA :=
+      procedure (Dialog: IDialog)
+      begin
+        FIsShow := False;
+      end;
+    FDateTimePicker.DoAutoSize;
+    FIsShow := True;
+    HandlerPickerOpened(Self);
+    {$ENDIF}
+  end;
+end;
+
+procedure TCustomDateTimeView.SetDateTime(const Value: TDateTime);
+begin
+  FDateTime := Value;
+  Text := FormatDateTime(DateTimeFormat, Value);
+end;
+
+{TDateView}
+
+constructor TDateView.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  FDateTimeFormat := FormatSettings.ShortDateFormat;
+  {$IFDEF NEXTGEN}
+  if HasPicker then
+    FDateTimePicker.ShowMode := TDatePickerShowMode.Date;
+  {$ENDIF}
+  DateTime := Now;
+end;
+
+function TDateView.GetLanguage: ICalendarLanguage;
+begin
+  {$IFNDEF NEXTGEN}
+  Result := FLanguage;
+  {$ENDIF}
+end;
+
+procedure TDateView.SetLanguage(const Value: ICalendarLanguage);
+begin
+  {$IFNDEF NEXTGEN}
+  FLanguage := Value;
+  {$ENDIF}
+end;
+
+{TTimeView}
+
+constructor TTimeView.Create(AOwner: TComponent);
+begin
+  inherited;
+
+  FDateTimeFormat := FormatSettings.ShortTimeFormat;
+  {$IFDEF NEXTGEN}
+  if HasPicker then
+    FDateTimePicker.ShowMode := TDatePickerShowMode.Time;
+  {$ENDIF}
+  DateTime := Now;
+end;
+
+{$IFNDEF NEXTGEN}
+procedure TTimeView.DoTimeChange(Sender: TObject);
+begin
+  if Assigned(Self) then
+    HandlerPickerDateTimeChanged(Self, TTimeEdit(Sender).DateTime);
+end;
+
+procedure TTimeView.ClosePicker;
+begin
+end;
+
+procedure TTimeView.OpenPicker;
+var
+  FTimeEdit: TTimeEdit;
+begin
+  FTimeEdit := TTimeEdit.Create(Self);
+  FTimeEdit.Width := Max(Self.Width, 100);
+  FTimeEdit.Height := 24;
+  FTimeEdit.Time := DateTime;
+  if FDateTimeFormat = FormatSettings.ShortTimeFormat then
+    FTimeEdit.TimeFormatKind := TDTFormatKind.Short
+  else
+    FTimeEdit.TimeFormatKind := TDTFormatKind.Long;
+  FTimeEdit.OnChange := DoTimeChange;
+
+  TDialog.ShowView(Self, Self, FTimeEdit, True, 0, 0, TDialogViewPosition.Bottom,
+    True, TFrameAniType.None, False);
+end;
+{$ENDIF}
 
 initialization
   DefaultLanguage := TCalendarLanguage_EN.Create(nil);

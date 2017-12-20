@@ -1624,7 +1624,7 @@ begin
           begin
             Dismiss;
           end,
-        0.1);
+        0.05);
       end else
         Dismiss;
     end else
@@ -1639,6 +1639,10 @@ end;
 
 procedure TDialog.DoFreeBuilder;
 begin
+  if (not (csDestroying in ComponentState)) and Assigned(FViewRoot) and
+   (FViewRoot.ChildrenCount = 1) and (FViewRoot.FLayBubble = nil)
+  then
+    FViewRoot.Controls[0].Parent := nil;
 end;
 
 procedure TDialog.DoRootClick(Sender: TObject);
