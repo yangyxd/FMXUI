@@ -21,7 +21,7 @@ interface
 {$ENDIF}
 
 uses
-  UI.Debug, UI.Utils,
+  UI.Debug, UI.Utils, UI.Utils.SVGImage,
   FMX.Forms,
   {$IFDEF ANDROID}
   Androidapi.Helpers,
@@ -84,7 +84,7 @@ type
   /// </summary>
   TViewScroll = (None, Horizontal, Vertical, Both);
 
-  TViewBrushKind = (None, Solid, Gradient, Bitmap, Resource, Patch9Bitmap, AccessoryBitmap);
+  TViewBrushKind = (None, Solid, Gradient, Bitmap, Resource, Patch9Bitmap, AccessoryBitmap, SVGImage);
 
   /// <summary>
   /// ¸½¼þÑùÊ½
@@ -249,11 +249,13 @@ type
   TViewBrushBase = class(TBrush)
   private
     FAccessory: TViewAccessory;
+    FSvgImage: TSVGImage;
     function GetKind: TViewBrushKind;
     procedure SetKind(const Value: TViewBrushKind);
     function IsKindStored: Boolean;
     function GetAccessory: TViewAccessory;
     procedure SetAccessory(const Value: TViewAccessory);
+    procedure SetSvgImage(const Value: TSVGImage);
   protected
     procedure DoAccessoryChange(Sender: TObject);
   public
@@ -262,6 +264,7 @@ type
     procedure ChangeToSolidColor(const AColor: TAlphaColor; IsDefault: Boolean = True);
   published
     property Accessory: TViewAccessory read GetAccessory write SetAccessory;
+    property SVGImage: TSVGImage read FSvgImage write SetSvgImage;
     property Kind: TViewBrushKind read GetKind write SetKind stored IsKindStored;
   end;
 
@@ -2662,7 +2665,10 @@ procedure TDrawableBase.SetBitmap(State: TViewState; const Value: TBitmap);
 var V: TBrush;
 begin
   V := GetBrush(State, True);
-  V.Bitmap.Bitmap.Assign(Value);
+  if Assigned(Value) then
+    V.Bitmap.Bitmap.Assign(Value)
+  else
+    V.Bitmap.Bitmap.Clear(0);
   V.Kind := TBrushKind.Bitmap;
 end;
 
@@ -6914,6 +6920,17 @@ end;
 procedure TViewBrushBase.SetKind(const Value: TViewBrushKind);
 begin
   inherited Kind := TBrushKind(Value);
+end;
+
+procedure TViewBrushBase.SetSvgImage(const Value: TSVGImage);
+begin
+  if Value = nil then
+    FreeAndNil(FSvgImage)
+  else begin
+    if FSvgImage = nil then
+      FSvgImage := TSVGImage.Create;
+    FSvgImage.Assign(Value);
+  end;
 end;
 
 { TViewBrush }

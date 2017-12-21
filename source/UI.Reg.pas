@@ -28,6 +28,9 @@ uses
   UI.Design.Bounds,
   UI.Design.GridColumns,
 
+  UI.Utils.SVGImage,
+  UI.Design.SVGImage,
+
   UI.Frame,
   {$IFDEF MSWINDOWS}
   Windows, Registry,
@@ -66,6 +69,14 @@ type
   end;
 
   TGridColumnsSettingsProperty = class(TClassProperty)
+  private
+  protected
+    procedure Edit; override;
+  public
+    function GetAttributes: TPropertyAttributes; override;
+  end;
+
+  TSVGImageProperty = class(TClassProperty)
   private
   protected
     procedure Edit; override;
@@ -167,6 +178,8 @@ begin
   RegisterPropertyEditor(TypeInfo(TPatchBounds), TPersistent, '', TPatchBoundsProperty);
   RegisterPropertyEditor(TypeInfo(TGridColumnsSetting), TGridBase, '', TGridColumnsSettingsProperty);
   RegisterPropertyEditor(TypeInfo(TControl), TViewLayout, '', TLayoutComponentProperty);
+
+  RegisterPropertyEditor(TypeInfo(TSVGImage), TPersistent, '', TSVGImageProperty);
 
   //RegisterPropertyEditor(TypeInfo(TCustomImageList), TPersistent, '', TShareImageListProperty);
 
@@ -610,6 +623,32 @@ begin
 end;
 
 function TGridColumnsSettingsProperty.GetAttributes: TPropertyAttributes;
+begin
+  Result := [paMultiSelect, paSubProperties, paReadOnly, paDialog];
+end;
+
+{ TSVGImageProperty }
+
+procedure TSVGImageProperty.Edit;
+var
+  Component: TObject;
+  Dialog: TFrmDesignSVGImage;
+begin
+  Component := GetComponent(0);
+  if not (Component is TViewBrushBase) then
+    Exit;
+  Dialog := TFrmDesignSVGImage.Create(nil);
+  try
+    Dialog.Caption := 'SVG Image View';
+    Dialog.LoadImage(TViewBrushBase(Component).SVGImage);
+    if Dialog.ShowModal = mrOK then begin
+    end;
+  finally
+    Dialog.Free;
+  end;
+end;
+
+function TSVGImageProperty.GetAttributes: TPropertyAttributes;
 begin
   Result := [paMultiSelect, paSubProperties, paReadOnly, paDialog];
 end;

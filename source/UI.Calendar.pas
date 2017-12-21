@@ -273,7 +273,7 @@ type
 
 type
   TCalendarDateItem = record
-    Text: string[80];
+    Text: string;
     IsTerm: Boolean; // 是否为节气
     IsHoliday: Boolean; // 是否是节日
     IsLunarHoliday: Boolean; // 是否是农历节日
@@ -782,8 +782,12 @@ begin
 end;
 
 procedure TCalendarViewBase.ClearLunarDataList;
+var
+  I: Integer;
 begin
-  SetLength(FLunarDataList, 0)    
+  for I := Low(FLunarDataList) to High(FLunarDataList) do
+    FLunarDataList[I].Text := '';
+  SetLength(FLunarDataList, 0);
 end;
 
 constructor TCalendarViewBase.Create(AOwner: TComponent);
@@ -825,13 +829,13 @@ end;
 
 destructor TCalendarViewBase.Destroy;
 begin
+  ClearLunarDataList();
   FreeAndNil(FTextSettings);
   FreeAndNil(FTextSettingsOfLunar);
   FreeAndNil(FTextSettingsOfTitle);
   FreeAndNil(FTextSettingsOfWeeks);
   FreeAndNil(FDrawable);
   FreeAndNil(FDividerBrush);
-  ClearLunarDataList();
   inherited Destroy;
 end;
 
@@ -1889,21 +1893,23 @@ var
   Item: TLunarData;
 begin
   E := FCurRows * 7;
+  for I := Low(FLunarDataList) to High(FLunarDataList) do
+    FLunarDataList[I].Text := '';
   SetLength(FLunarDataList, FCurRows * 7);
   S := 0;
   for I := FCurDrawS to (FCurDrawS + E - 1) do begin
     Item := SolarToLunar((I));
     if Item.Year > 0 then begin
       if (coShowTerm in FOptions) and (Item.IsTerm) then begin  // 节气
-        FLunarDataList[S].Text := ShortString(Item.Term);
+        FLunarDataList[S].Text := Item.Term;
         FLunarDataList[S].IsTerm := True;
         FLunarDataList[S].IsHoliday := False;
         FLunarDataList[S].IsLunarHoliday := False;
       end else begin                                  // 农历日期
         if Item.Day = 1 then
-          FLunarDataList[S].Text := ShortString(Item.CnMonth)
+          FLunarDataList[S].Text := Item.CnMonth
         else
-          FLunarDataList[S].Text := ShortString(Item.CnDay);
+          FLunarDataList[S].Text := Item.CnDay;
         FLunarDataList[S].IsTerm := False;
         FLunarDataList[S].IsHoliday := False;
         FLunarDataList[S].IsLunarHoliday := False;

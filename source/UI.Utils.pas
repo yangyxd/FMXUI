@@ -87,7 +87,7 @@ function PCharToIntDef(const S: pchar; Len: Integer; def: NativeInt = 0): Native
 function PHexToIntDef(const S: pchar; Len: Integer; def: NativeInt = 0): NativeInt;
 
 // HtmlÑÕÉ«×ªÎªColor
-function HtmlColorToColor(const V: string): TAlphaColor;
+function HtmlColorToColor(const V: string; const DefaultValue: TAlphaColor = 0): TAlphaColor;
 function Text2Color(const s:string): TAlphaColor;
 function Hex2Color(const s: string): TAlphaColor;
 function RgbStrToColor(const s: string): TAlphaColor;
@@ -711,6 +711,7 @@ begin
   if (s='purple') then result:=TAlphaColorRec.Purple else
   if (s='teal') then result:=TAlphaColorRec.Teal else
   if (s='maroon') then result:=TAlphaColorRec.Maroon else
+  if (s='pink') then result:=TAlphaColorRec.Pink else
   if (Length(s) = 6) then result := StrToIntDef('$ff' + s, 0)
 end;
 
@@ -742,13 +743,13 @@ begin
   end;
 end;
 
-function HtmlColorToColor(const V: string): TAlphaColor;
+function HtmlColorToColor(const V: string; const DefaultValue: TAlphaColor): TAlphaColor;
 begin
-  Result := 0;
+  Result := DefaultValue;
   if V = '' then Exit;
   case PChar(V)^ of
     '#': Result := Hex2Color(V);
-    '$': Result := StrToIntDef(V, 0);
+    '$': Result := StrToIntDef(V, DefaultValue);
   else
     if PDWORD(PChar(V))^ = PDWORD(PChar('rgb('))^ then begin
       Result := RgbStrToColor(V)

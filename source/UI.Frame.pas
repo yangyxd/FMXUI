@@ -683,8 +683,8 @@ class function TFrameView.CreateFrame(Parent: TFmxObject;
         if (Parent is TCommonCustomForm) then begin
           TCommonCustomForm(Parent).Padding.Top :=
             TCommonCustomForm(Parent).Padding.Top + TView.GetStatusHeight;
-          TCommonCustomForm(Parent).Padding.Bottom :=
-            TCommonCustomForm(Parent).Padding.Bottom + TView.GetNavigationBarHeight;
+          //TCommonCustomForm(Parent).Padding.Bottom :=
+          //  TCommonCustomForm(Parent).Padding.Bottom + TView.GetNavigationBarHeight;
           Break;
         end;
         Parent := Parent.Parent;

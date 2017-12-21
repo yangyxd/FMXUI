@@ -1,0 +1,166 @@
+object FrmDesignSVGImage: TFrmDesignSVGImage
+  Left = 0
+  Top = 0
+  Caption = 'Form2'
+  ClientHeight = 517
+  ClientWidth = 830
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  DesignerMasterStyle = 0
+  object Layout1: TLayout
+    Align = Right
+    Padding.Left = 9.000000000000000000
+    Padding.Top = 9.000000000000000000
+    Padding.Right = 9.000000000000000000
+    Padding.Bottom = 9.000000000000000000
+    Position.X = 702.000000000000000000
+    Size.Width = 128.000000000000000000
+    Size.Height = 517.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    object Label1: TLabel
+      Align = Top
+      Position.X = 9.000000000000000000
+      Position.Y = 103.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Height:'
+      TabOrder = 8
+    end
+    object Button2: TButton
+      Align = Bottom
+      Cancel = True
+      ModalResult = 2
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 9.000000000000000000
+      Position.Y = 474.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 5
+      Text = 'Cancel'
+      OnClick = Button2Click
+    end
+    object btnOk: TButton
+      Align = Bottom
+      Default = True
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 9.000000000000000000
+      Position.Y = 440.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 3
+      Text = 'OK'
+      OnClick = btnOkClick
+    end
+    object labelScale: TLabel
+      Align = Top
+      Position.X = 9.000000000000000000
+      Position.Y = 77.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Width:'
+    end
+    object edtHeight: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 7
+      Text = '100'
+      Position.X = 54.000000000000000000
+      Position.Y = 106.000000000000000000
+      Size.Width = 65.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      OnKeyDown = edtWidthKeyDown
+      OnExit = edtHeightExit
+    end
+    object Button1: TButton
+      Align = Top
+      Margins.Top = 10.000000000000000000
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 9.000000000000000000
+      Position.Y = 139.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 4
+      Text = 'Auto Size'
+      OnClick = Button1Click
+    end
+    object edtWidth: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 6
+      Text = '100'
+      Position.X = 54.000000000000000000
+      Position.Y = 80.000000000000000000
+      Size.Width = 65.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      OnKeyDown = edtWidthKeyDown
+      OnExit = edtWidthExit
+    end
+    object Button3: TButton
+      Align = Top
+      Default = True
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 9.000000000000000000
+      Position.Y = 9.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      Text = 'Load...'
+      OnClick = Button3Click
+    end
+    object Button4: TButton
+      Align = Top
+      Default = True
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 9.000000000000000000
+      Position.Y = 43.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      Text = 'Clear'
+      OnClick = Button4Click
+    end
+  end
+  object Panel1: TPanel
+    Align = Client
+    Size.Width = 702.000000000000000000
+    Size.Height = 517.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 4
+    object ScrollBox1: TScrollBox
+      Align = Client
+      Margins.Left = 2.000000000000000000
+      Margins.Top = 2.000000000000000000
+      Margins.Right = 2.000000000000000000
+      Margins.Bottom = 2.000000000000000000
+      Size.Width = 698.000000000000000000
+      Size.Height = 513.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = 'scrollboxstyle'
+      TabOrder = 1
+      Viewport.Width = 698.000000000000000000
+      Viewport.Height = 513.000000000000000000
+      object View1: TView
+        Gravity = None
+        Position.X = 4.000000000000000000
+        Position.Y = 4.000000000000000000
+        TabOrder = 0
+        OnResize = View1Resize
+      end
+    end
+  end
+  object OpenDialog1: TOpenDialog
+    Filter = 'SVG Image(*.svg)|*.svg|All Files(*.*)|*.*'
+    Options = [ofHideReadOnly, ofPathMustExist, ofFileMustExist, ofEnableSizing]
+    Left = 440
+    Top = 232
+  end
+end
