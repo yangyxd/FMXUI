@@ -57,18 +57,30 @@ type
 type
   TSVGImage = class(TPersistent)
   private
+    FOnChange: TNotifyEvent;
     FData: TSVGDecode;
     FBitmap: TBitmap;
     FLayout: TTextLayout;
+    FColor: TAlphaColor;
+    FLoss: Boolean;
     function GetEmpty: Boolean;
     function GetHeight: Integer;
     function GetWidth: Integer;
     procedure SetHeight(const Value: Integer);
     procedure SetWidth(const Value: Integer);
+    procedure SetColor(const Value: TAlphaColor);
+    procedure SetLoss(const Value: Boolean);
+  protected
+    { rtl }
+    procedure DefineProperties(Filer: TFiler); override;
+    procedure ReadData(Reader: TReader); virtual;
+    procedure WriteData(Writer: TWriter); virtual;
   protected
     procedure CreateDecode();
     procedure InitBitmap();
     procedure DrawSVG();
+
+    procedure DoChange();
 
     procedure FillText(const Canvas: TCanvas; const ARect: TRectF; const AText: string; 
       const AColor: TAlphaColor; const AOpacity: Single;
@@ -84,14 +96,18 @@ type
     procedure LoadFormStream(const AStream: TStream);
     procedure Assign(Source: TPersistent); override;
     procedure Clear;
+    procedure ReSize();
     procedure Draw(Canvas: TCanvas; const X, Y: Single; const AOpacity: Single = 1; const HighSpeed: Boolean = False);
     procedure SetSize(const Width, Height: Integer);
     property Empty: Boolean read GetEmpty;
     property Data: TSVGDecode read FData;
     property Bitmap: TBitmap read FBitmap;
+    property OnChange: TNotifyEvent read FOnChange write FOnChange;
   published
-    property Width: Integer read GetWidth write SetWidth;
-    property Height: Integer read GetHeight write SetHeight;
+    property Width: Integer read GetWidth write SetWidth default 0;
+    property Height: Integer read GetHeight write SetHeight default 0;
+    property Color: TAlphaColor read FColor write SetColor default 0;
+    property Loss: Boolean read FLoss write SetLoss default True;  // Ê¸Á¿»¯
   end;
 
 implementation
@@ -174,7 +190,11 @@ begin
   if not Assigned(AStream) then
     Exit;
   if not Assigned(FData) then
-    FData := TXMLDocument.Create();
+    FData := TXMLDocument.Create()
+  else
+    FData.Clear;
+  FSvg := nil;
+  FViewBox := TPoint.Zero;
   FData.LoadFromStream(AStream);
   try
     DecodeSVG();
@@ -228,6 +248,7 @@ var
   Stream: TMemoryStream;
 begin
   if Source is TSVGImage then begin
+    FColor := TSVGImage(Source).FColor;
     if TSVGImage(Source).Empty then
       Clear
     else begin
@@ -237,10 +258,15 @@ begin
         TSVGImage(Source).FData.FData.SaveToStream(Stream);
         Stream.Position := 0;
         Self.FData.LoadFormStream(Stream);
+        if not Assigned(FBitmap) then
+          InitBitmap();
+        FBitmap.SetSize(FData.Size);
+        DrawSVG;
       finally
         Stream.Free;
       end;
     end;
+    DoChange();
   end else
     inherited;
 end;
@@ -249,10 +275,12 @@ procedure TSVGImage.Clear;
 begin
   FreeAndNil(FData);
   FreeAndNil(FBitmap);
+  DoChange();
 end;
 
 constructor TSVGImage.Create;
 begin
+  FLoss := True;
 end;
 
 procedure TSVGImage.CreateDecode;
@@ -261,12 +289,24 @@ begin
     FData := TSVGDecode.Create;
 end;
 
+procedure TSVGImage.DefineProperties(Filer: TFiler);
+begin
+  inherited;
+  Filer.DefineProperty('SVGData', ReadData, WriteData, Assigned(FData));
+end;
+
 destructor TSVGImage.Destroy;
 begin
   FreeAndNil(FLayout);
   FreeAndNil(FData);
   FreeAndNil(FBitmap);
   inherited;
+end;
+
+procedure TSVGImage.DoChange;
+begin
+  if Assigned(FOnChange) then
+    FOnChange(Self);
 end;
 
 procedure TSVGImage.Draw(Canvas: TCanvas; const X, Y: Single; const AOpacity: Single; const HighSpeed: Boolean);
@@ -315,10 +355,10 @@ var
     end;
     if Flag <> 0 then Exit;
 
-    if StrLCompX(PS, 'fill', 4, PN) = 0 then begin
+    if (FColor = 0) and (StrLCompX(PS, 'fill', 4, PN) = 0) then begin
       SetString(Value, PV, PL);
       Canvas.Fill.Color := HtmlColorToColor(TrimRight(Value), Canvas.Fill.Color);
-    end else if StrLCompX(PS, 'stroke', 6, PN) = 0 then begin
+    end else if (FColor = 0) and (StrLCompX(PS, 'stroke', 6, PN) = 0) then begin
       SetString(Value, PV, PL);
       Canvas.Stroke.Color := HtmlColorToColor(TrimRight(Value), Canvas.Stroke.Color);
     end else if StrLCompX(PS, 'fill-opacity', 12, PN) = 0 then begin
@@ -376,9 +416,9 @@ var
 
   procedure ParserStyle(Canvas: TCanvas; Item: TXmlNode; Flag: Integer = 0); overload;
   begin
-    if Flag = 0 then    
+    if (Flag = 0) and (FColor = 0) then
       Canvas.Fill.Color := FData.ReadColor(Item, 'fill', Canvas.Fill.Color);
-    if (Flag = 0) and Item.HasAttribute('stroke') then
+    if (Flag = 0) and (FColor = 0) and Item.HasAttribute('stroke') then
       Canvas.Stroke.Color := FData.ReadColor(Item, 'stroke', Canvas.Stroke.Color);
     if Item.HasAttribute('stroke-width') then
       Canvas.Stroke.Thickness := FData.ReadFloat(Item, 'stroke-width', Canvas.Stroke.Thickness) * SX;
@@ -780,13 +820,18 @@ begin
     if (FBitmap.Width = 0) or (FBitmap.Height = 0) then
       Exit;
 
+    FBitmap.Clear(0);
     FBitmap.Canvas.BeginScene();
-    FBitmap.Clear(0);    
     try
       FontAnchor := 0;
       FBitmap.Canvas.Stroke.Thickness := 0;
-      FBitmap.Canvas.Stroke.Color := TAlphaColorRec.Black;
-      FBitmap.Canvas.Fill.Color := TAlphaColorRec.Black;
+      if FColor = 0 then begin
+        FBitmap.Canvas.Stroke.Color := TAlphaColorRec.Black;
+        FBitmap.Canvas.Fill.Color := TAlphaColorRec.Black;
+      end else begin
+        FBitmap.Canvas.Stroke.Color := FColor;
+        FBitmap.Canvas.Fill.Color := FColor;
+      end;
       ParserNodes(FData.FSvg.ChildNodes, Path);
     finally
       FBitmap.Canvas.EndScene;
@@ -856,6 +901,7 @@ begin
     InitBitmap();
   FBitmap.SetSize(FData.Size);
   DrawSVG;
+  DoChange();
 end;
 
 procedure TSVGImage.LoadFormStream(const AStream: TStream);
@@ -870,29 +916,78 @@ begin
     InitBitmap;
   FBitmap.SetSize(FData.Size);
   DrawSVG;
+  DoChange();
+end;
+
+procedure TSVGImage.ReadData(Reader: TReader);
+var
+  Stream: TStringStream;
+begin
+  try
+    Stream := TStringStream.Create;
+    try
+      Stream.WriteString(Reader.ReadString);
+      Stream.Position := 0;
+      Self.LoadFormStream(Stream);
+    finally
+      Stream.Free;
+    end;
+  except
+  end;
+end;
+
+procedure TSVGImage.ReSize;
+var
+  LSize: TSizeF;
+begin
+  if Assigned(FData) then begin
+    LSize := FData.GetSize;
+    SetSize(Round(LSize.Width), Round(LSize.Height));
+  end;
+end;
+
+procedure TSVGImage.SetColor(const Value: TAlphaColor);
+begin
+  if FColor <> Value then begin
+    FColor := Value;
+    DrawSVG;
+    DoChange;
+  end;
 end;
 
 procedure TSVGImage.SetHeight(const Value: Integer);
 begin
-  if Value <> Height then
+  if Value <> Height then begin
     SetSize(Width, Value);
+    DoChange;
+  end;
+end;
+
+procedure TSVGImage.SetLoss(const Value: Boolean);
+begin
+  if FLoss <> Value then begin
+    FLoss := Value;
+    if (not Value) then
+      ReSize();
+    DoChange();
+  end;
 end;
 
 procedure TSVGImage.SetSize(const Width, Height: Integer);
 begin
-  if Empty then
-    Exit;
-  if (Width <> FBitmap.Width) or (Height <> FBitmap.Height) then begin
+  if Assigned(FBitmap) and ((Width <> FBitmap.Width) or (Height <> FBitmap.Height)) then begin
     FBitmap.SetSize(Width, Height);
-    if (Width > 0) and (Height > 0) then
+    if (Width > 0) and (Height > 0) and (not Empty) then
       DrawSVG();
   end;
 end;
 
 procedure TSVGImage.SetWidth(const Value: Integer);
 begin
-  if Value <> Width then
+  if Value <> Width then begin
     SetSize(Value, Height);
+    DoChange;
+  end;
 end;
 
 function RoundToScale(const Value, Scale: Single): Single;
@@ -923,6 +1018,23 @@ begin
     ASize.Height := Height;
     //ASize.Width := RoundToScale(Width, SceneScale);
     //ASize.Height := RoundToScale(Height, SceneScale);
+  end;
+end;
+
+procedure TSVGImage.WriteData(Writer: TWriter);
+var
+  Stream: TStringStream;
+begin
+  try
+    Stream := TStringStream.Create;
+    try
+      if Assigned(FData) and Assigned(FData.FData) then
+        FData.FData.SaveToStream(Stream);
+    finally
+      Writer.WriteString(Stream.DataString);
+      Stream.Free;
+    end;
+  except
   end;
 end;
 

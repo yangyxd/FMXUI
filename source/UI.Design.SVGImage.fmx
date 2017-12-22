@@ -4,9 +4,11 @@ object FrmDesignSVGImage: TFrmDesignSVGImage
   Caption = 'Form2'
   ClientHeight = 517
   ClientWidth = 830
+  Position = MainFormCenter
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
+  OnDestroy = FormDestroy
   DesignerMasterStyle = 0
   object Layout1: TLayout
     Align = Right
@@ -27,7 +29,7 @@ object FrmDesignSVGImage: TFrmDesignSVGImage
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
       Text = 'Height:'
-      TabOrder = 8
+      TabOrder = 10
     end
     object Button2: TButton
       Align = Bottom
@@ -39,9 +41,8 @@ object FrmDesignSVGImage: TFrmDesignSVGImage
       Size.Width = 110.000000000000000000
       Size.Height = 25.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 5
+      TabOrder = 7
       Text = 'Cancel'
-      OnClick = Button2Click
     end
     object btnOk: TButton
       Align = Bottom
@@ -52,7 +53,7 @@ object FrmDesignSVGImage: TFrmDesignSVGImage
       Size.Width = 110.000000000000000000
       Size.Height = 25.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 3
+      TabOrder = 4
       Text = 'OK'
       OnClick = btnOkClick
     end
@@ -67,7 +68,7 @@ object FrmDesignSVGImage: TFrmDesignSVGImage
     end
     object edtHeight: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 7
+      TabOrder = 9
       Text = '100'
       Position.X = 54.000000000000000000
       Position.Y = 106.000000000000000000
@@ -86,13 +87,13 @@ object FrmDesignSVGImage: TFrmDesignSVGImage
       Size.Width = 110.000000000000000000
       Size.Height = 25.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 4
+      TabOrder = 6
       Text = 'Auto Size'
       OnClick = Button1Click
     end
     object edtWidth: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 6
+      TabOrder = 8
       Text = '100'
       Position.X = 54.000000000000000000
       Position.Y = 80.000000000000000000
@@ -111,7 +112,7 @@ object FrmDesignSVGImage: TFrmDesignSVGImage
       Size.Width = 110.000000000000000000
       Size.Height = 25.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 2
+      TabOrder = 3
       Text = 'Load...'
       OnClick = Button3Click
     end
@@ -124,9 +125,33 @@ object FrmDesignSVGImage: TFrmDesignSVGImage
       Size.Width = 110.000000000000000000
       Size.Height = 25.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 1
+      TabOrder = 2
       Text = 'Clear'
       OnClick = Button4Click
+    end
+    object ComboColorBox1: TComboColorBox
+      Color = claNull
+      Position.X = 7.000000000000000000
+      Position.Y = 216.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      OnChange = ComboColorBox1Change
+      OnClick = ComboColorBox1Change
+    end
+    object Button5: TButton
+      Align = Top
+      Margins.Top = 10.000000000000000000
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 9.000000000000000000
+      Position.Y = 183.000000000000000000
+      Size.Width = 110.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 5
+      Text = 'Default Color'
+      OnClick = Button5Click
     end
   end
   object Panel1: TPanel
@@ -146,6 +171,7 @@ object FrmDesignSVGImage: TFrmDesignSVGImage
       Size.PlatformDefault = False
       StyleLookup = 'scrollboxstyle'
       TabOrder = 1
+      OnPainting = ScrollBox1Painting
       Viewport.Width = 698.000000000000000000
       Viewport.Height = 513.000000000000000000
       object View1: TView

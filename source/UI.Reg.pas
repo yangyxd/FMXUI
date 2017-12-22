@@ -639,10 +639,10 @@ begin
     Exit;
   Dialog := TFrmDesignSVGImage.Create(nil);
   try
-    Dialog.Caption := 'SVG Image View';
+    Dialog.Caption := 'SVG Image';
     Dialog.LoadImage(TViewBrushBase(Component).SVGImage);
-    if Dialog.ShowModal = mrOK then begin
-    end;
+    if Dialog.ShowModal = mrOK then
+      TViewBrushBase(Component).SVGImage := Dialog.Bmp;
   finally
     Dialog.Free;
   end;

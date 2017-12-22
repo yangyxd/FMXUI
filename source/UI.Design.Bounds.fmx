@@ -67,7 +67,7 @@ object BoundsDesigner: TBoundsDesigner
       Position.X = 9.000000000000000000
       Position.Y = 103.000000000000000000
       Size.Width = 110.000000000000000000
-      Size.Height = 19.000000000000000000
+      Size.Height = 20.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 2
       Value = 1.000000000000000000
@@ -95,7 +95,7 @@ object BoundsDesigner: TBoundsDesigner
       Margins.Top = 10.000000000000000000
       Margins.Bottom = 9.000000000000000000
       Position.X = 9.000000000000000000
-      Position.Y = 132.000000000000000000
+      Position.Y = 133.000000000000000000
       Size.Width = 110.000000000000000000
       Size.Height = 25.000000000000000000
       Size.PlatformDefault = False

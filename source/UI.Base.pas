@@ -256,15 +256,17 @@ type
     function GetAccessory: TViewAccessory;
     procedure SetAccessory(const Value: TViewAccessory);
     procedure SetSvgImage(const Value: TSVGImage);
+    function GetSvgImage: TSVGImage;
   protected
     procedure DoAccessoryChange(Sender: TObject);
+    procedure DoSvgImageChange(Sender: TObject);
   public
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
     procedure ChangeToSolidColor(const AColor: TAlphaColor; IsDefault: Boolean = True);
   published
     property Accessory: TViewAccessory read GetAccessory write SetAccessory;
-    property SVGImage: TSVGImage read FSvgImage write SetSvgImage;
+    property SVGImage: TSVGImage read GetSvgImage write SetSvgImage;
     property Kind: TViewBrushKind read GetKind write SetKind stored IsKindStored;
   end;
 
@@ -360,7 +362,7 @@ type
     class procedure FillRect9Patch(Canvas: TCanvas; const ARect: TRectF; const XRadius, YRadius: Single; const ACorners: TCorners;
       const AOpacity: Single; const ABrush: TViewBrush; const ACornerType: TCornerType = TCornerType.Round);
     procedure FillRect(Canvas: TCanvas; const ARect: TRectF; const XRadius, YRadius: Single; const ACorners: TCorners;
-      const AOpacity: Single; const ABrush: TBrush; const ACornerType: TCornerType = TCornerType.Round); inline;
+      const AOpacity: Single; const ABrush: TBrush; const ACornerType: TCornerType = TCornerType.Round);
     procedure FillArc(Canvas: TCanvas; const Center, Radius: TPointF;
       const StartAngle, SweepAngle, AOpacity: Single; const ABrush: TBrush); inline;
 
@@ -2230,6 +2232,7 @@ function TDrawableBase.BrushIsEmpty(V: TBrush): Boolean;
 begin
   if (not Assigned(V)) or (V.Kind = TBrushKind.None) or
     ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid)) or
+    ((Ord(V.Kind) = Ord(TViewBrushKind.SVGImage)) and ((TViewBrushBase(V).FSvgImage = nil) or (TViewBrushBase(V).FSvgImage.Empty))) or
     ((Ord(V.Kind) = Ord(TViewBrushKind.AccessoryBitmap)) and ((TViewBrushBase(V).FAccessory = nil) or TViewBrushBase(V).FAccessory.IsEmpty))
   then begin
     if (V is TViewImagesBrush) and (TViewImagesBrush(V).FImageIndex >= 0) then
@@ -2484,6 +2487,14 @@ begin
     if Ord(ABrush.Kind) = Ord(TViewBrushKind.AccessoryBitmap) then begin
       if Assigned(TViewBrushBase(ABrush).FAccessory) then begin
         Bmp := TViewBrushBase(ABrush).FAccessory.FAccessoryBmp;
+        if Assigned(Bmp) then
+          Canvas.DrawBitmap(Bmp, RectF(0, 0, Bmp.Width, Bmp.Height), ARect, AOpacity, True);
+      end;
+    end else if Ord(ABrush.Kind) = Ord(TViewBrushKind.SVGImage) then begin
+      if Assigned(TViewBrushBase(ABrush).FSvgImage) then begin
+        if TViewBrushBase(ABrush).FSvgImage.Loss then
+          TViewBrushBase(ABrush).FSvgImage.SetSize(Round(ARect.Width), Round(ARect.Height));
+        Bmp := TViewBrushBase(ABrush).FSvgImage.Bitmap;
         if Assigned(Bmp) then
           Canvas.DrawBitmap(Bmp, RectF(0, 0, Bmp.Width, Bmp.Height), ARect, AOpacity, True);
       end;
@@ -6880,10 +6891,17 @@ destructor TViewBrushBase.Destroy;
 begin
   if FAccessory <> nil then
     FreeAndNil(FAccessory);
+  FreeAndNil(FSvgImage);
   inherited;
 end;
 
 procedure TViewBrushBase.DoAccessoryChange(Sender: TObject);
+begin
+  if Assigned(OnChanged) then
+    OnChanged(Self);
+end;
+
+procedure TViewBrushBase.DoSvgImageChange(Sender: TObject);
 begin
   if Assigned(OnChanged) then
     OnChanged(Self);
@@ -6901,6 +6919,15 @@ end;
 function TViewBrushBase.GetKind: TViewBrushKind;
 begin
   Result := TViewBrushKind(inherited Kind);
+end;
+
+function TViewBrushBase.GetSvgImage: TSVGImage;
+begin
+  if FSvgImage = nil then begin
+    FSvgImage := TSVGImage.Create;
+    FSvgImage.OnChange := DoSvgImageChange;
+  end;
+  Result := FSvgImage;
 end;
 
 function TViewBrushBase.IsKindStored: Boolean;
@@ -6927,8 +6954,10 @@ begin
   if Value = nil then
     FreeAndNil(FSvgImage)
   else begin
-    if FSvgImage = nil then
+    if FSvgImage = nil then begin
       FSvgImage := TSVGImage.Create;
+      FSvgImage.OnChange := DoSvgImageChange;
+    end;
     FSvgImage.Assign(Value);
   end;
 end;
