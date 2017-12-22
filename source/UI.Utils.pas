@@ -641,6 +641,14 @@ begin
   end;
 end;
 
+function PCharToFloatDef(const S: pchar; Len: Integer; def: Extended = 0): Extended;
+var
+  v: string;
+begin
+  SetString(V, s, Len);
+  Result := StrToFloatDef(V, def);
+end;
+
 function PHexToIntDef(const S: pchar; Len: Integer; def: NativeInt = 0): NativeInt;
 var
   I: Integer;
@@ -712,6 +720,7 @@ begin
   if (s='teal') then result:=TAlphaColorRec.Teal else
   if (s='maroon') then result:=TAlphaColorRec.Maroon else
   if (s='pink') then result:=TAlphaColorRec.Pink else
+  if (s='orange') then result:=TAlphaColorRec.Orange else
   if (Length(s) = 6) then result := StrToIntDef('$ff' + s, 0)
 end;
 
@@ -743,6 +752,41 @@ begin
   end;
 end;
 
+function RgbaStrToColor(const s: string): TAlphaColor;
+var
+  P, PE, P1: PChar;
+begin
+  Result := TAlphaColorRec.Black;
+  P := PChar(s);
+  Inc(P, 4);
+  PE := P + Length(S);
+  SkipSpace(P);
+  P1 := P;
+  while (P < PE) and (not CharInSet(P^, [',',')',' '])) do Inc(P);
+  TAlphaColorRec(Result).R := PCharToIntDef(P1, P - P1, 0);
+  Inc(P);
+  SkipSpace(P);
+  if P < PE then begin
+    P1 := P;
+    while (P < PE) and (not CharInSet(P^, [',',')',' '])) do Inc(P);
+    TAlphaColorRec(Result).G := PCharToIntDef(P1, P - P1, 0);
+    Inc(P);
+    SkipSpace(P);
+    if P < PE then begin
+      P1 := P;
+      while (P < PE) and (not CharInSet(P^, [',',')',' '])) do Inc(P);
+      TAlphaColorRec(Result).B := PCharToIntDef(P1, P - P1, 0);
+      Inc(P);
+      SkipSpace(P);
+      if P < PE then begin
+        P1 := P;
+        while (P < PE) and (not CharInSet(P^, [',',')',' '])) do Inc(P);
+        TAlphaColorRec(Result).A := Round(PCharToFloatDef(P1, P - P1, 0) * 255);
+      end;
+    end;
+  end;
+end;
+
 function HtmlColorToColor(const V: string; const DefaultValue: TAlphaColor): TAlphaColor;
 begin
   Result := DefaultValue;
@@ -751,8 +795,13 @@ begin
     '#': Result := Hex2Color(V);
     '$': Result := StrToIntDef(V, DefaultValue);
   else
-    if PDWORD(PChar(V))^ = PDWORD(PChar('rgb('))^ then begin
-      Result := RgbStrToColor(V)
+    if Length(V) > 9 then begin
+      if PInt64(PChar(V))^ = PInt64(PChar('rgb('))^ then begin
+        Result := RgbStrToColor(V)
+      end else if (PInt64(PChar(V))^ = PInt64(PChar('rgba'))^) and (V.Chars[4] = '(') then begin
+        Result := RgbaStrToColor(V)
+      end else
+        Result := Text2Color(V)
     end else
       Result := Text2Color(V)
   end;
