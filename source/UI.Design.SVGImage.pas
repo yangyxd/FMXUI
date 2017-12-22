@@ -62,12 +62,7 @@ implementation
 
 procedure TFrmDesignSVGImage.btnOkClick(Sender: TObject);
 begin
-  if Assigned(Bmp) and (not Bmp.Empty) then
-    ModalResult := mrOk
-  else begin
-    ShowMessage('Please load the SVG image.');
-    Exit;
-  end;
+  ModalResult := mrOk
 end;
 
 procedure TFrmDesignSVGImage.Button1Click(Sender: TObject);
