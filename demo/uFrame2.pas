@@ -31,6 +31,7 @@ type
     tvTitle: TTextView;
     BadgeView1: TBadgeView;
     BadgeView2: TBadgeView;
+    View1: TView;
     procedure btnBackClick(Sender: TObject);
     procedure GridsLayout1Resize(Sender: TObject);
     procedure TextView2Click(Sender: TObject);
