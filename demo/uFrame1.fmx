@@ -40,28 +40,28 @@ object Frame1: TFrame1
       Drawable.ItemDefault.Bitmap.Bitmap.PNG = {
         89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
         03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
-        0291494441545847CD98594EE3401445C33E68486701F00D8B8655343DC05F00
-        09C4F00102459D056436F7949FA3E4510E763C842BA1AA54BDC9C7E5A2EC4E92
-        247B8BC5E2683E9F9FA9DFEBEC40E425BFEA38A69E0E9DE974FAD8EFF717B3D9
-        ACAFC1AED9B622F29197FCD4413D1D5578CE8026335D69E2A7F9342AF2902F4D
-        9B24D4413D019D110AB28A6FE47068BE8D88F8E45905A23AAED5A44B489DAEFE
-        AE9CC16553C4884B7C4B1540A881D8FAD2C190CA839564C4EEEA266684EE5601
-        E8F76D2E00CDB3E82E1DB13F6A6A59FCC4B17841E431629BE3CBA0C795042FC9
-        883D542566841E1CA17B35C5B62119862BAA8B187E11427FD52D178F7BCC95A5
-        6196C49ED43D309342C21E3F4788FD68BB8708E4116217456FA5F95F986B10F1
-        8AFAE74A71BA4668A9C964F2A2662331E6CD6E29C5795653CB439377C510FB61
-        266B623C62FFBB32212F02FA2B1F8FC7EFBE307E336E2641F27BADBDA04C8A7F
-        1021F04B09F799A7E5B74D0541484DA987A3B48CC45B9A32D56834FAAFF1135A
-        1B0A8A916C4C24F24486C3E1C8BA4146B09D823291D093C9A4F161EB056552E2
-        534F6830188C19379376A5C4FB1B48B1C6DABF757E4D41C8BA41ADAE2912459E
-        3ED6D0A927875DE38519A1D83E1512DBBCDFA7B06F669F52C22A3BFA0BFE6652
-        8F1437B693F3BF2C7A6B188FD8173E5D7C29C58B9D125ED56C734A204EB55382
-        0240C89FA70AFFB7C76E95989D38B73F4FC9317AF22C1B107BFCDCC993337FB9
-        9327812284EA3EA3178F67843EBDCDA85B692DE04F1C478C3C9BDF668CD03F4F
-        A834EA1C1127422CFFBDCF08EDEA0D996F17EB17AEF1EFF52DC10C3E7D7551B7
-        D21AFA4AC4278F03411DBDEFF97D4A137CC90BFB8855DA28212FF29197FCD441
-        3D0CF2CDF3980AD5DFE537CF73EA489264EF0331DEA381E35826880000000049
-        454E44AE426082}
+        0294494441545847CD98594EE3401445C33E804E6701E4BB5974B30AA0197EA2
+        1E245A407F806845640199CD3DE5E7287994831D0FE14AA82A556FF271B928BB
+        9324C9C172B93C592C16DFD5EF75F620F2925F75F4A9A74367369B3D0C0683E5
+        7C3EFFA9C1AED9B622F29197FCD4413D1D5578C6802633DD6AE2ABF9342AF290
+        2F4D9B24D4413D019D110AB28A7FCBE18BF93622E293671D88EAF8A5265D42EA
+        74F577EB0C6E9A22465CE25BAA00420DC436970E86541EAC2423765737312374
+        B70E40BFFFE402D03C8BEEC611FBA1A696C54F1C8B17441E23B63DBE0C7A5C49
+        F0928CD87D556246E8DE11FAABA6D83624C370457511C32F42E84ADD72F1B8C7
+        5C591A6645EC51DD63332924ECF17384D88F767B88401E217651F4569AFF85B9
+        0611AFA87FAE14A76B84569A4EA74F6AB61263DEEC56529C7F6A6A7968F2AE18
+        624766B221C623F69795097911D05FF96432F9EF0BE337E3661224BFE7DA0BCA
+        A4F8C71102E74A78C83C2DBF6D2A08426A4A3D1CA565245ED294A9C6E3F1ABC6
+        BFD1DA50508C6463229127321A8DC6D60D3282ED149489849E4C268D8F5A2F28
+        93129F7A42C3E170C2B899B42B253EDC428A35D6FEADF36B0A42D60D6A754D91
+        28F2F4B1864E3D39EC1A2FCC08C5F6A990D8E6FD3E857D33FB941256D9D19FF0
+        37937AA4B8B19D9CFF65D15BC378C4BEF0E9E243295EEC94F0AC6697530271AA
+        9D12140042FE3C55F8BF3D76EBC4ECC4B9FB794A8ED19367D980D8E3E74E9E9C
+        F9CB9D3C09142154F719BD783C23F4EE6D46DD4A6B017FE23862E4D9FE366384
+        AE3DA1D2A873449C08B1FCF73E23B4AF3764BE5D6C5EB8C63FD7B7043378F7D5
+        45DD4A6BE823119F3C0E0475F43EE7F7294DF0252FEC235669A384BCC8475EBB
+        43EC837D06F9E6D9A742F5F7F9CDF38C3A9224397803744EA29761CCD0200000
+        000049454E44AE426082}
       Drawable.ItemDefault.Bitmap.WrapMode = TileStretch
       Drawable.ItemDefault.Kind = Bitmap
     end
@@ -139,7 +139,7 @@ object Frame1: TFrame1
       Padding.Right = 8.000000000000000000
       Padding.Bottom = 8.000000000000000000
       Size.Width = 369.000000000000000000
-      Size.Height = 712.000000000000000000
+      Size.Height = 756.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
       Orientation = Vertical
@@ -147,7 +147,6 @@ object Frame1: TFrame1
         Background.XRadius = 3.000000000000000000
         Background.YRadius = 3.000000000000000000
         Background.ItemDefault.Color = claChocolate
-        Background.ItemDefault.Accessory.UseIcon = True
         Background.ItemPressed.Color = claCrimson
         Background.Border.Color.Pressed = claSilver
         Background.Border.Color.Focused = claNull
@@ -164,7 +163,7 @@ object Frame1: TFrame1
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 8.000000000000000000
-        TabOrder = 15
+        TabOrder = 16
         OnClick = ButtonView1Click
         Text = 'GridsLayout Demo'
         TextSettings.Color.Default = claWhite
@@ -179,7 +178,6 @@ object Frame1: TFrame1
         Drawable.SizeHeight = 22
         Drawable.ItemDefault.Kind = AccessoryBitmap
         Drawable.ItemDefault.Accessory.Icon = Note
-        Drawable.ItemDefault.Accessory.UseIcon = True
         ShowScrollBars = False
       end
       object ButtonView10: TButtonView
@@ -203,7 +201,7 @@ object Frame1: TFrame1
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 52.000000000000000000
-        TabOrder = 8
+        TabOrder = 9
         OnClick = ButtonView10Click
         Text = #36793#26639#33756#21333' Demo'
         TextSettings.Color.Default = claWhite
@@ -237,7 +235,7 @@ object Frame1: TFrame1
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 96.000000000000000000
-        TabOrder = 5
+        TabOrder = 6
         OnClick = ButtonView11Click
         Text = 'ImageView Demo'
         TextSettings.Color.Default = claWhite
@@ -271,7 +269,7 @@ object Frame1: TFrame1
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 140.000000000000000000
-        TabOrder = 12
+        TabOrder = 13
         OnClick = ButtonView12Click
         Text = #20998#32452' ListView Demo'
         TextSettings.Color.Default = claWhite
@@ -407,7 +405,7 @@ object Frame1: TFrame1
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 316.000000000000000000
-        TabOrder = 11
+        TabOrder = 12
         OnClick = ButtonView2Click
         Text = #20061#23467#26684#32972#26223#22270
         TextSettings.Color.Default = claWhite
@@ -441,7 +439,7 @@ object Frame1: TFrame1
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 360.000000000000000000
-        TabOrder = 14
+        TabOrder = 15
         OnClick = ButtonView3Click
         Text = 'Dialog Demo'
         TextSettings.Color.Default = claWhite
@@ -475,7 +473,7 @@ object Frame1: TFrame1
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 404.000000000000000000
-        TabOrder = 13
+        TabOrder = 14
         OnClick = ButtonView4Click
         Text = #33258#23450#20041' ListView Demo'
         TextSettings.Color.Default = claWhite
@@ -577,7 +575,7 @@ object Frame1: TFrame1
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 536.000000000000000000
-        TabOrder = 10
+        TabOrder = 11
         OnClick = ButtonView6Click
         Text = 'ProgressView Demo'
         TextSettings.Color.Default = claWhite
@@ -611,7 +609,7 @@ object Frame1: TFrame1
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 580.000000000000000000
-        TabOrder = 9
+        TabOrder = 10
         OnClick = ButtonView7Click
         Text = #20998#26639#39029#38754' Demo'
         TextSettings.Color.Default = claWhite
@@ -645,7 +643,7 @@ object Frame1: TFrame1
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 624.000000000000000000
-        TabOrder = 7
+        TabOrder = 8
         OnClick = ButtonView8Click
         Text = 'RingView Demo'
         TextSettings.Color.Default = claWhite
@@ -679,9 +677,43 @@ object Frame1: TFrame1
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 668.000000000000000000
-        TabOrder = 6
+        TabOrder = 7
         OnClick = ButtonView9Click
         Text = 'MultiPathView Demo'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claWhitesmoke
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Checked = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.Gravity = Center
+        ShowScrollBars = False
+      end
+      object ButtonView17: TButtonView
+        Background.XRadius = 3.000000000000000000
+        Background.YRadius = 3.000000000000000000
+        Background.ItemDefault.Color = claFuchsia
+        Background.ItemPressed.Color = claDarkorchid
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Size.Width = 353.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 8.000000000000000000
+        Position.Y = 712.000000000000000000
+        TabOrder = 5
+        OnClick = ButtonView17Click
+        Text = 'CalendarView Demo'
         TextSettings.Color.Default = claWhite
         TextSettings.Color.Pressed = claWhitesmoke
         TextSettings.Color.Focused = claNull

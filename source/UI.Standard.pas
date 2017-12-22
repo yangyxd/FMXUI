@@ -2670,6 +2670,7 @@ begin
         HScrollBar.ValueD := Floor(ANewPos);
       Handled := True;
     end;
+    FAniCalculations.Shown := False;
   end;
 end;
 
@@ -5787,7 +5788,7 @@ begin
       FPointTarget := Result;
       Result := Self;
     end else
-      FPointTarget := nil;
+      FPointTarget := nil;  // win10 bug
   end;
   {$ENDIF}
 end;
@@ -5959,7 +5960,10 @@ end;
 
 function TViewScrollContent.ObjectAtPoint(P: TPointF): IControl;
 begin
-  Result := inherited ObjectAtPoint(P)
+  if Assigned(FScrollBox.FAniCalculations) and (FScrollBox.FAniCalculations.Shown) then
+    Result := nil   // 手势滚动中，不允许点击子项
+  else
+    Result := inherited ObjectAtPoint(P);
 //  if Result <> nil then
 //  begin
 //    if FScene <> nil then

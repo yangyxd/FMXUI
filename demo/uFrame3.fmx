@@ -106,7 +106,6 @@ object Frame3: TFrame3
       Drawable.ItemDefault.Kind = AccessoryBitmap
       Drawable.ItemDefault.Accessory.Icon = Settings
       Drawable.ItemDefault.Accessory.Color = claSlateblue
-      Drawable.ItemDefault.Accessory.UseIcon = True
     end
   end
   object LinearLayout1: TLinearLayout

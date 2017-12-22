@@ -31,6 +31,7 @@ type
     ButtonView8: TButtonView;
     ButtonView9: TButtonView;
     ButtonView16: TButtonView;
+    ButtonView17: TButtonView;
     procedure TextView17Click(Sender: TObject);
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
@@ -49,6 +50,7 @@ type
     procedure ButtonView15Click(Sender: TObject);
     procedure ButtonView5Click(Sender: TObject);
     procedure ButtonView16Click(Sender: TObject);
+    procedure ButtonView17Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -63,6 +65,7 @@ implementation
 {$R *.fmx}
 
 uses
+  uFrameDateView,
   uFrameHorzScrollView,
   uFrameVertScrollView,
   uFrameCameraViewer,
@@ -124,6 +127,11 @@ end;
 procedure TFrame1.ButtonView16Click(Sender: TObject);
 begin
   StartFrame(TFrameHorzScrollView)
+end;
+
+procedure TFrame1.ButtonView17Click(Sender: TObject);
+begin
+  StartFrame(TFrameDateView)
 end;
 
 procedure TFrame1.ButtonView1Click(Sender: TObject);
