@@ -2493,7 +2493,7 @@ begin
     end else if Ord(ABrush.Kind) = Ord(TViewBrushKind.SVGImage) then begin
       if Assigned(TViewBrushBase(ABrush).FSvgImage) then begin
         if TViewBrushBase(ABrush).FSvgImage.Loss then
-          TViewBrushBase(ABrush).FSvgImage.SetSize(Round(ARect.Width), Round(ARect.Height));
+          TViewBrushBase(ABrush).FSvgImage.SetSize(Round(ARect.Width * GetScreenScale), Round(ARect.Height * GetScreenScale));
         Bmp := TViewBrushBase(ABrush).FSvgImage.Bitmap;
         if Assigned(Bmp) then
           Canvas.DrawBitmap(Bmp, RectF(0, 0, Bmp.Width, Bmp.Height), ARect, AOpacity, True);
