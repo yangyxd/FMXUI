@@ -1476,9 +1476,9 @@ begin
       FOnDrawText(Self, Canvas, FText, SR)
     else begin
       if Assigned(FHtmlText) then
-        FHtmlText.Draw(Canvas, FText, SR, Opacity, DrawState)
+        FHtmlText.Draw(Canvas, FText, SR, GetAbsoluteOpacity, DrawState)
       else
-        FText.Draw(Canvas, SR, Opacity, DrawState);
+        FText.Draw(Canvas, SR, GetAbsoluteOpacity, DrawState);
     end;
   end;
 end;

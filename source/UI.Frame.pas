@@ -575,8 +575,13 @@ begin
       TFrameAniType.DefaultAni:
         if not (DefaultAnimate in [TFrameAniType.None, TFrameAniType.DefaultAni]) then
           AnimatePlay(DefaultAnimate, IsIn, SwitchFlag, AEvent)
-        else if Assigned(AEvent) then
+        else if Assigned(AEvent) then begin
+          if IsIn then
+            Self.Opacity := 1
+          else
+            Self.Opacity := 0;
           AEvent(Self);
+        end;
       TFrameAniType.FadeInOut:
         DoFadeInOut;
       TFrameAniType.MoveInOut:
