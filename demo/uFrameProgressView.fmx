@@ -16451,7 +16451,7 @@ object FrameProgressView: TFrameProgressView
     Position.Y = 216.000000000000000000
     TabOrder = 3
     OnClick = ProgressView1Click
-    Value = 100
+    Value = 0
     ForeGround.Padding.Left = 8.000000000000000000
     ForeGround.Padding.Top = 8.000000000000000000
     ForeGround.Padding.Right = 8.000000000000000000
@@ -16459,6 +16459,7 @@ object FrameProgressView: TFrameProgressView
     ForeGround.XRadius = 5.000000000000000000
     ForeGround.YRadius = 5.000000000000000000
     ForeGround.ItemDefault.Color = x7F0000FF
+    ForeGround.ValueOffset = 10.000000000000000000
     StartAngle = -90.000000000000000000
     PaddingBorder = True
   end
@@ -16568,7 +16569,6 @@ object FrameProgressView: TFrameProgressView
       item
         MultiResBitmap.Height = 37
         MultiResBitmap.Width = 37
-        MultiResBitmap.LoadSize = 2
         MultiResBitmap = <
           item
             Width = 37
@@ -16596,7 +16596,6 @@ object FrameProgressView: TFrameProgressView
       item
         MultiResBitmap.Height = 37
         MultiResBitmap.Width = 37
-        MultiResBitmap.LoadSize = 2
         MultiResBitmap = <
           item
             Width = 37
@@ -16632,7 +16631,6 @@ object FrameProgressView: TFrameProgressView
       item
         MultiResBitmap.Height = 37
         MultiResBitmap.Width = 37
-        MultiResBitmap.LoadSize = 2
         MultiResBitmap = <
           item
             Width = 37
@@ -16641,7 +16639,7 @@ object FrameProgressView: TFrameProgressView
               89504E470D0A1A0A0000000D4948445200000025000000250806000000C59E20
               03000000017352474200AECE1CE90000000467414D410000B18F0BFC61050000
               01BB494441545847ED98CD4AC34010C79B04143C481154042D3E8B82BE8567EB
-              C18BFA027D06AD7AF5EE5D505F4253C4AF93690FF5904BAB623EF43FF65F2192
+              C18BFA007D07AD7AF5EE5D505F4253C4AF93690FF5904BAB623EF43FF65F2192
               2ABB69D61CF283616767067698EE6E275BC9421CC70B90DD20086E3E808C3217
               3B43CC8285E7A2283A97647E2276F8E7196A0E2CBAC31C52817F8FA1E6C04FF5
               C8F55381FF9EA1CAD81C95F13CAF4635955EAFB748D51C61185EB328A9C07FC5
@@ -16653,8 +16651,8 @@ object FrameProgressView: TFrameProgressView
               AC94E338FBAD562BE23481D8E13FE0D41C28466EA76F5CF7D43AEFA9A77FBDA7
               4A4A4650C8CE731C3D7A1DB20A19F6E817904388768FAE0DAA93DBD78C365874
               B3DD6EBF338F046287BFCE5073E4F985ACCDA82A0DF17DFF95A1E64017F0D7AB
-              CB034395C9D225FCFA5600FF315573602317EF254FC0C239BC79562A9FE98EB3
-              E00602FA470000000049454E44AE426082}
+              CB034395C9D225FCFA5600FF315573602317EF254FC0C239BC79562A9F6852B3
+              D4E8D44FE10000000049454E44AE426082}
             FileName = 'E:\Users Folder\Desktop\FMXUI\image\btn_top_more.png'
           end>
         Name = 'btn_top_more'
