@@ -288,12 +288,12 @@ type
     First: Integer;  // 当前显示的第一天
     Last: Integer;   // 当前显示的最后一天
     Rows: Integer; // 需要显示的行数
+    RowHeight: Single; // 日期每行高度
     DrawS: Integer; // 当前绘制的第一天
     DrawSD: Integer; // 当前绘制的第一天的日期
     Weeks: Integer;  // 本月第一天所属的周数
     Month, Year: Word; // 当前选中日期的年，月
     XOffset: Single; // 绘制时的X偏移
-    ShowButton: Boolean; // 显示按钮
     LunarDataList: TArray<TCalendarDateItem>; // 农历数据
     procedure ClearLunar;
     procedure Clear;
@@ -344,7 +344,7 @@ type
 
     FDivider: TAlphaColor; // 分隔线颜色
     FInFitSize: Boolean;    
-    FAning: Integer;  
+    FAning: Integer;
 
     FRangeOfNavigation: TRectF;
     FRangeOfDays: TRectF;
@@ -390,9 +390,10 @@ type
     procedure SetViewTypeMax(const Value: TCalendarViewType);
     procedure SetViewTypeMin(const Value: TCalendarViewType);
     function GetValue: TDate;
+    function GetAniX: Single;
+    procedure SetAniX(const Value: Single);
   protected
     procedure AniCalcChange(Sender: TObject);
-    procedure AniCalcStart(Sender: TObject);
     procedure AniCalcStop(Sender: TObject);
     procedure UpdateScrollLimits(Flag: Integer = 0);
   protected
@@ -414,7 +415,7 @@ type
     procedure InitDividerBrush;
 
     function CalcMonthOffset(Flag: Integer): Integer;
-    
+
     procedure SwitchDate(const Value: TDate = InvaludeDate; const OffsetMonth: Integer = 0);
     procedure ParseValue(const Value: TDate; var AState: TCalendarDrawState); virtual;
     procedure ParseValueLunar(var AState: TCalendarDrawState); virtual;
@@ -502,6 +503,8 @@ type
     /// 当前选择时间
     /// </summary>
     property DateTime: TDate read GetValue write SetValue;
+
+    property AniX: Single read GetAniX write SetAniX;
 
     /// <summary>
     /// 选项
@@ -710,13 +713,15 @@ type
 implementation
 
 uses
-  FMX.Forms, UI.Dialog;
+  FMX.Forms, UI.Dialog, UI.Frame;
 
 type
   TTmpSimpleTextSettings = class(TSimpleTextSettings);
 
 var
   DefaultLanguage: TCalendarLanguage_EN;
+  FDownTime: Int64 = 0;
+  FDownX: Single = 0;
 
 procedure DecodeDate(const DateTime: TDateTime; var Year, Month, Day: Word);
 var
@@ -727,7 +732,7 @@ end;
 
 function IncMonth(const V: TDateTime; IncM: Integer; First: Boolean = True): TDateTime;
 var
-  Y, M, D: Word;
+  Y, M, D, D2: Word;
 begin
   if IncM <> 0 then begin
     DecodeDate(V, Y, M, D);
@@ -743,9 +748,27 @@ begin
     end;
     if First then
       D := 1;
+    if D > 28 then begin
+      D2 := DaysInMonth(EncodeDate(Y, M, 1));
+      if D > D2 then
+        D := D2;
+    end;
+    if Y < 1 then Y := 1;
+    if Y > 9999 then Y := 9999;
     Result := EncodeDate(Y, M, D);
   end else
     Result := V;   
+end;
+
+function GetVolecity(X: Single): Single;
+var
+  T: Int64;
+begin
+  T := GetTimestamp - FDownTime;
+  Result := Abs(X - FDownX);
+  if T > 1 then
+    Result := Result / T * 100;
+  //OutputDebugString(PChar(FloatToStr(Result)));
 end;
 
 { TCalendarLanguage_CN }
@@ -819,23 +842,18 @@ begin
   InvalidateRect(ClipRect);
 end;
 
-procedure TCalendarViewBase.AniCalcStart(Sender: TObject);
-begin
-  if Scene <> nil then
-    Scene.ChangeScrollingState(Self, True);
-end;
-
 procedure TCalendarViewBase.AniCalcStop(Sender: TObject);
 begin
   if Scene <> nil then
     Scene.ChangeScrollingState(nil, False);
   if FAning <> 0 then begin
+    FAniCalc.BoundsAnimation := True;
     FAniCalc.ViewportPositionF := PointF(0, 0);
-    FCurHotDate := FAning;  
+    FAniCalc.UpdatePosImmediately(True);
+    FCurHotDate := FAning;
     FAning := 0;
     DoClickEvent;
-    FCurHotDate := InvaludeDate;  
-    FAniCalc.BoundsAnimation := True;
+    FCurHotDate := InvaludeDate;
   end;
 end;
 
@@ -870,7 +888,6 @@ constructor TCalendarViewBase.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FLanguage := nil;
-  FCurState.ShowButton := True;
   FOptions := CDefaultCalendarOptions;
   FViewTypeMax := TCalendarViewType.Years;
 
@@ -902,12 +919,10 @@ begin
   FAniCalc.ViewportPositionF := PointF(0, 0);
   FAniCalc.Animation := True;
   FAniCalc.Averaging := True;
-  FAniCalc.Interval := 15;
+  FAniCalc.Interval := 8;
   FAniCalc.BoundsAnimation := True;
-  FAniCalc.TouchTracking := [ttHorizontal, ttVertical];
+  FAniCalc.TouchTracking := [ttHorizontal];
   FAniCalc.OnChanged := AniCalcChange;
-  FAniCalc.OnStart := AniCalcStart;
-  FAniCalc.OnStop := AniCalcStop;
 
   EnableExecuteAction := True;
   SetAcceptsControls(False);
@@ -1100,7 +1115,7 @@ begin
   LEE := Trunc(FEndDate);
 
   if FSelected then
-    LSelect := Trunc(FValue)
+    LSelect := Trunc(AState.Value)
   else
     LSelect := InvaludeDate;
   LToday := Trunc(Now);
@@ -1525,6 +1540,7 @@ end;
 
 procedure TCalendarViewBase.DoMouseLeave;
 begin
+  FCurHotDate := InvaludeDate;
   inherited DoMouseLeave;
 end;
 
@@ -1571,7 +1587,7 @@ begin
         V := FRowHeihgt + FRowPadding;
         if coShowLunar in FOptions then
           V := V + FRowLunarHeight + Max(0, FRowLunarPadding);
-
+        FCurState.RowHeight := V;
         H := H + V * FCurState.Rows;
       end;
     else
@@ -1595,6 +1611,11 @@ begin
   Repaint;
   if TTextSettingsBase(Sender).IsEffectsChange then
     UpdateEffects;
+end;
+
+function TCalendarViewBase.GetAniX: Single;
+begin
+  Result := FAniCalc.ViewportPositionF.X;
 end;
 
 function TCalendarViewBase.GetAutoSize: Boolean;
@@ -1740,6 +1761,8 @@ procedure TCalendarViewBase.MouseDown(Button: TMouseButton; Shift: TShiftState;
 begin
   inherited;
   FAning := 0;
+  FDownX := X;
+  FDownTime := GetTimestamp;
   FAniCalc.MouseDown(x, y);
 end;
 
@@ -1833,20 +1856,59 @@ end;
 
 procedure TCalendarViewBase.MouseUp(Button: TMouseButton; Shift: TShiftState; x,
   y: single);
+var
+  I: Integer;
+  NewH: Single;
 begin
   inherited;
-  if (Abs(FAniCalc.ViewportPosition.X) > (Width * 0.35)) then begin
-    if FAniCalc.ViewportPosition.X > 0 then  // 右
-      FAning := BID_Next
-    else
+  FAniCalc.MouseUp(X, Y);
+  UpdateScrollLimits;
+
+  if (Abs(FDownX - X) > (Width * 0.6)) or (GetVolecity(X) > 100) then begin
+    // 需要切换到上页或下页了
+    FAniCalc.OnChanged := nil;
+    if FAniCalc.ViewportPosition.X > 0 then begin  // 右
+      FAning := BID_Next;
+      X := Width;
+    end else begin
       FAning := BID_Up;
-    FAniCalc.MouseUp(X, Y);
-    UpdateScrollLimits(1);
-    FAniCalc.BoundsAnimation := False;
-  end else begin
-    FAning := 0;
-    FAniCalc.MouseUp(X, Y);
-    UpdateScrollLimits;
+      X := -Width;
+    end;
+
+    NewH := 0;
+    if (FCurViewType = TCalendarViewType.Days) and AutoSize then begin
+      if (FAning = BID_Next) and (FCurState.Right <> nil) then
+        I := FCurState.Right.Rows
+      else if FCurState.Left <> nil then
+        I := FCurState.Left.Rows
+      else
+        I := 0;
+      if (I <> 0) and (I <> FCurState.Rows) then
+        NewH := Height + (I - FCurState.Rows) * FCurState.RowHeight;
+    end;
+
+    if NewH <> 0 then begin
+      // 动达改变高度
+      FInFitSize := True;
+      TFrameAnimator.AnimateFloat(Self, 'Height', NewH,
+        procedure (Sender: TObject)
+        begin
+          FInFitSize := False;
+        end
+      ,0.25);
+    end;
+
+    TFrameAnimator.AnimateFloat(Self, 'AniX', X,
+      procedure (Sender: TObject)
+      begin
+        FAniCalc.OnChanged := AniCalcChange;
+        AniCalcStop(Sender);
+      end,
+      procedure(Sender: TObject)
+      begin
+        AniCalcChange(Sender);
+      end
+    , 0.3);
   end;
 end;
 
@@ -1862,7 +1924,10 @@ begin
   else
     FInnerLanguage := DefaultLanguage;
 
-  FCurState.XOffset := - FAniCalc.ViewportPosition.X;
+  if Assigned(FBackground) then
+    FBackground.Draw(Canvas);
+
+  FCurState.XOffset :=  -FAniCalc.ViewportPosition.X;
   if FCurState.XOffset <> 0 then begin
     W := Width;
     if Abs(FCurState.XOffset) > W then begin
@@ -1879,7 +1944,7 @@ begin
       end;
       FCurState.Right.XOffset := FCurState.XOffset + W;
       
-      LValue := IncMonth(FValue, CalcMonthOffset(1));
+      LValue := IncMonth(FValue, CalcMonthOffset(1), False);
       if FCurState.Right.Value <> LValue then
         ParseValue(LValue, FCurState.Right^);
       PaintToCanvas(Canvas, FCurState.Right^);
@@ -1890,13 +1955,14 @@ begin
       end;
       FCurState.Left.XOffset := FCurState.XOffset - W;
 
-      LValue := IncMonth(FValue, CalcMonthOffset(0));
+      LValue := IncMonth(FValue, CalcMonthOffset(0), False);
       if FCurState.Left.Value <> LValue then
         ParseValue(LValue, FCurState.Left^);
       PaintToCanvas(Canvas, FCurState.Left^);
     end;
   end else
     PaintToCanvas(Canvas, FCurState);
+
 end;
 
 procedure TCalendarViewBase.PaintToCanvas(Canvas: TCanvas; const AState: TCalendarDrawState);
@@ -1907,7 +1973,6 @@ var
 begin
   LH := 0;
   if Assigned(FBackground) then begin
-    FBackground.Draw(Canvas);
     if Assigned(TDrawableBorder(FBackground)._Border) and (TDrawableBorder(FBackground)._Border.Style <> TViewBorderStyle.None) then
       LH := TDrawableBorder(FBackground)._Border.Width;
   end;
@@ -1976,31 +2041,28 @@ begin
       end;
   end;
 
-  if AState.ShowButton then begin
-
-    // 今天按钮
-    if coShowTodayButton in FOptions then begin
-      if not (coShowClearButton in FOptions) then begin
-        LR := RectF(R.Left, R.Top + 1, R.Right, R.Top + FRowHeihgt - 1);
-        R.Top := LR.Bottom + 1;
-      end else
-        LR := RectF(R.Left, R.Top + 1, R.Left + (R.Right - R.Left) * 0.5, R.Top + FRowHeihgt - 1);
-      DoDrawButton(Canvas, LR, FInnerLanguage.TodayStr, BID_Today);
-    end;
-
-    // 清除按钮
-    if coShowClearButton in FOptions then begin
-      if not (coShowTodayButton in FOptions) then begin
-        LR := RectF(R.Left, R.Top + 1, R.Right, R.Top + FRowHeihgt - 1);
-      end else begin
-        LR.Left := LR.Right;
-        LR.Right := R.Right;
-      end;
+  // 今天按钮
+  if coShowTodayButton in FOptions then begin
+    if not (coShowClearButton in FOptions) then begin
+      LR := RectF(R.Left, R.Top + 1, R.Right, R.Top + FRowHeihgt - 1);
       R.Top := LR.Bottom + 1;
-      DoDrawButton(Canvas, LR, FInnerLanguage.ClearStr, BID_Clear);
-    end;
-    
+    end else
+      LR := RectF(R.Left, R.Top + 1, R.Left + (R.Right - R.Left) * 0.5, R.Top + FRowHeihgt - 1);
+    DoDrawButton(Canvas, LR, FInnerLanguage.TodayStr, BID_Today);
   end;
+
+  // 清除按钮
+  if coShowClearButton in FOptions then begin
+    if not (coShowTodayButton in FOptions) then begin
+      LR := RectF(R.Left, R.Top + 1, R.Right, R.Top + FRowHeihgt - 1);
+    end else begin
+      LR.Left := LR.Right;
+      LR.Right := R.Right;
+    end;
+    R.Top := LR.Bottom + 1;
+    DoDrawButton(Canvas, LR, FInnerLanguage.ClearStr, BID_Clear);
+  end;
+    
 end;
 
 procedure TCalendarViewBase.ParseValue(const Value: TDate; var AState: TCalendarDrawState);
@@ -2081,6 +2143,11 @@ end;
 procedure TCalendarViewBase.Resize;
 begin
   inherited;
+end;
+
+procedure TCalendarViewBase.SetAniX(const Value: Single);
+begin
+  FAniCalc.ViewportPositionF := PointF(Value, 0);
 end;
 
 procedure TCalendarViewBase.SetAutoSize(const Value: Boolean);
@@ -2347,7 +2414,9 @@ begin
     ParseValue(FValue, FCurState);
     if LAutoSize then        
       DoAutoSize;
-  end;
+  end else
+    FCurState.Value := FValue;
+
   if LChange then
     DoDateChange;
 end;
@@ -2367,18 +2436,18 @@ begin
       Targets[0].TargetType := TAniCalculations.TTargetType.Min;
       Targets[0].Point := TPointD.Create(0, 0);  
       Targets[1].TargetType := TAniCalculations.TTargetType.Max;
-      Targets[1].Point := TPointD.Create(Max(0, 0), Max(0, 0));
+      Targets[1].Point := TPointD.Create(0, 0);
     end else begin
       if FAning = BID_Up then begin
         Targets[0].TargetType := TAniCalculations.TTargetType.Min;
-        Targets[0].Point := TPointD.Create(-Width, 0);  
+        Targets[0].Point := TPointD.Create(-Width, 0);
         Targets[1].TargetType := TAniCalculations.TTargetType.Max;
-        Targets[1].Point := TPointD.Create(Max(0, 0), Max(0, 0));
+        Targets[1].Point := TPointD.Create(0, 0);
       end else begin
         Targets[0].TargetType := TAniCalculations.TTargetType.Min;
         Targets[0].Point := TPointD.Create(0, 0);  
         Targets[1].TargetType := TAniCalculations.TTargetType.Max;
-        Targets[1].Point := TPointD.Create(Max(0, Width), Max(0, 0));
+        Targets[1].Point := TPointD.Create(Max(0, Width), 0);
       end;
     end;
     FAniCalc.SetTargets(Targets);

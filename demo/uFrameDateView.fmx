@@ -66,6 +66,8 @@ object FrameDateView: TFrameDateView
   end
   object CalendarView1: TCalendarView
     Align = Top
+    Background.ItemDefault.Color = claGhostwhite
+    Background.ItemDefault.Kind = Solid
     Gravity = None
     Margins.Top = 50.000000000000000000
     Size.Width = 344.000000000000000000
@@ -101,5 +103,10 @@ object FrameDateView: TFrameDateView
   object CalendarLanguage_CN1: TCalendarLanguage_CN
     Left = 208
     Top = 456
+  end
+  object GestureManager1: TGestureManager
+    Sensitivity = 80.000000000000000000
+    Left = 136
+    Top = 272
   end
 end

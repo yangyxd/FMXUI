@@ -5,7 +5,8 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
-  UI.Standard, UI.Base, UI.Frame, UI.Calendar, FMX.Controls.Presentation;
+  UI.Standard, UI.Base, UI.Frame, UI.Calendar, FMX.Controls.Presentation,
+  FMX.Gestures;
 
 type
   TFrameDateView = class(TFrame)
@@ -16,6 +17,7 @@ type
     CheckBox1: TCheckBox;
     CheckBox2: TCheckBox;
     CalendarLanguage_CN1: TCalendarLanguage_CN;
+    GestureManager1: TGestureManager;
     procedure btnBackClick(Sender: TObject);
     procedure CheckBox1Change(Sender: TObject);
     procedure CheckBox2Change(Sender: TObject);

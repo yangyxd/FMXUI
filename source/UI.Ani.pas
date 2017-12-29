@@ -28,15 +28,24 @@ type
     procedure Stop; override;
   end;
 
+  TFloatExAnimation = class(TFloatAnimation)
+  protected
+    function FindProperty: Boolean;
+  public
+    procedure Start; override;
+  end;
+
   TFrameAnimator = class
   private type
     TFrameAnimatorEvent = record
       OnFinish: TNotifyEvent;
       OnFinishA: TNotifyEventA;
+      OnProcess: TNotifyEventA;
     end;
     TAnimationDestroyer = class
     private
       FOnFinishs: TDictionary<Integer, TFrameAnimatorEvent>;
+      procedure DoAniProcess(Sender: TObject);
       procedure DoAniFinished(Sender: TObject);
       procedure DoAniFinishedEx(Sender: TObject; FreeSender: Boolean);
     public
@@ -44,6 +53,7 @@ type
       destructor Destroy; override;
       procedure Add(Sender: TObject; AOnFinish: TNotifyEvent); overload;
       procedure Add(Sender: TObject; AOnFinish: TNotifyEventA); overload;
+      procedure Add(Sender: TObject; AOnFinish, AOnProcess: TNotifyEventA); overload;
     end;
   private class var
     FDestroyer: TAnimationDestroyer;
@@ -64,6 +74,11 @@ type
     class procedure AnimateFloat(const Target: TFmxObject;
       const APropertyName: string; const NewValue: Single;
       AOnFinish: TNotifyEventA; Duration: Single = 0.2;
+      Delay: Single = 0.0; AType: TAnimationType = TAnimationType.In;
+      AInterpolation: TInterpolationType = TInterpolationType.Linear); overload;
+    class procedure AnimateFloat(const Target: TFmxObject;
+      const APropertyName: string; const NewValue: Single;
+      AOnFinish: TNotifyEventA; AOnProcess: TNotifyEventA; Duration: Single = 0.2;
       Delay: Single = 0.0; AType: TAnimationType = TAnimationType.In;
       AInterpolation: TInterpolationType = TInterpolationType.Linear); overload;
 
@@ -202,6 +217,35 @@ begin
     FDestroyer.DoAniFinishedEx(Animation, False);
 end;
 
+class procedure TFrameAnimator.AnimateFloat(const Target: TFmxObject;
+  const APropertyName: string; const NewValue: Single; AOnFinish,
+  AOnProcess: TNotifyEventA; Duration, Delay: Single; AType: TAnimationType;
+  AInterpolation: TInterpolationType);
+var
+  Animation: TFloatAnimation;
+begin
+  TAnimator.StopPropertyAnimation(Target, APropertyName);
+
+  CreateDestroyer;
+
+  Animation := TFloatExAnimation.Create(nil);
+  FDestroyer.Add(Animation, AOnFinish, AOnProcess);
+  Animation.Parent := Target;
+  Animation.AnimationType := AType;
+  Animation.Interpolation := AInterpolation;
+  Animation.OnFinish := FDestroyer.DoAniFinished;
+  Animation.OnProcess := FDestroyer.DoAniProcess;
+  Animation.Duration := Duration;
+  Animation.Delay := Delay;
+  Animation.PropertyName := APropertyName;
+  Animation.StartFromCurrent := True;
+  Animation.StopValue := NewValue;
+  Animation.Start;
+
+  if not Animation.Enabled then
+    FDestroyer.DoAniFinishedEx(Animation, False);
+end;
+
 class procedure TFrameAnimator.AnimateInt(const Target: TFmxObject;
   const APropertyName: string; const NewValue: Integer; AOnFinish: TNotifyEvent;
   Duration, Delay: Single; AType: TAnimationType; AInterpolation: TInterpolationType);
@@ -301,6 +345,7 @@ begin
     Exit;
   Item.OnFinish := AOnFinish;
   Item.OnFinishA := nil;
+  Item.OnProcess := nil;
   FOnFinishs.Add(Sender.GetHashCode, Item);
 end;
 
@@ -313,6 +358,20 @@ begin
     Exit;
   Item.OnFinishA := AOnFinish;
   Item.OnFinish := nil;
+  Item.OnProcess := nil;
+  FOnFinishs.AddOrSetValue(Sender.GetHashCode, Item);
+end;
+
+procedure TFrameAnimator.TAnimationDestroyer.Add(Sender: TObject; AOnFinish,
+  AOnProcess: TNotifyEventA);
+var
+  Item: TFrameAnimatorEvent;
+begin
+  if not Assigned(AOnFinish) then
+    Exit;
+  Item.OnFinishA := AOnFinish;
+  Item.OnFinish := nil;
+  Item.OnProcess := AOnProcess;
   FOnFinishs.AddOrSetValue(Sender.GetHashCode, Item);
 end;
 
@@ -339,12 +398,12 @@ var
   Key: Integer;
 begin
   Key := Sender.GetHashCode;
-  if FOnFinishs.ContainsKey(Key) then begin
-    Item := FOnFinishs[Key];
+  if FOnFinishs.TryGetValue(Key, Item) then begin
     FOnFinishs.Remove(Key);  // UI操作，默认是单线程，不作同步处理
   end else begin
     Item.OnFinish := nil;
     Item.OnFinishA := nil;
+    Item.OnProcess := nil;
   end;
   if FreeSender then
     TAnimation(Sender).DisposeOf;
@@ -354,6 +413,16 @@ begin
     if Assigned(Item.OnFinishA) then
       Item.OnFinishA(Sender);
   except
+  end;
+end;
+
+procedure TFrameAnimator.TAnimationDestroyer.DoAniProcess(Sender: TObject);
+var
+  Item: TFrameAnimatorEvent;
+begin
+  if FOnFinishs.TryGetValue(Sender.GetHashCode, Item) then begin
+    if Assigned(Item.OnProcess) then
+      Item.OnProcess(Sender);
   end;
 end;
 
@@ -375,6 +444,18 @@ end;
 procedure TDelayExecute.Stop;
 begin
   inherited Stop;
+end;
+
+{ TFloatExAnimation }
+
+function TFloatExAnimation.FindProperty: Boolean;
+begin
+  Result := True;
+end;
+
+procedure TFloatExAnimation.Start;
+begin
+  inherited Start;
 end;
 
 initialization
