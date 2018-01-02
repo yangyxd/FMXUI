@@ -1864,7 +1864,7 @@ begin
   FAniCalc.MouseUp(X, Y);
   UpdateScrollLimits;
 
-  if (Abs(FDownX - X) > (Width * 0.6)) or (GetVolecity(X) > 100) then begin
+  if (Abs(FDownX - X) > (Width * 0.6)) or (GetVolecity(X) > 80) then begin
     // 需要切换到上页或下页了
     FAniCalc.OnChanged := nil;
     if FAniCalc.ViewportPosition.X > 0 then begin  // 右
@@ -1895,7 +1895,7 @@ begin
         begin
           FInFitSize := False;
         end
-      ,0.25);
+      ,0.2);
     end;
 
     TFrameAnimator.AnimateFloat(Self, 'AniX', X,
@@ -1908,7 +1908,7 @@ begin
       begin
         AniCalcChange(Sender);
       end
-    , 0.3);
+    , 0.2);
   end;
 end;
 
