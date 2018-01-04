@@ -284,7 +284,7 @@ begin
         Self.FData.LoadFormStream(Stream);
         if not Assigned(FBitmap) then
           InitBitmap();
-        FBitmap.SetSize(FData.Size);
+        FBitmap.SetSize(FData.Size.Width, FData.Size.Height);
         DrawSVG;
       finally
         Stream.Free;
@@ -941,7 +941,7 @@ begin
   end;
   if not Assigned(FBitmap) then
     InitBitmap();
-  FBitmap.SetSize(FData.Size);
+  FBitmap.SetSize(FData.Size.Width, FData.Size.Height);
   DrawSVG;
   DoChange();
 end;
@@ -956,7 +956,7 @@ begin
   end;
   if not Assigned(FBitmap) then 
     InitBitmap;
-  FBitmap.SetSize(FData.Size);
+  FBitmap.SetSize(FData.Size.Width, FData.Size.Height);
   DrawSVG;
   DoChange();
 end;
