@@ -86,6 +86,7 @@ type
   /// <summary>
   /// 日历语言 - 中文
   /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TCalendarLanguage_CN = class(TComponent, ICalendarLanguage)
   public
     function WeekStrList: TArray<string>;
@@ -98,6 +99,7 @@ type
   /// <summary>
   /// 日历语言 - 英文
   /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TCalendarLanguage_EN = class(TComponent, ICalendarLanguage)
   public
     function WeekStrList: TArray<string>;
@@ -1816,7 +1818,7 @@ begin
         ID := LY * 4 + LX + 1;
       end;
     end;     
-  end else if IsPointInRect(P, FRangeOfNavigation) then begin
+  end else if (P.Y > 0) and IsPointInRect(P, FRangeOfNavigation) then begin
     // 在导航区域内
     if P.X < FRangeOfNavigation.Left + CDefaultNextUpW then
       ID := BID_Up
