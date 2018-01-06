@@ -394,6 +394,8 @@ type
     function GetValue: TDate;
     function GetAniX: Single;
     procedure SetAniX(const Value: Single);
+    function GetMonthBegin: TDate;
+    function GetMonthEnd: TDate;
   protected
     procedure AniCalcChange(Sender: TObject);
     procedure AniCalcStop(Sender: TObject);
@@ -505,6 +507,9 @@ type
     /// 当前选择时间
     /// </summary>
     property DateTime: TDate read GetValue write SetValue;
+
+    property MonthBegin: TDate read GetMonthBegin;
+    property MonthEnd: TDate read GetMonthEnd;
 
     property AniX: Single read GetAniX write SetAniX;
 
@@ -710,6 +715,8 @@ type
 
     property OnChange;
     property OnOwnerLunarData;
+    property OnOwnerDrawCalendar;
+    property OnClickView;
   end;
 
 implementation
@@ -1659,6 +1666,16 @@ begin
     else
       Result.Text := '';
   end;
+end;
+
+function TCalendarViewBase.GetMonthBegin: TDate;
+begin
+  Result := FCurState.First;
+end;
+
+function TCalendarViewBase.GetMonthEnd: TDate;
+begin
+  Result := FCurState.Last;
 end;
 
 function TCalendarViewBase.GetNotDaysRowHeight(const RowCount: Integer): Single;
