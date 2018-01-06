@@ -173,15 +173,20 @@ type
     FImageScale: Single;
     FImageMap: TBitmap;
     FActiveStyle: TFmxObject;
+  protected
     procedure AddEllipsesAccessory;
     procedure AddFlagAccessory;
     procedure AddBackAccessory;
+    procedure AddMoreAccessory;
+    procedure AddRefreshAccessory;
     procedure CalculateImageScale;
     function GetAccessoryFromResource(const AStyleName: string; const AState: string = ''): TBitmap;
     procedure Initialize;
   public
     constructor Create;
     destructor Destroy; override;
+    
+    procedure AddPath(const PathData: string; const SW, SH: Single);
 
     function GetAccessoryImage(AAccessory: TViewAccessoryType): TBitmap;
     procedure SetAccessoryImage(AAccessory: TViewAccessoryType; const Value: TBitmap);
@@ -7056,28 +7061,10 @@ end;
 { TViewAccessoryImageList }
 
 procedure TViewAccessoryImageList.AddBackAccessory;
-var
-  AAcc: TBitmap;
 begin
-  AAcc := TBitmap.Create;
-  AAcc.SetSize(64, 64);
-  AAcc.Clear(claNull);
-  AAcc.Canvas.BeginScene;
-  try
-    AAcc.Canvas.Fill.Color := claSilver;
-    AAcc.Canvas.FillPolygon([
-      PointF(40, 0),
-      PointF(46, 6),
-      PointF(21, 31.5),
-      PointF(46, 56),
-      PointF(40, 63),
-      PointF(9, 31.5),
-      PointF(40, 0)
-    ], 1);
-  finally
-    AAcc.Canvas.EndScene;
-  end;
-  Add(AAcc);
+  AddPath('M360.44 511.971l442.598-422.3c21.503-20.53 21.503-53.782 0-74.286-21.477-20.505-56.316-20.505-77.794 '+
+    '0L282.645 437.71 204.8 511.97l77.82 74.262 442.624 422.3c21.503 20.555 56.317 20.555 77.82 0 21.477-20.48 '+
+    '21.477-53.758 0-74.237L360.439 511.971z', 1024, 1024);
 end;
 
 procedure TViewAccessoryImageList.AddEllipsesAccessory;
@@ -7143,6 +7130,77 @@ begin
     AAcc.Canvas.EndScene;
   end;
   Add(AAcc);
+end;
+
+procedure TViewAccessoryImageList.AddMoreAccessory;
+begin
+  AddPath('M744.942345 542.72l37.428965-37.428966L308.047448 30.896552 258.048 '+
+    '80.825379 682.548966 505.291034 233.083586 954.721103l49.964138 49.928828 461.894621-461.894621z',1024, 1024);
+end;
+
+procedure TViewAccessoryImageList.AddPath(const PathData: string;const SW, SH: Single);
+
+  procedure ParserPathSize(Path: TPathData; var W, H: Single);
+  var
+     I: Integer;
+  begin
+    W := 0;
+    H := 0;
+    for I := 0 to Path.Count - 1 do begin
+      with Path.Points[I] do begin
+        if Kind <> TPathPointKind.Close then begin
+          W := Max(Point.X, W);
+          H := Max(Point.Y, H);
+        end;
+      end;
+    end;
+  end;
+
+const
+  SWH = 64;
+var
+  AAcc: TBitmap;
+  Path: TPathData;
+  W, H, SX: Single;
+begin
+  AAcc := TBitmap.Create;
+  AAcc.SetSize(SWH, SWH);
+  Path := TPathData.Create;
+  try
+    Path.Data := PathData;
+    if (SW = 0) and (SH = 0) then
+      ParserPathSize(Path, W, H)
+    else begin
+      W := SW;
+      H := SH;
+    end;
+    if W <= 1 then W := SWH;
+    if H <= 1 then H := SWH;      
+    SX := SWH / W;
+    if SWH / H < SX then      
+      SX := SWH / H;      
+    if (SX <> 1) then
+      Path.Scale(SX, SX);
+    AAcc.Canvas.BeginScene;
+    try
+      AAcc.Clear(claNull);
+      AAcc.Canvas.Fill.Color := claBlack;
+      AAcc.Canvas.FillPath(Path, 1);
+    finally
+      AAcc.Canvas.EndScene;
+    end;
+  finally
+    FreeAndNil(Path);
+  end;
+  Add(AAcc);
+end;
+
+procedure TViewAccessoryImageList.AddRefreshAccessory;
+begin
+  AddPath('M817.093 597.188c-7.486 157.805-137.796 283.457-297.455 283.457-164.47 '+
+    '0-297.805-133.336-297.805-297.805 0-159.643 125.608-289.923 283.375-297.452'+
+    'v141.624l311.986-170.174L505.208 58.3v141.862c-204.746 7.63-368.38 176.022-368.38 '+
+    '382.622 0 211.472 171.421 382.893 382.891 382.893 206.65 0 375.053-163.692 382.627-368.49h-85.253z', 1024, 1024);
 end;
 
 procedure TViewAccessoryImageList.CalculateImageScale;
@@ -7289,7 +7347,7 @@ begin
   begin
     case ICount of
       TViewAccessoryType.None: Add(GetAccessoryFromResource('none'));
-      TViewAccessoryType.More: Add(GetAccessoryFromResource('listviewstyle.accessorymore'));
+      TViewAccessoryType.More: AddMoreAccessory;
       TViewAccessoryType.Checkmark: Add(GetAccessoryFromResource('listviewstyle.accessorycheckmark'));
       TViewAccessoryType.Detail: Add(GetAccessoryFromResource('listviewstyle.accessorydetail'));
       TViewAccessoryType.Ellipses: AddEllipsesAccessory;

@@ -5,7 +5,7 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   System.Generics.Collections, System.Rtti, System.SyncObjs,
-  FMX.Ani,
+  FMX.Ani, FMX.Utils,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Platform, IOUtils;
 
 type
@@ -33,6 +33,22 @@ type
     function FindProperty: Boolean;
   public
     procedure Start; override;
+  end;
+
+  TInt64Animation = class(TCustomPropertyAnimation)
+  private
+    FStartValue: Int64;
+    FStopValue: Int64;
+    FStartFromCurrent: Boolean;
+  protected
+    procedure ProcessAnimation; override;
+    procedure FirstFrame; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+  published
+    property StartValue: Int64 read FStartValue write FStartValue stored True nodefault;
+    property StopValue: Int64 read FStopValue write FStopValue stored True nodefault;
+    property StartFromCurrent: Boolean read FStartFromCurrent write FStartFromCurrent default False;
   end;
 
   TFrameAnimator = class
@@ -93,6 +109,12 @@ type
       Delay: Single = 0.0; AType: TAnimationType = TAnimationType.In;
       AInterpolation: TInterpolationType = TInterpolationType.Linear); overload;
 
+    class procedure AnimateInt64(const Target: TFmxObject;
+      const APropertyName: string; const NewValue: Int64;
+      AOnFinish: TNotifyEvent = nil; Duration: Single = 0.2;
+      Delay: Single = 0.0; AType: TAnimationType = TAnimationType.In;
+      AInterpolation: TInterpolationType = TInterpolationType.Linear); overload;
+
     class procedure AnimateColor(const Target: TFmxObject;
       const APropertyName: string; NewValue: TAlphaColor;
       AOnFinish: TNotifyEvent = nil; Duration: Single = 0.2;
@@ -105,7 +127,14 @@ type
       AInterpolation: TInterpolationType = TInterpolationType.Linear); overload;
   end;
 
+function InterpolateInt64(const Start, Stop: Int64; const T: Single): Int64;
+
 implementation
+
+function InterpolateInt64(const Start, Stop: Int64; const T: Single): Int64;
+begin
+  Result := Round(Start + (Stop - Start) * T);
+end;
 
 { TFrameAnimator }
 
@@ -301,6 +330,34 @@ begin
     FDestroyer.DoAniFinishedEx(Animation, False);
 end;
 
+class procedure TFrameAnimator.AnimateInt64(const Target: TFmxObject;
+  const APropertyName: string; const NewValue: Int64; AOnFinish: TNotifyEvent;
+  Duration, Delay: Single; AType: TAnimationType;
+  AInterpolation: TInterpolationType);
+var
+  Animation: TInt64Animation;
+begin
+  CreateDestroyer;
+
+  TAnimator.StopPropertyAnimation(Target, APropertyName);
+
+  Animation := TInt64Animation.Create(nil);
+  FDestroyer.Add(Animation, AOnFinish);
+  Animation.Parent := Target;
+  Animation.AnimationType := AType;
+  Animation.Interpolation := AInterpolation;
+  Animation.OnFinish := FDestroyer.DoAniFinished;
+  Animation.Duration := Duration;
+  Animation.Delay := Delay;
+  Animation.PropertyName := APropertyName;
+  Animation.StartFromCurrent := True;
+  Animation.StopValue := NewValue;
+  Animation.Start;
+
+  if not Animation.Enabled then
+    FDestroyer.DoAniFinishedEx(Animation, False);
+end;
+
 class procedure TFrameAnimator.CreateDestroyer;
 begin
   if FDestroyer = nil then
@@ -456,6 +513,37 @@ end;
 procedure TFloatExAnimation.Start;
 begin
   inherited Start;
+end;
+
+{ TInt64Animation }
+
+constructor TInt64Animation.Create(AOwner: TComponent);
+begin
+  inherited;
+
+end;
+
+procedure TInt64Animation.FirstFrame;
+begin
+  inherited;
+
+end;
+
+procedure TInt64Animation.ProcessAnimation;
+var
+  T: TRttiType;
+  P: TRttiProperty;
+begin
+  if FInstance <> nil then
+  begin
+    T := SharedContext.GetType(FInstance.ClassInfo);
+    if T <> nil then
+    begin
+      P := T.GetProperty(FPath);
+      if (P <> nil) and (P.PropertyType.TypeKind in [tkInt64]) then
+        P.SetValue(FInstance, InterpolateInt64(FStartValue, FStopValue, NormalizedTime));
+    end;
+  end;
 end;
 
 initialization
