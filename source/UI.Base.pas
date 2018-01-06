@@ -23,6 +23,7 @@ interface
 uses
   UI.Debug, UI.Utils, UI.Utils.SVGImage,
   FMX.Forms,
+  FMX.FontGlyphs,
   {$IFDEF ANDROID}
   Androidapi.Helpers,
   Androidapi.Jni,
@@ -1386,6 +1387,7 @@ type
   protected
     {$IFDEF ANDROID}
     class procedure InitAudioManager();
+    class procedure InitFontGlyphs();
     {$ENDIF}
   public
     /// <summary>
@@ -1824,6 +1826,9 @@ var
 implementation
 
 uses
+  {$IFDEF ANDROID}
+  UI.FontGlyphs.Android,
+  {$ENDIF}
   UI.Ani;
 
 resourcestring
@@ -4282,10 +4287,27 @@ class procedure TView.InitAudioManager();
 var
   NativeService: JObject;
 begin
-  NativeService := TAndroidHelper.Context.getSystemService(TJContext.JavaClass.AUDIO_SERVICE);
-  if not Assigned(NativeService) then
-    Exit;
-  FAudioManager := TJAudioManager.Wrap((NativeService as ILocalObject).GetObjectID);
+  try
+    NativeService := TAndroidHelper.Context.getSystemService(TJContext.JavaClass.AUDIO_SERVICE);
+    if not Assigned(NativeService) then
+      Exit;
+    FAudioManager := TJAudioManager.Wrap((NativeService as ILocalObject).GetObjectID);
+  except
+  end;
+end;
+
+class procedure TView.InitFontGlyphs();
+//var
+//  FCurrentManager: TFontGlyphManager;
+begin
+//  try
+//    FCurrentManager := TFontGlyphManager.Current;
+//    if Assigned(FCurrentManager) then
+//      FreeAndNil(FCurrentManager);
+//    FCurrentManager := TAndroidFontGlyphManagerFMXUI.Create;
+//    SetRttiValue<TFontGlyphManager>('FCurrentManager', FCurrentManager);
+//  except
+//  end;
 end;
 {$ENDIF}
 
@@ -9342,6 +9364,7 @@ initialization
   FAccessoryImages := TViewAccessoryImageList.Create;
   {$IFDEF ANDROID}
   TView.InitAudioManager();
+  TView.InitFontGlyphs();
   DoInitFrameStatusHeight();
   DoInitNavigationBarHeight();
   {$ENDIF}
