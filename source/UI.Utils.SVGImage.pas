@@ -39,10 +39,13 @@ type
     function GetSize: TSize;
   protected
     procedure DecodeSVG(); virtual;
-    function ReadFloat(Node: TXmlNode; const Name: string; const DefaultValue: Double = 0): Double;
-    function ReadColor(Node: TXmlNode; const Name: string; const DefaultValue: TAlphaColor = 0): TAlphaColor;
     function ReadString(Node: TXmlNode; const Name: string): string;
-    function ReadFontAnchor(Node: TXmlNode; DefaultValue: Integer = 0): Integer;
+    function ReadFloat(Node: TXmlNode; const Name: string; const DefaultValue: Double = 0): Double; overload;
+    function ReadColor(Node: TXmlNode; const Name: string; const DefaultValue: TAlphaColor = 0): TAlphaColor; overload;
+    function ReadFontAnchor(Node: TXmlNode; DefaultValue: Integer = 0): Integer; overload;
+    function ReadFloat(const Value: string; const DefaultValue: Double = 0): Double; overload;
+    function ReadColor(const Value: string; const DefaultValue: TAlphaColor = 0): TAlphaColor; overload;
+    function ReadFontAnchor(const Value: string; DefaultValue: Integer = 0): Integer; overload;
   public
     destructor Destroy; override;
     procedure LoadFormFile(const AFileName: string);
@@ -195,8 +198,8 @@ begin
     FData.Clear;
   FSvg := nil;
   FViewBox := TPoint.Zero;
-  FData.LoadFromStream(AStream);
   try
+    FData.LoadFromStream(AStream);
     DecodeSVG();
   except
   end;
@@ -218,27 +221,48 @@ begin
 end;
 
 function TSVGDecode.ReadFontAnchor(Node: TXmlNode; DefaultValue: Integer): Integer;
-var
-  S: string;
 begin
-  Result := DefaultValue;
-  S := LowerCase(ReadString(Node, 'text-anchor'));
-  if S = 'start' then
-    Result := 0
-  else if S = 'middle' then
-    Result := 1
-  else if S = 'end' then
-    Result := 2   
-  else if S = 'inherit' then
-    Result := 3   
+  Result := ReadFontAnchor(ReadString(Node, 'text-anchor'));
 end;
 
 function TSVGDecode.ReadString(Node: TXmlNode; const Name: string): string;
 begin
   Result := '';
-  if not Assigned(Node) then Exit;
-  if Node.HasAttribute(Name) then
+  if Assigned(Node) then
     Result := Node.Attributes[Name];
+end;
+
+function TSVGDecode.ReadColor(const Value: string;
+  const DefaultValue: TAlphaColor): TAlphaColor;
+begin
+  try
+    Result := HtmlColorToColor(Value, DefaultValue);
+  except
+    Result := DefaultValue;
+  end;
+end;
+
+function TSVGDecode.ReadFloat(const Value: string;
+  const DefaultValue: Double): Double;
+begin
+  Result := StrToFloatDef(Value, DefaultValue);
+end;
+
+function TSVGDecode.ReadFontAnchor(const Value: string;
+  DefaultValue: Integer): Integer;
+var
+  S: string;
+begin
+  Result := DefaultValue;
+  S := LowerCase(Value);
+  if S = 'start' then
+    Result := 0
+  else if S = 'middle' then
+    Result := 1
+  else if S = 'end' then
+    Result := 2
+  else if S = 'inherit' then
+    Result := 3
 end;
 
 { TSVGImage }
@@ -260,7 +284,7 @@ begin
         Self.FData.LoadFormStream(Stream);
         if not Assigned(FBitmap) then
           InitBitmap();
-        FBitmap.SetSize(FData.Size);
+        FBitmap.SetSize(FData.Size.Width, FData.Size.Height);
         DrawSVG;
       finally
         Stream.Free;
@@ -322,61 +346,51 @@ end;
 
 procedure TSVGImage.DrawSVG;
 var
-  FillOpacity, StrokeOpacity: Single;
-  SX, SY: Single;
+  FillOpacity, StrokeOpacity: Single;  // 填充和边线透明度
+  SX, SY: Single; // X, Y 缩放
   FontAnchor: Integer;
 
-  function StrLCompX(const Str1, Str2: PWideChar; MaxLen, Len: Cardinal): Integer;
-  begin
-    if Len <> MaxLen then
-      Result := -1
-    else
-      Result := StrLComp(Str1, Str2, MaxLen);
-  end;
-
   procedure ParserStyleItem(Canvas: TCanvas; const PS: PChar; const PN: Integer;
-    const PV: PChar; const PL, Flag: Integer);
+    const PV: PChar; PL: Integer; const Flag: Integer);
   var
-    Value: string;
     P: PChar;
   begin
-    if (PL < 1) or (PN < 1) then Exit;
-    if StrLCompX(PS, 'stroke-width', 12, PN) = 0 then begin
+    //if (PL < 1) or (PN < 1) then Exit;
+    // 跳过尾部空格
+    P := PV + PL - 1;
+    while (P >= PV) and ((P^ = ' ') or (P^ = #13) or (P^ = #10)) do begin
+      Dec(PL);
+      Dec(P);
+    end;
+
+    if PL < 1 then Exit;
+    if (PN = 12) and (StrLComp(PS, 'stroke-width', PN) = 0) then begin
       P := PV + PL;
       while P > PV do begin
         Dec(P);
-        if ('0123456789'.Contains(P^)) then begin
+        if (P^ >= '0') and (P^ <= '9') then begin
           Inc(P);
           Break;
         end;
       end;
-      SetString(Value, PV, P - PV);
-      Canvas.Stroke.Thickness := StrToFloatDef(TrimRight(Value), 0) * SX;    
+      Canvas.Stroke.Thickness := PCharToFloatDef(PV, P - PV, 0) * SX;
     end;
     if Flag <> 0 then Exit;
-
-    if (FColor = 0) and (StrLCompX(PS, 'fill', 4, PN) = 0) then begin
-      SetString(Value, PV, PL);
-      Canvas.Fill.Color := HtmlColorToColor(TrimRight(Value), Canvas.Fill.Color);
-    end else if (FColor = 0) and (StrLCompX(PS, 'stroke', 6, PN) = 0) then begin
-      SetString(Value, PV, PL);
-      Canvas.Stroke.Color := HtmlColorToColor(TrimRight(Value), Canvas.Stroke.Color);
-    end else if StrLCompX(PS, 'fill-opacity', 12, PN) = 0 then begin
-      SetString(Value, PV, PL);
-      FillOpacity := StrToFloatDef(TrimRight(Value), 1);
-    end else if StrLCompX(PS, 'stroke-opacity', 14, PN) = 0 then begin
-      SetString(Value, PV, PL);
-      StrokeOpacity := StrToFloatDef(TrimRight(Value), 1);
-    end else if StrLCompX(PS, 'opacity', 7, PN) = 0 then begin
-      SetString(Value, PV, PL);
-      StrokeOpacity := StrToFloatDef(TrimRight(Value), 1);
+    if (PN = 4) and (FColor = 0) and (StrLComp(PS, 'fill', PN) = 0) then begin
+      Canvas.Fill.Color := HtmlColorToColor(PCharToStr(PV, PL), TAlphaColorRec.Black);
+    end else if (PN = 6) and (FColor = 0) and (StrLComp(PS, 'stroke', PN) = 0) then begin
+      Canvas.Stroke.Color := HtmlColorToColor(PCharToStr(PV, PL), TAlphaColorRec.Black);
+    end else if (PN = 12) and (StrLComp(PS, 'fill-opacity', PN) = 0) then begin
+      FillOpacity := StrToFloatDef(PCharToStr(PV, PL), 1);
+    end else if (PN = 14) and (StrLComp(PS, 'stroke-opacity', PN) = 0) then begin
+      StrokeOpacity := PCharToFloatDef(PV, PL, 1);
+    end else if (PN = 7) and (StrLComp(PS, 'opacity', PN) = 0) then begin
+      StrokeOpacity := PCharToFloatDef(PV, PL, 1);
       FillOpacity := StrokeOpacity;
-    end else if StrLCompX(PS, 'font-size', 9, PN) = 0 then begin
-      SetString(Value, PV, PL);
-      FLayout.Font.Size := StrToFloatDef(TrimRight(Value), FLayout.Font.Size);
-    end else if StrLCompX(PS, 'font-family', 11, PN) = 0 then begin
-      SetString(Value, PV, PL);
-      FLayout.Font.Family := Value;
+    end else if (PN = 9) and (StrLComp(PS, 'font-size', PN) = 0) then begin
+      FLayout.Font.Size := PCharToFloatDef(PV, PL, FLayout.Font.Size);
+    end else if (PN = 11) and (StrLComp(PS, 'font-family', PN) = 0) then begin
+      FLayout.Font.Family := PCharToStr(PV, PL);
     end;
   end;
 
@@ -399,7 +413,7 @@ var
         while (P < PE) and ((P^ = ' ') or (P^ = #13) or (P^ = #10)) do Inc(P);
         PV := P;
         Continue;
-      end else if (PV <> nil) and (P^ = ';') then begin
+      end else if (P^ = ';') and (PV <> nil) then begin
         if (PN > 0) and (P > PV) then
           ParserStyleItem(Canvas, PS, PN, PV, P - PV, Flag);
         PN := 0;
@@ -414,21 +428,36 @@ var
       ParserStyleItem(Canvas, PS, PN, PV, P - PV, Flag);
   end;
 
+  function TryGetAttr(Item: TXmlNode; var Value: string; const Key: string): Boolean;
+  var
+    Attr: TXmlAttribute;
+  begin
+    Attr := Item.AttributeList.Find(Key);
+    if Assigned(Attr) then begin
+      Value := Attr.Value;
+      Result := True;
+    end else
+      Result := False;
+  end;
+
   procedure ParserStyle(Canvas: TCanvas; Item: TXmlNode; Flag: Integer = 0); overload;
+  var
+    Value: string;
   begin
     if (Flag = 0) and (FColor = 0) then
       Canvas.Fill.Color := FData.ReadColor(Item, 'fill', Canvas.Fill.Color);
-    if (Flag = 0) and (FColor = 0) and Item.HasAttribute('stroke') then
-      Canvas.Stroke.Color := FData.ReadColor(Item, 'stroke', Canvas.Stroke.Color);
-    if Item.HasAttribute('stroke-width') then
-      Canvas.Stroke.Thickness := FData.ReadFloat(Item, 'stroke-width', Canvas.Stroke.Thickness) * SX;
-    if Item.HasAttribute('text-anchor') then
-      FontAnchor := FData.ReadFontAnchor(Item, FontAnchor);
-    if Item.HasAttribute('font-size') then
-      FLayout.Font.Size := FData.ReadFloat(Item, 'font-size', FLayout.Font.Size);
-    if Item.HasAttribute('font-family') then
-      FLayout.Font.Family := FData.ReadString(Item, 'font-family');
-    ParserStyle(Canvas, FData.ReadString(Item, 'style'), Flag);
+    if (Flag = 0) and (FColor = 0) and TryGetAttr(Item, Value, 'stroke') then
+      Canvas.Stroke.Color := FData.ReadColor(Value, Canvas.Stroke.Color);
+    if TryGetAttr(Item, Value, 'stroke-width') then
+      Canvas.Stroke.Thickness := FData.ReadFloat(Value, Canvas.Stroke.Thickness) * SX;
+    if TryGetAttr(Item, Value, 'text-anchor') then
+      FontAnchor := FData.ReadFontAnchor(Value, FontAnchor);
+    if TryGetAttr(Item, Value, 'font-size') then
+      FLayout.Font.Size := FData.ReadFloat(Value, FLayout.Font.Size);
+    if TryGetAttr(Item, Value, 'font-family') then
+      FLayout.Font.Family := Value;
+    if TryGetAttr(Item, Value, 'style') then
+      ParserStyle(Canvas, Value, Flag);
   end;
 
   procedure ParserPoints(var LPoints: TPolygon; const Data: string; Offset: Single = 0);
@@ -506,15 +535,15 @@ var
     H := 0;
     for I := 0 to Path.Count - 1 do begin
       with Path.Points[I] do begin
-        if Kind = TPathPointKind.Close then
-          Continue;
-        W := Max(Point.X, W);
-        H := Max(Point.Y, H);
+        if Kind <> TPathPointKind.Close then begin
+          W := Max(Point.X, W);
+          H := Max(Point.Y, H);
+        end;
       end;
     end;
   end;
 
-  procedure ParserNodesCaleSize(Nodes: TXmlNodeList; Path: TPathData; var MW, MH: Single);
+  procedure ParserNodesCaleSize(Canvas: TCanvas; Nodes: TXmlNodeList; Path: TPathData; var MW, MH: Single);
   var
     Item: TXmlNode;
     I, DefFontAnchor: Integer;
@@ -522,7 +551,7 @@ var
     ASize: TSizeF;
     LName, LData, DefFontName: string;
   begin
-    DefStrokeSize := FBitmap.Canvas.Stroke.Thickness;
+    DefStrokeSize := Canvas.Stroke.Thickness;
     DefFontSize := FLayout.Font.Size;
     DefFontName := FLayout.Font.Family; 
     DefFontAnchor := FontAnchor;
@@ -531,48 +560,48 @@ var
       Item := Nodes.Items[I];
       if Item = nil then Continue;
       LName := LowerCase(Item.Name);
-      FBitmap.Canvas.Stroke.Thickness := DefStrokeSize;
-      FLayout.Font.Size := DefFontSize;
-      FLayout.Font.Family := DefFontName;
-      FontAnchor := DefFontAnchor;
+      Canvas.Stroke.Thickness := DefStrokeSize;
             
       if (LName = 'g') or (LName = 'a') then begin
         // 扩展
-        FBitmap.Canvas.Font.Size := FData.ReadFloat(Item, 'font-size', 12);
-        FBitmap.Canvas.Font.Family := FData.ReadString(Item, 'font');
-        ParserStyle(FBitmap.Canvas, Item, 1);
+        Canvas.Font.Size := FData.ReadFloat(Item, 'font-size', 12);
+        Canvas.Font.Family := FData.ReadString(Item, 'font');
+        ParserStyle(Canvas, Item, 1);
         if Item.ChildNodes.Count > 0 then
-          ParserNodesCaleSize(Item.ChildNodes, Path, MW, MH);
+          ParserNodesCaleSize(Canvas, Item.ChildNodes, Path, MW, MH);
+        FLayout.Font.Size := DefFontSize;
+        FLayout.Font.Family := DefFontName;
+        FontAnchor := DefFontAnchor;
       end else if LName = 'path' then begin
-        ParserStyle(FBitmap.Canvas, Item, 1);
+        ParserStyle(Canvas, Item, 1);
         Path.Data := FData.ReadString(Item, 'd');
         Path.Scale(SX, SY);
         ParserPathSize(Path, W, H);
-        MW := Max(MW, W + FBitmap.Canvas.Stroke.Thickness * 0.5);
-        MH := Max(MH, H + FBitmap.Canvas.Stroke.Thickness * 0.5);
+        MW := Max(MW, W + Canvas.Stroke.Thickness * 0.5);
+        MH := Max(MH, H + Canvas.Stroke.Thickness * 0.5);
       end else if LName = 'rect' then begin
-        ParserStyle(FBitmap.Canvas, Item, 1);
+        ParserStyle(Canvas, Item, 1);
         W := FData.ReadFloat(Item, 'width') * SX;
         H := FData.ReadFloat(Item, 'height') * SY;
         X := FData.ReadFloat(Item, 'x') * SX;
         Y := FData.ReadFloat(Item, 'y') * SY;
-        MW := Max(MW, X + W + FBitmap.Canvas.Stroke.Thickness);
-        MH := Max(MH, Y + H + FBitmap.Canvas.Stroke.Thickness);
+        MW := Max(MW, X + W + Canvas.Stroke.Thickness);
+        MH := Max(MH, Y + H + Canvas.Stroke.Thickness);
       end else if LName = 'circle' then begin
-        ParserStyle(FBitmap.Canvas, Item, 1);
+        ParserStyle(Canvas, Item, 1);
         RX := FData.ReadFloat(Item, 'cx') * SX;
         RY := FData.ReadFloat(Item, 'cy') * SY;
         W := FData.ReadFloat(Item, 'r') * SX;
-        MW := Max(MW, RX + W + FBitmap.Canvas.Stroke.Thickness * 0.5);
-        MH := Max(MH, RY + W + FBitmap.Canvas.Stroke.Thickness * 0.5);
+        MW := Max(MW, RX + W + Canvas.Stroke.Thickness * 0.5);
+        MH := Max(MH, RY + W + Canvas.Stroke.Thickness * 0.5);
       end else if LName = 'ellipse' then begin
-        ParserStyle(FBitmap.Canvas, Item, 1);
+        ParserStyle(Canvas, Item, 1);
         RX := FData.ReadFloat(Item, 'cx') * SX;
         RY := FData.ReadFloat(Item, 'cy') * SY;
         W := FData.ReadFloat(Item, 'rx') * SX;
         H := FData.ReadFloat(Item, 'ry') * SX;
-        MW := Max(MW, RX + W + FBitmap.Canvas.Stroke.Thickness * 0.5);
-        MH := Max(MH, RY + H + FBitmap.Canvas.Stroke.Thickness * 0.5);
+        MW := Max(MW, RX + W + Canvas.Stroke.Thickness * 0.5);
+        MH := Max(MH, RY + H + Canvas.Stroke.Thickness * 0.5);
       end else if LName = 'line' then begin
         X := FData.ReadFloat(Item, 'x1') * SX;
         Y := FData.ReadFloat(Item, 'y1') * SY;
@@ -586,20 +615,20 @@ var
         MW := Max(MW, W);
         MH := Max(MH, H);
       end else if LName = 'polyline' then begin
-        ParserStyle(FBitmap.Canvas, Item, 1);
+        ParserStyle(Canvas, Item, 1);
         LData := FData.ReadString(Item, 'points');
-        ParserPointsSize(LData, W, H, FBitmap.Canvas.Stroke.Thickness * 0.5);
+        ParserPointsSize(LData, W, H, Canvas.Stroke.Thickness * 0.5);
         MW := Max(MW, W);
         MH := Max(MH, H);
       end else if LName = 'text' then begin
         // 文本
-        ParserStyle(FBitmap.Canvas, Item, 1);
+        ParserStyle(Canvas, Item, 1);
         X := FData.ReadFloat(Item, 'x') * SX;
         Y := FData.ReadFloat(Item, 'y') * SY;
         RX := FData.ReadFloat(Item, 'dx') * SX;
         RY := FData.ReadFloat(Item, 'dy') * SX;
         if Item.ChildNodes.Count = 0 then begin
-          TextSize(Item.Text, ASize, FBitmap.Canvas.Scale);
+          TextSize(Item.Text, ASize, Canvas.Scale);
           if FontAnchor = 3 then
             FontAnchor := DefFontAnchor;
           case FontAnchor of
@@ -613,11 +642,14 @@ var
           MH := Max(MH, Y + RY);
           MW := Max(MW, W);
         end;
+        FLayout.Font.Size := DefFontSize;
+        FLayout.Font.Family := DefFontName;
+        FontAnchor := DefFontAnchor;
       end;
     end;
   end;
 
-  procedure ParserNodes(Nodes: TXmlNodeList; Path: TPathData);
+  procedure ParserNodes(Canvas: TCanvas; Nodes: TXmlNodeList; Path: TPathData);
   var
     LPoints: TPolygon;
     Item: TXmlNode;
@@ -627,9 +659,9 @@ var
     DefStrokeColor, DefFillColor: TAlphaColor;
     LName, LData, DefFontName: string;
   begin
-    DefStrokeColor := FBitmap.Canvas.Stroke.Color;
-    DefFillColor := FBitmap.Canvas.Fill.Color;
-    DefStrokeSize := FBitmap.Canvas.Stroke.Thickness;
+    DefStrokeColor := Canvas.Stroke.Color;
+    DefFillColor := Canvas.Fill.Color;
+    DefStrokeSize := Canvas.Stroke.Thickness;
     DefFontSize := FLayout.Font.Size;
     DefFontName := FLayout.Font.Family; 
     DefFontAnchor := FontAnchor;
@@ -641,39 +673,41 @@ var
 
       FillOpacity := 1;
       StrokeOpacity := 1;
-      FBitmap.Canvas.Stroke.Color := DefStrokeColor;
-      FBitmap.Canvas.Fill.Color := DefFillColor;
-      FBitmap.Canvas.Stroke.Thickness := DefStrokeSize;
-      FLayout.Font.Size := DefFontSize;
-      FLayout.Font.Family := DefFontName;
-      FontAnchor := DefFontAnchor;
+      Canvas.Stroke.Color := DefStrokeColor;
+      Canvas.Fill.Color := DefFillColor;
+      Canvas.Stroke.Thickness := DefStrokeSize;
 
       if (LName = 'g') or (LName = 'a') then begin
         // 扩展
-        FBitmap.Canvas.Font.Size := FData.ReadFloat(Item, 'font-size', 12);
-        FBitmap.Canvas.Font.Family := FData.ReadString(Item, 'font');
-        ParserStyle(FBitmap.Canvas, Item);
+        Canvas.Font.Size := FData.ReadFloat(Item, 'font-size', 12);
+        Canvas.Font.Family := FData.ReadString(Item, 'font');
+        ParserStyle(Canvas, Item);
         if Item.ChildNodes.Count > 0 then
-          ParserNodes(Item.ChildNodes, Path);
+          ParserNodes(Canvas, Item.ChildNodes, Path);
+        FLayout.Font.Size := DefFontSize;
+        FLayout.Font.Family := DefFontName;
+        FontAnchor := DefFontAnchor;
       end else if LName = 'path' then begin
         // 路径
         LData := Item.Attributes['d'];
         if LData <> '' then begin
           Path.Data := LData;
-          Path.Scale(SX, SY);
-          ParserStyle(FBitmap.Canvas, Item);
-          FBitmap.Canvas.FillPath(Path, FillOpacity);
-          if FBitmap.Canvas.Stroke.Thickness > 0 then
-            FBitmap.Canvas.DrawPath(Path, StrokeOpacity);
+          if (SX <> 1) or (SY <> 1) then
+            Path.Scale(SX, SY);
+          ParserStyle(Canvas, Item);
+          if (Canvas.Fill.Color and $FF000000 <> 0) and (FillOpacity > 0) then
+            Canvas.FillPath(Path, FillOpacity);
+          if (Canvas.Stroke.Thickness > 0) and (StrokeOpacity > 0) then
+            Canvas.DrawPath(Path, StrokeOpacity);
         end;
       end else if LName = 'rect' then begin
         // 矩形
-        ParserStyle(FBitmap.Canvas, Item);
+        ParserStyle(Canvas, Item);
         W := FData.ReadFloat(Item, 'width') * SX;
         H := FData.ReadFloat(Item, 'height') * SY;
         if (W <= 0) or (H <= 0) then
           Continue;
-        LD := FBitmap.Canvas.Stroke.Thickness;
+        LD := Canvas.Stroke.Thickness;
         X := FData.ReadFloat(Item, 'x') * SX;
         Y := FData.ReadFloat(Item, 'y') * SY;
         RX := FData.ReadFloat(Item, 'rx') * SX;
@@ -685,39 +719,39 @@ var
         if RY > 0 then         
           BY := Max(0, RY - LD * 0.5)
         else
-          BY := RY; 
-        FBitmap.Canvas.FillRect(RectF(X + LD * 0.5, Y + LD * 0.5, X + W - LD * 0.5, Y + H - LD * 0.5), BX, BY, AllCorners, FillOpacity);
+          BY := RY;
+        if (Canvas.Fill.Color and $FF000000 <> 0) and (FillOpacity > 0) then
+          Canvas.FillRect(RectF(X + LD * 0.5, Y + LD * 0.5, X + W - LD * 0.5, Y + H - LD * 0.5), BX, BY, AllCorners, FillOpacity);
         if LD > 0 then begin
-          FBitmap.Canvas.DrawRect(RectF(X, Y, X + W, Y + H), RX, RY, AllCorners, StrokeOpacity);
+          Canvas.DrawRect(RectF(X, Y, X + W, Y + H), RX, RY, AllCorners, StrokeOpacity);
         end;
       end else if LName = 'circle' then begin
         // 圆
-        ParserStyle(FBitmap.Canvas, Item);
+        ParserStyle(Canvas, Item);
         RX := FData.ReadFloat(Item, 'cx') * SX;
         RY := FData.ReadFloat(Item, 'cy') * SY;
         W := FData.ReadFloat(Item, 'r') * SX;
         if W > 0 then begin
-          FBitmap.Canvas.FillArc(PointF(RX, RY), PointF(W, W), 0, 360, FillOpacity);
-          LD := FBitmap.Canvas.Stroke.Thickness;
-          if LD > 0 then
-            FBitmap.Canvas.DrawArc(PointF(RX, RY), PointF(W, W), 0, 360, StrokeOpacity);
+          if (Canvas.Fill.Color and $FF000000 <> 0) and (FillOpacity > 0) then
+            Canvas.FillArc(PointF(RX, RY), PointF(W, W), 0, 360, FillOpacity);
+          if Canvas.Stroke.Thickness > 0 then
+            Canvas.DrawArc(PointF(RX, RY), PointF(W, W), 0, 360, StrokeOpacity);
         end;
       end else if LName = 'ellipse' then begin
         // 椭圆
-        ParserStyle(FBitmap.Canvas, Item);
+        ParserStyle(Canvas, Item);
         RX := FData.ReadFloat(Item, 'cx') * SX;
         RY := FData.ReadFloat(Item, 'cy') * SY;
         W := FData.ReadFloat(Item, 'rx') * SX;
         H := FData.ReadFloat(Item, 'ry') * SX;
         if (W > 0) or (H > 0) then begin
-          FBitmap.Canvas.FillArc(PointF(RX, RY), PointF(W, H), 0, 360, FillOpacity);
-          LD := FBitmap.Canvas.Stroke.Thickness;
-          if LD > 0 then
-            FBitmap.Canvas.DrawArc(PointF(RX, RY), PointF(W, H), 0, 360, StrokeOpacity);
+          Canvas.FillArc(PointF(RX, RY), PointF(W, H), 0, 360, FillOpacity);
+          if Canvas.Stroke.Thickness > 0 then
+            Canvas.DrawArc(PointF(RX, RY), PointF(W, H), 0, 360, StrokeOpacity);
         end;
       end else if LName = 'line' then begin
         // 线条
-        ParserStyle(FBitmap.Canvas, Item);
+        ParserStyle(Canvas, Item);
         X := FData.ReadFloat(Item, 'x1') * SX;
         Y := FData.ReadFloat(Item, 'y1') * SY;
         RX := FData.ReadFloat(Item, 'x2') * SX;
@@ -725,37 +759,37 @@ var
         Path.Clear;
         Path.MoveTo(PointF(X, Y));
         Path.LineTo(PointF(RX, RY));
-        if FBitmap.Canvas.Stroke.Thickness > 0 then
-          FBitmap.Canvas.DrawPath(Path, StrokeOpacity);
+        if Canvas.Stroke.Thickness > 0 then
+          Canvas.DrawPath(Path, StrokeOpacity);
       end else if LName = 'polygon' then begin
         // 多边形
-        ParserStyle(FBitmap.Canvas, Item);
+        ParserStyle(Canvas, Item);
         LData := FData.ReadString(Item, 'points');
         if LData <> '' then begin
           ParserPoints(LPoints, LData);
           if Length(LPoints) = 0 then
             Continue;
-          FBitmap.Canvas.FillPolygon(LPoints, FillOpacity);
-          if FBitmap.Canvas.Stroke.Thickness > 0 then
-           FBitmap.Canvas.DrawPolygon(LPoints, StrokeOpacity);
+          Canvas.FillPolygon(LPoints, FillOpacity);
+          if Canvas.Stroke.Thickness > 0 then
+           Canvas.DrawPolygon(LPoints, StrokeOpacity);
         end;
       end else if LName = 'polyline' then begin
         // 折线
-        ParserStyle(FBitmap.Canvas, Item);
+        ParserStyle(Canvas, Item);
         LData := FData.ReadString(Item, 'points');
         if LData <> '' then begin
-          ParserPoints(LPoints, LData, FBitmap.Canvas.Stroke.Thickness * 0.5);
-          if (Length(LPoints) = 0) or (FBitmap.Canvas.Stroke.Thickness <= 0) then
+          ParserPoints(LPoints, LData, Canvas.Stroke.Thickness * 0.5);
+          if (Length(LPoints) = 0) or (Canvas.Stroke.Thickness <= 0) then
             Continue;
           Path.Clear;
           Path.MoveTo(LPoints[0]);
           for J := 1 to High(LPoints) do
             Path.LineTo(LPoints[J]);
-          FBitmap.Canvas.DrawPath(Path, StrokeOpacity);
+          Canvas.DrawPath(Path, StrokeOpacity);
         end;
       end else if LName = 'text' then begin
         // 文本
-        ParserStyle(FBitmap.Canvas, Item);
+        ParserStyle(Canvas, Item);
         X := FData.ReadFloat(Item, 'x') * SX;
         Y := FData.ReadFloat(Item, 'y') * SY;
         RX := FData.ReadFloat(Item, 'dx') * SX;
@@ -763,27 +797,30 @@ var
         
         if Item.ChildNodes.Count = 0 then begin
           LData := Item.Text;  
-          TextSize(LData, ASize, FBitmap.Canvas.Scale);
+          TextSize(LData, ASize, Canvas.Scale);
           if FontAnchor = 3 then
             FontAnchor := DefFontAnchor;
           case FontAnchor of
             1: // middle 
-              FillText(FBitmap.Canvas, 
+              FillText(Canvas,
                 RectF(X - ASize.Width * 0.5 + RX, Y - ASize.Height + RY, X + ASize.Width * 0.5 + RX, Y + RY), 
-                LData, FBitmap.Canvas.Fill.Color, FillOpacity, [], 
+                LData, Canvas.Fill.Color, FillOpacity, [],
                 TTextAlign.Leading, TTextAlign.Trailing);                
             2: // end
-              FillText(FBitmap.Canvas, 
+              FillText(Canvas,
                 RectF(X - ASize.Width + RX, Y - ASize.Height + RY, X + RX, Y + RY), 
-                LData, FBitmap.Canvas.Fill.Color, FillOpacity, [], 
+                LData, Canvas.Fill.Color, FillOpacity, [],
                 TTextAlign.Leading, TTextAlign.Trailing); 
           else  // start
-            FillText(FBitmap.Canvas, 
+            FillText(Canvas,
               RectF(X + RX, Y - ASize.Height + RY, X + ASize.Width + RX, Y + RY), 
-              LData, FBitmap.Canvas.Fill.Color, FillOpacity, [], 
+              LData, Canvas.Fill.Color, FillOpacity, [],
               TTextAlign.Leading, TTextAlign.Trailing);   
           end;
         end;
+        FLayout.Font.Size := DefFontSize;
+        FLayout.Font.Family := DefFontName;
+        FontAnchor := DefFontAnchor;
       end;
 
     end;
@@ -792,6 +829,7 @@ var
 var
   Path: TPathData;
   MW, MH: Single;
+  Canvas: TCanvas;
 begin
   if (FData = nil) or (Fdata.FData = nil) or (FData.FSvg = nil) then
     Exit;
@@ -803,16 +841,20 @@ begin
     SY := 1
   else
     SY := Height / FData.FViewBox.Y;
+  if not Assigned(FLayout) then begin
+    Canvas := FBitmap.Canvas;
+    FLayout := TTextLayoutManager.TextLayoutByCanvas(Canvas.ClassType).Create(Canvas);
+  end;
   Path := TPathData.Create;
-  FLayout := TTextLayoutManager.TextLayoutByCanvas(FBitmap.Canvas.ClassType).Create(FBitmap.Canvas);
   try
     // 自动大小
     if (FBitmap.Width = 0) and (FBitmap.Height = 0) then begin
       MW := 0;
       MH := 0;
       FontAnchor := 0;
-      FBitmap.Canvas.Stroke.Thickness := 0;
-      ParserNodesCaleSize(FData.FSvg.ChildNodes, Path, MW, MH);
+      Canvas := FBitmap.Canvas;
+      Canvas.Stroke.Thickness := 0;
+      ParserNodesCaleSize(Canvas, FData.FSvg.ChildNodes, Path, MW, MH);
       FData.ViewBox := PointF(MW, MH);
       FBitmap.SetSize(Round(MW), Round(MH));
     end;
@@ -821,24 +863,24 @@ begin
       Exit;
 
     FBitmap.Clear(0);
-    FBitmap.Canvas.BeginScene();
+    Canvas := FBitmap.Canvas;
+    Canvas.BeginScene();
     try
       FontAnchor := 0;
-      FBitmap.Canvas.Stroke.Thickness := 0;
+      Canvas.Stroke.Thickness := 0;
       if FColor = 0 then begin
-        FBitmap.Canvas.Stroke.Color := TAlphaColorRec.Black;
-        FBitmap.Canvas.Fill.Color := TAlphaColorRec.Black;
+        Canvas.Stroke.Color := TAlphaColorRec.Black;
+        Canvas.Fill.Color := TAlphaColorRec.Black;
       end else begin
-        FBitmap.Canvas.Stroke.Color := FColor;
-        FBitmap.Canvas.Fill.Color := FColor;
+        Canvas.Stroke.Color := FColor;
+        Canvas.Fill.Color := FColor;
       end;
-      ParserNodes(FData.FSvg.ChildNodes, Path);
+      ParserNodes(Canvas, FData.FSvg.ChildNodes, Path);
     finally
-      FBitmap.Canvas.EndScene;
+      Canvas.EndScene;
     end;
   finally
     FreeAndNil(Path);
-    FreeAndNil(FLayout);
   end;
 end;
 
@@ -899,7 +941,7 @@ begin
   end;
   if not Assigned(FBitmap) then
     InitBitmap();
-  FBitmap.SetSize(FData.Size);
+  FBitmap.SetSize(FData.Size.Width, FData.Size.Height);
   DrawSVG;
   DoChange();
 end;
@@ -914,7 +956,7 @@ begin
   end;
   if not Assigned(FBitmap) then 
     InitBitmap;
-  FBitmap.SetSize(FData.Size);
+  FBitmap.SetSize(FData.Size.Width, FData.Size.Height);
   DrawSVG;
   DoChange();
 end;

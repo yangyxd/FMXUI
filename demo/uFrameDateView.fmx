@@ -1,13 +1,13 @@
 object FrameDateView: TFrameDateView
-  Size.Width = 361.000000000000000000
-  Size.Height = 541.000000000000000000
+  Size.Width = 344.000000000000000000
+  Size.Height = 580.000000000000000000
   Size.PlatformDefault = False
   object LinearLayout1: TLinearLayout
     Align = Top
     Background.ItemDefault.Color = claPurple
     Background.ItemDefault.Kind = Solid
     Gravity = None
-    Size.Width = 361.000000000000000000
+    Size.Width = 344.000000000000000000
     Size.Height = 50.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
@@ -49,7 +49,7 @@ object FrameDateView: TFrameDateView
       Background.Border.Color.Enabled = claNull
       Weight = 1.000000000000000000
       Margins.Right = 50.000000000000000000
-      Size.Width = 261.000000000000000000
+      Size.Width = 244.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       Position.X = 50.000000000000000000
@@ -66,17 +66,21 @@ object FrameDateView: TFrameDateView
   end
   object CalendarView1: TCalendarView
     Align = Top
+    Background.ItemDefault.Color = claGhostwhite
+    Background.ItemDefault.Kind = Solid
     Gravity = None
     Margins.Top = 50.000000000000000000
-    Size.Width = 361.000000000000000000
-    Size.Height = 360.000000000000000000
+    Size.Width = 344.000000000000000000
+    Size.Height = 460.000000000000000000
     Size.PlatformDefault = False
     Position.Y = 100.000000000000000000
     TabOrder = 1
     AutoSize = True
-    Options = [coShowNavigation, coShowWeek, coCalendarWeeks, coTodayHighlight, coShowTodayButton, coShowClearButton, coShowTerm, coShowRowLines, coShowWeekLine]
+    Options = [coShowNavigation, coShowWeek, coCalendarWeeks, coTodayHighlight, coShowTodayButton, coShowClearButton, coShowLunar, coShowTerm, coShowRowLines, coShowWeekLine]
     WeekStart = 1
     DaysOfWeekHighlighted = [Week1]
+    DateTime = 43096.596909282410000000
+    RowLunarPadding = -5.000000000000000000
     TextSettings.Font.Size = 15.000000000000000000
     TextSettingsOfTitle.Font.Size = 15.000000000000000000
     TextSettingsOfWeeks.Color = claCadetblue
@@ -99,5 +103,10 @@ object FrameDateView: TFrameDateView
   object CalendarLanguage_CN1: TCalendarLanguage_CN
     Left = 208
     Top = 456
+  end
+  object GestureManager1: TGestureManager
+    Sensitivity = 80.000000000000000000
+    Left = 136
+    Top = 272
   end
 end

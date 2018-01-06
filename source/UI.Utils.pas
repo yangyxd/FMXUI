@@ -84,7 +84,9 @@ function CharCount(const S: string): Integer;
 
 // 字符串指针转为数字
 function PCharToIntDef(const S: pchar; Len: Integer; def: NativeInt = 0): NativeInt;
+function PCharToFloatDef(const S: pchar; Len: Integer; def: Double = 0): Double;
 function PHexToIntDef(const S: pchar; Len: Integer; def: NativeInt = 0): NativeInt;
+function PCharToStr(const S: PChar; Len: Integer): string;
 
 // Html颜色转为Color
 function HtmlColorToColor(const V: string; const DefaultValue: TAlphaColor = 0): TAlphaColor;
@@ -625,6 +627,11 @@ begin
   {$ENDIF}
 end;
 
+function PCharToStr(const S: PChar; Len: Integer): string;
+begin
+  SetString(Result, S, Len);
+end;
+
 function PCharToIntDef(const S: pchar; Len: Integer; def: NativeInt = 0): NativeInt;
 var
   I: Integer;
@@ -641,12 +648,30 @@ begin
   end;
 end;
 
-function PCharToFloatDef(const S: pchar; Len: Integer; def: Extended = 0): Extended;
+function PCharToFloatDef(const S: pchar; Len: Integer; def: Double = 0): Double;
 var
-  v: string;
+  I, K, V, M: Integer;
 begin
-  SetString(V, s, Len);
-  Result := StrToFloatDef(V, def);
+  Result := 0;
+  K := 0;
+  M := 10;
+  for i := 0 to len - 1 do begin
+    V := Convert[Ord(s[i])];
+    if (s[i] = '.') and (k = 0) then Inc(k);
+    if (V < 0) then begin
+      if (k > 1) then begin
+        Result := def;
+        Exit;
+      end;
+    end else begin
+      if k = 0 then
+        Result := (Result * 10) + V
+      else begin
+        Result := Result + V / M;
+        M := M * 10;
+      end;
+    end;
+  end;
 end;
 
 function PHexToIntDef(const S: pchar; Len: Integer; def: NativeInt = 0): NativeInt;

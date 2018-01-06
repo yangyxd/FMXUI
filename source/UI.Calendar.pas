@@ -279,6 +279,26 @@ type
     IsLunarHoliday: Boolean; // 是否是农历节日
   end;
 
+  PCalendarDrawState = ^TCalendarDrawState;
+  TCalendarDrawState = record
+    Left: PCalendarDrawState;
+    Right: PCalendarDrawState;
+    Value: TDate; // 日期
+    DayOfWeek: Integer; // 本月第一天的星期数
+    First: Integer;  // 当前显示的第一天
+    Last: Integer;   // 当前显示的最后一天
+    Rows: Integer; // 需要显示的行数
+    RowHeight: Single; // 日期每行高度
+    DrawS: Integer; // 当前绘制的第一天
+    DrawSD: Integer; // 当前绘制的第一天的日期
+    Weeks: Integer;  // 本月第一天所属的周数
+    Month, Year: Word; // 当前选中日期的年，月
+    XOffset: Single; // 绘制时的X偏移
+    LunarDataList: TArray<TCalendarDateItem>; // 农历数据
+    procedure ClearLunar;
+    procedure Clear;
+  end;
+
 type
   TOnGetLunarData = procedure (Sender: TObject; const Date: TDate; var Text: TCalendarDateItem) of object;
   TOnOwnerDrawCalendar = procedure (Sender: TObject; Canvas: TCanvas; const R: TRectF; const Date: TDate; var DrawDefault: Boolean) of object;
@@ -313,6 +333,8 @@ type
     FDrawable: TCalendarDrawable;
     FDividerBrush: TBrush;
 
+    FAniCalc: TAniCalculations;
+
     FRowPadding: Single;
     FRowHeihgt: Single;
     FRowLunarHeight: Single;
@@ -321,12 +343,11 @@ type
     FWeeksWidth: Single;
 
     FDivider: TAlphaColor; // 分隔线颜色
-    FInFitSize: Boolean;
+    FInFitSize: Boolean;    
+    FAning: Integer;
 
     FRangeOfNavigation: TRectF;
     FRangeOfDays: TRectF;
-
-    FLunarDataList: TArray<TCalendarDateItem>;
 
     FOnValueChange: TNotifyEvent;
     FOnGetLunarData: TOnGetLunarData;
@@ -361,7 +382,7 @@ type
     procedure SetRowPadding(const Value: Single);
     procedure SetValue(const Value: TDate);
     procedure SetDivider(const Value: TAlphaColor);
-    function GetLunarData(const LDate: Integer): TCalendarDateItem;
+    function GetLunarData(const LDate: Integer; const AState: TCalendarDrawState): TCalendarDateItem;
     function GetHoverDate: TDate;
     function IsStoredWeeksWidth: Boolean;
     procedure SetWeeksWidth(const Value: Single);
@@ -369,21 +390,19 @@ type
     procedure SetViewTypeMax(const Value: TCalendarViewType);
     procedure SetViewTypeMin(const Value: TCalendarViewType);
     function GetValue: TDate;
+    function GetAniX: Single;
+    procedure SetAniX(const Value: Single);
+  protected
+    procedure AniCalcChange(Sender: TObject);
+    procedure AniCalcStop(Sender: TObject);
+    procedure UpdateScrollLimits(Flag: Integer = 0);
   protected
     FValue: TDate;
     FSelected: Boolean;
 
-    FCurDayOfWeek: Integer; // 本月第一天的星期数
-    FCurMonth, FCurYear: Word; // 当前选中日期的年，月
-    FCurFirst: Integer;  // 当前显示的第一天
-    FCurLast: Integer;   // 当前显示的最后一天
-    FCurRows: Integer; // 需要显示的行数
-    FCurDrawS: Integer; // 当前绘制的第一天
-    FCurDrawSD: Integer; // 当前绘制的第一天的日期
-    FCurWeeks: Integer;  // 本月第一天所属的周数
     FCurViewType: TCalendarViewType; // 当前视图类型
-
     FCurHotDate: Integer; // 当前鼠标指向的日期
+    FCurState: TCalendarDrawState;
 
     function IsAutoSize: Boolean; override;
     procedure DoOptionsChange; virtual;
@@ -394,11 +413,12 @@ type
 
     procedure DoAutoSize;
     procedure InitDividerBrush;
-    procedure ClearLunarDataList;
+
+    function CalcMonthOffset(Flag: Integer): Integer;
 
     procedure SwitchDate(const Value: TDate = InvaludeDate; const OffsetMonth: Integer = 0);
-    procedure ParseValue(const Value: TDate); virtual;
-    procedure ParseValueLunar(); virtual;
+    procedure ParseValue(const Value: TDate; var AState: TCalendarDrawState); virtual;
+    procedure ParseValueLunar(var AState: TCalendarDrawState); virtual;
     function IsInvalidValue(const Value: Integer): Boolean;
   protected
     procedure Loaded; override;
@@ -409,20 +429,23 @@ type
 
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
 
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; x, y: single); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; x, y: single); override;
+
     procedure DoMouseLeave; override;
-    procedure DoClickEvent; override;
+    procedure DoClickEvent; override;  
 
     procedure PaintBackground; override;
-    procedure PaintToCanvas(Canvas: TCanvas);
+    procedure PaintToCanvas(Canvas: TCanvas; const AState: TCalendarDrawState);
 
-    procedure DoDrawNavigation(Canvas: TCanvas; const R: TRectF);
-    procedure DoDrawWeekRow(Canvas: TCanvas; const R: TRectF);
-    procedure DoDrawDatesRow(Canvas: TCanvas; var R: TRectF; WeekRowTop: Single);
+    procedure DoDrawNavigation(Canvas: TCanvas; const R: TRectF; const AState: TCalendarDrawState);
+    procedure DoDrawWeekRow(Canvas: TCanvas; const R: TRectF; const AState: TCalendarDrawState);
+    procedure DoDrawDatesRow(Canvas: TCanvas; var R: TRectF; WeekRowTop: Single; const AState: TCalendarDrawState);
     procedure DoDrawItemBackground(Canvas: TCanvas; ABrush: TBrush; const R: TRectF; IsCircle: Boolean);
     procedure DoDrawButton(Canvas: TCanvas; const R: TRectF; const Text: string; const ID: Integer);
-    procedure DoDrawMonths(Canvas: TCanvas; const R: TRectF);
-    procedure DoDrawYears(Canvas: TCanvas; const R: TRectF; const YearInterval: Integer);
+    procedure DoDrawMonths(Canvas: TCanvas; const R: TRectF; const AState: TCalendarDrawState);
+    procedure DoDrawYears(Canvas: TCanvas; const R: TRectF; const YearInterval: Integer; const AState: TCalendarDrawState);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -480,6 +503,8 @@ type
     /// 当前选择时间
     /// </summary>
     property DateTime: TDate read GetValue write SetValue;
+
+    property AniX: Single read GetAniX write SetAniX;
 
     /// <summary>
     /// 选项
@@ -688,19 +713,62 @@ type
 implementation
 
 uses
-  FMX.Forms, UI.Dialog;
+  FMX.Forms, UI.Dialog, UI.Frame;
 
 type
   TTmpSimpleTextSettings = class(TSimpleTextSettings);
 
 var
   DefaultLanguage: TCalendarLanguage_EN;
+  FDownTime: Int64 = 0;
+  FDownX: Single = 0;
 
 procedure DecodeDate(const DateTime: TDateTime; var Year, Month, Day: Word);
 var
   Dummy: Word;
 begin
   DecodeDateFully(DateTime, Year, Month, Day, Dummy);
+end;
+
+function IncMonth(const V: TDateTime; IncM: Integer; First: Boolean = True): TDateTime;
+var
+  Y, M, D, D2: Word;
+begin
+  if IncM <> 0 then begin
+    DecodeDate(V, Y, M, D);
+    Y := Y + (IncM div 12);
+    M := M + (IncM mod 12);
+    while M > 12 do begin
+      Inc(Y);
+      Dec(M, 12);
+    end;
+    while M < 1 do begin
+      Dec(Y);
+      Inc(M, 12);
+    end;
+    if First then
+      D := 1;
+    if D > 28 then begin
+      D2 := DaysInMonth(EncodeDate(Y, M, 1));
+      if D > D2 then
+        D := D2;
+    end;
+    if Y < 1 then Y := 1;
+    if Y > 9999 then Y := 9999;
+    Result := EncodeDate(Y, M, D);
+  end else
+    Result := V;   
+end;
+
+function GetVolecity(X: Single): Single;
+var
+  T: Int64;
+begin
+  T := GetTimestamp - FDownTime;
+  Result := Abs(X - FDownX);
+  if T > 1 then
+    Result := Result / T * 100;
+  //OutputDebugString(PChar(FloatToStr(Result)));
 end;
 
 { TCalendarLanguage_CN }
@@ -769,6 +837,41 @@ end;
 
 { TCalendarViewBase }
 
+procedure TCalendarViewBase.AniCalcChange(Sender: TObject);
+begin
+  InvalidateRect(ClipRect);
+end;
+
+procedure TCalendarViewBase.AniCalcStop(Sender: TObject);
+begin
+  if Scene <> nil then
+    Scene.ChangeScrollingState(nil, False);
+  if FAning <> 0 then begin
+    FAniCalc.BoundsAnimation := True;
+    FAniCalc.ViewportPositionF := PointF(0, 0);
+    FAniCalc.UpdatePosImmediately(True);
+    FCurHotDate := FAning;
+    FAning := 0;
+    DoClickEvent;
+    FCurHotDate := InvaludeDate;
+  end;
+end;
+
+function TCalendarViewBase.CalcMonthOffset(Flag: Integer): Integer;
+begin
+  case FCurViewType of
+    TCalendarViewType.Days: Result := -1;
+    TCalendarViewType.Months: Result := -12;
+    TCalendarViewType.Years: Result := -120;
+    TCalendarViewType.Decades: Result := -1200;
+    TCalendarViewType.Centuries: Result := -12000;
+  else
+    Result := 0;
+  end;
+  if Flag <> 0 then 
+    Result := -Result;
+end;
+
 function TCalendarViewBase.CanRePaintBk(const View: IView;
   State: TViewState): Boolean;
 begin
@@ -779,15 +882,6 @@ procedure TCalendarViewBase.Clear;
 begin
   FSelected := False;
   DoDateChange;
-end;
-
-procedure TCalendarViewBase.ClearLunarDataList;
-var
-  I: Integer;
-begin
-  for I := Low(FLunarDataList) to High(FLunarDataList) do
-    FLunarDataList[I].Text := '';
-  SetLength(FLunarDataList, 0);
 end;
 
 constructor TCalendarViewBase.Create(AOwner: TComponent);
@@ -821,6 +915,15 @@ begin
 
   FDivider := CDefaultDividerColor;
 
+  FAniCalc := TAniCalculations.Create(nil);
+  FAniCalc.ViewportPositionF := PointF(0, 0);
+  FAniCalc.Animation := True;
+  FAniCalc.Averaging := True;
+  FAniCalc.Interval := 8;
+  FAniCalc.BoundsAnimation := True;
+  FAniCalc.TouchTracking := [ttHorizontal];
+  FAniCalc.OnChanged := AniCalcChange;
+
   EnableExecuteAction := True;
   SetAcceptsControls(False);
   Clickable := True;
@@ -829,13 +932,14 @@ end;
 
 destructor TCalendarViewBase.Destroy;
 begin
-  ClearLunarDataList();
+  FCurState.Clear;
   FreeAndNil(FTextSettings);
   FreeAndNil(FTextSettingsOfLunar);
   FreeAndNil(FTextSettingsOfTitle);
   FreeAndNil(FTextSettingsOfWeeks);
   FreeAndNil(FDrawable);
   FreeAndNil(FDividerBrush);
+  FreeAndNil(FAniCalc);
   inherited Destroy;
 end;
 
@@ -875,30 +979,18 @@ end;
 
 procedure TCalendarViewBase.DoClickEvent;
 begin
-  if csDesigning in ComponentState then
+  if (csDesigning in ComponentState) then
     Exit;
   case FCurHotDate of
     InvaludeDate:
       Exit;
     BID_Up:
       begin
-        case FCurViewType of
-          TCalendarViewType.Days: SwitchDate(InvaludeDate, -1);
-          TCalendarViewType.Months: SwitchDate(InvaludeDate, -12);
-          TCalendarViewType.Years: SwitchDate(InvaludeDate, -120);
-          TCalendarViewType.Decades: SwitchDate(InvaludeDate, -1200);
-          TCalendarViewType.Centuries: SwitchDate(InvaludeDate, -12000);
-        end;
+        SwitchDate(InvaludeDate, CalcMonthOffset(0));
       end;
     BID_Next:
       begin
-        case FCurViewType of
-          TCalendarViewType.Days: SwitchDate(InvaludeDate, 1);
-          TCalendarViewType.Months: SwitchDate(InvaludeDate, 12);
-          TCalendarViewType.Years: SwitchDate(InvaludeDate, 120);
-          TCalendarViewType.Decades: SwitchDate(InvaludeDate, 1200);
-          TCalendarViewType.Centuries: SwitchDate(InvaludeDate, 12000);
-        end;
+        SwitchDate(InvaludeDate, CalcMonthOffset(1));
       end;
     BID_Today:
       begin
@@ -921,6 +1013,8 @@ begin
       end
   else
     begin
+      if Assigned(FAniCalc) and (Abs(FAniCalc.ViewportPosition.X) > 1) then
+        Exit;
       case FCurViewType of
         Days: 
           begin
@@ -932,22 +1026,22 @@ begin
         Months: 
           begin
             FSelected := True;
-            SwitchDate(FValue, FCurHotDate - FCurMonth);
+            SwitchDate(FValue, FCurHotDate - FCurState.Month);
           end;
         Years: 
           begin
             FSelected := True;
-            SwitchDate(FValue, ((FCurYear div 10 * 10 + FCurHotDate - 2) - FCurYear) * 12);
+            SwitchDate(FValue, ((FCurState.Year div 10 * 10 + FCurHotDate - 2) - FCurState.Year) * 12);
           end;
         Decades: 
           begin
             FSelected := True;
-            SwitchDate(FValue, ((FCurYear div 100 * 100 + FCurHotDate * 10 - 20) - FCurYear) * 12);
+            SwitchDate(FValue, ((FCurState.Year div 100 * 100 + FCurHotDate * 10 - 20) - FCurState.Year) * 12);
           end;
         Centuries: 
           begin
             FSelected := True;
-            SwitchDate(FValue, ((FCurYear div 1000 * 1000 + FCurHotDate * 100 - 200) - FCurYear) * 12);
+            SwitchDate(FValue, ((FCurState.Year div 1000 * 1000 + FCurHotDate * 100 - 200) - FCurState.Year) * 12);
           end;
       end;
       if Assigned(FOnClickView) then FOnClickView(Self, FCurHotDate);
@@ -988,7 +1082,8 @@ begin
   TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := LColor;
 end;
 
-procedure TCalendarViewBase.DoDrawDatesRow(Canvas: TCanvas; var R: TRectF; WeekRowTop: Single);
+procedure TCalendarViewBase.DoDrawDatesRow(Canvas: TCanvas; var R: TRectF; WeekRowTop: Single;
+  const AState: TCalendarDrawState);
 var
   X, Y, W, LX, LY, LunarHeight, LOpacity: Single;
   S, LS, LE, LSelect, LToday, Week, ColorIndex, LES, LEE: Integer;
@@ -1012,15 +1107,15 @@ begin
   else
     LunarHeight := 0;
 
-  LS := FCurFirst;
-  LE := FCurLast;
-  S := FCurDrawS;
-  D := FCurDrawSD;
+  LS := AState.First;
+  LE := AState.Last;
+  S := AState.DrawS;
+  D := AState.DrawSD;
   LES := Trunc(FStartDate);
   LEE := Trunc(FEndDate);
 
   if FSelected then
-    LSelect := Trunc(FValue)
+    LSelect := Trunc(AState.Value)
   else
     LSelect := InvaludeDate;
   LToday := Trunc(Now);
@@ -1044,15 +1139,15 @@ begin
   // 画周数
   if (coCalendarWeeks in FOptions) and (FTextSettingsOfWeeks.Color and $FF000000 <> 0) then begin
     LY := Y;
-    for J := 1 to FCurRows do begin
+    for J := 1 to AState.Rows do begin
       FTextSettingsOfWeeks.FillText(Canvas, RectF(R.Left, LY, LX, LY + FRowHeihgt + LunarHeight),
-          IntToStr(FCurWeeks + J - 1), LOpacity, FTextSettingsOfWeeks.Color,
+          IntToStr(AState.Weeks + J - 1), LOpacity, FTextSettingsOfWeeks.Color,
           FTextSettingsOfWeeks.FillTextFlags, nil, 0, TTextAlign.Center);
       LY := LY + FRowHeihgt + FRowPadding + LunarHeight;
     end;
   end;
 
-  for J := 1 to FCurRows do begin
+  for J := 1 to AState.Rows do begin
     X := LX;
     for I := 0 to 6 do begin
       if BeforeAfter or ((S >= LS) and (S <= LE)) then begin
@@ -1154,7 +1249,7 @@ begin
 
           // 画农历或节气
           if Lunar then begin
-            LItem := GetLunarData(S);
+            LItem := GetLunarData(S, AState);
             if LItem.Text <> '' then begin
               LColor := 0;
               if (ColorIndex = 0) or (ColorIndex = 1) or (ColorIndex = 12) then begin
@@ -1232,7 +1327,8 @@ begin
     FDrawable.DrawBrushTo(Canvas, ABrush, R);
 end;
 
-procedure TCalendarViewBase.DoDrawMonths(Canvas: TCanvas; const R: TRectF);
+procedure TCalendarViewBase.DoDrawMonths(Canvas: TCanvas; const R: TRectF;
+  const AState: TCalendarDrawState);
 var
   LColor: TAlphaColor;
   W, H, LOpacity: Single;
@@ -1250,7 +1346,7 @@ begin
     LColor := 0;
     LR := RectF(X, Y, X + W - 1, Y + H - 1);
 
-    if I = FCurMonth - 1 then begin
+    if I = AState.Month - 1 then begin
       DoDrawItemBackground(Canvas, FDrawable.FDefault,  LR, FDrawable.IsCircle);
       LColor := FTextSettings.FColor.FHovered;
     end else if FCurHotDate = I + 1 then begin
@@ -1275,7 +1371,7 @@ begin
   end;
 end;
 
-procedure TCalendarViewBase.DoDrawNavigation(Canvas: TCanvas; const R: TRectF);
+procedure TCalendarViewBase.DoDrawNavigation(Canvas: TCanvas; const R: TRectF; const AState: TCalendarDrawState);
 var
   LR: TRectF;
   LColor, SColor: TAlphaColor;
@@ -1308,22 +1404,22 @@ begin
 
   case FCurViewType of
     Days: 
-      FTextSettingsOfTitle.Draw(Canvas, FInnerLanguage.DateToStr(FValue), LR, LOpacity, TViewState.None, TLayoutGravity.Center);
+      FTextSettingsOfTitle.Draw(Canvas, FInnerLanguage.DateToStr(AState.Value), LR, LOpacity, TViewState.None, TLayoutGravity.Center);
     Months: 
-      FTextSettingsOfTitle.Draw(Canvas, IntToStr(FCurYear), LR, LOpacity, TViewState.None, TLayoutGravity.Center);
+      FTextSettingsOfTitle.Draw(Canvas, IntToStr(AState.Year), LR, LOpacity, TViewState.None, TLayoutGravity.Center);
     Years:
       begin
-        LY := FCurYear div 10 * 10;
+        LY := AState.Year div 10 * 10;
         FTextSettingsOfTitle.Draw(Canvas, Format('%d-%d', [LY, LY + 9]), LR, LOpacity, TViewState.None, TLayoutGravity.Center);
       end;
     Decades:
       begin
-        LY := FCurYear div 100 * 100;
+        LY := AState.Year div 100 * 100;
         FTextSettingsOfTitle.Draw(Canvas, Format('%d-%d', [LY, LY + 90]), LR, LOpacity, TViewState.None, TLayoutGravity.Center);
       end;
     Centuries:
       begin
-        LY := FCurYear div 1000 * 1000;
+        LY := AState.Year div 1000 * 1000;
         FTextSettingsOfTitle.Draw(Canvas, Format('%d-%d', [LY, LY + 900]), LR, LOpacity, TViewState.None, TLayoutGravity.Center);
       end;
   end;
@@ -1339,7 +1435,7 @@ begin
   TTmpSimpleTextSettings(FTextSettingsOfTitle).FColor := LColor;
 end;
 
-procedure TCalendarViewBase.DoDrawWeekRow(Canvas: TCanvas; const R: TRectF);
+procedure TCalendarViewBase.DoDrawWeekRow(Canvas: TCanvas; const R: TRectF; const AState: TCalendarDrawState);
 var
   X, W, L: Single;
   I, J: Integer;
@@ -1382,7 +1478,7 @@ begin
 end;
 
 procedure TCalendarViewBase.DoDrawYears(Canvas: TCanvas; const R: TRectF;
-  const YearInterval: Integer);
+  const YearInterval: Integer; const AState: TCalendarDrawState);
 var
   LColor: TAlphaColor;
   W, H, LOpacity: Single;
@@ -1396,14 +1492,14 @@ begin
   H := R.Height / 3;
   
   LY := YearInterval * 10;
-  LY := FCurYear div LY * LY - YearInterval;   
+  LY := AState.Year div LY * LY - YearInterval;
   LOpacity := Opacity;
   
   for I := 0 to 11 do begin
     LColor := 0;
     LR := RectF(X, Y, X + W - 1, Y + H - 1);
         
-    if LY = FCurYear then begin
+    if LY = AState.Year then begin
       DoDrawItemBackground(Canvas, FDrawable.FDefault,  LR, FDrawable.IsCircle);
       LColor := FTextSettings.FColor.FHovered;
     end else if (I = 0) or (I = 11) then begin
@@ -1451,11 +1547,10 @@ end;
 procedure TCalendarViewBase.DoOptionsChange;
 begin
   InitDividerBrush();
-  ParseValue(FValue);
-  if IsAutoSize then
-    DoAutoSize
-  else
-    Invalidate;
+  ParseValue(FValue, FCurState);
+  if IsAutoSize then 
+    DoAutoSize;
+  Invalidate;
 end;
 
 procedure TCalendarViewBase.DoRecalcSize(var AWidth, AHeight: Single);
@@ -1492,8 +1587,8 @@ begin
         V := FRowHeihgt + FRowPadding;
         if coShowLunar in FOptions then
           V := V + FRowLunarHeight + Max(0, FRowLunarPadding);
-
-        H := H + V * FCurRows;
+        FCurState.RowHeight := V;
+        H := H + V * FCurState.Rows;
       end;
     else
       H := H + GetNotDaysRowHeight(3) * 3;
@@ -1518,6 +1613,11 @@ begin
     UpdateEffects;
 end;
 
+function TCalendarViewBase.GetAniX: Single;
+begin
+  Result := FAniCalc.ViewportPositionF.X;
+end;
+
 function TCalendarViewBase.GetAutoSize: Boolean;
 begin
   Result := FTextSettings.AutoSize;
@@ -1527,7 +1627,7 @@ function TCalendarViewBase.GetDefaultSize: TSizeF;
 begin
   Result := TSizeF.Create(300, 315);
   if (csDesigning in ComponentState) then
-    ParseValue(FValue);
+    ParseValue(FValue, FCurState);
 end;
 
 function TCalendarViewBase.GetHoverDate: TDate;
@@ -1543,7 +1643,7 @@ begin
   Result := FLanguage;
 end;
 
-function TCalendarViewBase.GetLunarData(const LDate: Integer): TCalendarDateItem;
+function TCalendarViewBase.GetLunarData(const LDate: Integer; const AState: TCalendarDrawState): TCalendarDateItem;
 begin
   if Assigned(FOnGetLunarData) then begin
     Result.Text := '';
@@ -1552,8 +1652,8 @@ begin
     Result.IsLunarHoliday := False;
     FOnGetLunarData(Self, (LDate), Result)
   end else begin
-    if LDate - FCurDrawS < Length(FLunarDataList) then
-      Result := FLunarDataList[LDate - FCurDrawS]
+    if LDate - AState.DrawS < Length(AState.LunarDataList) then
+      Result := AState.LunarDataList[LDate - AState.DrawS]
     else
       Result.Text := '';
   end;
@@ -1651,9 +1751,19 @@ begin
 
   ViewType := FViewTypeStart;
   if FValue < 1 then
-    ParseValue(FValue);
+    ParseValue(FValue, FCurState);
   if IsAutoSize then
     DoAutoSize;
+end;
+
+procedure TCalendarViewBase.MouseDown(Button: TMouseButton; Shift: TShiftState;
+  x, y: single);
+begin
+  inherited;
+  FAning := 0;
+  FDownX := X;
+  FDownTime := GetTimestamp;
+  FAniCalc.MouseDown(x, y);
 end;
 
 procedure TCalendarViewBase.MouseMove(Shift: TShiftState; X, Y: Single);
@@ -1662,6 +1772,12 @@ var
   ID, LX, LY: Integer;
 begin
   if (csDesigning in ComponentState) or (ssLeft in Shift) or (ssRight in Shift) then begin
+    FAniCalc.MouseMove(x, y);
+    inherited;
+    Exit;
+  end;
+
+  if FAning <> 0 then begin
     inherited;
     Exit;
   end;
@@ -1676,16 +1792,16 @@ begin
       Days: 
         begin
           X := FRangeOfDays.Width / 7;
-          Y := FRangeOfDays.Height / FCurRows;
+          Y := FRangeOfDays.Height / FCurState.Rows;
           LX := Trunc((P.X - FRangeOfDays.Left) / X);
           if LX > 6 then
             Exit;
           LY := Trunc((P.Y - FRangeOfDays.Top) / Y);
-          ID := FCurDrawS + LY * 7 + LX;
+          ID := FCurState.DrawS + LY * 7 + LX;
           if IsInvalidValue(ID) then
             ID := InvaludeDate;
           if (ID <> InvaludeDate) and (not (coShowBeforeAfter in FOptions)) then begin
-            if (ID < FCurFirst) or (ID > FCurLast) then
+            if (ID < FCurState.First) or (ID > FCurState.Last) then
               ID := InvaludeDate;
           end;
         end;
@@ -1738,7 +1854,68 @@ begin
   inherited;
 end;
 
+procedure TCalendarViewBase.MouseUp(Button: TMouseButton; Shift: TShiftState; x,
+  y: single);
+var
+  I: Integer;
+  NewH: Single;
+begin
+  inherited;
+  FAniCalc.MouseUp(X, Y);
+  UpdateScrollLimits;
+
+  if (Abs(FDownX - X) > (Width * 0.6)) or (GetVolecity(X) > 80) then begin
+    // 需要切换到上页或下页了
+    FAniCalc.OnChanged := nil;
+    if FAniCalc.ViewportPosition.X > 0 then begin  // 右
+      FAning := BID_Next;
+      X := Width;
+    end else begin
+      FAning := BID_Up;
+      X := -Width;
+    end;
+
+    NewH := 0;
+    if (FCurViewType = TCalendarViewType.Days) and AutoSize then begin
+      if (FAning = BID_Next) and (FCurState.Right <> nil) then
+        I := FCurState.Right.Rows
+      else if FCurState.Left <> nil then
+        I := FCurState.Left.Rows
+      else
+        I := 0;
+      if (I <> 0) and (I <> FCurState.Rows) then
+        NewH := Height + (I - FCurState.Rows) * FCurState.RowHeight;
+    end;
+
+    if NewH <> 0 then begin
+      // 动达改变高度
+      FInFitSize := True;
+      TFrameAnimator.AnimateFloat(Self, 'Height', NewH,
+        procedure (Sender: TObject)
+        begin
+          FInFitSize := False;
+        end
+      ,0.2);
+    end;
+
+    TFrameAnimator.AnimateFloat(Self, 'AniX', X,
+      procedure (Sender: TObject)
+      begin
+        FAniCalc.OnChanged := AniCalcChange;
+        AniCalcStop(Sender);
+      end,
+      procedure(Sender: TObject)
+      begin
+        AniCalcChange(Sender);
+      end
+    , 0.2);
+  end;
+end;
+
 procedure TCalendarViewBase.PaintBackground;
+var
+  W: Single;
+  LValue: TDate;
 begin
   if AbsoluteInVisible or (csLoading in ComponentState) then
     Exit;
@@ -1746,10 +1923,49 @@ begin
     FInnerLanguage := FLanguage
   else
     FInnerLanguage := DefaultLanguage;
-  PaintToCanvas(Canvas);
+
+  if Assigned(FBackground) then
+    FBackground.Draw(Canvas);
+
+  FCurState.XOffset :=  -FAniCalc.ViewportPosition.X;
+  if FCurState.XOffset <> 0 then begin
+    W := Width;
+    if Abs(FCurState.XOffset) > W then begin
+      if FCurState.XOffset < 0 then
+        FCurState.XOffset := -W
+      else
+        FCurState.XOffset := W;
+    end;
+    PaintToCanvas(Canvas, FCurState);
+    if FCurState.XOffset < 0 then begin  // 左拉
+      if FCurState.Right = nil then begin
+        New(FCurState.Right);  
+        FillChar(FCurState.Right^, SizeOf(FCurState), 0);
+      end;
+      FCurState.Right.XOffset := FCurState.XOffset + W;
+      
+      LValue := IncMonth(FValue, CalcMonthOffset(1), False);
+      if FCurState.Right.Value <> LValue then
+        ParseValue(LValue, FCurState.Right^);
+      PaintToCanvas(Canvas, FCurState.Right^);
+    end else if FCurState.XOffset > 0 then begin // 右拉
+      if FCurState.Left = nil then begin
+        New(FCurState.Left);    
+        FillChar(FCurState.Left^, SizeOf(FCurState), 0);     
+      end;
+      FCurState.Left.XOffset := FCurState.XOffset - W;
+
+      LValue := IncMonth(FValue, CalcMonthOffset(0), False);
+      if FCurState.Left.Value <> LValue then
+        ParseValue(LValue, FCurState.Left^);
+      PaintToCanvas(Canvas, FCurState.Left^);
+    end;
+  end else
+    PaintToCanvas(Canvas, FCurState);
+
 end;
 
-procedure TCalendarViewBase.PaintToCanvas(Canvas: TCanvas);
+procedure TCalendarViewBase.PaintToCanvas(Canvas: TCanvas; const AState: TCalendarDrawState);
 var
   R, LR: TRectF;
   LH, LT: Single;
@@ -1757,18 +1973,22 @@ var
 begin
   LH := 0;
   if Assigned(FBackground) then begin
-    FBackground.Draw(Canvas);
     if Assigned(TDrawableBorder(FBackground)._Border) and (TDrawableBorder(FBackground)._Border.Style <> TViewBorderStyle.None) then
       LH := TDrawableBorder(FBackground)._Border.Width;
   end;
 
-  R := RectF(Padding.Left + LH, Padding.Top + LH, Width - Padding.Right - LH, Height - Padding.Bottom - LH);
+  R := RectF(
+    Padding.Left + LH + AState.XOffset,
+    Padding.Top + LH,
+    Width - Padding.Right - LH + AState.XOffset,
+    Height - Padding.Bottom - LH
+  );
 
   // 导航栏
   if coShowNavigation in FOptions then begin  
     LR := RectF(R.Left, R.Top, R.Right, R.Top + FRowHeihgt); 
     R.Top := LR.Bottom;
-    DoDrawNavigation(Canvas, LR);
+    DoDrawNavigation(Canvas, LR, AState);
     FRangeOfNavigation := LR;
   end else
     FRangeOfNavigation.Clear;
@@ -1783,16 +2003,16 @@ begin
             LT := R.Top;
           LR := RectF(R.Left, R.Top, R.Right, R.Top + FRowHeihgt); 
           R.Top := LR.Bottom;
-          DoDrawWeekRow(Canvas, LR);
+          DoDrawWeekRow(Canvas, LR, AState);
         end;
 
         // 日期
         LH := FRowHeihgt + FRowPadding;
         if coShowLunar in FOptions then
           LH := LH + FRowLunarHeight + Max(0, FRowLunarPadding);
-        LR := RectF(R.Left, R.Top, R.Right, R.Top + FCurRows * LH);
+        LR := RectF(R.Left, R.Top, R.Right, R.Top + AState.Rows * LH);
         R.Top := LR.Bottom;
-        DoDrawDatesRow(Canvas, LR, LT);
+        DoDrawDatesRow(Canvas, LR, LT, AState);
         FRangeOfDays := LR; 
       end;
     Months: 
@@ -1800,7 +2020,7 @@ begin
         // 月份
         LH := GetNotDaysRowHeight(3);
         LR := RectF(R.Left, R.Top, R.Right, R.Top + LH * 3);
-        DoDrawMonths(Canvas, LR);
+        DoDrawMonths(Canvas, LR, AState);
         FRangeOfDays := LR;
         R.Top := LR.Bottom;
       end;
@@ -1815,7 +2035,7 @@ begin
           V := 10
         else
           V := 100;
-        DoDrawYears(Canvas, LR, V);
+        DoDrawYears(Canvas, LR, V, AState);
         FRangeOfDays := LR;
         R.Top := LR.Bottom;
       end;
@@ -1842,22 +2062,24 @@ begin
     R.Top := LR.Bottom + 1;
     DoDrawButton(Canvas, LR, FInnerLanguage.ClearStr, BID_Clear);
   end;
+    
 end;
 
-procedure TCalendarViewBase.ParseValue(const Value: TDate);
+procedure TCalendarViewBase.ParseValue(const Value: TDate; var AState: TCalendarDrawState);
 var
   S, E, Offset: Integer;
   Y, M, D: Word;
 begin
   DecodeDate(Value, Y, M, D);
-  FCurFirst := Trunc(EncodeDateTime(Y, M, 1, 0, 0, 0, 0));
-  FCurMonth := M;
-  FCurYear := Y;
+  AState.Value := Value;
+  AState.First := Trunc(EncodeDateTime(Y, M, 1, 0, 0, 0, 0));
+  AState.Month := M;
+  AState.Year := Y;
   
   if M = 1 then
-    FCurWeeks := 1
+    AState.Weeks := 1
   else
-    FCurWeeks := WeekOfTheYear((FCurFirst));
+    AState.Weeks := WeekOfTheYear((AState.First));
 
   if M < 12 then
     Inc(M)
@@ -1865,57 +2087,55 @@ begin
     M := 1;
     Inc(Y);
   end;
-  FCurLast := Trunc(EncodeDateTime(Y, M, 1, 0, 0, 0, 0)) - 1;
+  AState.Last := Trunc(EncodeDateTime(Y, M, 1, 0, 0, 0, 0)) - 1;
 
-  FCurDayOfWeek := DayOfWeek(FCurFirst) - 1;
-  Offset := (FCurDayOfWeek - FWeekStart) mod 7;
+  AState.DayOfWeek := DayOfWeek(AState.First) - 1;
+  Offset := (AState.DayOfWeek - FWeekStart) mod 7;
   if Offset < 0 then
     Inc(Offset, 7);
 
-  S := FCurFirst - Offset;
-  E := FCurLast;
-  FCurRows := (E - S + 1) div 7;
+  S := AState.First - Offset;
+  E := AState.Last;
+  AState.Rows := (E - S + 1) div 7;
   if (E - S + 1) mod 7 > 0 then
-    Inc(FCurRows);
+    Inc(AState.Rows);
 
-  FCurDrawS := S;  // 记录当前显示的开始日期
-  FCurDrawSD := DayOf((S));
+  AState.DrawS := S;  // 记录当前显示的开始日期
+  AState.DrawSD := DayOf((S));
 
   if (coShowLunar in FOptions) and (FCurViewType = TCalendarViewType.Days) then 
-    ParseValueLunar()
+    ParseValueLunar(AState)
   else
-    ClearLunarDataList();
+    AState.ClearLunar;
 end;
 
-procedure TCalendarViewBase.ParseValueLunar;
+procedure TCalendarViewBase.ParseValueLunar(var AState: TCalendarDrawState);
 var
   E, S, I: Integer;
   Item: TLunarData;
 begin
-  E := FCurRows * 7;
-  for I := Low(FLunarDataList) to High(FLunarDataList) do
-    FLunarDataList[I].Text := '';
-  SetLength(FLunarDataList, FCurRows * 7);
+  E := AState.Rows * 7;
+  AState.ClearLunar;
+  SetLength(AState.LunarDataList, AState.Rows * 7);
   S := 0;
-  for I := FCurDrawS to (FCurDrawS + E - 1) do begin
+  for I := AState.DrawS to (AState.DrawS + E - 1) do begin
     Item := SolarToLunar((I));
     if Item.Year > 0 then begin
       if (coShowTerm in FOptions) and (Item.IsTerm) then begin  // 节气
-        FLunarDataList[S].Text := Item.Term;
-        FLunarDataList[S].IsTerm := True;
-        FLunarDataList[S].IsHoliday := False;
-        FLunarDataList[S].IsLunarHoliday := False;
+        AState.LunarDataList[S].Text := Item.Term;
+        AState.LunarDataList[S].IsTerm := True;
+        AState.LunarDataList[S].IsHoliday := False;
+        AState.LunarDataList[S].IsLunarHoliday := False;
       end else begin                                  // 农历日期
         if Item.Day = 1 then
-          FLunarDataList[S].Text := Item.CnMonth
+          AState.LunarDataList[S].Text := Item.CnMonth
         else
-          FLunarDataList[S].Text := Item.CnDay;
-        FLunarDataList[S].IsTerm := False;
-        FLunarDataList[S].IsHoliday := False;
-        FLunarDataList[S].IsLunarHoliday := False;
+          AState.LunarDataList[S].Text := Item.CnDay;
+        AState.LunarDataList[S].IsTerm := False;
+        AState.LunarDataList[S].IsHoliday := False;
+        AState.LunarDataList[S].IsLunarHoliday := False;
       end;
-    end else
-      FLunarDataList[S].Text := '';
+    end;
     Inc(S);
   end;
 end;
@@ -1923,6 +2143,11 @@ end;
 procedure TCalendarViewBase.Resize;
 begin
   inherited;
+end;
+
+procedure TCalendarViewBase.SetAniX(const Value: Single);
+begin
+  FAniCalc.ViewportPositionF := PointF(Value, 0);
 end;
 
 procedure TCalendarViewBase.SetAutoSize(const Value: Boolean);
@@ -1939,7 +2164,7 @@ begin
       Exit;
     FCurViewType := Value; 
     if (coShowLunar in FOptions) and (Value = TCalendarViewType.Days) then
-      ParseValueLunar;    
+      ParseValueLunar(FCurState);
     if IsAutoSize then
       DoAutoSize
     else
@@ -2119,9 +2344,9 @@ var
 begin
   if FWeekStart <> Value then begin
     FWeekStart := Value;
-    LRows := FCurRows;
-    ParseValue(FValue);
-    if (FCurRows <> LRows) and IsAutoSize then
+    LRows := FCurState.Rows;
+    ParseValue(FValue, FCurState);
+    if (FCurState.Rows <> LRows) and IsAutoSize then
       DoAutoSize;
     DoChange;
   end;
@@ -2185,10 +2410,13 @@ begin
   end;
   
   if (Y <> Y2) or (M <> M2) then begin  
-    ParseValue(FValue);
+    FCurState.ClearLunar;
+    ParseValue(FValue, FCurState);
     if LAutoSize then        
       DoAutoSize;
-  end;
+  end else
+    FCurState.Value := FValue;
+
   if LChange then
     DoDateChange;
 end;
@@ -2196,6 +2424,34 @@ end;
 procedure TCalendarViewBase.Today;
 begin
   DateTime := Now;
+end;
+
+procedure TCalendarViewBase.UpdateScrollLimits(Flag: Integer);
+var
+  Targets: array of TAniCalculations.TTarget;
+begin
+  if FAniCalc <> nil then begin
+    SetLength(Targets, 2);
+    if (Flag = 0) or (FAning = 0) then begin    
+      Targets[0].TargetType := TAniCalculations.TTargetType.Min;
+      Targets[0].Point := TPointD.Create(0, 0);  
+      Targets[1].TargetType := TAniCalculations.TTargetType.Max;
+      Targets[1].Point := TPointD.Create(0, 0);
+    end else begin
+      if FAning = BID_Up then begin
+        Targets[0].TargetType := TAniCalculations.TTargetType.Min;
+        Targets[0].Point := TPointD.Create(-Width, 0);
+        Targets[1].TargetType := TAniCalculations.TTargetType.Max;
+        Targets[1].Point := TPointD.Create(0, 0);
+      end else begin
+        Targets[0].TargetType := TAniCalculations.TTargetType.Min;
+        Targets[0].Point := TPointD.Create(0, 0);  
+        Targets[1].TargetType := TAniCalculations.TTargetType.Max;
+        Targets[1].Point := TPointD.Create(Max(0, Width), 0);
+      end;
+    end;
+    FAniCalc.SetTargets(Targets);
+  end;
 end;
 
 { TCalendarColor }
@@ -2856,6 +3112,30 @@ begin
     True, TFrameAniType.None, False);
 end;
 {$ENDIF}
+
+{ TCalendarDrawState }
+
+procedure TCalendarDrawState.Clear;
+begin
+  ClearLunar();
+  if Left <> nil then begin
+    Left.Clear;
+    Dispose(Left);
+  end;
+  if Right <> nil then begin
+    Right.Clear;
+    Dispose(Right);  
+  end;
+end;
+
+procedure TCalendarDrawState.ClearLunar;
+var
+  I: Integer;
+begin
+  for I := Low(LunarDataList) to High(LunarDataList) do
+    LunarDataList[I].Text := '';
+  SetLength(LunarDataList, 0);  
+end;
 
 initialization
   DefaultLanguage := TCalendarLanguage_EN.Create(nil);

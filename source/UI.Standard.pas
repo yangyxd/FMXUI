@@ -114,12 +114,16 @@ type
   TDrawableProgress = class(TDrawable)
   private
     FWidth: Single;
+    FValueOffset: Single;
     function IsStoredWidth: Boolean;
     procedure SetWidth(const Value: Single);
+    function IsStoreValueOffset: Boolean;
+    procedure SetValueOffset(const Value: Single);
   protected
     procedure InitDrawable; override;
   published
     property RingWidth: Single read FWidth write SetWidth stored IsStoredWidth;
+    property ValueOffset: Single read FValueOffset write SetValueOffset stored IsStoreValueOffset;
   end;
 
 type
@@ -1476,9 +1480,9 @@ begin
       FOnDrawText(Self, Canvas, FText, SR)
     else begin
       if Assigned(FHtmlText) then
-        FHtmlText.Draw(Canvas, FText, SR, Opacity, DrawState)
+        FHtmlText.Draw(Canvas, FText, SR, GetAbsoluteOpacity, DrawState)
       else
-        FText.Draw(Canvas, SR, Opacity, DrawState);
+        FText.Draw(Canvas, SR, GetAbsoluteOpacity, DrawState);
     end;
   end;
 end;
@@ -3023,13 +3027,12 @@ procedure TProgressView.PaintBackground;
 
   procedure DoDrawHorizontal;
   var
-    R: TRectF;
     W, PW: Single;
   begin
     inherited PaintBackground;
-    if (FMax - FMin <= 0) or (FValue - FMin <= 0) then
+    if (FMax - FMin <= 0) or (FValue - FMin < 0) then
       Exit;
-    PW := FForeGround.Padding.Left + FForeGround.Padding.Right;
+    PW := FForeGround.Padding.Left + FForeGround.Padding.Right + FForeGround.FValueOffset;
     if FValue > FMax then
       W := FMax
     else if FValue < FMin then
@@ -3037,19 +3040,17 @@ procedure TProgressView.PaintBackground;
     else
       W := FValue;
     W := (W - FMin) / (FMax - FMin) * (Width - PW) + PW;
-    R := RectF(0, 0, W, Height);
-    FForeGround.DrawTo(Canvas, R);
+    FForeGround.DrawTo(Canvas, RectF(0, 0, W, Height));
   end;
 
   procedure DoDrawVertical;
   var
-    R: TRectF;
     H, V, PH: Single;
   begin
     inherited PaintBackground;
-    if (FMax - FMin <= 0) or (FValue - FMin <= 0) then
+    if (FMax - FMin <= 0) or (FValue - FMin < 0) then
       Exit;
-    PH := FForeGround.Padding.Top + FForeGround.Padding.Bottom;
+    PH := FForeGround.Padding.Top + FForeGround.Padding.Bottom + FForeGround.FValueOffset;
     V := Height - PH;
     if FValue > FMax then
       H := FMax
@@ -3058,8 +3059,7 @@ procedure TProgressView.PaintBackground;
     else
       H := FValue;
     H := V - (H - FMin) / (FMax - FMin) * V;
-    R := RectF(0, H, Width, Height);
-    FForeGround.DrawTo(Canvas, R);
+    FForeGround.DrawTo(Canvas, RectF(0, H, Width, Height));
   end;
 
   procedure DoDrawCircleRing();
@@ -4121,11 +4121,25 @@ end;
 procedure TDrawableProgress.InitDrawable;
 begin
   FWidth := 8;
+  FValueOffset := 0;
 end;
 
 function TDrawableProgress.IsStoredWidth: Boolean;
 begin
   Result := FWidth <> 8;
+end;
+
+function TDrawableProgress.IsStoreValueOffset: Boolean;
+begin
+  Result := FValueOffset <> 0;
+end;
+
+procedure TDrawableProgress.SetValueOffset(const Value: Single);
+begin
+  if FValueOffset <> Value then begin
+    FValueOffset := Value;
+    DoChange(Self);
+  end;
 end;
 
 procedure TDrawableProgress.SetWidth(const Value: Single);
