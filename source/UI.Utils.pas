@@ -279,6 +279,13 @@ begin
   Result := Copy(Mobile, 1, 3) + '****' + Copy(Mobile, 8, 4);
 end;
 
+{$WARNINGS OFF}
+function CharInSet(C: Char; const CharSet: TSysCharSet): Boolean;
+begin
+  Result := C in CharSet;
+end;
+{$WARNINGS ON}
+
 type
   TRGBA = record
     R, G, B, A: Byte;

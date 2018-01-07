@@ -573,7 +573,7 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
       Self.Opacity := 1;
       if not SwitchFlag then begin
         Self.Position.Y := Self.Height;
-        TFrameAnimator.AnimateFloat(Self, 'Position.Y', 0, AEvent);
+        TFrameAnimator.AnimateFloat(Self, 'Position.Y', Self.ParentForm.Padding.Top, AEvent);
       end else if Assigned(AEvent) then
         TFrameAnimator.DelayExecute(Self, AEvent, 0.2);
     end else begin

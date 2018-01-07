@@ -8850,6 +8850,7 @@ end;
 
 procedure TViewHtmlText.ParseHtmlText(const Text: string);
 
+  {$WARNINGS OFF}
   procedure ReadProperty(var Item: THtmlTextItem; var P, PE: PChar; OnReadAttr: TViewHtmlReadAttr);
   var
     P1: PChar;
@@ -8888,6 +8889,7 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
         OnReadAttr(Item, Key, Value);       
     end;
   end;
+  {$WARNINGS ON}
 
   procedure SetItem(var Item: THtmlTextItem; const LText: string);
   var
