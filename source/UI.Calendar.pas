@@ -258,6 +258,8 @@ type
     function GetValue(const Index: Integer): TViewBrush;
     procedure SetValue(const Index: Integer; const Value: TViewBrush);
     procedure SetIsCircle(const Value: Boolean);
+  public
+    procedure Assign(Source: TPersistent); override;
   published
     property XRadius;
     property YRadius;
@@ -564,7 +566,7 @@ type
     /// <summary>
     /// 行高
     /// </summary>
-    property RowHeihgt: Single read FRowHeihgt write SetRowHeihgt stored IsStoredRowHeihgt;
+    property RowHeight: Single read FRowHeihgt write SetRowHeihgt stored IsStoredRowHeihgt;
     /// <summary>
     /// 农历和节日行高
     /// </summary>
@@ -597,6 +599,8 @@ type
     property OnClickView: TOnClickView read FOnClickView write FOnClickView;
   published
     property EnableExecuteAction default True;
+    property CanFocus default True;
+    property Clickable default True;
   end;
 
 type
@@ -704,7 +708,7 @@ type
     property DateTime;
 
     property RowPadding;
-    property RowHeihgt;
+    property RowHeight;
     property RowLunarHeight;
     property RowLunarPadding;
 
@@ -896,7 +900,11 @@ end;
 constructor TCalendarViewBase.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
+  FCurState.Left := nil;
+  FCurState.Right := nil;
+  FCurState.Clear;
   FLanguage := nil;
+  FInnerLanguage := nil;
   FOptions := CDefaultCalendarOptions;
   FViewTypeMax := TCalendarViewType.Years;
 
@@ -941,6 +949,8 @@ end;
 
 destructor TCalendarViewBase.Destroy;
 begin
+  FInnerLanguage := nil;
+  FLanguage := nil;
   FCurState.Clear;
   FreeAndNil(FTextSettings);
   FreeAndNil(FTextSettingsOfLunar);
@@ -2785,6 +2795,14 @@ end;
 
 { TCalendarDrawable }
 
+procedure TCalendarDrawable.Assign(Source: TPersistent);
+begin
+  if Source is TCalendarDrawable then begin
+    FIsCircle := TCalendarDrawable(Source).FIsCircle;
+  end;
+  inherited Assign(Source);
+end;
+
 function TCalendarDrawable.GetValue(const Index: Integer): TViewBrush;
 begin
   Result := inherited GetBrush(TViewState(Index),
@@ -3003,7 +3021,7 @@ begin
     FDateTimePicker.Width := 220;
     FDateTimePicker.Height := 200;
     FDateTimePicker.Options := [coShowNavigation, coShowWeek, coTodayHighlight, coShowTodayButton];
-    FDateTimePicker.RowHeihgt := 22;
+    FDateTimePicker.RowHeight := 22;
     FDateTimePicker.WeekStart := 1;
     FDateTimePicker.AutoSize := True;
     if Assigned(FLanguage) then      

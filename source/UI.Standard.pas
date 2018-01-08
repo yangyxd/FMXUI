@@ -121,6 +121,8 @@ type
     procedure SetValueOffset(const Value: Single);
   protected
     procedure InitDrawable; override;
+  public
+    procedure Assign(Source: TPersistent); override;
   published
     property RingWidth: Single read FWidth write SetWidth stored IsStoredWidth;
     property ValueOffset: Single read FValueOffset write SetValueOffset stored IsStoreValueOffset;
@@ -4117,6 +4119,15 @@ begin
 end;
 
 { TDrawableProgress }
+
+procedure TDrawableProgress.Assign(Source: TPersistent);
+begin
+  if Source is TDrawableProgress then begin
+    FWidth := TDrawableProgress(Source).FWidth;
+    FValueOffset := TDrawableProgress(Source).FValueOffset;
+  end;
+  inherited Assign(Source);
+end;
 
 procedure TDrawableProgress.InitDrawable;
 begin

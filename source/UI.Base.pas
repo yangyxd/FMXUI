@@ -284,6 +284,7 @@ type
   protected
   public
     constructor Create(const ADefaultKind: TViewBrushKind; const ADefaultColor: TAlphaColor);
+    procedure Assign(Source: TPersistent); override;
   published
     property Bitmap: TPatch9Bitmap read GetBitmap write SetBitmap stored IsPatch9BitmapStored;
   end;
@@ -312,6 +313,7 @@ type
     procedure IGlyph.SetImages = SetImageList;
   public
     constructor Create(const ADefaultKind: TBrushKind; const ADefaultColor: TAlphaColor);
+    procedure Assign(Source: TPersistent); override;
     property Owner: TObject read FOwner write FOwner;
     property Images: TBaseImageList read GetImageList write SetImageList;
   published
@@ -1455,11 +1457,13 @@ type
     class function GetNavigationBarHeight: Single;
 
     { Rtti Function }
+    class function ExistRttiValue(Instance: TObject; const Name: string): Boolean;
     class function GetRttiValue(Instance: TObject; const Name: string): TValue; overload;
     class function GetRttiValue<T>(Instance: TObject; const Name: string): T; overload;
     class function GetRttiObject(Instance: TObject; const Name: string): TObject;
     class procedure SetRttiValue(Instance: TObject; const Name: string; const Value: TValue); overload;
     class procedure SetRttiValue<T>(Instance: TObject; const Name: string; const Value: T); overload;
+    class procedure SetRttiObject(Instance: TObject; const Name: string; const Value: TObject); overload;
     class procedure InvokeMethod(Instance: TObject; const Name: string; const Args: array of TValue); overload;
     class function InvokeMethod<T>(Instance: TObject; const Name: string; const Args: array of TValue): T; overload;
 
@@ -4068,6 +4072,24 @@ begin
   Result := FWidthSize;
 end;
 
+class procedure TView.SetRttiObject(Instance: TObject; const Name: string;
+  const Value: TObject);
+var
+  FType: TRttiType;
+  FFiled: TRttiField;
+  FContext: TRttiContext;
+begin
+  FContext := TRttiContext.Create;
+  try
+    FType := FContext.GetType(Instance.ClassType);
+    FFiled := FType.GetField(Name);
+    if Assigned(FFiled) and (FFiled.FieldType.TypeKind = tkClass) then
+      FFiled.SetValue(Instance, Value);
+  finally
+    FContext.Free;
+  end;
+end;
+
 class procedure TView.SetRttiValue(Instance: TObject; const Name: string; const Value: TValue);
 var
   FType: TRttiType;
@@ -4471,6 +4493,23 @@ begin
     DecViewState(TViewState.Enabled);
   end else begin
     IncViewState(TViewState.Enabled);
+  end;
+end;
+
+class function TView.ExistRttiValue(Instance: TObject;
+  const Name: string): Boolean;
+var
+  FType: TRttiType;
+  FFiled: TRttiField;
+  FContext: TRttiContext;
+begin
+  FContext := TRttiContext.Create;
+  try
+    FType := FContext.GetType(Instance.ClassType);
+    FFiled := FType.GetField(Name);
+    Result := Assigned(FFiled);
+  finally
+    FContext.Free;
   end;
 end;
 
@@ -6991,6 +7030,13 @@ end;
 
 { TViewBrush }
 
+procedure TViewBrush.Assign(Source: TPersistent);
+begin
+  if Source is TViewBrush then
+    Self.Bitmap := TViewBrush(Source).Bitmap;
+  inherited;
+end;
+
 constructor TViewBrush.Create(const ADefaultKind: TViewBrushKind;
   const ADefaultColor: TAlphaColor);
 var
@@ -7026,8 +7072,10 @@ end;
 
 procedure TPatch9Bitmap.Assign(Source: TPersistent);
 begin
-  if Source is TPatch9Bitmap then
+  if Source is TPatch9Bitmap then begin
+    FRemoveBlackLine := TPatch9Bitmap(Source).FRemoveBlackLine;
     FBounds.Assign(TPatch9Bitmap(Source).FBounds);
+  end;
   inherited;
 end;
 
@@ -7389,6 +7437,15 @@ begin
 end;
 
 { TViewImagesBrush }
+
+procedure TViewImagesBrush.Assign(Source: TPersistent);
+begin
+  if Source is TViewImagesBrush then begin
+    FImageIndex := TViewImagesBrush(Source).FImageIndex;
+    Self.Images := TViewImagesBrush(Source).Images;
+  end;
+  inherited;
+end;
 
 constructor TViewImagesBrush.Create(const ADefaultKind: TBrushKind;
   const ADefaultColor: TAlphaColor);
@@ -9244,6 +9301,24 @@ begin
   if Source is TViewAccessory then begin
     Self.FAccessoryType := TViewAccessory(Source).FAccessoryType;
     Self.FAccessoryColor := TViewAccessory(Source).FAccessoryColor;
+    Self.FIcon := TViewAccessory(Source).FIcon;
+    Self.FStyle := TViewAccessory(Source).FStyle;
+
+    if TViewAccessory(Source).FAccessoryBmp = nil then
+      FreeAndNil(Self.FAccessoryBmp)
+    else begin
+      if not Assigned(FAccessoryBmp) then
+        FAccessoryBmp := TBitmap.Create;
+      FAccessoryBmp.Assign(TViewAccessory(Source).FAccessoryBmp);
+    end;
+
+    if TViewAccessory(Source).FPathData = nil then
+      FreeAndNil(Self.FPathData)
+    else begin
+      if not Assigned(FPathData) then
+        FPathData := TPathData.Create;
+      FPathData.Assign(TViewAccessory(Source).FPathData);
+    end;
     DoChanged;
   end else
     inherited;

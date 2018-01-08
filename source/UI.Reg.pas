@@ -52,6 +52,7 @@ resourcestring
 type
   TViewControlEditor = class(TDefaultEditor)
   private
+    FCmdIndex: TArray<Integer>;
   protected
     procedure DesignerModified;
   public
@@ -120,6 +121,12 @@ type
   end;
 
 {$IFDEF MSWINDOWS}
+var
+  [Weak] FCopyBackground: TObject = nil;
+  [Weak] FCopyDrawable: TObject = nil;
+{$ENDIF}
+
+{$IFDEF MSWINDOWS}
 // 设置环境变量
 procedure SetEnvPath(const sName, sValue: string);
 var
@@ -175,6 +182,7 @@ begin
   RegisterComponents(PageName, [TDrawableBrush]);
 
   RegisterComponentEditor(TView, TViewControlEditor);
+
   RegisterPropertyEditor(TypeInfo(TPatchBounds), TPersistent, '', TPatchBoundsProperty);
   RegisterPropertyEditor(TypeInfo(TGridColumnsSetting), TGridBase, '', TGridColumnsSettingsProperty);
   RegisterPropertyEditor(TypeInfo(TControl), TViewLayout, '', TLayoutComponentProperty);
@@ -214,6 +222,7 @@ begin
       'MaxHeight',
       'Gravity',
       'Weight',
+      'CaptureDragForm',
       'Orientation',
       'OnClick',
       'OnPaint',
@@ -315,6 +324,28 @@ begin
       'ShowColIndex',
       'ColumnsSettings',
 
+      { CalendarView }
+      'DateTime',
+      'DaysOfWeekDisabled',
+      'DaysOfWeekHighlighted',
+      'StartDate',
+      'EndDate',
+      'Language',
+      'RowHeight',
+      'RowLunarHeight',
+      'RowLunarPadding',
+      'RowPadding',
+      'TextSettingsOfLunar',
+      'TextSettingsOfTitle',
+      'TextSettingsOfWeeks',
+      'ViewModeMax',
+      'ViewModeMin',
+      'ViewModeStart',
+      'WeekStart',
+      'WeeksWidth',
+      'OnOwnerLunarData',
+      'OnClickView',
+
       'OnTitleClick',
       'OnColumnMoved',
       'OnFixedCellClick',
@@ -380,7 +411,7 @@ begin
   AddEnumElementAliases(TypeInfo(TViewBorderStyle),
     ['None', 'RectBorder', 'RectBitmap', 'LineEdit', 'LineTop', 'LineBottom', 'LineLeft', 'LineRight']);
   AddEnumElementAliases(TypeInfo(TViewBrushKind),
-    ['None', 'Solid', 'Gradient', 'Bitmap', 'Resource', 'Patch9Bitmap', 'AccessoryBitmap']);
+    ['None', 'Solid', 'Gradient', 'Bitmap', 'Resource', 'Patch9Bitmap', 'AccessoryBitmap', 'SVGImage']);
   AddEnumElementAliases(TypeInfo(TViewScroll),
     ['None', 'Horizontal', 'Vertical', 'Both']);
   AddEnumElementAliases(TypeInfo(TViewStretchMode),
@@ -416,6 +447,9 @@ begin
      'User', 'UserEdit', 'UserGroup', 'Users', 'UserSearch',
      'VideoCamera', 'VideoPlayer', 'Viewer',
      'Wifi', 'Window', 'Write']);
+
+  AddEnumElementAliases(TypeInfo(TCalendarViewType),
+    ['Days', 'Months', 'Years', 'Decades', 'Centuries']);
 end;
 
 procedure UnregisterAliases;
@@ -435,9 +469,13 @@ begin
   RemoveEnumElementAliases(TypeInfo(TGridFooterStyle));
   RemoveEnumElementAliases(TypeInfo(TViewAccessoryType));
   RemoveEnumElementAliases(TypeInfo(TViewIconType));
+  RemoveEnumElementAliases(TypeInfo(TCalendarViewType));
 end;
 
 { TViewControlEditor }
+
+type
+  TViewPri = class(TView);
 
 procedure TViewControlEditor.DesignerModified;
 begin
@@ -446,9 +484,11 @@ begin
 end;
 
 procedure TViewControlEditor.ExecuteVerb(Index: Integer);
+var
+  O: TDrawableBase;
 begin
   if not (Component is TControl) then Exit;
-  case Index of
+  case FCmdIndex[Index] of
     0:
       begin
         if TControl(Component).Index > 0 then
@@ -467,27 +507,83 @@ begin
       begin
         TControl(Component).Index := TControl(Component).Parent.ChildrenCount - 1;
       end;
+    4:
+      begin
+        FCopyBackground := TViewPri(Component).FBackground;
+      end;
+    5:
+      begin
+        try
+          TView(Component).Background := TDrawable(FCopyBackground);
+        except
+          MessageBox(0, PChar(Exception(ExceptObject).Message), 'Error', 48);
+        end;
+      end;
+    6:
+      begin
+        if TView.ExistRttiValue(Component, 'Drawable') then
+          FCopyDrawable := TView.GetRttiObject(Component, 'Drawable')
+        else
+          FCopyDrawable := TView.GetRttiObject(Component, 'FDrawable');
+      end;
+    7:
+      begin
+        try
+          if Component is TTextView then begin
+            TTextView(Component).Drawable := TDrawableIcon(FCopyDrawable)
+          end else if Component is TCustomEditView then begin
+            TCustomEditView(Component).Drawable := TDrawableIcon(FCopyDrawable)
+          end else
+            TView.InvokeMethod(Component, 'SetDrawable', [TDrawableIcon(FCopyDrawable)]);
+        except
+          MessageBox(0, PChar(Exception(ExceptObject).Message), 'Error', 48);
+        end;
+      end;
   end;
   Designer.SelectComponent(Component);
   DesignerModified;
 end;
 
 function TViewControlEditor.GetVerb(Index: Integer): string;
+const
+  CmdNames: TArray<string> = ['前移', '后移', '移至最前', '移至最后',
+    'Copy Background', 'Paste Background', 'Copy Drawable', 'Paste Drawable'];
 begin
-  case Index of
-    0: Result := '前移';
-    1: Result := '后移';
-    2: Result := '移至最前';
-    3: Result := '移至最后';
-  end;
+  Result := CmdNames[FCmdIndex[Index]];
 end;
 
 function TViewControlEditor.GetVerbCount: Integer;
+var
+  O: TObject;
 begin
-  if (Component is TControl) and (TControl(Component).Parent is TLinearLayout) then
-    Result := 4
-  else
+  SetLength(FCmdIndex, 20);
+  if (Component is TControl) and (TControl(Component).Parent is TLinearLayout) then begin
+    Result := 4;
+    FCmdIndex[0] := 0;
+    FCmdIndex[1] := 1;
+    FCmdIndex[2] := 2;
+    FCmdIndex[3] := 3;
+  end else
     Result := 0;
+  if (Component is TView) then begin
+    FCmdIndex[Result] := 4;
+    Inc(Result);
+    if Assigned(FCopyBackground) then begin
+      FCmdIndex[Result] := 5;
+      Inc(Result);
+    end;
+    O := TView.GetRttiObject(Component, 'Drawable');
+    if not Assigned(O) then
+      O := TView.GetRttiObject(Component, 'FDrawable');
+    if Assigned(O) and (O is TDrawableBase) then begin
+      FCmdIndex[Result] := 6;
+      Inc(Result);
+      if Assigned(FCopyDrawable) then begin
+        FCmdIndex[Result] := 7;
+        Inc(Result);
+      end;
+    end;
+  end;
 end;
 
 { TPatchBoundsProperty }
@@ -660,5 +756,9 @@ initialization
 
 finalization
   UnregisterAliases;
+  {$IFDEF MSWINDOWS}
+  FCopyBackground := nil;
+  FCopyDrawable := nil;
+  {$ENDIF}
 
 end.
