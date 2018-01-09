@@ -7319,7 +7319,8 @@ begin
 
     if AStyleObj <> nil then begin
       if FImageMap.IsEmpty then begin
-        AImageMap := ((AStyleObj as TStyleObject).Source.MultiResBitmap.Bitmaps[FImageScale]);
+        //AImageMap := ((AStyleObj as TStyleObject).Source.MultiResBitmap.Bitmaps[FImageScale]);
+        AImageMap := ((AStyleObj as TStyleObject).Source.MultiResBitmap.Bitmaps[1]);
 
         FImageMap.SetSize(Round(AImageMap.Width), Round(AImageMap.Height));
         FImageMap.Clear(claNull);

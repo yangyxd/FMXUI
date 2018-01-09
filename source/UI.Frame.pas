@@ -1107,7 +1107,8 @@ procedure TFrameView.InternalShow(TriggerOnShow: Boolean;
 begin
   if FShowing then Exit;  
   FShowing := True;
-  FDefaultAni := Ani;
+  if TriggerOnShow and (not SwitchFlag) then
+    FDefaultAni := Ani;
   if Title <> '' then begin
     Application.Title := Title;
     if Assigned(Parent) and (Parent is TCustomForm) then
