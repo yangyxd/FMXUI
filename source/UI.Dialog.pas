@@ -578,6 +578,7 @@ type
 
     FTitle: string;
     FMessage: string;
+    FMessageIsHtml: Boolean;
     FCancelable: Boolean;
     FIsMaxWidth: Boolean;
     FIsSingleChoice: Boolean;
@@ -651,7 +652,7 @@ type
     /// <summary>
     /// 设置消息
     /// </summary>
-    function SetMessage(const AMessage: string): TDialogBuilder;
+    function SetMessage(const AMessage: string; IsHtmlText: Boolean = False): TDialogBuilder;
     /// <summary>
     /// 设置图标
     /// </summary>
@@ -801,6 +802,7 @@ type
 
     property Title: string read FTitle;
     property Message: string read FMessage;
+    property MessageIsHtml: Boolean read FMessageIsHtml;
     property Cancelable: Boolean read FCancelable;
     property IsMaxWidth: Boolean read FIsMaxWidth;
     property IsSingleChoice: Boolean read FIsSingleChoice;
@@ -873,7 +875,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    procedure InitView(const AMsg: string);
+    procedure InitView(const AMsg: string; IsHtmlText: Boolean = False);
     /// <summary>
     /// 显示一个等待对话框
     /// </summary>
@@ -1134,10 +1136,11 @@ begin
   Result := Self;
 end;
 
-function TDialogBuilder.SetMessage(const AMessage: string): TDialogBuilder;
+function TDialogBuilder.SetMessage(const AMessage: string; IsHtmlText: Boolean): TDialogBuilder;
 begin
   Result := Self;
   FMessage := AMessage;
+  FMessageIsHtml := IsHtmlText;
 end;
 
 function TDialogBuilder.SetMultiChoiceItems(const AItems: TArray<string>;
@@ -2215,7 +2218,10 @@ begin
   // 初始化消息区
   if (Builder.FIcon <> nil) or (Builder.FMessage <> '') then begin
     FViewRoot.InitMessage(StyleManager);
-    FViewRoot.FMsgMessage.Text := Builder.FMessage;
+    if Builder.MessageIsHtml then
+      FViewRoot.FMsgMessage.HtmlText := Builder.FMessage
+    else
+      FViewRoot.FMsgMessage.Text := Builder.FMessage;
     if Assigned(Builder.FIcon) then begin
       if Builder.FIcon is TDrawableBase then
         FViewRoot.FMsgMessage.Drawable.Assign(TDrawableBase(Builder.FIcon))
@@ -2394,7 +2400,10 @@ begin
   // 初始化消息区
   if (Builder.FIcon <> nil) or (Builder.FMessage <> '') then begin
     FViewRoot.InitMessage(Sytle);
-    FViewRoot.FMsgMessage.Text := Builder.FMessage;
+    if Builder.FMessageIsHtml then
+      FViewRoot.FMsgMessage.HtmlText := Builder.FMessage
+    else
+      FViewRoot.FMsgMessage.Text := Builder.FMessage;
     if Assigned(Builder.FIcon) then begin
       if Builder.FIcon is TDrawableBase then
         FViewRoot.FMsgMessage.Drawable.Assign(TDrawableBase(Builder.FIcon))
@@ -3075,7 +3084,7 @@ begin
     Result := '';
 end;
 
-procedure TProgressDialog.InitView(const AMsg: string);
+procedure TProgressDialog.InitView(const AMsg: string; IsHtmlText: Boolean);
 var
   Style: TDialogStyleManager;
 begin
@@ -3101,7 +3110,10 @@ begin
   if AMsg = '' then
     FViewRoot.FMsgMessage.Visible := False
   else begin
-    FViewRoot.FMsgMessage.Text := AMsg;
+    if IsHtmlText then
+      FViewRoot.FMsgMessage.HtmlText := AMsg
+    else
+      FViewRoot.FMsgMessage.Text := AMsg;
     FViewRoot.FMsgMessage.Visible := True;
     FViewRoot.FLayBubble.WidthSize := TViewSize.CustomSize;
     FViewRoot.FLayBubble.Width := FViewRoot.FMsgMessage.Width + 32;

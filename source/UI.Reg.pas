@@ -343,6 +343,7 @@ begin
       'ViewModeStart',
       'WeekStart',
       'WeeksWidth',
+      'OnOwnerDrawCalendar',
       'OnOwnerLunarData',
       'OnClickView',
 
