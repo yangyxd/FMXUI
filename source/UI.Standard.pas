@@ -2032,6 +2032,7 @@ begin
         FAniCalculations.TouchTracking := [ttVertical]
       else
         FAniCalculations.TouchTracking := [ttHorizontal];
+      FAniCalculations.Shown := False;
     end;
   end;
   FAniCalculations.MouseMove(X, Y);
@@ -2046,8 +2047,10 @@ begin
   FAniCalculations.MouseUp(X, Y);
   if (FAniCalculations.LowVelocity) or (not FAniCalculations.Animation) then
     FAniCalculations.Shown := False;
-  if FDragOneWay then
+  if FDragOneWay then begin
     FAniCalculations.TouchTracking := FLastTouchTracking;
+    FLastTouchTracking := [];
+  end;
 end;
 
 procedure TScrollView.AniVScrollTo(const AOffset: Single;
@@ -2175,11 +2178,11 @@ end;
 procedure TScrollView.DoMouseLeave;
 begin
   inherited DoMouseLeave;
-  if FMouseEvents and Assigned(FAniCalculations) and FAniCalculations.Down then
+  if Assigned(FAniCalculations) then
   begin
     FAniCalculations.MouseLeave;
-    if (FAniCalculations.LowVelocity) or
-       (not FAniCalculations.Animation) then
+    if FMouseEvents and FAniCalculations.Down and ((FAniCalculations.LowVelocity) or
+       (not FAniCalculations.Animation)) then
       FAniCalculations.Shown := False;
   end;
 end;

@@ -3020,20 +3020,22 @@ begin
   {$IFDEF NEXTGEN}
   if (Assigned(FAdjuestItem) or Assigned(FHotItem)) then
     FAniCalculations.Down := False;
+  AniMouseUp(True, X, Y);
   inherited MouseUp(Button, Shift, X, Y);
   {$ELSE}
+  //
   if DragScroll and Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
-    Sleep(10);
-    P := LocalToScreen(FDownPos);
-    P := FPointTarget.ScreenToLocal(P);
-    FPointTarget.MouseUp(Button, Shift, P.X, P.Y);
 
     if (Button = TMouseButton.mbLeft) then begin
       FMovePos := TPointF.Zero;
       AniMouseUp(True, X, Y);
     end;
 
-    inherited MouseUp(Button, Shift, X, Y);
+    P := LocalToScreen(FDownPos);
+    P := FPointTarget.ScreenToLocal(P);
+    FPointTarget.MouseUp(Button, Shift, P.X, P.Y);
+    FAniCalculations.Down := False;
+    //inherited MouseUp(Button, Shift, X, Y);
   end else begin
     if DragScroll and (Assigned(FAdjuestItem) or Assigned(FHotItem)) then
       FAniCalculations.Down := False;
