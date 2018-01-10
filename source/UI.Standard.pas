@@ -2178,11 +2178,11 @@ end;
 procedure TScrollView.DoMouseLeave;
 begin
   inherited DoMouseLeave;
-  if Assigned(FAniCalculations) then
+  if FMouseEvents and Assigned(FAniCalculations) and FAniCalculations.Down then
   begin
     FAniCalculations.MouseLeave;
-    if FMouseEvents and FAniCalculations.Down and ((FAniCalculations.LowVelocity) or
-       (not FAniCalculations.Animation)) then
+    if (FAniCalculations.LowVelocity) or
+       (not FAniCalculations.Animation) then
       FAniCalculations.Shown := False;
   end;
 end;
