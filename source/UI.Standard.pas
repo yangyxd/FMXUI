@@ -2047,10 +2047,8 @@ begin
   FAniCalculations.MouseUp(X, Y);
   if (FAniCalculations.LowVelocity) or (not FAniCalculations.Animation) then
     FAniCalculations.Shown := False;
-  if FDragOneWay then begin
+  if FDragOneWay then
     FAniCalculations.TouchTracking := FLastTouchTracking;
-    FLastTouchTracking := [];
-  end;
 end;
 
 procedure TScrollView.AniVScrollTo(const AOffset: Single;
@@ -2178,11 +2176,10 @@ end;
 procedure TScrollView.DoMouseLeave;
 begin
   inherited DoMouseLeave;
-  if FMouseEvents and Assigned(FAniCalculations) and FAniCalculations.Down then
+  if Assigned(FAniCalculations) then
   begin
     FAniCalculations.MouseLeave;
-    if (FAniCalculations.LowVelocity) or
-       (not FAniCalculations.Animation) then
+    if FMouseEvents and FAniCalculations.Down and ((FAniCalculations.LowVelocity) or (not FAniCalculations.Animation)) then
       FAniCalculations.Shown := False;
   end;
 end;
@@ -5700,18 +5697,17 @@ begin
     FDownPos.Y := Y;
     FMovePos := FDownPos;
     AniMouseDown(True, X, Y);
-
     if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
+      FMouseDown := False;
       TFrameAnimator.DelayExecute(Self,
         procedure (Sender: TObject)
         var
           P: TPointF;
         begin
           try
-            if FMovePos <> FDownPos then Exit;
+            if (FMovePos <> FDownPos) or (FMouseDown) then Exit;
             if Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
               P := (FPointTarget as TControl).AbsoluteToLocal(LocalToAbsolute(PointF(X, Y)));
-              FMouseDown := True;
               FPointTarget.MouseDown(Button, Shift, P.X, P.Y);
             end;
           except
