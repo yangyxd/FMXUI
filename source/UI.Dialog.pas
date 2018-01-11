@@ -1414,7 +1414,7 @@ var
     if (Owner is TFrame) then LFrame := TFrame(Owner) else LFrame := nil;
     if Assigned(AniView) and Assigned(FViewRoot) then begin
       if IsIn then begin
-        NewValue := Round(AniView.Position.X);
+        NewValue := AniView.Position.X;
         AniView.Position.X := -FViewRoot.Width + 1;
         TFrameAnimator.AnimateFloat(AniView, 'Position.X', NewValue, AEvent);
 
