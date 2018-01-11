@@ -1414,7 +1414,7 @@ var
     if (Owner is TFrame) then LFrame := TFrame(Owner) else LFrame := nil;
     if Assigned(AniView) and Assigned(FViewRoot) then begin
       if IsIn then begin
-        NewValue := AniView.Position.X;
+        NewValue := Round(AniView.Position.X);
         AniView.Position.X := -FViewRoot.Width + 1;
         TFrameAnimator.AnimateFloat(AniView, 'Position.X', NewValue, AEvent);
 
@@ -1427,7 +1427,7 @@ var
         TFrameAnimator.AnimateFloat(AniView, 'Position.X', NewValue, AEvent, 0.15);
 
         if Assigned(LFrame) then
-          TAnimator.AnimateFloatWait(LFrame, 'Position.X', FTempValue, 0.15);
+          TFrameAnimator.AnimateFloat(LFrame, 'Position.X', FTempValue, nil, 0.15);
       end;
     end;
   end;
@@ -1454,7 +1454,7 @@ var
         TFrameAnimator.AnimateFloat(AniView, 'Position.X', NewValue, AEvent, 0.15);
 
         if Assigned(LFrame) then
-          TAnimator.AnimateFloatWait(LFrame, 'Position.X', FTempValue, 0.15);
+          TFrameAnimator.AnimateFloat(LFrame, 'Position.X', FTempValue, nil, 0.15);
       end;
     end;
   end;

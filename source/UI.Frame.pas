@@ -568,12 +568,19 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
 
   // 底部移入移出, 右边进入
   procedure DoBottomMoveInOut();
+  var
+    LForm: TCustomForm;
+    Y: Single;
   begin
     if IsIn then begin
       Self.Opacity := 1;
       if not SwitchFlag then begin
         Self.Position.Y := Self.Height;
-        TFrameAnimator.AnimateFloat(Self, 'Position.Y', Self.ParentForm.Padding.Top, AEvent);
+        Y := 0;
+        LForm := Self.ParentForm;
+        if Assigned(LForm) then
+          Y := LForm.Padding.Top;
+        TFrameAnimator.AnimateFloat(Self, 'Position.Y', Y, AEvent);
       end else if Assigned(AEvent) then
         TFrameAnimator.DelayExecute(Self, AEvent, 0.2);
     end else begin

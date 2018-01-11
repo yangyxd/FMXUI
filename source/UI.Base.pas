@@ -9152,7 +9152,8 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
             end;
           end;
           P := P1 + 1;
-          SkipSpace(P);
+          if P1^ <> '>' then
+            SkipSpace(P);
           LS := '';
           LE := '';
           NeedBreak := True;

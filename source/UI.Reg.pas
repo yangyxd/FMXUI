@@ -229,6 +229,7 @@ begin
       'OnResize',
       { TScrollView }
       'ShowScrollBars',
+      'ScrollBars',
       'DragScroll',
       'DragOneWay',
       'ScrollSmallChangeFraction',
@@ -278,6 +279,7 @@ begin
       'OnValidating',
       'OnTyping',
       { TTextView }
+      'HtmlText',
       'Drawable',
       'GroupIndex',
       'OnDrawBackgroud',

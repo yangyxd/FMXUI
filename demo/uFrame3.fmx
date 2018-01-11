@@ -99,8 +99,8 @@ object Frame3: TFrame3
       Position.Y = 77.000000000000000000
       TabOrder = 3
       OnClick = ButtonView2Click
-      Text = 'ButtonView2'
       TextSettings.Gravity = Center
+      HtmlText = #26597#30475'<font color="blue">Android</font>   '#29256#26412
       Drawable.SizeWidth = 24
       Drawable.SizeHeight = 24
       Drawable.ItemDefault.Kind = AccessoryBitmap
