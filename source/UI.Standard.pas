@@ -357,6 +357,7 @@ type
     FMouseEvents: Boolean;
     FScrollStretchStrength: Single;
     //FScrollTrackPressed: Boolean;
+    FScrollStart: Boolean;
     FScrollingStretchGlowColor: TAlphaColor;
     FScrollSmallChangeFraction: Single;    //Animation mouse events
 
@@ -2014,7 +2015,7 @@ begin
 //    FScrollTrackPressed := FScrollV.Pressed or GetScrollPressed
 //  else
 //    FScrollTrackPressed := False;
-  FLastTouchTracking := [];
+  FScrollStart := True;
   FAniCalculations.Averaging := Touch;
   FAniCalculations.MouseDown(X, Y);
 end;
@@ -2025,8 +2026,11 @@ var
 begin
   if FDragOneWay then begin
     // 只允许单向拖动时
-    if FLastTouchTracking = [] then begin
+    if FLastTouchTracking = [] then
       FLastTouchTracking := FAniCalculations.TouchTracking;
+    // 开始滚动时，就决定好方向
+    if FScrollStart then begin
+      FScrollStart := False;
       P := FAniCalculations.DownPoint;
       if Abs(Y - P.Y)  > Abs(X - P.X) then
         FAniCalculations.TouchTracking := [ttVertical]
@@ -2616,7 +2620,7 @@ procedure TScrollView.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
   FMouseEvents := True;
-  inherited;
+  inherited MouseDown(Button, Shift, X, Y);
   if Assigned(FAniCalculations) and (Button = TMouseButton.mbLeft){$IFNDEF NEXTGEN} and (FDragScroll){$ENDIF} then
   begin
     AniMouseDown(ssTouch in Shift, X, Y);

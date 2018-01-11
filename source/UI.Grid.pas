@@ -990,6 +990,8 @@ type
     {$IFNDEF NEXTGEN}
     [Weak] FPointTarget: IControl;
     FMouseEnter: Boolean;
+    {$ELSE}
+    FCanMouseChild: Boolean;
     {$ENDIF}
 
     function ObjectAtPoint(AScreenPoint: TPointF): IControl; override;
@@ -2816,7 +2818,7 @@ var
   I, J, K: Integer;
   H, LH, DH, PH: Double;
 begin
-  inherited;
+  inherited MouseDown(Button, Shift, X, Y);
 
   FDownPos.X := X;
   FDownPos.Y := Y;
@@ -2905,11 +2907,26 @@ begin
       0.05);
 
     end;
+    {$ELSE}
+    FCanMouseChild := False;
+    FMovePos := FDownPos;
+    TFrameAnimator.DelayExecute(Self,
+      procedure (Sender: TObject)
+      var
+        P: TPointF;
+      begin
+        FCanMouseChild := True;
+        if FMovePos <> FDownPos then Exit;
+        P := LocalToScreen(FDownPos);
+        P := FContentViews.ScreenToLocal(P);
+        FContentViews.MouseDown(Button, Shift, P.X, P.Y);
+      end,
+    0.05);
     {$ENDIF}
 
   {$IFDEF NEXTGEN}
   end else begin
-    if DragScroll and (Assigned(FAdjuestItem) or Assigned(FHotItem)) then
+    if (Assigned(FAdjuestItem) or Assigned(FHotItem)) then
       FAniCalculations.Down := False;
   {$ENDIF}
   end;
@@ -2936,6 +2953,8 @@ begin
           FPointTarget.MouseMove(Shift, X, Y);
         end;
     end;
+    {$ELSE}
+    inherited MouseMove(Shift, X, Y);
     {$ENDIF}
 
     if (ssLeft in Shift) then begin
@@ -3125,6 +3144,9 @@ begin
     end else
       FPointTarget := nil;
   end;
+  {$ELSE}
+  if (not FCanMouseChild) and (Result is TGridViewContent) then
+    Result := Self;
   {$ENDIF}
 end;
 
@@ -5074,6 +5096,10 @@ procedure TGridViewContent.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
   inherited;
+  {$IFDEF NEXTGEN}
+  if Assigned(GridView) then
+    GridView.FCanMouseChild := False;
+  {$ENDIF}
 end;
 
 function TGridViewContent.ObjectAtPoint(AScreenPoint: TPointF): IControl;

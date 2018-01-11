@@ -1136,13 +1136,24 @@ type
     property HtmlText: string read FHtmlText write SetHtmlText;
   end;
 
+  TAniCalculationsEx = class (TAniCalculations)
+  private
+    function GetDownPoint: TPointD;
+  public
+    property DownPoint: TPointD read GetDownPoint;
+    property Shown;
+    property MouseTarget;
+    property MinTarget;
+    property MaxTarget;
+    property Target;
+  end;
+
   /// <summary>
   /// ¹ö¶¯¶¯»­¿ØÖÆÆ÷
   /// </summary>
-  TScrollCalculations = class (TAniCalculations)
+  TScrollCalculations = class (TAniCalculationsEx)
   private
     [Weak] FScrollView: TView;
-    function GetDownPoint: TPointD;
   protected
     procedure DoChanged; override;
     procedure DoStart; override;
@@ -1150,12 +1161,6 @@ type
   public
     constructor Create(AOwner: TPersistent); override;
     property ScrollView: TView read FScrollView;
-    property Shown;
-    property MouseTarget;
-    property MinTarget;
-    property MaxTarget;
-    property Target;
-    property DownPoint: TPointD read GetDownPoint;
   end;
 
   TScrollBarHelper = class Helper for TScrollBar
@@ -7526,6 +7531,13 @@ begin
   Result := -1;
 end;
 
+{ TAniCalculationsEx }
+
+function TAniCalculationsEx.GetDownPoint: TPointD;
+begin
+  Result := TView.GetRttiValue<TPointD>(Self, 'FDownPoint');
+end;
+
 { TScrollCalculations }
 
 constructor TScrollCalculations.Create(AOwner: TPersistent);
@@ -7555,11 +7567,6 @@ begin
   inherited;
   if (FScrollView <> nil) and not (csDestroying in FScrollView.ComponentState) then
     FScrollView.StopScrolling;
-end;
-
-function TScrollCalculations.GetDownPoint: TPointD;
-begin
-  Result := TView.GetRttiValue<TPointD>(Self, 'FDownPoint');
 end;
 
 { TScrollBarHelper }

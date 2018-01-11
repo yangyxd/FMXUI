@@ -337,7 +337,9 @@ type
     FDrawable: TCalendarDrawable;
     FDividerBrush: TBrush;
 
-    FAniCalc: TAniCalculations;
+    FAniCalc: TAniCalculationsEx;
+    FCanAniMove: Boolean;
+    FStartScroll: Boolean;
 
     FRowPadding: Single;
     FRowHeihgt: Single;
@@ -863,6 +865,7 @@ begin
     FAniCalc.BoundsAnimation := True;
     FAniCalc.ViewportPositionF := PointF(0, 0);
     FAniCalc.UpdatePosImmediately(True);
+    FAniCalc.TouchTracking := [ttHorizontal];
     FCurHotDate := FAning;
     FAning := 0;
     DoClickEvent;
@@ -932,7 +935,7 @@ begin
 
   FDivider := CDefaultDividerColor;
 
-  FAniCalc := TAniCalculations.Create(nil);
+  FAniCalc := TAniCalculationsEx.Create(nil);
   FAniCalc.ViewportPositionF := PointF(0, 0);
   FAniCalc.Animation := True;
   FAniCalc.Averaging := True;
@@ -1792,16 +1795,35 @@ begin
   FAning := 0;
   FDownX := X;
   FDownTime := GetTimestamp;
+  FStartScroll := True;
+  FCanAniMove := False;
   FAniCalc.MouseDown(x, y);
 end;
 
 procedure TCalendarViewBase.MouseMove(Shift: TShiftState; X, Y: Single);
+
+  function PointF(const P: TPointD): TPointF;
+  begin
+    Result.X := P.X;
+    Result.Y := P.Y;
+  end;
+
 var
   P: TPointF;
   ID, LX, LY: Integer;
 begin
   if (csDesigning in ComponentState) or (ssLeft in Shift) or (ssRight in Shift) then begin
-    FAniCalc.MouseMove(x, y);
+    if FStartScroll then begin
+      FStartScroll := False;
+      P := PointF(FAniCalc.DownPoint);
+      if Abs(Y - P.Y)  > Abs(X - P.X) then
+        FCanAniMove := False
+      else
+        FCanAniMove := True;
+      FAniCalc.Shown := False;
+    end;
+    if FCanAniMove then
+      FAniCalc.MouseMove(x, y);
     inherited;
     Exit;
   end;
@@ -1956,7 +1978,10 @@ begin
   if Assigned(FBackground) then
     FBackground.Draw(Canvas);
 
-  FCurState.XOffset :=  -FAniCalc.ViewportPosition.X;
+  if FCanAniMove then
+    FCurState.XOffset := -FAniCalc.ViewportPosition.X
+  else
+    FCurState.XOffset := 0;
   if FCurState.XOffset <> 0 then begin
     W := Width;
     if Abs(FCurState.XOffset) > W then begin
