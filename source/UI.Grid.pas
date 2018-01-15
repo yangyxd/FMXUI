@@ -6993,11 +6993,11 @@ begin
       end;
 
     end;
-
     Dataset.Filtered := False;
     Dataset.Filter := '';
   finally
     EndUpdate;
+    FColumns.UpdateWeight;
   end;   
 end;
 
