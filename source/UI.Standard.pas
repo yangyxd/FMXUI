@@ -1442,6 +1442,7 @@ end;
 procedure TTextView.DoPaintText(var R: TRectF);
 var
   SR: TRectF;
+  LState: TViewState;
 begin
   if InVisible then
     Exit;
@@ -1482,10 +1483,13 @@ begin
     if Assigned(FOnDrawText) then
       FOnDrawText(Self, Canvas, FText, SR)
     else begin
+      LState := DrawState;
+      if (LState <> TViewState.None) and Checked and (FText.Color.GetColor(LState) = 0) then
+        LState := TViewState.Checked;
       if Assigned(FHtmlText) then
-        FHtmlText.Draw(Canvas, FText, SR, GetAbsoluteOpacity, DrawState)
+        FHtmlText.Draw(Canvas, FText, SR, GetAbsoluteOpacity, LState)
       else
-        FText.Draw(Canvas, SR, GetAbsoluteOpacity, DrawState);
+        FText.Draw(Canvas, SR, GetAbsoluteOpacity, LState);
     end;
   end;
 end;

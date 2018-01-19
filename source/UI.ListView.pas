@@ -246,6 +246,8 @@ type
     /// 当前真实显示的列宽
     /// </summary>
     property AbsoluteColumnWidth: Single read GetAbsoluteColumnWidth;
+
+    property State: TListViewState read FState;
   end;
 
   /// <summary>
