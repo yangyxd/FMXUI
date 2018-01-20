@@ -226,6 +226,8 @@ type
     /// </summary>
     procedure RemoveFooterView();
 
+    procedure PullRefreshStart;
+
     /// <summary>
     /// 当前显示的首行索引号
     /// </summary>
@@ -247,7 +249,7 @@ type
     /// </summary>
     property AbsoluteColumnWidth: Single read GetAbsoluteColumnWidth;
 
-    property State: TListViewState read FState;
+    property State: TListViewState read FState write FState;
   end;
 
   /// <summary>
@@ -524,8 +526,8 @@ type
   protected
     { IListAdapter }
     function GetCount: Integer; virtual; abstract;
-    function GetItem(const Index: Integer): Pointer; virtual; abstract;
-    function IndexOf(const AItem: Pointer): Integer; virtual; abstract;
+    function GetItem(const Index: Integer): Pointer; virtual;
+    function IndexOf(const AItem: Pointer): Integer; virtual;
     function GetView(const Index: Integer; ConvertView: TViewBase; Parent: TViewGroup): TViewBase; virtual; abstract;
   public
     constructor Create();
@@ -1177,40 +1179,42 @@ begin
     SetLength(FItemsPoints, I);
 
   FContentBounds^ := TRectD.Empty;
-  if Length(FItemsPoints) = 0 then
-    Exit;
-
-  ItemDefaultH := FAdapter.ItemDefaultHeight;
+  H := 0;
   DividerH := GetDividerHeight;
 
-  // 计算出高度
-  H := 0;
-  LColCount := FContentViews.AbsoluteColumnCount;
-  if LColCount > 1 then begin
-    MH := 0;
-    for I := 0 to FCount - 1 do begin
-      MH := Max(FItemsPoints[i].H, MH);
-      if (I > 0) and ((I + 1) mod LColCount = 0) then begin
+  if Length(FItemsPoints) > 0 then begin
+
+    ItemDefaultH := FAdapter.ItemDefaultHeight;
+
+    // 计算出高度
+    LColCount := FContentViews.AbsoluteColumnCount;
+    if LColCount > 1 then begin
+      MH := 0;
+      for I := 0 to FCount - 1 do begin
+        MH := Max(FItemsPoints[i].H, MH);
+        if (I > 0) and ((I + 1) mod LColCount = 0) then begin
+          if MH = 0 then
+            H := H + DividerH + ItemDefaultH
+          else
+            H := H + DividerH + MH;
+          MH := 0;
+        end;
+      end;
+      if FCount mod LColCount > 0 then begin
         if MH = 0 then
           H := H + DividerH + ItemDefaultH
         else
           H := H + DividerH + MH;
-        MH := 0;
+      end;
+    end else begin
+      for I := 0 to FCount - 1 do begin
+        if FItemsPoints[i].H = 0 then
+          H := H + DividerH + ItemDefaultH
+        else
+          H := H + DividerH + FItemsPoints[i].H;
       end;
     end;
-    if FCount mod LColCount > 0 then begin
-      if MH = 0 then
-        H := H + DividerH + ItemDefaultH
-      else
-        H := H + DividerH + MH;
-    end;
-  end else begin
-    for I := 0 to FCount - 1 do begin
-      if FItemsPoints[i].H = 0 then
-        H := H + DividerH + ItemDefaultH
-      else
-        H := H + DividerH + FItemsPoints[i].H;
-    end;
+
   end;
 
   FContentBounds.Right := FContentViews.Width;
@@ -1843,20 +1847,40 @@ begin
             if Assigned(FHeader) then
               H := (FHeader as TControl).Height;
             if H > 0 then begin
-              FHeader.DoUpdateState(TListViewState.None, 0);
+//              FHeader.DoUpdateState(TListViewState.None, 0);
+//
+//              ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - H;
+//              ListView.DoUpdateScrollingLimits(True, 0);
+//
+//              FState := TListViewState.None;
+//              FLastScrollValue := FLastScrollValue - H;
+//              ListView.VScrollBarValue := ListView.VScrollBarValue - H;
 
               ListView.FContentBounds.Bottom := ListView.FContentBounds.Bottom - H;
               ListView.DoUpdateScrollingLimits(True, 0);
 
-              FState := TListViewState.None;
+              FState := TListViewState.PullChangeing;
               FLastScrollValue := FLastScrollValue - H;
               ListView.VScrollBarValue := ListView.VScrollBarValue - H;
+
+              TFrameAnimator.DelayExecute(FHeader as TControl,
+                procedure (Sender: TObject)
+                begin
+                  try
+                    if (FState = TListViewState.PullChangeing) then begin
+                      FState := TListViewState.None;
+                      FHeader.DoUpdateState(TListViewState.None, 0);
+                    end;
+                  except
+                  end;
+                end
+              , 0.15);
             end;
           end;
         except
         end;
       end
-    , 0.5);
+    , 0.3);
   end;
 end;
 
@@ -2644,7 +2668,8 @@ begin
   if (FCount = 0) then begin
     if Assigned(FFooter) then
       (FFooter as TControl).Visible := False;
-    Exit;
+    if not Assigned(FHeader) then
+      Exit;
   end;
 
   LDisablePaint := FDisablePaint;
@@ -2711,6 +2736,12 @@ begin
   LS.Adjust := 0;
   LS.Left := 0;
   LS.OnItemMeasureHeight := ListView.FOnItemMeasureHeight;
+
+  // 修正向上拉出全部区域后，回弹时显示错误的问题
+  if LS.ScrollValue = 0 then begin
+    FFirstRowIndex := 0;
+    LS.MoveSpace := 0;
+  end;
 
   BeginUpdate;
   try
@@ -2950,6 +2981,16 @@ begin
     DrawDivider(Canvas);
 end;
 
+procedure TListViewContent.PullRefreshStart;
+begin
+  if not Assigned(FHeader) then
+    Exit;
+  ListView.VScrollBarValue := ListView.VScrollBarValue + (FHeader as TControl).Height;
+  FHeader.DoUpdateState(TListViewState.PullDownFinish, 0);
+  FState := TListViewState.PullDownFinish;
+  DoRealign;
+end;
+
 procedure TListViewContent.RemoveFooterView;
 begin
   if Assigned(FFooterView) then begin
@@ -2998,6 +3039,11 @@ procedure TListAdapterBase.DoInitData;
 begin
 end;
 
+function TListAdapterBase.GetItem(const Index: Integer): Pointer;
+begin
+  Result := Pointer(Index);
+end;
+
 function TListAdapterBase.GetItemID(const Index: Integer): Int64;
 begin
   Result := Index;
@@ -3006,6 +3052,11 @@ end;
 function TListAdapterBase.GetItemViewType(const Index: Integer): Integer;
 begin
   Result := ListViewType_Default;
+end;
+
+function TListAdapterBase.IndexOf(const AItem: Pointer): Integer;
+begin
+  Result := -1;
 end;
 
 function TListAdapterBase.IsEmpty: Boolean;

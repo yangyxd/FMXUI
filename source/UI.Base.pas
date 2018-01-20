@@ -136,7 +136,7 @@ type
   /// <summary>
   /// 列表视图状态
   /// </summary>
-  TListViewState = (None {无},
+  TListViewState = (None {无},  PullChangeing,
     PullDownStart {下拉开始}, PullDownOK {下拉到位}, PullDownFinish {下拉松开}, PullDownComplete {下拉完成},
     PullUpStart {上拉开始}, PullUpOK {下拉到位}, PullUpFinish {上拉松开}, PullUpComplete {上拉完成}
   );
