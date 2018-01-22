@@ -560,7 +560,9 @@ var
   O: TObject;
 begin
   SetLength(FCmdIndex, 20);
-  if (Component is TControl) and (TControl(Component).Parent is TLinearLayout) then begin
+  if (Component is TControl) and ((TControl(Component).Parent is TLinearLayout) or
+    (TControl(Component).Parent is TGridsLayout)) then
+  begin
     Result := 4;
     FCmdIndex[0] := 0;
     FCmdIndex[1] := 1;
