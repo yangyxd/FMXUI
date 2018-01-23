@@ -686,6 +686,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Clear;
+    procedure DeleteSelf;
 
     procedure Add(const ANode: TTreeListNode<T>);
     procedure Remove(const ANode: TTreeListNode<T>);
@@ -708,13 +709,13 @@ type
   /// </summary>
   TCustomTreeListDataAdapter<T> = class(TListAdapterBase)
   private
-    FRoot: TTreeListNode<T>;
-    FList: TList<TTreeListNode<T>>;
     FUpdateRef: Integer;
     function GetNodes(const Index: Integer): TTreeListNode<T>;
     function GetNodeCount: Integer;
     procedure AddListItem(const Parent: TTreeListNode<T>);
   protected
+    FRoot: TTreeListNode<T>;
+    FList: TList<TTreeListNode<T>>;
     function GetCount: Integer; override;
     function GetItem(const Index: Integer): Pointer; override;
     function IndexOf(const AItem: Pointer): Integer; override;
@@ -3557,6 +3558,12 @@ begin
     FNodes := TList<TTreeListNode<T>>.Create;
     FNodes.OnNotify := DoNodeNotify;
   end;
+end;
+
+procedure TTreeListNode<T>.DeleteSelf;
+begin
+  if Assigned(FParent) then
+    FParent.Remove(Self);
 end;
 
 destructor TTreeListNode<T>.Destroy;
