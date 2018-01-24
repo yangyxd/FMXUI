@@ -155,7 +155,7 @@ type
     function Write(const Buffer; Count: Longint): Longint; override;
   end;
 
-function TPointerStream.Write(const Buffer; Count: Integer): Longint;
+function TPointerStream.Write(const Buffer; Count: Longint): Longint;
 begin
   Result := 0;
 end;
@@ -195,6 +195,8 @@ var
   ps: PWideChar;
   {$IFDEF MSWINDOWS}
   len: Integer;
+  {$ELSE}
+  buf: TBytes;
   {$ENDIF}
 begin
   if l<=0 then begin
@@ -208,10 +210,9 @@ begin
     SetLength(Result, len);
     WideCharToMultiByte(CP_ACP,0,p,l,PAnsiChar(Result), len, nil, nil);
     {$ELSE}
-    Result.Length:= l shl 1;
-    Result.FValue[0]:=0;
-    Move(p^,PAnsiChar(Result)^, l shl 1);
-    Result := TEncoding.Convert(TEncoding.Unicode, TEncoding.GetEncoding('GB2312'), Result.FValue, 1, l shl 1);
+    SetLength(buf, l shl 1);
+    Move(p^, buf[0], l shl 1);
+    Result := TEncoding.Convert(TEncoding.Unicode, TEncoding.ANSI, buf, 1, l shl 1);
     {$ENDIF}
   end else
     SetLength(Result, 0);
