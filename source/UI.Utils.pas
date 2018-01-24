@@ -452,7 +452,7 @@ begin
   P := PChar(Value);
   if (P^ <> '1') then Exit;
   Inc(P);
-  if not P^.IsInArray(['3', '4','5', '7', '8']) then Exit;
+  if not P^.IsInArray(['3', '4','5', '6', '7', '8', '9']) then Exit;
   //if not System.SysUtils.CharInSet(P^, ['3', '4','5', '7', '8']) then Exit;
   //if not (P^ in ['3', '4','5', '7', '8']) then Exit;
   Inc(P);
