@@ -15,6 +15,7 @@ uses
   FMX.Effects, FMX.Text, FMX.Pickers,
   {$IFDEF MSWINDOWS}Windows, UI.Debug, {$ENDIF}
   {$IFDEF MSWINDOWS} FMX.DateTimeCtrls, {$ENDIF}
+  {$IFDEF MACOS}FMX.DateTimeCtrls, {$ENDIF}
   FMX.Objects, System.Math, System.Actions, System.DateUtils, FMX.Consts,
   System.TypInfo, FMX.Graphics, System.Generics.Collections, FMX.TextLayout,
   System.Classes, System.Types, System.UITypes, System.SysUtils, System.Math.Vectors,

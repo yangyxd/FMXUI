@@ -33,6 +33,16 @@ uses
   iOSapi.CoreGraphics,
   Macapi.Helpers,
   FMX.Helpers.iOS,
+  {$ELSE}
+  {$IFDEF MACOS}
+  Macapi.ObjectiveC,
+  Macapi.CocoaTypes,
+  Macapi.Foundation,
+  Macapi.CoreGraphics,
+  Macapi.Helpers,
+  Macapi.AppKit,
+  FMX.Helpers.Mac,
+  {$ENDIF}
   {$ENDIF}
   FMX.BehaviorManager,
   System.NetEncoding,
@@ -594,11 +604,20 @@ begin
   else
     Result := False;
 end;
+{$ELSE} {$IFDEF MACOS}
+var
+  NSU: NSUrl;
+  Workspace : NSWorkspace;
+begin
+  NSU := StrToNSUrl(URL);
+  Workspace := TNSWorkspace.Create;
+  exit(Workspace.openURL(NSU));
+end;
 {$ELSE}
 begin
   Result := ShellExecute(0, 'OPEN', PChar(URL), nil, nil, SW_SHOWMAXIMIZED) > 32;
 end;
-{$ENDIF IOS}{$ENDIF ANDROID}
+{$ENDIF MACOS}{$ENDIF IOS}{$ENDIF ANDROID}
 
 procedure Share(const AControl: TControl; const Title, Msg: string);
 

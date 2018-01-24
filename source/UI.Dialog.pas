@@ -82,6 +82,10 @@ const
   {$ENDIF}
   {$IFDEF IOS}
   COLOR_ProcessBackgroundColor = $80000000;
+  {$ELSE}
+  {$IFDEF MACOS}
+  COLOR_ProcessBackgroundColor = $80000000;
+  {$ENDIF}
   {$ENDIF}
   {$IFDEF ANDROID}
   COLOR_ProcessBackgroundColor = $7f000000;
