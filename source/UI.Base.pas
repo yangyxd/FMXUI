@@ -1430,6 +1430,10 @@ type
     procedure Invalidate;
     procedure DoResize;
 
+    {$IFDEF ANDROID}
+    class function AppContext: JContext;
+    {$ENDIF}
+
     procedure SetBackground(const Value: TDrawable); overload;
     procedure SetBackground(const Value: TAlphaColor); overload;
     procedure SetBackground(const Value: TGradient); overload;
@@ -4270,6 +4274,17 @@ begin
     FInvaliding := True;
   end;
 end;
+
+{$IFDEF ANDROID}
+class function TView.AppContext: JContext;
+begin
+  {$IF CompilerVersion > 27}
+  Result := TAndroidHelper.Context;
+  {$ELSE}
+  Result := SharedActivityContext;
+  {$ENDIF}
+end;
+{$ENDIF}
 
 class procedure TView.InvokeMethod(Instance: TObject; const Name: string;
   const Args: array of TValue);
