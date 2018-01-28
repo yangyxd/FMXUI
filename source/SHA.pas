@@ -204,7 +204,7 @@ begin
     while ps^<>#0 do Inc(ps);
     l:=ps-p;
   end;
-  if l>0 then  begin
+  if l > 0 then  begin
     {$IFDEF MSWINDOWS}
     len := WideCharToMultiByte(CP_ACP,0,p,l,nil,0,nil,nil);
     SetLength(Result, len);
@@ -212,7 +212,7 @@ begin
     {$ELSE}
     SetLength(buf, l shl 1);
     Move(p^, buf[0], l shl 1);
-    Result := TEncoding.Convert(TEncoding.Unicode, TEncoding.ANSI, buf, 1, l shl 1);
+    Result := TEncoding.Convert(TEncoding.Unicode, TEncoding.ANSI, buf);
     {$ENDIF}
   end else
     SetLength(Result, 0);
