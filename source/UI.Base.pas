@@ -90,7 +90,7 @@ type
   /// <summary>
   /// 附件样式
   /// </summary>
-  TViewAccessoryStyle = (Accessory, Icon, Path);
+  TViewAccessoryStyle = (Accessory, Path);
 
   /// <summary>
   /// 附图类型
@@ -100,22 +100,9 @@ type
     Next, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Reply,
     Search, Bookmarks, Trash, Organize, Camera, Compose, Info,
     Pagecurl, Details, RadioButton, RadioButtonChecked, CheckBox,
-    CheckBoxChecked, UserDefined1, UserDefined2, UserDefined3);
-
-  /// <summary>
-  /// 常用 Icon 类型
-  /// </summary>
-  TViewIconType = (
-    None, AlarmClock, BarChart, Barcode, Bell, BookCover, BookCoverMinus, BookCoverPlus, BookMark, BookOpen,
-    Calendar, Camera, Car, Clock, CloudDownload, CloudUpload, Cross, Document, Download, Earth, Email,
-    Fax, FileList, FileMinus, FilePlus, Files, FileStar, FileTick, Flag, Folder, FolderMinus,
-    FolderPlus, FolderStar, Home, Inbox, Incoming, ListBullets, ListCheckBoxes, ListImages, ListNumbered, ListTicked,
-    Location, More, Note, Outgoing,
-    PaperClip, Photo, PieChart, Pin, Presentation, Search, Settings, Share, ShoppingCart, Spanner, Speaker,
-    Star, Tablet, Tag, Telephone, Telephone2, TelephoneBook, Tick, Timer, Trash, Upload,
-    User, UserEdit, UserGroup, Users, UserSearch,
-    VideoCamera, VideoPlayer, Viewer,
-    Wifi, Window, Write);
+    CheckBoxChecked, User, Password, Down, Exit, Finish, Calendar, Cross, Menu,
+    About, Share, UserMsg, Cart, Setting, Edit, Home, Heart,
+    UserDefined1, UserDefined2, UserDefined3);
 
   TPatchBounds = class(TBounds);
 
@@ -174,13 +161,13 @@ type
     FImageMap: TBitmap;
     FActiveStyle: TFmxObject;
   protected
-    procedure AddEllipsesAccessory;
-    procedure AddFlagAccessory;
+    //procedure AddFlagAccessory;
     procedure AddBackAccessory;
-    procedure AddMoreAccessory;
+    procedure AddAddAccessory;
     procedure AddRefreshAccessory;
     procedure CalculateImageScale;
     function GetAccessoryFromResource(const AStyleName: string; const AState: string = ''): TBitmap;
+    function LoadFromResource(const AStyleName: string): TBitmap;
     procedure Initialize;
   public
     constructor Create;
@@ -220,7 +207,6 @@ type
 
   TViewAccessory = class(TPersistent)
   private
-    FIcon: TViewIconType;
     FStyle: TViewAccessoryStyle;
     FAccessoryType: TViewAccessoryType;
     FAccessoryColor: TAlphaColor;
@@ -230,13 +216,11 @@ type
     procedure SetAccessoryType(const Value: TViewAccessoryType);
     procedure SetAccessoryColor(const Value: TAlphaColor);
     function GetIsEmpty: Boolean;
-    procedure SetIcon(const Value: TViewIconType);
     procedure SetStyle(const Value: TViewAccessoryStyle);
     function GetPathData: string;
     procedure SetPathData(const Value: string);
   protected
     procedure DoChanged();
-    procedure DoIconChanged();
     procedure DoPathChanged(Sender: TObject);
   public
     constructor Create;
@@ -246,7 +230,6 @@ type
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
   published
     property Accessory: TViewAccessoryType read FAccessoryType write SetAccessoryType default TViewAccessoryType.None;
-    property Icon: TViewIconType read FIcon write SetIcon default TViewIconType.None;
     property Color: TAlphaColor read FAccessoryColor write SetAccessoryColor default TAlphaColorRec.White;
     property PathData: string read GetPathData write SetPathData;
     property Style: TViewAccessoryStyle read FStyle write SetStyle default TViewAccessoryStyle.Accessory;
@@ -2511,7 +2494,7 @@ begin
       if Assigned(TViewBrushBase(ABrush).FAccessory) then begin
         Bmp := TViewBrushBase(ABrush).FAccessory.FAccessoryBmp;
         if Assigned(Bmp) then
-          Canvas.DrawBitmap(Bmp, RectF(0, 0, Bmp.Width, Bmp.Height), ARect, AOpacity, True);
+          Canvas.DrawBitmap(Bmp, RectF(0, 0, Bmp.Width, Bmp.Height), Canvas.AlignToPixel(ARect), AOpacity);
       end;
     end else if Ord(ABrush.Kind) = Ord(TViewBrushKind.SVGImage) then begin
       if Assigned(TViewBrushBase(ABrush).FSvgImage) then begin
@@ -2519,7 +2502,7 @@ begin
           TViewBrushBase(ABrush).FSvgImage.SetSize(Round(ARect.Width * GetScreenScale), Round(ARect.Height * GetScreenScale));
         Bmp := TViewBrushBase(ABrush).FSvgImage.Bitmap;
         if Assigned(Bmp) then
-          Canvas.DrawBitmap(Bmp, RectF(0, 0, Bmp.Width, Bmp.Height), ARect, AOpacity, True);
+          Canvas.DrawBitmap(Bmp, RectF(0, 0, Bmp.Width, Bmp.Height), ARect, AOpacity);
       end;
     end else
       Canvas.FillRect(ARect, XRadius, YRadius, ACorners, AOpacity, ABrush, ACornerType);
@@ -7128,6 +7111,11 @@ end;
 
 { TViewAccessoryImageList }
 
+procedure TViewAccessoryImageList.AddAddAccessory;
+begin
+  AddPath('M1024 472.436364H549.236364V0h-76.8v472.436364H0v76.8h472.436364V1024h76.8V549.236364H1024z', 1024, 1024);
+end;
+
 procedure TViewAccessoryImageList.AddBackAccessory;
 begin
   AddPath('M360.44 511.971l442.598-422.3c21.503-20.53 21.503-53.782 0-74.286-21.477-20.505-56.316-20.505-77.794 '+
@@ -7135,6 +7123,7 @@ begin
     '21.477-53.758 0-74.237L360.439 511.971z', 1024, 1024);
 end;
 
+{
 procedure TViewAccessoryImageList.AddEllipsesAccessory;
 var
   AAcc: TBitmap;
@@ -7163,7 +7152,9 @@ begin
   end;
   Add(AAcc);
 end;
+}
 
+{
 procedure TViewAccessoryImageList.AddFlagAccessory;
 var
   AAcc: TBitmap;
@@ -7199,12 +7190,7 @@ begin
   end;
   Add(AAcc);
 end;
-
-procedure TViewAccessoryImageList.AddMoreAccessory;
-begin
-  AddPath('M744.942345 542.72l37.428965-37.428966L308.047448 30.896552 258.048 '+
-    '80.825379 682.548966 505.291034 233.083586 954.721103l49.964138 49.928828 461.894621-461.894621z',1024, 1024);
-end;
+}
 
 procedure TViewAccessoryImageList.AddPath(const PathData: string;const SW, SH: Single);
 
@@ -7415,44 +7401,80 @@ begin
   begin
     case ICount of
       TViewAccessoryType.None: Add(GetAccessoryFromResource('none'));
-      TViewAccessoryType.More: AddMoreAccessory;
-      TViewAccessoryType.Checkmark: Add(GetAccessoryFromResource('listviewstyle.accessorycheckmark'));
+      TViewAccessoryType.More: Add(LoadFromResource('ICON_More'));
+      TViewAccessoryType.Checkmark: Add(LoadFromResource('ICON_Checkmark')); //Add(GetAccessoryFromResource('listviewstyle.accessorycheckmark'));
       TViewAccessoryType.Detail: Add(GetAccessoryFromResource('listviewstyle.accessorydetail'));
-      TViewAccessoryType.Ellipses: AddEllipsesAccessory;
-      TViewAccessoryType.Flag: AddFlagAccessory;
+      TViewAccessoryType.Ellipses: Add(LoadFromResource('ICON_Ellipses')); //AddEllipsesAccessory;
+      TViewAccessoryType.Flag: Add(LoadFromResource('icon_Flag')); //AddFlagAccessory;
       TViewAccessoryType.Back: AddBackAccessory;// Add(GetAccessoryFromResource('backtoolbutton.icon'));
-      TViewAccessoryType.Refresh: Add(GetAccessoryFromResource('refreshtoolbutton.icon'));
+      TViewAccessoryType.Refresh: Add(LoadFromResource('ICON_REFRESH')); // Add(GetAccessoryFromResource('refreshtoolbutton.icon'));
       TViewAccessoryType.Action: Add(GetAccessoryFromResource('actiontoolbutton.icon'));
       TViewAccessoryType.Play: Add(GetAccessoryFromResource('playtoolbutton.icon'));
       TViewAccessoryType.Rewind: Add(GetAccessoryFromResource('rewindtoolbutton.icon'));
       TViewAccessoryType.Forwards: Add(GetAccessoryFromResource('forwardtoolbutton.icon'));
       TViewAccessoryType.Pause: Add(GetAccessoryFromResource('pausetoolbutton.icon'));
-      TViewAccessoryType.Stop: Add(GetAccessoryFromResource('stoptoolbutton.icon'));
-      TViewAccessoryType.Add: Add(GetAccessoryFromResource('addtoolbutton.icon'));
-      TViewAccessoryType.Prior: Add(GetAccessoryFromResource('priortoolbutton.icon'));
-      TViewAccessoryType.Next: Add(GetAccessoryFromResource('nexttoolbutton.icon'));
-      TViewAccessoryType.ArrowUp: Add(GetAccessoryFromResource('arrowuptoolbutton.icon'));
-      TViewAccessoryType.ArrowDown: Add(GetAccessoryFromResource('arrowdowntoolbutton.icon'));
-      TViewAccessoryType.ArrowLeft: Add(GetAccessoryFromResource('arrowlefttoolbutton.icon'));
-      TViewAccessoryType.ArrowRight: Add(GetAccessoryFromResource('arrowrighttoolbutton.icon'));
-      TViewAccessoryType.Reply: Add(GetAccessoryFromResource('replytoolbutton.icon'));
-      TViewAccessoryType.Search: Add(GetAccessoryFromResource('searchtoolbutton.icon'));
-      TViewAccessoryType.Bookmarks: Add(GetAccessoryFromResource('bookmarkstoolbutton.icon'));
-      TViewAccessoryType.Trash: Add(GetAccessoryFromResource('trashtoolbutton.icon'));
-      TViewAccessoryType.Organize: Add(GetAccessoryFromResource('organizetoolbutton.icon'));
-      TViewAccessoryType.Camera: Add(GetAccessoryFromResource('cameratoolbutton.icon'));
+      TViewAccessoryType.Stop: Add(LoadFromResource('ICON_STOP')); // Add(GetAccessoryFromResource('stoptoolbutton.icon'));
+      TViewAccessoryType.Add: Add(LoadFromResource('ICON_ADD')); // AddAddAccessory; // Add(GetAccessoryFromResource('addtoolbutton.icon'));
+      TViewAccessoryType.Prior: Add(LoadFromResource('ICON_PRIOR'));// Add(GetAccessoryFromResource('priortoolbutton.icon'));
+      TViewAccessoryType.Next: Add(LoadFromResource('ICON_NEXT'));// Add(GetAccessoryFromResource('nexttoolbutton.icon'));
+      TViewAccessoryType.ArrowUp: Add(LoadFromResource('ICON_ARROWUP')); //Add(GetAccessoryFromResource('arrowuptoolbutton.icon'));
+      TViewAccessoryType.ArrowDown: Add(LoadFromResource('ICON_ARROWDOWN'));// Add(GetAccessoryFromResource('arrowdowntoolbutton.icon'));
+      TViewAccessoryType.ArrowLeft: Add(LoadFromResource('ICON_ARROWLEFT')); // Add(GetAccessoryFromResource('arrowlefttoolbutton.icon'));
+      TViewAccessoryType.ArrowRight: Add(LoadFromResource('ICON_ARROWRIGHT')); //Add(GetAccessoryFromResource('arrowrighttoolbutton.icon'));
+      TViewAccessoryType.Reply: Add(LoadFromResource('ICON_REPLY')); // Add(GetAccessoryFromResource('replytoolbutton.icon'));
+      TViewAccessoryType.Search: Add(LoadFromResource('ICON_SEARCH'));// Add(GetAccessoryFromResource('searchtoolbutton.icon'));
+      TViewAccessoryType.Bookmarks: Add(LoadFromResource('ICON_BOOKMARKS')); // Add(GetAccessoryFromResource('bookmarkstoolbutton.icon'));
+      TViewAccessoryType.Trash: Add(LoadFromResource('ICON_TRASH'));// Add(GetAccessoryFromResource('trashtoolbutton.icon'));
+      TViewAccessoryType.Organize: Add(LoadFromResource('ICON_ORGANIZE'));// Add(GetAccessoryFromResource('organizetoolbutton.icon'));
+      TViewAccessoryType.Camera: Add(LoadFromResource('ICON_CAMERA')); // Add(GetAccessoryFromResource('cameratoolbutton.icon'));
       TViewAccessoryType.Compose: Add(GetAccessoryFromResource('composetoolbutton.icon'));
       TViewAccessoryType.Info: Add(GetAccessoryFromResource('infotoolbutton.icon'));
       TViewAccessoryType.Pagecurl: Add(GetAccessoryFromResource('pagecurltoolbutton.icon'));
       TViewAccessoryType.Details: Add(GetAccessoryFromResource('detailstoolbutton.icon'));
-      TViewAccessoryType.RadioButton: Add(GetAccessoryFromResource('radiobuttonstyle.background'));
-      TViewAccessoryType.RadioButtonChecked: Add(GetAccessoryFromResource('radiobuttonstyle.background', 'checked'));
-      TViewAccessoryType.CheckBox: Add(GetAccessoryFromResource('checkboxstyle.background'));
-      TViewAccessoryType.CheckBoxChecked: Add(GetAccessoryFromResource('checkboxstyle.background', 'checked'));
+      TViewAccessoryType.RadioButton: Add(LoadFromResource('ICON_RADIOBUTTON')); // Add(GetAccessoryFromResource('radiobuttonstyle.background'));
+      TViewAccessoryType.RadioButtonChecked: Add(LoadFromResource('ICON_RADIOBUTTONCHECKED')); // Add(GetAccessoryFromResource('radiobuttonstyle.background', 'checked'));
+      TViewAccessoryType.CheckBox: Add(LoadFromResource('ICON_CheckBox')); // Add(GetAccessoryFromResource('checkboxstyle.background'));
+      TViewAccessoryType.CheckBoxChecked: Add(LoadFromResource('ICON_CheckBoxChecked'));// Add(GetAccessoryFromResource('checkboxstyle.background', 'checked'));
+      TViewAccessoryType.User: Add(LoadFromResource('ICON_User'));
+      TViewAccessoryType.Password: Add(LoadFromResource('ICON_PWD'));
+      TViewAccessoryType.Down: Add(LoadFromResource('ICON_Down'));
+      TViewAccessoryType.Exit: Add(LoadFromResource('ICON_Exit'));
+      TViewAccessoryType.Finish: Add(LoadFromResource('ICON_Finish'));
+      TViewAccessoryType.Calendar: Add(LoadFromResource('ICON_Calendar'));
+      TViewAccessoryType.Cross: Add(LoadFromResource('ICON_Cross'));
+      TViewAccessoryType.Menu: Add(LoadFromResource('ICON_Menu'));
+      TViewAccessoryType.About: Add(LoadFromResource('ICON_About'));
+
+      TViewAccessoryType.Share: Add(LoadFromResource('ICON_Share'));
+      TViewAccessoryType.UserMsg: Add(LoadFromResource('ICON_MESSAGE'));
+      TViewAccessoryType.Cart: Add(LoadFromResource('ICON_Cart'));
+      TViewAccessoryType.Setting: Add(LoadFromResource('ICON_Setting'));
+      TViewAccessoryType.Edit: Add(LoadFromResource('ICON_Edit'));
+      TViewAccessoryType.Home: Add(LoadFromResource('ICON_Home'));
+      TViewAccessoryType.Heart: Add(LoadFromResource('ICON_Heart'));
+
       TViewAccessoryType.UserDefined1: Add(GetAccessoryFromResource('userdefined1'));
       TViewAccessoryType.UserDefined2: Add(GetAccessoryFromResource('userdefined2'));
       TViewAccessoryType.UserDefined3: Add(GetAccessoryFromResource('userdefined3'));
     end;
+  end;
+end;
+
+function TViewAccessoryImageList.LoadFromResource(
+  const AStyleName: string): TBitmap;
+var
+  AImageStream: TResourceStream;
+begin
+  AImageStream := nil;
+  Result := TBitmap.Create;
+  try
+    try
+      AImageStream := TResourceStream.Create(HInstance, AStyleName, RT_RCDATA);
+      Result.LoadFromStream(AImageStream);
+    finally
+      FreeAndNil(AImageStream);
+    end;
+  except
   end;
 end;
 
@@ -9324,17 +9346,8 @@ begin
   if Source is TViewAccessory then begin
     Self.FAccessoryType := TViewAccessory(Source).FAccessoryType;
     Self.FAccessoryColor := TViewAccessory(Source).FAccessoryColor;
-    Self.FIcon := TViewAccessory(Source).FIcon;
     Self.FStyle := TViewAccessory(Source).FStyle;
-
-    if TViewAccessory(Source).FAccessoryBmp = nil then
-      FreeAndNil(Self.FAccessoryBmp)
-    else begin
-      if not Assigned(FAccessoryBmp) then
-        FAccessoryBmp := TBitmap.Create;
-      FAccessoryBmp.Assign(TViewAccessory(Source).FAccessoryBmp);
-    end;
-
+    FreeAndNil(Self.FAccessoryBmp);
     if TViewAccessory(Source).FPathData = nil then
       FreeAndNil(Self.FPathData)
     else begin
@@ -9365,15 +9378,15 @@ end;
 procedure TViewAccessory.DoChanged;
 begin
   case FStyle of
-    TViewAccessoryStyle.Icon:
-      DoIconChanged;
     TViewAccessoryStyle.Path:
       DoPathChanged(Self);
     TViewAccessoryStyle.Accessory:
       begin
         if FAccessoryType <> TViewAccessoryType.None then begin
           if not Assigned(FAccessoryBmp) then
-            FAccessoryBmp := TBitmap.Create;
+            FAccessoryBmp := TBitmap.Create
+          else
+            FAccessoryBmp.Clear(claNull);
           FAccessoryBmp.Assign(FAccessoryImages.GetAccessoryImage(FAccessoryType));
           if FAccessoryColor <> TAlphaColorRec.Null then
             ReplaceOpaqueColor(FAccessoryBmp, FAccessoryColor);
@@ -9383,36 +9396,6 @@ begin
   end;
   if Assigned(FOnChanged) then
     FOnChanged(Self);
-end;
-
-procedure TViewAccessory.DoIconChanged;
-var
-  AStream: TResourceStream;
-  AEnumName: string;
-begin
-  if FIcon = TViewIconType.None then
-    FreeAndNil(FAccessoryBmp)
-  else begin
-    try
-      AEnumName := GetENumName(TypeInfo(TViewIconType), Ord(FIcon));
-      AStream := TResourceStream.Create(HInstance, AEnumName, RT_RCDATA);
-      try
-        if not Assigned(FAccessoryBmp) then
-          FAccessoryBmp := TBitmap.Create
-        else
-          FAccessoryBmp.Clear(claNull);
-        FAccessoryBmp.LoadFromStream(AStream);
-        if Color = 0 then
-          ReplaceOpaqueColor(FAccessoryBmp, TAlphaColors.Dodgerblue)
-        else
-          ReplaceOpaqueColor(FAccessoryBmp, Color);
-      finally
-        FreeAndNil(AStream);
-      end;
-    except
-      FreeAndNil(FAccessoryBmp)
-    end;
-  end;
 end;
 
 procedure TViewAccessory.DoPathChanged(Sender: TObject);
@@ -9483,14 +9466,6 @@ procedure TViewAccessory.SetAccessoryType(const Value: TViewAccessoryType);
 begin
   if FAccessoryType <> Value then begin
     FAccessoryType := Value;
-    DoChanged;
-  end;
-end;
-
-procedure TViewAccessory.SetIcon(const Value: TViewIconType);
-begin
-  if FIcon <> Value then begin
-    FIcon := Value;
     DoChanged;
   end;
 end;

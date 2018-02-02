@@ -431,26 +431,18 @@ begin
     ['PlanText', 'CheckBox', 'RadioButton', 'Image', 'ProgressBar', 'CustomDraw']);
   AddEnumElementAliases(TypeInfo(TGridFooterStyle),
     ['None', 'DataTotal', 'DataAverage', 'DataMin', 'DataMax']);
+  AddEnumElementAliases(TypeInfo(TViewAccessoryStyle),
+    ['Accessory', 'Path']);
   AddEnumElementAliases(TypeInfo(TViewAccessoryType),
     ['None', 'More', 'Checkmark', 'Detail', 'Ellipses', 'Flag', 'Back', 'Refresh',
      'Action', 'Play','Rewind', 'Forwards', 'Pause', 'Stop', 'Add', 'Prior',
      'Next', 'ArrowUp', 'ArrowDown', 'ArrowLeft','ArrowRight', 'Reply',
      'Search', 'Bookmarks', 'Trash', 'Organize', 'Camera', 'Compose', 'Info',
      'Pagecurl', 'Details', 'RadioButton', 'RadioButtonChecked', 'CheckBox',
-     'CheckBoxChecked', 'UserDefined1', 'UserDefined2', 'UserDefined3'
+     'CheckBoxChecked', 'User', 'Password', 'Down', 'Exit', 'Finish', 'Calendar', 'Cross', 'Menu',
+     'About', 'Share', 'UserMsg', 'Cart', 'Setting', 'Edit', 'Home', 'Heart',
+     'UserDefined1', 'UserDefined2', 'UserDefined3'
     ]);
-  AddEnumElementAliases(TypeInfo(TViewIconType),
-    ['None', 'AlarmClock', 'BarChart', 'Barcode', 'Bell', 'BookCover', 'BookCoverMinus', 'BookCoverPlus', 'BookMark', 'BookOpen',
-     'Calendar', 'Camera', 'Car', 'Clock', 'CloudDownload', 'CloudUpload', 'Cross', 'Document', 'Download', 'Earth', 'Email',
-     'Fax', 'FileList', 'FileMinus', 'FilePlus', 'Files', 'FileStar', 'FileTick', 'Flag', 'Folder', 'FolderMinus',
-     'FolderPlus'', ''FolderStar'', ''Home', 'Inbox', 'Incoming', 'ListBullets', 'ListCheckBoxes', 'ListImages', 'ListNumbered', 'ListTicked',
-     'Location', 'More', 'Note', 'Outgoing',
-     'PaperClip', 'Photo', 'PieChart', 'Pin', 'Presentation', 'Search', 'Settings', 'Share', 'ShoppingCart', 'Spanner', 'Speaker',
-     'Star', 'Tablet', 'Tag', 'Telephone', 'Telephone2', 'TelephoneBook', 'Tick', 'Timer', 'Trash', 'Upload',
-     'User', 'UserEdit', 'UserGroup', 'Users', 'UserSearch',
-     'VideoCamera', 'VideoPlayer', 'Viewer',
-     'Wifi', 'Window', 'Write']);
-
   AddEnumElementAliases(TypeInfo(TCalendarViewType),
     ['Days', 'Months', 'Years', 'Decades', 'Centuries']);
 end;
@@ -470,8 +462,8 @@ begin
   RemoveEnumElementAliases(TypeInfo(TRingViewStyle));
   RemoveEnumElementAliases(TypeInfo(TGridDataType));
   RemoveEnumElementAliases(TypeInfo(TGridFooterStyle));
+  RemoveEnumElementAliases(TypeInfo(TViewAccessoryStyle));
   RemoveEnumElementAliases(TypeInfo(TViewAccessoryType));
-  RemoveEnumElementAliases(TypeInfo(TViewIconType));
   RemoveEnumElementAliases(TypeInfo(TCalendarViewType));
 end;
 
