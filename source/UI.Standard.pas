@@ -442,6 +442,10 @@ type
     destructor Destroy; override;
     procedure ScrollBy(const Dx, Dy: Double);
     procedure ScrollTo(const Dx, Dy: Double);
+
+    // 刷新开始
+    procedure PullRefreshStart(); virtual;
+
     property VScrollBarValue: Double read GetVScrollBarValue write SetVScrollBarValue;
     property HScrollBarValue: Double read GetHScrollBarValue write SetHScrollBarValue;
     // 获取滚动条所在位置的百分比
@@ -499,8 +503,8 @@ type
     property IsContentChanged: Boolean read FIsContentChanged write FIsContentChanged;
   public
     constructor Create(AOwner: TComponent); override;
-    property ScrollBox: TScrollView read FScrollBox;
     function PointInObjectLocal(X, Y: Single): Boolean; override;
+    property ScrollBox: TScrollView read FScrollBox;
   end;
 
   /// <summary>
@@ -529,6 +533,8 @@ type
     FOnPullLoad: TNotifyEvent;
     procedure SetEnablePullLoad(const Value: Boolean);
     procedure SetEnablePullRefresh(const Value: Boolean);
+    function GetContentChildCount: Integer;
+    function GetContentControlItem(const Index: Integer): TControl;
   protected
     function CreateScroll: TScrollBar; override;
     procedure InvalidateContentSize(); override; // 计算内容区大小
@@ -578,11 +584,16 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
+    // 刷新开始
+    procedure PullRefreshStart(); override;
     // 刷新完成
     procedure PullRefreshComplete();
     // 加载更多完成
     procedure PullLoadComplete();
 
+    // 内部控件数量
+    property ContentControlsCount: Integer read GetContentChildCount;
+    property ContentControls[const Index: Integer]: TControl read GetContentControlItem;
   published
     property HitTest default True;
     property Clickable default True;
@@ -2734,6 +2745,10 @@ begin
   end;
 end;
 
+procedure TScrollView.PullRefreshStart;
+begin
+end;
+
 procedure TScrollView.RealignContent;
 begin
   case FScrollbar of
@@ -3925,20 +3940,22 @@ begin
   if AbsoluteInVisible then
     Exit;
 
-  V := FBackground.GetStateItem(DrawState);
-  if V <> nil then
-    Canvas.FillPath(FPath, AbsoluteOpacity, V);
+  if Assigned(FBackground) then begin
+    V := FBackground.GetStateItem(DrawState);
+    if V <> nil then
+      Canvas.FillPath(FPath, AbsoluteOpacity, V);
 
-  LBorder := TDrawableBorder(FBackground)._Border;
-  if Assigned(LBorder) and (LBorder.Width > 0) and (LBorder.Style = TViewBorderStyle.RectBorder) then begin
-    if LBorder.Kind = TBrushKind.Solid then begin
-      LOnChange := LBorder.Brush.OnChanged;
-      LBorder.Brush.OnChanged := nil;
-      LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState);
-      Canvas.DrawPath(FPath, AbsoluteOpacity, LBorder.Brush);
-      LBorder.Brush.OnChanged := LOnChange;
-    end else
-      Canvas.DrawPath(FPath, AbsoluteOpacity, LBorder.Brush);
+    LBorder := TDrawableBorder(FBackground)._Border;
+    if Assigned(LBorder) and (LBorder.Width > 0) and (LBorder.Style = TViewBorderStyle.RectBorder) then begin
+      if LBorder.Kind = TBrushKind.Solid then begin
+        LOnChange := LBorder.Brush.OnChanged;
+        LBorder.Brush.OnChanged := nil;
+        LBorder.Brush.Color :=  LBorder.Color.GetStateColor(DrawState);
+        Canvas.DrawPath(FPath, AbsoluteOpacity, LBorder.Brush);
+        LBorder.Brush.OnChanged := LOnChange;
+      end else
+        Canvas.DrawPath(FPath, AbsoluteOpacity, LBorder.Brush);
+    end;
   end;
 end;
 
@@ -3991,8 +4008,11 @@ var
   LC, LR: TPointF;
 begin
   FPath.Clear;
-  R := RectF(FBackground.Padding.Left, FBackground.Padding.Top,
-    Width - FBackground.Padding.Right, Height - FBackground.Padding.Bottom);;
+  if Assigned(FBackground) then
+    R := RectF(FBackground.Padding.Left, FBackground.Padding.Top,
+      Width - FBackground.Padding.Right, Height - FBackground.Padding.Bottom)
+  else
+    R := RectF(0, 0, Width, Height);
 
   if (FOuter = TRingViewStyle.Circle) and (FInner = TRingViewStyle.Circle) then
   begin
@@ -4017,8 +4037,11 @@ begin
 
   case FOuter of
     TRingViewStyle.Rectangle:
-      FPath.AddRectangle(R, FBackground.XRadius, FBackground.YRadius,
-        FBackground.Corners, FBackground.CornerType);
+      if Assigned(FBackground) then
+        FPath.AddRectangle(R, FBackground.XRadius, FBackground.YRadius,
+          FBackground.Corners, FBackground.CornerType)
+      else
+        FPath.AddRectangle(R, 0, 0, AllCorners, TCornerType.Round);
     TRingViewStyle.Circle:
       begin
         LC := PointF(R.Width / 2 + R.Left, R.Height / 2 + R.Top);
@@ -4036,8 +4059,11 @@ begin
     TRingViewStyle.Rectangle:
       begin
         R.Inflate(-FDistance, -FDistance);
-        FPath.AddRectangle(R, FBackground.XRadius, FBackground.YRadius,
-          FBackground.Corners, FBackground.CornerType);
+        if Assigned(FBackground) then
+          FPath.AddRectangle(R, FBackground.XRadius, FBackground.YRadius,
+            FBackground.Corners, FBackground.CornerType)
+        else
+          FPath.AddRectangle(R, 0, 0, AllCorners, TCornerType.Round);
       end;
     TRingViewStyle.Circle:
       begin
@@ -5617,6 +5643,19 @@ begin
   end;
 end;
 
+function TVertScrollView.GetContentChildCount: Integer;
+begin
+  if Assigned(FContent) then
+    Result := FContent.ControlsCount
+  else
+    Result := 0;
+end;
+
+function TVertScrollView.GetContentControlItem(const Index: Integer): TControl;
+begin
+  Result := FContent.Controls[Index];
+end;
+
 function TVertScrollView.GetScrollOffset: TPointF;
 begin
   Result.X := 0;
@@ -5835,6 +5874,25 @@ procedure TVertScrollView.PullRefreshComplete;
 begin
   if Assigned(FContent) and (FState = TListViewState.PullDownFinish) then
     DoPullRefreshComplete;
+end;
+
+procedure TVertScrollView.PullRefreshStart;
+begin
+  if not Assigned(FHeader) then
+    Exit;
+  if FState = TListViewState.PullDownFinish then
+    Exit;
+  VScrollBarValue := VScrollBarValue + (FHeader as TControl).Height;
+  FHeader.DoUpdateState(TListViewState.PullDownFinish, 0);
+  FState := TListViewState.PullDownFinish;
+
+  FOffsetScroll := (FHeader as TControl).Height;
+  InvalidateContentSize;
+  DoUpdateScrollingLimits(True, 0);
+  if Assigned(FOnPullRefresh) then
+    FOnPullRefresh(Self);
+  DoRealign;
+  (FHeader as TControl).UpdateEffects;
 end;
 
 procedure TVertScrollView.Resize;

@@ -366,6 +366,8 @@ type
     // 通知数据发生改变
     procedure NotifyDataChanged; virtual;
 
+    // 刷新开始
+    procedure PullRefreshStart(); override;
     // 刷新完成
     procedure PullRefreshComplete();
     // 加载更多完成
@@ -1427,6 +1429,12 @@ begin
     FContentViews.DoPullRefreshComplete;
 end;
 
+procedure TListViewEx.PullRefreshStart;
+begin
+  if Assigned(FContentViews) then
+    FContentViews.PullRefreshStart;
+end;
+
 procedure TListViewEx.RemoveFooterView;
 begin
   FContentViews.RemoveFooterView;
@@ -1587,11 +1595,9 @@ procedure TListViewContent.AddControlToCacle(const ItemType: Integer;
 var
   List: TListViewList;
 begin
-  if not FCacleViews.ContainsKey(Itemtype) then begin
+  if not FCacleViews.TryGetValue(ItemType, List) then begin
     List := TListViewList.Create;
     FCacleViews.Add(ItemType, List);
-  end else begin
-    List := FCacleViews[ItemType];
   end;
   Value.Visible := False;
   Value.OnClick := nil;
@@ -2879,11 +2885,9 @@ function TListViewContent.GetControlFormCacle(const ItemType: Integer): TViewBas
 var
   List: TListViewList;
 begin
-  if not FCacleViews.ContainsKey(Itemtype) then begin
+  if not FCacleViews.TryGetValue(ItemType, List) then begin
     List := TListViewList.Create;
     FCacleViews.Add(ItemType, List);
-  end else begin
-    List := FCacleViews[ItemType];
   end;
   if List.Count > 0 then begin
     Result := List.Last;
@@ -3028,7 +3032,18 @@ end;
 { TListAdapterBase }
 
 procedure TListAdapterBase.Clear;
+var
+  B: Boolean;
 begin
+  if Assigned(ListView) and Assigned(ListView.ContentViews) then begin
+    B := ListView.FContentViews.FDisableAlign;
+    ListView.FContentViews.FDisableAlign := True;
+    try
+      ListView.ContentViews.HideViews;
+    finally
+      ListView.FContentViews.FDisableAlign := B;
+    end;
+  end;
 end;
 
 constructor TListAdapterBase.Create;

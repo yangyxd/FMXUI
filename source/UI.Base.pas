@@ -972,6 +972,8 @@ type
     destructor Destroy; override;
     procedure Change;
 
+    procedure Assign(Source: TPersistent); override;
+
     function GetStateColor(const State: TViewState): TAlphaColor; virtual; abstract;
 
     function CalcTextObjectSize(const AText: string; const MaxWidth, SceneScale: Single;
@@ -1037,6 +1039,7 @@ type
   public
     constructor Create(AOwner: TComponent);
     destructor Destroy; override;
+    procedure Assign(Source: TPersistent); override;
     function GetStateColor(const State: TViewState): TAlphaColor; override;
   published
     property AutoSize;
@@ -1494,6 +1497,8 @@ type
     /// 获取父级Form
     /// </summary>
     property ParentForm: TCustomForm read GetParentForm;
+
+    property IsChecked: Boolean read GetIsChecked write SetIsChecked;
   published
     /// <summary>
     /// 组件相对于容器的对齐方式。当容器为非布局组件时有效，在部分布局组件中有效，但不建议使用。
@@ -6112,6 +6117,28 @@ begin
     Result := Ceil(Value);
 end;
 
+procedure TTextSettingsBase.Assign(Source: TPersistent);
+var
+  Src: TTextSettingsBase;
+  LastOnChange: TNotifyEvent;
+begin
+  if Source is TTextSettingsBase then begin
+    Src := TTextSettingsBase(Source);
+    LastOnChange := Self.OnChanged;
+    Self.OnChanged := nil;
+    Self.Font := Src.Font;
+    Self.Gravity := Src.Gravity;
+    Self.AutoSize := Src.AutoSize;
+    Self.PrefixStyle := Src.PrefixStyle;
+    Self.Trimming := Src.Trimming;
+    Self.WordWrap := Src.WordWrap;
+    Self.FText := Src.FText;
+    Self.OnChanged := LastOnChange;
+    DoChange;
+  end else
+    inherited;
+end;
+
 function TTextSettingsBase.CalcTextHeight(const AText: string;
   SceneScale: Single): Single;
 var
@@ -6554,6 +6581,15 @@ end;
 
 { TTextSettings }
 
+procedure TTextSettings.Assign(Source: TPersistent);
+begin
+  if Source is TTextSettings then begin
+    Self.FColor.Assign(TTextSettings(Source).FColor);
+    Self.FOpacity := TTextSettings(Source).FOpacity;
+  end;
+  inherited Assign(Source);
+end;
+
 constructor TTextSettings.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -6645,7 +6681,13 @@ end;
 procedure TDrawableBorder.Assign(Source: TPersistent);
 begin
   if Source is TDrawableBorder then begin
-    FBorder.Assign(TDrawableBorder(Source).FBorder);
+    if TDrawableBorder(Source).FBorder = nil then
+      FreeAndNil(FBorder)
+    else begin
+      if (FBorder = nil) then
+        CreateBorder();
+      FBorder.Assign(TDrawableBorder(Source).FBorder);
+    end;
   end;
   inherited Assign(Source);
 end;
