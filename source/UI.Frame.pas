@@ -671,6 +671,10 @@ begin
         end;
       end;
     end;
+    {$IFDEF MSWINDOWS}
+    if Assigned(ParentForm) then
+      ParentForm.ReleaseCapture;
+    {$ENDIF}
     Parent.RemoveObject(Self);
     {$IFDEF ANDROID}
     if (not Assigned(Screen.FocusControl)) and (Assigned(ParentForm)) then
