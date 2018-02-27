@@ -2261,6 +2261,16 @@ procedure TListViewContent.DoRealign;
       V := FViewTop;
     end;
 
+    // 当首行显示位置大于0且显示的项目不是第一个时，是因为删除了最后一行引起，
+    // 要进行调节，否则会导致上部分空白
+    if (First > 0) and (V - First > 0) and (S > 0) then begin
+      Item := @ListView.FItemsPoints[S];
+      if Item.H > 0 then begin
+        Dec(S);
+        V := V - LS.DividerH - Item.H;
+      end;
+    end;
+
     K := S + FViews.Count;
     J := 0;
 

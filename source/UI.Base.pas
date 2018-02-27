@@ -119,7 +119,6 @@ type
     procedure FocusToNext();
   end;
 
-
   /// <summary>
   /// ¡–±Ì ”Õº◊¥Ã¨
   /// </summary>
@@ -8515,17 +8514,19 @@ begin
   K := $FFFFFF;
   J := -1;
   M := TabOrder;
-  for I := 0 to ParentControl.ControlsCount - 1 do begin
-    Item := ParentControl.Controls[I];
-    if (not Assigned(Item)) or (not Item.Visible) or (not Item.Enabled) or (not Item.CanFocus) then
-      Continue;
-    if (Item.TabOrder < K) and (Item.TabOrder > M) then begin
-      K := Item.TabOrder;
-      J := I;
+  if Assigned(ParentControl) then begin
+    for I := 0 to ParentControl.ControlsCount - 1 do begin
+      Item := ParentControl.Controls[I];
+      if (not Assigned(Item)) or (not Item.Visible) or (not Item.Enabled) or (not Item.CanFocus) then
+        Continue;
+      if (Item.TabOrder < K) and (Item.TabOrder > M) then begin
+        K := Item.TabOrder;
+        J := I;
+      end;
     end;
+    if J >= 0 then
+      ParentControl.Controls[J].SetFocus;
   end;
-  if J >= 0 then
-    ParentControl.Controls[J].SetFocus;
 end;
 
 function TControlHelper.SetFocusObject(V: TControl): Boolean;
