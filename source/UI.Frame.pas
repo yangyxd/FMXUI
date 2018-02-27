@@ -973,20 +973,8 @@ begin
 end;
 
 function TFrameView.GetParentForm: TCustomForm;
-var
-  V: TFmxObject;
 begin
-  Result := nil;
-  if not Assigned(Self) then
-    Exit;
-  V := Parent;
-  while Assigned(V) do begin
-    if V is TCustomForm then begin
-      Result := V as TCustomForm;
-      Break;
-    end;
-    V := V.Parent;
-  end;
+  Result := UI.Base.GetParentForm(Self);
 end;
 
 function TFrameView.GetPreferences: TFrameState;

@@ -2102,8 +2102,8 @@ begin
       end else if AniCalculations.Down then begin
         AniMouseUp(True, LP.X, LP.Y);
       end;
-  end else
-    inherited CMGesture(EventInfo);
+  end;
+  inherited CMGesture(EventInfo); // 向上级传递
 end;
 
 procedure TScrollView.ContentAddObject(const AObject: TFmxObject);

@@ -1819,6 +1819,8 @@ procedure SimulateClick(AControl: TControl; const x, y: single);
 procedure ReplaceOpaqueColor(ABmp: TBitmap; const Color: TAlphaColor);
 // 屏幕缩放
 function GetScreenScale: single;
+// 获取组件所属的窗口
+function GetParentForm(AObj: TFmxObject): TCustomForm;
 
 function ViewStateToString(const State: TViewStates): string;
 function ComponentStateToString(const State: TComponentState): string;
@@ -2017,6 +2019,23 @@ begin
       List.Free;
     end;
     Result := True;
+  end;
+end;
+
+function GetParentForm(AObj: TFmxObject): TCustomForm;
+var
+  V: TFmxObject;
+begin
+  Result := nil;
+  if not Assigned(AObj) then
+    Exit;
+  V := AObj.Parent;
+  while Assigned(V) do begin
+    if V is TCustomForm then begin
+      Result := V as TCustomForm;
+      Break;
+    end;
+    V := V.Parent;
   end;
 end;
 
