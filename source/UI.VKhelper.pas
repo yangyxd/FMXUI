@@ -213,7 +213,7 @@ var
   AService: IFMXScreenService;
   AScale: Single;
 begin
-  ATemp := GetVKBounds;
+  ATemp := GetVirtalKeyboardBounds;
   Result := not ATemp.IsEmpty;
   if Result then
   begin
