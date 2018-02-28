@@ -3292,7 +3292,12 @@ var
   LWrapMode: TWrapMode;
   LBitmapChange: TNotifyEvent;
 begin
-  Img := FImage.GetStateItem(FDrawState);
+  if IsChecked then
+    Img := FImage.GetStateItem(TViewState.Checked)
+  else
+    Img := nil;
+  if FImage.BrushIsEmpty(Img) then
+    Img := FImage.GetStateItem(FDrawState);
   if Img = nil then Exit;
   R := RectF(
     Padding.Left + FImage.Padding.Left,

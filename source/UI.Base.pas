@@ -2259,17 +2259,21 @@ end;
 
 function TDrawableBase.BrushIsEmpty(V: TBrush): Boolean;
 begin
-  if (not Assigned(V)) or (V.Kind = TBrushKind.None) or
-    ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid)) or
-    ((Ord(V.Kind) = Ord(TViewBrushKind.SVGImage)) and ((TViewBrushBase(V).FSvgImage = nil) or (TViewBrushBase(V).FSvgImage.Empty))) or
-    ((Ord(V.Kind) = Ord(TViewBrushKind.AccessoryBitmap)) and ((TViewBrushBase(V).FAccessory = nil) or TViewBrushBase(V).FAccessory.IsEmpty))
-  then begin
-    if (V is TViewImagesBrush) and (TViewImagesBrush(V).FImageIndex >= 0) then
-      Result := False
-    else
-      Result := True
-  end else
-    Result := False;
+  if not Assigned(V) then
+    Result := True
+  else begin
+    if (V.Kind = TBrushKind.None) or
+      ((V.Color and $FF000000 = 0) and (V.Kind = TBrushKind.Solid)) or
+      ((Ord(V.Kind) = Ord(TViewBrushKind.SVGImage)) and ((TViewBrushBase(V).FSvgImage = nil) or (TViewBrushBase(V).FSvgImage.Empty))) or
+      ((Ord(V.Kind) = Ord(TViewBrushKind.AccessoryBitmap)) and ((TViewBrushBase(V).FAccessory = nil) or TViewBrushBase(V).FAccessory.IsEmpty))
+    then begin
+      if (V is TViewImagesBrush) and (TViewImagesBrush(V).FImageIndex >= 0) then
+        Result := False
+      else
+        Result := True
+    end else
+      Result := False;
+  end;
 end;
 
 procedure TDrawableBase.Change;
