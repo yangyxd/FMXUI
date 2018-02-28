@@ -302,7 +302,7 @@ var
 
   function RootLayout(ARoot: TFMXObject): TControl;
   var
-    ACtrl: TFMXObject;
+    ACtrl: TComponent;
     I: Integer;
     ALastRootStyle: string;
   begin
@@ -310,6 +310,7 @@ var
 
     if (ARoot.ComponentCount > 0) then begin
       for I := 0 to ARoot.ComponentCount - 1 do begin
+        ACtrl := ARoot.Components[I];
         if ACtrl is TLayout then begin
           Result := ACtrl as TLayout;
           if Result.TagObject <> Self then

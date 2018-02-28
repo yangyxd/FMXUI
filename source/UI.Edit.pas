@@ -1683,7 +1683,7 @@ begin
   if Model.Password then begin
     T := FTextService.CombinedText;
     EditRectWidth := GetPasswordCharWidth;
-    WholeTextWidth := T.Length * EditRectWidth;
+    WholeTextWidth := T.Length * EditRectWidth + Padding.Left;
     Result := ContentRect.Left;
     if a > 0 then begin
       if a <= T.Length then
@@ -1705,8 +1705,9 @@ begin
       if System.Length(Rgn) > 0 then
         Result := Result + Rgn[High(Rgn)].Width;
     end;
+
     EditRectWidth := ViewRect.Width;
-    WholeTextWidth := ContentRect.Width;
+    WholeTextWidth := ContentRect.Width + Padding.Left;
     if WholeTextWidth < EditRectWidth then
       Result := CheckGravity(Result, EditRectWidth, WholeTextWidth);
   end;
@@ -2713,6 +2714,7 @@ end;
 procedure TCustomEditView.Resize;
 begin
   inherited Resize;
+  RealignContent;
   UpdateSpelling;
 end;
 
@@ -3239,8 +3241,10 @@ end;
 procedure TCustomEditView.UpdateTextHeight;
 begin
   FTextHeight := 0;
-  TCanvasManager.MeasureCanvas.Font.Assign(FText.Font);
-  FTextHeight := TCanvasManager.MeasureCanvas.TextHeight('Lb|y'); // do not localize
+  if Assigned(FText) then begin
+    TCanvasManager.MeasureCanvas.Font.Assign(FText.Font);
+    FTextHeight := TCanvasManager.MeasureCanvas.TextHeight('Lb|y'); // do not localize
+  end;
 end;
 
 procedure TCustomEditView.UpdateTextLayout;
