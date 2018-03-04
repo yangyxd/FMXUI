@@ -24,6 +24,8 @@ uses
   Androidapi.JNI.GraphicsContentViewText,
   Androidapi.JNI.Util,
   Androidapi.JNI.App,
+  Androidapi.JNI.Os,
+  androidapi.jni.provider,
   FMX.Helpers.Android,
   {$ENDIF}
   {$IFDEF IOS}
@@ -86,6 +88,14 @@ function GetVersionName(): string;
 
 // 打开网址
 function OpenURL(const URL: string): Boolean;
+
+// Android: 自动升级 - 获取下载的apk文件保存目录
+function GetInstallDir(): string;
+// Android: 自动升级 - 安装apk （由于 Android 7.0 之后系统变化，所以需要 authorities）
+//  - ApkFileName 安装包文件名称 (不包含路径)
+//  - authorities 在AndroidManifest.xml中application段中自定义provider中android:authorities值
+function InstallApk(const ApkFileName, authorities: string): Boolean;
+
 // 调用移动平台的分享功能
 procedure Share(const AControl: TControl; const Title, Msg: string);
 
@@ -236,6 +246,51 @@ const
      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
      );
+
+{$IFDEF ANDROID}
+type
+  JFileProvider = interface;
+
+  JFileProviderClass = interface(JObjectClass)
+    ['{FACE4BE8-CC0C-4E4F-B7BE-CD3C13295C5D}']
+    function delete(uri : Jnet_Uri; selection : JString; selectionArgs : TJavaArray<JString>) : Integer; cdecl;// (Landroid/net/Uri;Ljava/lang/String;[Ljava/lang/String;)I A: $1
+    function getType(uri : Jnet_Uri) : JString; cdecl;                              // (Landroid/net/Uri;)Ljava/lang/String; A: $1
+    function getUriForFile(context : JContext; authority : JString; &file : JFile) : Jnet_Uri; cdecl;// (Landroid/content/Context;Ljava/lang/String;Ljava/io/File;)Landroid/net/Uri; A: $9
+    function init : JFileProvider; cdecl;                                       // ()V A: $1
+    function insert(uri : Jnet_Uri; values : JContentValues) : Jnet_Uri; cdecl;         // (Landroid/net/Uri;Landroid/content/ContentValues;)Landroid/net/Uri; A: $1
+    function onCreate : boolean; cdecl;                                         // ()Z A: $1
+    function openFile(uri : Jnet_Uri; mode : JString) : JParcelFileDescriptor; cdecl;// (Landroid/net/Uri;Ljava/lang/String;)Landroid/os/ParcelFileDescriptor; A: $1
+    function query(uri : Jnet_Uri; projection : TJavaArray<JString>; selection : JString; selectionArgs : TJavaArray<JString>; sortOrder : JString) : JCursor; cdecl;// (Landroid/net/Uri;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)Landroid/database/Cursor; A: $1
+    function update(uri : Jnet_Uri; values : JContentValues; selection : JString; selectionArgs : TJavaArray<JString>) : Integer; cdecl;// (Landroid/net/Uri;Landroid/content/ContentValues;Ljava/lang/String;[Ljava/lang/String;)I A: $1
+    procedure attachInfo(context : JContext; info : JProviderInfo) ; cdecl;     // (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V A: $1
+  end;
+
+  //[JavaSignature('android/support/v4/content/FileProvider$SimplePathStrategy')]
+  [JavaSignature('android/support/v4/content/FileProvider')]
+  JFileProvider = interface(JObject)
+    ['{03ED248A-3365-42CC-AD1E-ACA3A69269EF}']
+    function delete(uri : Jnet_Uri; selection : JString; selectionArgs : TJavaArray<JString>) : Integer; cdecl;// (Landroid/net/Uri;Ljava/lang/String;[Ljava/lang/String;)I A: $1
+    function getType(uri : Jnet_Uri) : JString; cdecl;                              // (Landroid/net/Uri;)Ljava/lang/String; A: $1
+    function insert(uri : Jnet_Uri; values : JContentValues) : Jnet_Uri; cdecl;         // (Landroid/net/Uri;Landroid/content/ContentValues;)Landroid/net/Uri; A: $1
+    function onCreate : boolean; cdecl;                                         // ()Z A: $1
+    function openFile(uri : Jnet_Uri; mode : JString) : JParcelFileDescriptor; cdecl;// (Landroid/net/Uri;Ljava/lang/String;)Landroid/os/ParcelFileDescriptor; A: $1
+    function query(uri : Jnet_Uri; projection : TJavaArray<JString>; selection : JString; selectionArgs : TJavaArray<JString>; sortOrder : JString) : JCursor; cdecl;// (Landroid/net/Uri;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)Landroid/database/Cursor; A: $1
+    function update(uri : Jnet_Uri; values : JContentValues; selection : JString; selectionArgs : TJavaArray<JString>) : Integer; cdecl;// (Landroid/net/Uri;Landroid/content/ContentValues;Ljava/lang/String;[Ljava/lang/String;)I A: $1
+    procedure attachInfo(context : JContext; info : JProviderInfo) ; cdecl;     // (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V A: $1
+  end;
+
+  TJFileProvider = class(TJavaGenericImport<JFileProviderClass, JFileProvider>)
+  end;
+
+const
+  TJFileProviderMETA_DATA_FILE_PROVIDER_PATHS = 'android.support.FILE_PROVIDER_PATHS';
+  TJFileProviderTAG_ROOT_PATH = 'root-path';
+  TJFileProviderTAG_FILES_PATH = 'files-path';
+  TJFileProviderTAG_CACHE_PATH = 'cache-path';
+  TJFileProviderTAG_EXTERNAL = 'external-path';
+  TJFileProviderATTR_NAME = 'name';
+  TJFileProviderATTR_PATH = 'path';
+{$ENDIF}
 
 {$IFDEF MSWINDOWS}
 type
@@ -618,6 +673,52 @@ begin
   Result := ShellExecute(0, 'OPEN', PChar(URL), nil, nil, SW_SHOWMAXIMIZED) > 32;
 end;
 {$ENDIF MACOS}{$ENDIF IOS}{$ENDIF ANDROID}
+
+function GetInstallDir(): string;
+begin
+  {$IFDEF ANDROID}
+  // 说明：将 file_paths.xml 添加到 res/xml 中
+  Result := JStringToString(TAndroidHelper.Activity.getFilesDir.getPath()) + '/';
+  {$ELSE}
+  Result := '';
+  {$ENDIF}
+end;
+
+function InstallApk(const ApkFileName, authorities: string): Boolean;
+
+  {$IFDEF ANDROID}
+  procedure Exec();
+  var
+    Intent: JIntent;
+    f: JFile;
+    uri: Jnet_Uri;
+  begin
+    f := TJFile.JavaClass.init(StringToJString(GetInstallDir() + ApkFileName));
+    Intent := TJIntent.Create;
+    Intent.setAction(TJIntent.JavaClass.ACTION_VIEW);
+    if TJBuild_VERSION.JavaClass.SDK_INT > 24 then begin
+      // provider authorities
+      uri := TJFileProvider.JavaClass.getUriForFile(
+        {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF},
+        StringToJString(authorities), f);
+      intent.addFlags(TJIntent.JavaClass.FLAG_GRANT_READ_URI_PERMISSION);
+      intent.setDataAndType(uri, StringToJString('application/vnd.android.package-archive'));
+    end else begin
+      Intent.setDataAndType(TJnet_Uri.JavaClass.fromFile(f),
+        StringToJString('application/vnd.android.package-archive'));
+    end;
+    TAndroidHelper.Activity.startActivity(Intent);
+  end;
+  {$ENDIF}
+
+begin
+  {$IFDEF ANDROID}
+  Exec();
+  Result := True;
+  {$ELSE}
+  Result := False;
+  {$ENDIF}
+end;
 
 procedure Share(const AControl: TControl; const Title, Msg: string);
 

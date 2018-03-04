@@ -263,6 +263,11 @@ type
     destructor Destroy; override;
 
     /// <summary>
+    /// ÷’÷πAPP
+    /// </summary>
+    class procedure AppTerminate();
+
+    /// <summary>
     /// …Ë÷√ Frame ƒ¨»œ±≥æ∞—’…´
     /// </summary>
     class procedure SetDefaultBackColor(const Value: TAlphaColor);
@@ -628,6 +633,22 @@ begin
           Opacity := 0;
       end;
     end;
+  except
+  end;
+end;
+
+class procedure TFrameView.AppTerminate;
+begin
+  try
+    {$IFDEF POSIX}
+      {$IFDEF DEBUG}
+      Application.Terminate;
+      {$ELSE}
+      Kill(0, SIGKILL);
+      {$ENDIF}
+    {$ELSE}
+    Application.Terminate;
+    {$ENDIF}
   except
   end;
 end;
