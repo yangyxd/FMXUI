@@ -87,7 +87,7 @@ object FrameVertScrollView: TFrameVertScrollView
       Padding.Top = 8.000000000000000000
       Padding.Right = 8.000000000000000000
       Size.Width = 383.000000000000000000
-      Size.Height = 969.000000000000000000
+      Size.Height = 973.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
       Orientation = Vertical
@@ -306,7 +306,6 @@ object FrameVertScrollView: TFrameVertScrollView
         Drawable.SizeWidth = 22
         Drawable.SizeHeight = 22
         Drawable.ItemDefault.Kind = AccessoryBitmap
-        Drawable.ItemDefault.Accessory.Icon = Note
       end
       object TextView3: TTextView
         WidthSize = FillParent
@@ -316,7 +315,7 @@ object FrameVertScrollView: TFrameVertScrollView
         Padding.Right = 8.000000000000000000
         Padding.Bottom = 8.000000000000000000
         Size.Width = 367.000000000000000000
-        Size.Height = 253.000000000000000000
+        Size.Height = 257.000000000000000000
         Size.PlatformDefault = False
         Position.X = 8.000000000000000000
         Position.Y = 621.000000000000000000
@@ -337,7 +336,7 @@ object FrameVertScrollView: TFrameVertScrollView
         Margins.Top = 10.000000000000000000
         Margins.Bottom = 10.000000000000000000
         Position.X = 8.000000000000000000
-        Position.Y = 884.000000000000000000
+        Position.Y = 888.000000000000000000
         Size.Width = 225.000000000000000000
         Size.Height = 75.000000000000000000
         Size.PlatformDefault = False
