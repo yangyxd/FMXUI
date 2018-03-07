@@ -288,6 +288,9 @@ type
     procedure ShowWaitDialog(const AMsg: string; ACancelable: Boolean = True); overload;
     procedure ShowWaitDialog(const AMsg: string; OnDismissListener: TOnDialogListener; ACancelable: Boolean = True); overload;
     procedure ShowWaitDialog(const AMsg: string; OnDismissListener: TOnDialogListenerA; ACancelable: Boolean = True); overload;
+
+    procedure UpdateWaitDialog(const AMsg: string);
+
     /// <summary>
     /// Òþ²ØµÈ´ý¶Ô»°¿ò
     /// </summary>
@@ -1380,6 +1383,16 @@ begin
     Result := LReader.DataString;
   finally
     LReader.Free;
+  end;
+end;
+
+procedure TFrameView.UpdateWaitDialog(const AMsg: string);
+begin
+  if (not Assigned(FWaitDialog)) or (FWaitDialog.IsDismiss) then
+    Exit;
+  if Assigned(FWaitDialog.RootView) then begin
+    FWaitDialog.Message := AMsg;
+    FWaitDialog.RootView.MessageView.Text := AMsg;
   end;
 end;
 

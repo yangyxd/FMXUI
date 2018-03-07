@@ -696,7 +696,7 @@ function InstallApk(const ApkFileName, authorities: string): Boolean;
     f := TJFile.JavaClass.init(StringToJString(GetInstallDir() + ApkFileName));
     Intent := TJIntent.Create;
     Intent.setAction(TJIntent.JavaClass.ACTION_VIEW);
-    if TJBuild_VERSION.JavaClass.SDK_INT > 24 then begin
+    if TJBuild_VERSION.JavaClass.SDK_INT >= 24 then begin
       // provider authorities
       uri := TJFileProvider.JavaClass.getUriForFile(
         {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF},
