@@ -57,7 +57,9 @@ contains
   UI.Grid in 'UI.Grid.pas',
   UI.Grid.Res in 'UI.Grid.Res.pas' {GridRes: TFrame},
   UI.Design.GridColumns in 'UI.Design.GridColumns.pas' {GridColumnsDesigner},
-  UI.Json in 'UI.Json.pas';
+  UI.Json in 'UI.Json.pas',
+  UI.Design.Accessory in 'UI.Design.Accessory.pas' {AccessoryDesigner},
+  UI.Design.SVGImage in 'UI.Design.SVGImage.pas' {FrmDesignSVGImage};
 
 end.
 

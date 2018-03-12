@@ -97,11 +97,12 @@ type
   /// </summary>
   TViewAccessoryType = (None, More, Checkmark, Detail, Ellipses, Flag, Back, Refresh,
     Action, Play, Rewind, Forwards, Pause, Stop, Add, Prior,
-    Next, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Reply,
+    Next, BackWard, ForwardGo, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Reply,
     Search, Bookmarks, Trash, Organize, Camera, Compose, Info,
     Pagecurl, Details, RadioButton, RadioButtonChecked, CheckBox,
     CheckBoxChecked, User, Password, Down, Exit, Finish, Calendar, Cross, Menu,
     About, Share, UserMsg, Cart, Setting, Edit, Home, Heart,
+    Comment, Collection, Fabulous, Image, Help, VCode, Time, UserReg, Scan, Circle, Location,
     UserDefined1, UserDefined2, UserDefined3);
 
   TPatchBounds = class(TBounds);
@@ -7536,20 +7537,24 @@ begin
       TViewAccessoryType.None: Add(GetAccessoryFromResource('none'));
       TViewAccessoryType.More: Add(LoadFromResource('ICON_More'));
       TViewAccessoryType.Checkmark: Add(LoadFromResource('ICON_Checkmark')); //Add(GetAccessoryFromResource('listviewstyle.accessorycheckmark'));
-      TViewAccessoryType.Detail: Add(GetAccessoryFromResource('listviewstyle.accessorydetail'));
+      TViewAccessoryType.Detail: Add(LoadFromResource('ICON_DETAIL')); // Add(GetAccessoryFromResource('listviewstyle.accessorydetail'));
       TViewAccessoryType.Ellipses: Add(LoadFromResource('ICON_Ellipses')); //AddEllipsesAccessory;
       TViewAccessoryType.Flag: Add(LoadFromResource('icon_Flag')); //AddFlagAccessory;
       TViewAccessoryType.Back: AddBackAccessory;// Add(GetAccessoryFromResource('backtoolbutton.icon'));
       TViewAccessoryType.Refresh: Add(LoadFromResource('ICON_REFRESH')); // Add(GetAccessoryFromResource('refreshtoolbutton.icon'));
-      TViewAccessoryType.Action: Add(GetAccessoryFromResource('actiontoolbutton.icon'));
-      TViewAccessoryType.Play: Add(GetAccessoryFromResource('playtoolbutton.icon'));
-      TViewAccessoryType.Rewind: Add(GetAccessoryFromResource('rewindtoolbutton.icon'));
-      TViewAccessoryType.Forwards: Add(GetAccessoryFromResource('forwardtoolbutton.icon'));
-      TViewAccessoryType.Pause: Add(GetAccessoryFromResource('pausetoolbutton.icon'));
+      TViewAccessoryType.Action: Add(LoadFromResource('ICON_ACTION')); // Add(GetAccessoryFromResource('actiontoolbutton.icon'));
+
+      TViewAccessoryType.Play: Add(LoadFromResource('ICON_PLAY')); // Add(GetAccessoryFromResource('playtoolbutton.icon'));
+      TViewAccessoryType.Rewind: Add(LoadFromResource('ICON_REWIND')); //Add(GetAccessoryFromResource('rewindtoolbutton.icon'));
+      TViewAccessoryType.Forwards: Add(LoadFromResource('ICON_FORWARDS')); //Add(GetAccessoryFromResource('forwardtoolbutton.icon'));
+      TViewAccessoryType.Pause: Add(LoadFromResource('ICON_PAUSE')); //Add(GetAccessoryFromResource('pausetoolbutton.icon'));
       TViewAccessoryType.Stop: Add(LoadFromResource('ICON_STOP')); // Add(GetAccessoryFromResource('stoptoolbutton.icon'));
-      TViewAccessoryType.Add: Add(LoadFromResource('ICON_ADD')); // AddAddAccessory; // Add(GetAccessoryFromResource('addtoolbutton.icon'));
       TViewAccessoryType.Prior: Add(LoadFromResource('ICON_PRIOR'));// Add(GetAccessoryFromResource('priortoolbutton.icon'));
       TViewAccessoryType.Next: Add(LoadFromResource('ICON_NEXT'));// Add(GetAccessoryFromResource('nexttoolbutton.icon'));
+      TViewAccessoryType.BackWard: Add(LoadFromResource('ICON_NEXT'));//
+      TViewAccessoryType.ForwardGo: Add(LoadFromResource('ICON_FORWARD'));//
+
+      TViewAccessoryType.Add: Add(LoadFromResource('ICON_ADD')); // AddAddAccessory; // Add(GetAccessoryFromResource('addtoolbutton.icon'));
       TViewAccessoryType.ArrowUp: Add(LoadFromResource('ICON_ARROWUP')); //Add(GetAccessoryFromResource('arrowuptoolbutton.icon'));
       TViewAccessoryType.ArrowDown: Add(LoadFromResource('ICON_ARROWDOWN'));// Add(GetAccessoryFromResource('arrowdowntoolbutton.icon'));
       TViewAccessoryType.ArrowLeft: Add(LoadFromResource('ICON_ARROWLEFT')); // Add(GetAccessoryFromResource('arrowlefttoolbutton.icon'));
@@ -7560,10 +7565,10 @@ begin
       TViewAccessoryType.Trash: Add(LoadFromResource('ICON_TRASH'));// Add(GetAccessoryFromResource('trashtoolbutton.icon'));
       TViewAccessoryType.Organize: Add(LoadFromResource('ICON_ORGANIZE'));// Add(GetAccessoryFromResource('organizetoolbutton.icon'));
       TViewAccessoryType.Camera: Add(LoadFromResource('ICON_CAMERA')); // Add(GetAccessoryFromResource('cameratoolbutton.icon'));
-      TViewAccessoryType.Compose: Add(GetAccessoryFromResource('composetoolbutton.icon'));
-      TViewAccessoryType.Info: Add(GetAccessoryFromResource('infotoolbutton.icon'));
-      TViewAccessoryType.Pagecurl: Add(GetAccessoryFromResource('pagecurltoolbutton.icon'));
-      TViewAccessoryType.Details: Add(GetAccessoryFromResource('detailstoolbutton.icon'));
+      TViewAccessoryType.Compose: Add(LoadFromResource('ICON_COMPOSE')); // Add(GetAccessoryFromResource('composetoolbutton.icon'));
+      TViewAccessoryType.Info: Add(LoadFromResource('ICON_INFO')); // Add(GetAccessoryFromResource('infotoolbutton.icon'));
+      TViewAccessoryType.Pagecurl: Add(LoadFromResource('ICON_PAGECURL')); //Add(GetAccessoryFromResource('pagecurltoolbutton.icon'));
+      TViewAccessoryType.Details: Add(LoadFromResource('ICON_DETAILS')); //Add(GetAccessoryFromResource('detailstoolbutton.icon'));
       TViewAccessoryType.RadioButton: Add(LoadFromResource('ICON_RADIOBUTTON')); // Add(GetAccessoryFromResource('radiobuttonstyle.background'));
       TViewAccessoryType.RadioButtonChecked: Add(LoadFromResource('ICON_RADIOBUTTONCHECKED')); // Add(GetAccessoryFromResource('radiobuttonstyle.background', 'checked'));
       TViewAccessoryType.CheckBox: Add(LoadFromResource('ICON_CheckBox')); // Add(GetAccessoryFromResource('checkboxstyle.background'));
@@ -7585,6 +7590,18 @@ begin
       TViewAccessoryType.Edit: Add(LoadFromResource('ICON_Edit'));
       TViewAccessoryType.Home: Add(LoadFromResource('ICON_Home'));
       TViewAccessoryType.Heart: Add(LoadFromResource('ICON_Heart'));
+
+      TViewAccessoryType.Comment: Add(LoadFromResource('ICON_Comment'));
+      TViewAccessoryType.Collection: Add(LoadFromResource('ICON_Collection'));
+      TViewAccessoryType.Fabulous: Add(LoadFromResource('ICON_Fabulous'));
+      TViewAccessoryType.Image: Add(LoadFromResource('ICON_Image'));
+      TViewAccessoryType.Help: Add(LoadFromResource('ICON_Help'));
+      TViewAccessoryType.VCode: Add(LoadFromResource('ICON_VCode'));
+      TViewAccessoryType.Time: Add(LoadFromResource('ICON_Time'));
+      TViewAccessoryType.UserReg: Add(LoadFromResource('ICON_REGISTER'));
+      TViewAccessoryType.Scan: Add(LoadFromResource('ICON_Scan'));
+      TViewAccessoryType.Circle: Add(LoadFromResource('ICON_Circle'));
+      TViewAccessoryType.Location: Add(LoadFromResource('ICON_LOCATION'));
 
       TViewAccessoryType.UserDefined1: Add(GetAccessoryFromResource('userdefined1'));
       TViewAccessoryType.UserDefined2: Add(GetAccessoryFromResource('userdefined2'));

@@ -27,6 +27,7 @@ uses
 
   UI.Design.Bounds,
   UI.Design.GridColumns,
+  UI.Design.Accessory,
 
   UI.Utils.SVGImage,
   UI.Design.SVGImage,
@@ -62,6 +63,14 @@ type
   end;
 
   TPatchBoundsProperty = class(TClassProperty)
+  private
+  protected
+    procedure Edit; override;
+  public
+    function GetAttributes: TPropertyAttributes; override;
+  end;
+
+  TViewAccessoryProperty = class(TClassProperty)
   private
   protected
     procedure Edit; override;
@@ -186,6 +195,7 @@ begin
   RegisterPropertyEditor(TypeInfo(TPatchBounds), TPersistent, '', TPatchBoundsProperty);
   RegisterPropertyEditor(TypeInfo(TGridColumnsSetting), TGridBase, '', TGridColumnsSettingsProperty);
   RegisterPropertyEditor(TypeInfo(TControl), TViewLayout, '', TLayoutComponentProperty);
+  RegisterPropertyEditor(TypeInfo(TViewAccessory), TPersistent, '', TViewAccessoryProperty);
 
   RegisterPropertyEditor(TypeInfo(TSVGImage), TPersistent, '', TSVGImageProperty);
 
@@ -438,11 +448,12 @@ begin
   AddEnumElementAliases(TypeInfo(TViewAccessoryType),
     ['None', 'More', 'Checkmark', 'Detail', 'Ellipses', 'Flag', 'Back', 'Refresh',
      'Action', 'Play','Rewind', 'Forwards', 'Pause', 'Stop', 'Add', 'Prior',
-     'Next', 'ArrowUp', 'ArrowDown', 'ArrowLeft','ArrowRight', 'Reply',
+     'Next', 'BackWard', 'ForwardGo', 'ArrowUp', 'ArrowDown', 'ArrowLeft','ArrowRight', 'Reply',
      'Search', 'Bookmarks', 'Trash', 'Organize', 'Camera', 'Compose', 'Info',
      'Pagecurl', 'Details', 'RadioButton', 'RadioButtonChecked', 'CheckBox',
      'CheckBoxChecked', 'User', 'Password', 'Down', 'Exit', 'Finish', 'Calendar', 'Cross', 'Menu',
      'About', 'Share', 'UserMsg', 'Cart', 'Setting', 'Edit', 'Home', 'Heart',
+     'Comment', 'Collection', 'Fabulous', 'Image', 'Help', 'VCode', 'Time', 'UserReg', 'Scan', 'Circle', 'Location',
      'UserDefined1', 'UserDefined2', 'UserDefined3'
     ]);
   AddEnumElementAliases(TypeInfo(TCalendarViewType),
@@ -745,6 +756,33 @@ begin
 end;
 
 function TSVGImageProperty.GetAttributes: TPropertyAttributes;
+begin
+  Result := [paMultiSelect, paSubProperties, paReadOnly, paDialog];
+end;
+
+{ TViewAccessoryProperty }
+
+procedure TViewAccessoryProperty.Edit;
+var
+  Component: TObject;
+  Dialog: TAccessoryDesigner;
+begin
+  Component := GetComponent(0);
+  if not (Component is TViewBrushBase) then
+    Exit;
+  Dialog := TAccessoryDesigner.Create(nil);
+  try
+    Dialog.Caption := 'Accessory Designer';
+    Dialog.Accessory := TViewBrushBase(Component).Accessory;
+    if Dialog.ShowModal = mrOK then begin
+      TViewBrushBase(Component).Accessory := Dialog.Accessory;
+    end;
+  finally
+    Dialog.Free;
+  end;
+end;
+
+function TViewAccessoryProperty.GetAttributes: TPropertyAttributes;
 begin
   Result := [paMultiSelect, paSubProperties, paReadOnly, paDialog];
 end;

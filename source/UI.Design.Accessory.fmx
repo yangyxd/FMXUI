@@ -1,0 +1,125 @@
+object AccessoryDesigner: TAccessoryDesigner
+  Left = 0
+  Top = 0
+  Caption = 'Form2'
+  ClientHeight = 497
+  ClientWidth = 705
+  Position = OwnerFormCenter
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnShow = FormShow
+  DesignerMasterStyle = 0
+  object Layout1: TLayout
+    Align = Bottom
+    Position.Y = 461.000000000000000000
+    Size.Width = 705.000000000000000000
+    Size.Height = 36.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 4
+    object ComboColorBox1: TComboColorBox
+      Color = claNull
+      Position.X = 52.000000000000000000
+      Position.Y = 6.000000000000000000
+      Size.Width = 149.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      OnChange = ComboColorBox1Change
+      OnClick = ComboColorBox1Change
+    end
+    object Label1: TLabel
+      Position.X = 8.000000000000000000
+      Position.Y = 11.000000000000000000
+      Text = 'Color:'
+      TabOrder = 5
+    end
+    object btnOk: TButton
+      Anchors = [akTop, akRight]
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 591.000000000000000000
+      Position.Y = 6.000000000000000000
+      Size.Width = 104.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      Text = #30830#23450
+      OnClick = btnOkClick
+    end
+    object Button2: TButton
+      Anchors = [akTop, akRight]
+      Cancel = True
+      Margins.Bottom = 9.000000000000000000
+      Position.X = 475.000000000000000000
+      Position.Y = 6.000000000000000000
+      Size.Width = 96.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 4
+      Text = #21462#28040
+      OnClick = Button2Click
+    end
+  end
+  object Line1: TLine
+    Align = Bottom
+    LineType = Diagonal
+    Position.Y = 460.000000000000000000
+    Size.Width = 705.000000000000000000
+    Size.Height = 1.000000000000000000
+    Size.PlatformDefault = False
+    Stroke.Color = claGray
+  end
+  object VertScrollView1: TVertScrollView
+    Align = Client
+    Background.ItemDefault.Color = claWhite
+    Background.ItemDefault.Kind = Solid
+    Gravity = None
+    Size.Width = 705.000000000000000000
+    Size.Height = 460.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 6
+    object BodyView: TGridsLayout
+      Align = Top
+      WidthSize = FillParent
+      HeightSize = WrapContent
+      Gravity = None
+      Size.Width = 705.000000000000000000
+      Size.Height = 96.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 7
+      ColumnWidth = 96.000000000000000000
+      ColumnHeight = 96.000000000000000000
+      SpacingBorder = False
+      ForceColumnSize = True
+    end
+  end
+  object TextView1: TTextView
+    Background.ItemPressed.Color = x1F000000
+    Background.ItemPressed.Kind = Solid
+    Background.ItemChecked.Color = x7F00FF00
+    Background.ItemChecked.Kind = Solid
+    Clickable = True
+    Padding.Left = 4.000000000000000000
+    Padding.Top = 4.000000000000000000
+    Padding.Right = 4.000000000000000000
+    Padding.Bottom = 4.000000000000000000
+    HitTest = True
+    Size.Width = 96.000000000000000000
+    Size.Height = 96.000000000000000000
+    Size.PlatformDefault = False
+    Position.X = 104.000000000000000000
+    Position.Y = 160.000000000000000000
+    TabOrder = 2
+    Text = 'TextView1TextView1TextView1'
+    TextSettings.Trimming = Character
+    TextSettings.Gravity = CenterHorizontal
+    Drawable.SizeWidth = 64
+    Drawable.SizeHeight = 64
+    Drawable.Position = Top
+    Drawable.ItemDefault.Kind = AccessoryBitmap
+    Drawable.ItemDefault.Accessory.Accessory = Time
+    Drawable.ItemDefault.Accessory.Color = claSlateblue
+  end
+end
