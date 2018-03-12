@@ -411,8 +411,10 @@ begin
     ['CustomSize', 'WrapContent', 'FillParent']);
   AddEnumElementAliases(TypeInfo(TDrawablePosition),
     ['Left', 'Right', 'Top', 'Bottom', 'Center']);
+  AddEnumElementAliases(TypeInfo(TDrawableKind),
+    ['None', 'Circle', 'Ellipse']);
   AddEnumElementAliases(TypeInfo(TViewBorderStyle),
-    ['None', 'RectBorder', 'RectBitmap', 'LineEdit', 'LineTop', 'LineBottom', 'LineLeft', 'LineRight']);
+    ['None', 'RectBorder', 'RectBitmap', 'CircleBorder', 'EllipseBorder', 'LineEdit', 'LineTop', 'LineBottom', 'LineLeft', 'LineRight']);
   AddEnumElementAliases(TypeInfo(TViewBrushKind),
     ['None', 'Solid', 'Gradient', 'Bitmap', 'Resource', 'Patch9Bitmap', 'AccessoryBitmap', 'SVGImage']);
   AddEnumElementAliases(TypeInfo(TViewScroll),
@@ -452,6 +454,7 @@ begin
   RemoveEnumElementAliases(TypeInfo(TLayoutGravity));
   RemoveEnumElementAliases(TypeInfo(TViewSize));
   RemoveEnumElementAliases(TypeInfo(TDrawablePosition));
+  RemoveEnumElementAliases(TypeInfo(TDrawableKind));
   RemoveEnumElementAliases(TypeInfo(TViewBorderStyle));
   RemoveEnumElementAliases(TypeInfo(TViewBrushKind));
   RemoveEnumElementAliases(TypeInfo(TViewScroll));

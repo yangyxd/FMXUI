@@ -308,15 +308,17 @@ type
   TDrawablePosition = (Left, Right, Top, Bottom, Center);
 
   /// <summary>
+  /// 绘制样式
+  /// </summary>
+  TDrawableKind = (None, Circle, Ellipse);
+
+  /// <summary>
   /// 可绘制对象
   /// </summary>
   TDrawableBase = class(TPersistent)
   private
     FOnChanged: TNotifyEvent;
-
-    FDefaultColor: TAlphaColor;
-    FDefaultKind: TViewBrushKind;
-
+    FKind: TDrawableKind;
 
     FXRadius, FYRadius: Single;
     FIsEmpty: Boolean;
@@ -331,6 +333,7 @@ type
     procedure SetCorners(const Value: TCorners);
     function IsStoredCorners: Boolean;
     procedure SetCornerType(const Value: TCornerType);
+    procedure SetKind(const Value: TDrawableKind);
   protected
     [Weak] FView: IView;
     FDefault: TBrush;  // 0
@@ -372,7 +375,9 @@ type
 
     procedure Assign(Source: TPersistent); override;
     procedure Change; virtual;
-    procedure CreateBrush(var Value: TBrush; IsDefault: Boolean); overload; virtual;
+    procedure CreateBrush(var Value: TBrush;
+      const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
+      const ADefaultColor: TAlphaColor = TAlphaColors.Null); overload; virtual;
     function CreateBrush(): TBrush; overload;
 
     procedure Draw(Canvas: TCanvas); virtual;
@@ -399,6 +404,9 @@ type
     property YRadius: Single read FYRadius write SetYRadius;
     property Corners: TCorners read FCorners write SetCorners stored IsStoredCorners;
     property CornerType: TCornerType read FCornerType write SetCornerType default TCornerType.Round;
+
+    // 背景样式
+    property Kind: TDrawableKind read FKind write SetKind default TDrawableKind.None;
   end;
 
   /// <summary>
@@ -427,6 +435,7 @@ type
     property YRadius;
     property Corners;
     property CornerType;
+    property Kind;
     property ItemDefault: TViewBrush index 0 read GetValue write SetValue;
     property ItemPressed: TViewBrush index 1 read GetValue write SetValue;
     property ItemFocused: TViewBrush index 2 read GetValue write SetValue;
@@ -443,6 +452,8 @@ type
   TViewBorderStyle = (None {无边框},
     RectBorder {四周矩形边框,会使用圆角设置},
     RectBitmap {实心的矩形, 像框},
+    CircleBorder {圆形边框},
+    EllipseBorder {椭圆边框},
     LineEdit {底部边框（带两端凸出},
     LineTop {顶部边框},
     LineBottom {底部边框},
@@ -617,7 +628,10 @@ type
     /// </summary>
     procedure AdjustDraw(Canvas: TCanvas; var R: TRectF; ExecDraw: Boolean; AState: TViewState);
 
-    procedure CreateBrush(var Value: TBrush; IsDefault: Boolean); override;
+    procedure CreateBrush(var Value: TBrush;
+      const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
+      const ADefaultColor: TAlphaColor = TAlphaColors.Null); override;
+
     procedure Draw(Canvas: TCanvas); override;
     procedure DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState; const AOpacity: Single); override;
     procedure DrawImage(Canvas: TCanvas; Index: Integer; const R: TRectF); overload;
@@ -633,6 +647,7 @@ type
     property YRadius;
     property Corners;
     property CornerType;
+    property Kind;
     property ItemDefault: TBrush index 0 read GetValue write SetValue;
     property ItemPressed: TBrush index 1 read GetValue write SetValue;
     property ItemFocused: TBrush index 2 read GetValue write SetValue;
@@ -2156,19 +2171,20 @@ var
   x, y: Integer;
   AMap: TBitmapData;
   PixelColor: TAlphaColor;
-  //PixelWhiteColor: TAlphaColor;
   C: PAlphaColorRec;
+  A: Single;
 begin
   if (Assigned(ABmp)) then begin
     if ABmp.Map(TMapAccess.ReadWrite, AMap) then
     try
-      AlphaColorToPixel(Color   , @PixelColor, AMap.PixelFormat);
+      AlphaColorToPixel(Color, @PixelColor, AMap.PixelFormat);
+      A := TAlphaColorRec(PixelColor).A / 255;
       //AlphaColorToPixel(claWhite, @PixelWhiteColor, AMap.PixelFormat);
       for y := 0 to ABmp.Height - 1 do begin
         for x := 0 to ABmp.Width - 1 do begin
           C := @PAlphaColorArray(AMap.Data)[y * (AMap.Pitch div 4) + x];
           if (C^.Color <> claWhite) and (C^.A > 0) then begin
-            TAlphaColorRec(PixelColor).A := C^.A;
+            TAlphaColorRec(PixelColor).A := Trunc(C^.A * A);
             C^.Color := PremultiplyAlpha(PixelColor);
           end;
             //C^.Color := PremultiplyAlpha(MakeColor(PixelColor, C^.A / $FF));
@@ -2242,6 +2258,7 @@ begin
     Src := TDrawable(Source);
     FCornerType := Src.FCornerType;
     FCorners := Src.Corners;
+    FKind := Src.FKind;
     AssignItem(TViewState.None, Src);
     AssignItem(TViewState.Pressed, Src);
     AssignItem(TViewState.Focused, Src);
@@ -2285,43 +2302,40 @@ constructor TDrawableBase.Create(View: IView; const ADefaultKind: TViewBrushKind
   const ADefaultColor: TAlphaColor);
 begin
   FView := View;
-  FDefaultColor := ADefaultColor;
-  FDefaultKind := ADefaultKind;
   FCorners := AllCorners;
   FCornerType := TCornerType.Round;
 
   if Assigned(FView) and (csDesigning in FView.GetComponentState) then begin
-    CreateBrush(FDefault, True);
-    CreateBrush(FPressed, False);
-    CreateBrush(FFocused, False);
-    CreateBrush(FHovered, False);
-    CreateBrush(FSelected, False);
-    CreateBrush(FChecked, False);
-    CreateBrush(FEnabled, False);
-    CreateBrush(FActivated, False);
+    CreateBrush(FDefault, ADefaultKind, ADefaultColor);
+    CreateBrush(FPressed);
+    CreateBrush(FFocused);
+    CreateBrush(FHovered);
+    CreateBrush(FSelected);
+    CreateBrush(FChecked);
+    CreateBrush(FEnabled);
+    CreateBrush(FActivated);
     FIsEmpty := GetEmpty;
   end else begin
     FIsEmpty := True;
-    if (FDefaultKind = TViewBrushKind.Solid) and (FDefaultColor <> TAlphaColorRec.Null) then
-      CreateBrush(FDefault, True);
+    if (ADefaultKind = TViewBrushKind.Solid) and (ADefaultColor <> TAlphaColorRec.Null) then begin
+      CreateBrush(FDefault, ADefaultKind, ADefaultColor);
+    end;
   end;
   InitDrawable;
 end;
 
-procedure TDrawableBase.CreateBrush(var Value: TBrush; IsDefault: Boolean);
+procedure TDrawableBase.CreateBrush(var Value: TBrush;
+  const ADefaultKind: TViewBrushKind; const ADefaultColor: TAlphaColor);
 begin
   if Assigned(Value) then
     FreeAndNil(Value);
-  if IsDefault then
-    Value := TViewBrush.Create(FDefaultKind, FDefaultColor)
-  else
-    Value := TViewBrush.Create(TViewBrushKind.None, TAlphaColorRec.Null);
+  Value := TViewBrush.Create(ADefaultKind, ADefaultColor);
   Value.OnChanged := DoChange;
 end;
 
 function TDrawableBase.CreateBrush: TBrush;
 begin
-  CreateBrush(Result, False);
+  CreateBrush(Result);
 end;
 
 destructor TDrawableBase.Destroy;
@@ -2369,7 +2383,7 @@ begin
   if (Result = nil) and
     (AutoCreate or (csLoading in FView.GetComponentState)) then
   begin
-    CreateBrush(Result, State = TViewState.None);
+    CreateBrush(Result);
     SetStateBrush(State, Result);
   end;
 end;
@@ -2513,6 +2527,7 @@ procedure TDrawableBase.FillRect(Canvas: TCanvas; const ARect: TRectF;
   const ACornerType: TCornerType = TCornerType.Round);
 var
   Bmp: TBitmap;
+  V: Single;
 begin
   if (Ord(ABrush.Kind) = Ord(TViewBrushKind.Patch9Bitmap)) and (ABrush is TViewBrush) then begin
     FillRect9Patch(Canvas, ARect, XRadius, YRadius, ACorners, AOpacity, TViewBrush(ABrush), ACornerType);
@@ -2531,8 +2546,26 @@ begin
         if Assigned(Bmp) then
           Canvas.DrawBitmap(Bmp, RectF(0, 0, Bmp.Width, Bmp.Height), ARect, AOpacity);
       end;
-    end else
-      Canvas.FillRect(ARect, XRadius, YRadius, ACorners, AOpacity, ABrush, ACornerType);
+    end else begin
+      case FKind of
+        TDrawableKind.None:
+          begin
+            Canvas.FillRect(ARect, XRadius, YRadius, ACorners, AOpacity, ABrush, ACornerType);
+          end;
+        TDrawableKind.Circle:
+          begin
+            V := Min(ARect.Width, ARect.Height) * 0.5;
+            Canvas.FillArc(
+              PointF(ARect.Width * 0.5 + ARect.Left, ARect.Height * 0.5 + ARect.Top),
+              PointF(V, V), 0, 360, AOpacity, ABrush);
+          end;
+        TDrawableKind.Ellipse:
+          begin
+            Canvas.FillEllipse(ARect, AOpacity, ABrush);
+          end;
+      end;
+
+    end;
   end;
 end;
 
@@ -2672,6 +2705,14 @@ begin
   V := GetBrush(State, True);
   V.Gradient.Assign(Value);
   V.Kind := TBrushKind.Gradient;
+end;
+
+procedure TDrawableBase.SetKind(const Value: TDrawableKind);
+begin
+  if FKind <> Value then begin
+    FKind := Value;
+    DoChange(Self);
+  end;
 end;
 
 procedure TDrawableBase.SetRadius(const X, Y: Single);
@@ -2909,14 +2950,12 @@ begin
   FPadding := 4;
 end;
 
-procedure TDrawableIcon.CreateBrush(var Value: TBrush; IsDefault: Boolean);
+procedure TDrawableIcon.CreateBrush(var Value: TBrush;
+  const ADefaultKind: TViewBrushKind; const ADefaultColor: TAlphaColor);
 begin
   if Assigned(Value) then
     FreeAndNil(Value);
-  if IsDefault then
-    Value := TViewImagesBrush.Create(TBrushKind(FDefaultKind), FDefaultColor)
-  else
-    Value := TViewImagesBrush.Create(TBrushKind.None, TAlphaColorRec.Null);
+  Value := TViewImagesBrush.Create(TBrushKind(ADefaultKind), ADefaultColor);
   TViewImagesBrush(Value).FOwner := Self;
   Value.OnChanged := DoChange;
 end;
@@ -6758,6 +6797,36 @@ begin
       TViewBorderStyle.RectBitmap:
         begin
           Canvas.FillRect(R, XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
+        end;
+      TViewBorderStyle.CircleBorder:
+        begin
+          if FBorder.Width > 0.1 then begin
+            TH := FBorder.Width / 1.95;
+            LRect.Left := R.Left + TH;
+            LRect.Top := R.Top + TH;
+            LRect.Right := R.Right - TH;
+            LRect.Bottom := R.Bottom - TH;
+            TH := Min(LRect.Width, LRect.Height) * 0.5;
+            Canvas.DrawArc(
+              PointF(LRect.Left + LRect.Width * 0.5, LRect.Top + LRect.Height * 0.5),
+              PointF(TH, TH), 0, 360, AOpacity, FBorder.Brush);
+          end else begin
+            TH := Min(R.Width, R.Height) * 0.5;
+            Canvas.DrawArc(PointF(R.Left + R.Width * 0.5, R.Top + R.Height * 0.5),
+              PointF(TH, TH), 0, 360, AOpacity, FBorder.Brush);
+          end;
+        end;
+      TViewBorderStyle.EllipseBorder:
+        begin
+          if FBorder.Width > 0.1 then begin
+            TH := FBorder.Width / 1.95;
+            LRect.Left := R.Left + TH;
+            LRect.Top := R.Top + TH;
+            LRect.Right := R.Right - TH;
+            LRect.Bottom := R.Bottom - TH;
+            Canvas.DrawEllipse(LRect, AOpacity, FBorder.Brush);
+          end else
+            Canvas.DrawEllipse(R, AOpacity, FBorder.Brush);
         end;
       TViewBorderStyle.LineEdit:
         begin
