@@ -14,9 +14,12 @@ uses
   UI.Base, UI.Standard,
   {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
   FMX.KeyMapping,
-  {$IFDEF ANDROID}
   FMX.VirtualKeyboard,
+  {$IFDEF ANDROID}
   FMX.VirtualKeyboard.Android,
+  {$ENDIF}
+  {$IFDEF IOS}
+  Macapi.Helpers, FMX.Platform.iOS, FMX.VirtualKeyboard.iOS,
   {$ENDIF}
   FMX.BehaviorManager, FMX.Forms, System.Messaging,
   FMX.Menus, FMX.Presentation.Messages, FMX.Controls.Presentation,
@@ -386,6 +389,8 @@ type
     procedure GoToTextBegin;
     procedure Replace(const AStartPos: Integer; const ALength: Integer; const AStr: string);
     function HasSelection: Boolean;
+
+    procedure HideInputMethod();
 
     property Caret: TCaret read GetSelfCaret write SetCaret;
     property CaretPosition: Integer read GetCaretPosition write SetCaretPosition;
@@ -1980,6 +1985,23 @@ end;
 procedure TCustomEditView.HideCaret;
 begin
   Model.Caret.Hide;
+end;
+
+procedure TCustomEditView.HideInputMethod;
+{$IFDEF NEXTGEN}
+var
+  AService: IFMXVirtualKeyboardService;
+{$ENDIF}
+begin
+{$IFDEF NEXTGEN}
+  try
+    if TPlatformServices.Current.SupportsPlatformService(IFMXVirtualKeyboardService, AService) then
+    begin
+      AService.HideVirtualKeyboard();
+    end;
+  except
+  end;
+{$ENDIF}
 end;
 
 procedure TCustomEditView.HideLoupe;
