@@ -2,7 +2,7 @@
 
 参考文章：http://blog.csdn.net/qq_27512671/article/details/70224978
 
-1. 将 file_paths.xml 添加到 res/xml/ 中
+1. 将 file_paths.xml 添加到 res\xml\ 中
 2. 在 AndroidManifest.xml 中添加 provider ，结果如下：
 
     <application android:persistent="False" 
