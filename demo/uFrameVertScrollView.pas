@@ -26,6 +26,14 @@ type
     Button2: TButton;
     EditView1: TEditView;
     TextView4: TTextView;
+    EditView2: TEditView;
+    EditView3: TEditView;
+    EditView4: TEditView;
+    EditView5: TEditView;
+    EditView6: TEditView;
+    EditView7: TEditView;
+    EditView8: TEditView;
+    EditView9: TEditView;
     procedure btnBackClick(Sender: TObject);
     procedure VertScrollView1PullRefresh(Sender: TObject);
     procedure VertScrollView1PullLoad(Sender: TObject);

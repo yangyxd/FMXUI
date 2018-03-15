@@ -2685,7 +2685,7 @@ begin
   if (FCount = 0) then begin
     if Assigned(FFooter) then
       (FFooter as TControl).Visible := False;
-    if not Assigned(FHeader) then
+    if (not Assigned(FHeader)) and (not Assigned(FHeaderView)) then
       Exit;
   end;
 

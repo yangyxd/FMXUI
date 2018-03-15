@@ -6831,14 +6831,15 @@ begin
         end;
       TViewBorderStyle.LineEdit:
         begin
-          Canvas.DrawLine(R.BottomRight, PointF(R.Left, R.Bottom), AOpacity, FBorder.Brush);
+          Canvas.FillRect(RectF(R.Left, R.Bottom - FBorder.Width, R.Right, R.Bottom),
+            0, 0, FCorners, AOpacity, FBorder.Brush, FCornerType);
           TH := Min(6, Min(FBorder.Width * 4, R.Height / 4));
           Canvas.DrawLine(PointF(R.Left, R.Bottom - TH), PointF(R.Left, R.Bottom), AOpacity, FBorder.Brush);
           Canvas.DrawLine(PointF(R.Right, R.Bottom - TH), R.BottomRight, AOpacity, FBorder.Brush);
         end;
       TViewBorderStyle.LineTop:
         begin
-          Canvas.FillRect(RectF(R.Left, R.Top, R.Right, R.Top + FBorder.Width),
+          Canvas.FillRect(Canvas.AlignToPixel(RectF(R.Left, R.Top, R.Right, R.Top + FBorder.Width)),
             XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
         end;
       TViewBorderStyle.LineBottom:

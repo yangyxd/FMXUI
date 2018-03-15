@@ -370,6 +370,7 @@ type
     procedure CMGesture(var EventInfo: TGestureEventInfo); override;
 
     function CanAnimation: Boolean; override;
+    function CanInheritedCMGesture(const EventInfo: TGestureEventInfo): Boolean; virtual;
 
     function IsRunningOnDesktop: Boolean;
     function HasTouchTracking: Boolean;
@@ -2084,6 +2085,23 @@ begin
   Result := FCanAnimation;
 end;
 
+function TScrollView.CanInheritedCMGesture(const EventInfo: TGestureEventInfo): Boolean;
+begin
+  if CanVScroll and Assigned(FScrollV) then begin
+    Result := (FScrollV.Value <= 0) or (ScrollValueV >= 1);
+//    Text := Format('GestureID: %d'#13'Angle: %.2f'#13'Distance: %d'#13+
+//      'FScrollV.Value: %.2f, Max: %.2f'#13'Location: %.2f, %.2f'#13'Result: %s',
+//      [Ord(EventInfo.GestureID),
+//        EventInfo.Angle, EventInfo.Distance,
+//        FScrollV.Value, FScrollV.Max,
+//        EventInfo.Location.X, EventInfo.Location.Y,
+//        BoolToStr(Result)]);
+  end else if CanHScroll and Assigned(FScrollH) then begin
+    Result := (FScrollH.Value <= 0) or (ScrollValueH >= 0.999);
+  end else
+    Result := True;
+end;
+
 procedure TScrollView.CMGesture(var EventInfo: TGestureEventInfo);
 var
   LP: TPointF;
@@ -2096,14 +2114,17 @@ begin
     LP := AbsoluteToLocal(EventInfo.Location);
     if (TInteractiveGestureFlag.gfBegin in EventInfo.Flags) then begin
       AniMouseDown(True, LP.X, LP.Y)
-    end else
+    end else begin
       if EventInfo.Flags = [] then begin
         AniMouseMove(True, LP.X, LP.Y);
       end else if AniCalculations.Down then begin
         AniMouseUp(True, LP.X, LP.Y);
       end;
-  end;
-  inherited CMGesture(EventInfo); // 向上级传递
+    end;
+    if CanInheritedCMGesture(EventInfo) then
+      inherited CMGesture(EventInfo); // 向上级传递
+  end else
+    inherited CMGesture(EventInfo); // 向上级传递
 end;
 
 procedure TScrollView.ContentAddObject(const AObject: TFmxObject);
@@ -2281,13 +2302,13 @@ begin
       TViewScroll.None:
         Targets[1].Point := TPointD.Create(0, 0);
       TViewScroll.Horizontal:
-        Targets[1].Point := TPointD.Create(Padding.Left + Max(FContentBounds.Width - ViewRect.Width, 0), 0);
+        Targets[1].Point := TPointD.Create(Padding.Left + Padding.Right + Max(FContentBounds.Width - ViewRect.Width, 0), 0);
       TViewScroll.Vertical:
-        Targets[1].Point := TPointD.Create(0, Padding.Top + Max(FContentBounds.Height - ViewRect.Height, 0));
+        Targets[1].Point := TPointD.Create(0, Padding.Top + Padding.Bottom + Max(FContentBounds.Height - ViewRect.Height, 0));
     else
       Targets[1].Point := TPointD.Create(
-        Padding.Left + Max(FContentBounds.Width - ViewRect.Width, 0),
-        Padding.Top + Max(FContentBounds.Height - ViewRect.Height, 0)
+        Padding.Left + Padding.Right + Max(FContentBounds.Width - ViewRect.Width, 0),
+        Padding.Top + Padding.Bottom + Max(FContentBounds.Height - ViewRect.Height, 0)
       );
     end;
 
