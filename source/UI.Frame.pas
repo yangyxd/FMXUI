@@ -186,6 +186,8 @@ type
     procedure SetParams(const Value: TFrameParams);
     function GetTitle: string;
     procedure SetTitle(const Value: string);
+    function GetDataString: string;
+    procedure SetDataString(const Value: string);
     function GetPreferences: TFrameState;
     function GetSharedPreferences: TFrameState;
     function GetParams: TFrameParams;
@@ -289,6 +291,9 @@ type
     procedure ShowWaitDialog(const AMsg: string; OnDismissListener: TOnDialogListener; ACancelable: Boolean = True); overload;
     procedure ShowWaitDialog(const AMsg: string; OnDismissListener: TOnDialogListenerA; ACancelable: Boolean = True); overload;
 
+    /// <summary>
+    /// 更新等待对话框消息内容
+    /// </summary>
     procedure UpdateWaitDialog(const AMsg: string);
 
     /// <summary>
@@ -330,7 +335,11 @@ type
     /// <summary>
     /// 开始一个视图，并隐藏当前视图
     /// </summary>
-    function StartFrame(FrameClass: TFrameViewClass; const Title: string; const Data: Pointer; Ani: TFrameAniType = TFrameAniType.DefaultAni): TFrameView; overload;
+    function StartFrame(FrameClass: TFrameViewClass; const Title: string; const Data: TValue; Ani: TFrameAniType = TFrameAniType.DefaultAni): TFrameView; overload;
+    /// <summary>
+    /// 开始一个视图，并隐藏当前视图
+    /// </summary>
+    function StartFrame(FrameClass: TFrameViewClass; const Title: string; const DataString: string; Ani: TFrameAniType = TFrameAniType.DefaultAni): TFrameView; overload;
 
     /// <summary>
     /// 显示一个提示消息
@@ -411,6 +420,7 @@ type
     property IsUseDefaultBackColor: Boolean read FUseDefaultBackColor;
   published
     property Title: string read GetTitle write SetTitle;
+    property DataString: string read GetDataString write SetDataString;
     /// <summary>
     /// 背景颜色
     /// </summary>
@@ -434,6 +444,7 @@ type
 const
   CS_Title = 'cs_p_title';
   CS_Data = 'cs_p_data';
+  CS_DataStr = 'cs_p_data_str';
 
 var
   /// <summary>
@@ -978,6 +989,14 @@ begin
     Result := V.AsVarRec.VPointer;
 end;
 
+function TFrameView.GetDataString: string;
+begin
+  if (FParams = nil) or (not FParams.ContainsKey(CS_DataStr)) then
+    Result := ''
+  else
+    Result := FParams.Items[CS_DataStr].ToString;
+end;
+
 function TFrameView.GetIsDestroy: Boolean;
 begin
   Result := (not Assigned(Self)) or (csDestroying in ComponentState);
@@ -1128,7 +1147,8 @@ end;
 procedure TFrameView.InternalShow(TriggerOnShow: Boolean;
   AOnFinish: TNotifyEventA; Ani: TFrameAniType; SwitchFlag: Boolean);
 begin
-  if FShowing then Exit;  
+  if FShowing then Exit;
+
   FShowing := True;
   if TriggerOnShow and (not SwitchFlag) then
     FDefaultAni := Ani;
@@ -1142,8 +1162,10 @@ begin
   else
     DoReStart();
   {$IFDEF ANDROID}
+  {$IF CompilerVersion < 32}
   if (not Assigned(Screen.FocusControl)) and (Assigned(ParentForm)) then
     ParentForm.SetFocus;
+  {$IFEND}
   {$ENDIF}
   Opacity := 0;
   FHideing := True;
@@ -1191,6 +1213,14 @@ begin
     Params.Items[CS_Data] := Value
   else
     Params.Add(CS_Data, Value);
+end;
+
+procedure TFrameView.SetDataString(const Value: string);
+begin
+  if Params.ContainsKey(CS_DataStr) then
+    Params.Items[CS_DataStr] := Value
+  else if Value <> '' then
+    Params.Add(CS_DataStr, Value);
 end;
 
 class procedure TFrameView.SetDefaultBackColor(const Value: TAlphaColor);
@@ -1359,12 +1389,24 @@ begin
 end;
 
 function TFrameView.StartFrame(FrameClass: TFrameViewClass; const Title: string;
-  const Data: Pointer; Ani: TFrameAniType): TFrameView;
+  const Data: TValue; Ani: TFrameAniType): TFrameView;
 begin
   Result := MakeFrame(FrameClass);
   if Assigned(Result) then begin  
     Result.Title := Title;
     Result.Data := Data;
+    Hide(Ani);
+    Result.Show(Ani, nil);
+  end;
+end;
+
+function TFrameView.StartFrame(FrameClass: TFrameViewClass; const Title,
+  DataString: string; Ani: TFrameAniType): TFrameView;
+begin
+  Result := MakeFrame(FrameClass);
+  if Assigned(Result) then begin
+    Result.Title := Title;
+    Result.DataString := DataString;
     Hide(Ani);
     Result.Show(Ani, nil);
   end;
