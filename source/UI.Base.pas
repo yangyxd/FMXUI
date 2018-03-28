@@ -1952,7 +1952,7 @@ type TPrivateControl = class(TControl);
 
 function GetBoundsFloat(const R: TBounds): string;
 begin
-  if Assigned(R) and (R.Left = R.Top) and (R.Left = R.Right) and (R.Left = R.Bottom) then
+  if Assigned(R) and (R.Left = R.Top) and (R.Left = R.Right) and (R.Left = R.Bottom) and (R.Left <> 0) then
     Result := Format('%.1f', [R.Left])
   else Result := '';
 end;
