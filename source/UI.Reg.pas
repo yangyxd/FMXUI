@@ -720,7 +720,7 @@ begin
     Exit;
   Dialog := TGridColumnsDesigner.Create(nil);
   try
-    Dialog.Caption := 'GridView 列设计器';
+    Dialog.Caption := 'GridView 列设计器 (隐藏的列请通过点击“上一项”或“下一项”切换)';
     Dialog.Columns := TGridView(Component).Columns;
     if Dialog.ShowModal = mrOK then
       TGridView(Component).Columns.Assign(Dialog.Columns);

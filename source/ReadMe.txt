@@ -1,9 +1,13 @@
 ﻿FMXUI  (YangYxd)
 
 【当前版本】
-  2018.03.12.001
+  2018.06.21.001
 
 【主要更改】
+ - -----------------------------------
+ - 2018.06.21 
+ * DBGrid功能加强，OnDrawFixedColText，OnDrawFixedCellsText事件增加DefaultDraw参数，设为True时继续执行默认绘制
+ + GridView中列数据类型为ProgressBar时显示进度条
  - -----------------------------------
  - 2018.03.12
  + Background, Drawable 增加 Kind 属性

@@ -392,6 +392,11 @@ type
     procedure SetCellData(const ACol, ARow: Integer; const Value: Pointer);
 
     /// <summary>
+    /// 获取指定格子的进度百分比（当单元格数据类型为 ProgressBar 时调用）
+    /// </summary>
+    function GetCellDataPercentage(const ACol, ARow: Integer): Double;
+
+    /// <summary>
     /// 获取单元格自定义格式，如果返回 False 说明没有自定义
     /// </summary>
     function GetCellSetting(const ACol, ARow: Integer): TGridCellSettings;
@@ -453,11 +458,13 @@ type
     FSelect: TAlphaColor;
     FCustomColor: TAlphaColor;
     FEnabled: TAlphaColor;
+    FProgressBar: TAlphaColor;
     FOpacity: Single;
     procedure SetColor(const Value: TAlphaColor);
     procedure SetOpacity(const Value: Single);
     procedure SetEnabledColor(const Value: TAlphaColor);
     procedure SetSelectColor(const Value: TAlphaColor);
+    procedure SetProgressBarColor(const Value: TAlphaColor);
   protected
     function IsStoreOpacity: Boolean; virtual;
     function IsStoredGravity: Boolean; override;
@@ -470,6 +477,7 @@ type
     property Color: TAlphaColor read FColor write SetColor default TAlphaColorRec.Black;
     property ColorSelect: TAlphaColor read FSelect write SetSelectColor default TAlphaColorRec.White;
     property ColorEnabled: TAlphaColor read FEnabled write SetEnabledColor default TAlphaColorRec.Gray;
+    property ColorProgressBar: TAlphaColor read FProgressBar write SetProgressBarColor default TAlphaColorRec.Gray;
     property Font;
     property PrefixStyle;
     property Trimming;
@@ -534,12 +542,12 @@ type
   /// 绘制表头固定单元格文本
   /// </summary>
   TOnDrawFixedColText = procedure (Sender: TObject; Canvas: TCanvas; Item: TGridColumnItem;
-    const R: TRectF) of object;
+    const R: TRectF; var DefaultDraw: Boolean) of object;
   /// <summary>
   /// 绘制左边固定单元格文本
   /// </summary>
   TOnDrawFixedCellsText = procedure (Sender: TObject; Canvas: TCanvas; const ACol, ARow: Integer;
-    const Item: TGridColumnItem; const R: TRectF; const Text: string) of object;
+    const Item: TGridColumnItem; const R: TRectF; var Text: string; var DefaultDraw: Boolean) of object;
 
   /// <summary>
   /// 绘制单元格
@@ -690,6 +698,7 @@ type
   private
     [Weak] FOwner: TGridBase;
     [Weak] FColumns: TGridColumns;
+    function GetTextSettings: TGridTextSettings;
   protected
     procedure DefineProperties(Filer: TFiler); override;
     procedure ReadCollumnsData(Reader: TReader); virtual;
@@ -698,6 +707,8 @@ type
     constructor Create(AOwner: TGridBase);
     property Columns: TGridColumns read FColumns;
     property Owner: TGridBase read FOwner;
+  published
+    property TextSettings: TGridTextSettings read GetTextSettings;
   end;
 
   /// <summary>
@@ -1488,6 +1499,8 @@ type
     function GetCellChecked(const ACol, ARow: Integer): Boolean; virtual;
     procedure SetCellChecked(const ACol, ARow: Integer; const Value: Boolean); virtual;
 
+    function GetCellDataPercentage(const ACol, ARow: Integer): Double; virtual;
+
     function GetCellHeight(const ACol, ARow: Integer): Single; virtual;
 
     function GetItemIndex: Integer; virtual;
@@ -1945,6 +1958,7 @@ var
   Item: TGridColumnItem;
   L, DH: Single;
   VR: TRectF;
+  DefaultDraw: Boolean;
   LText: string;
 begin
   L := R.Left;
@@ -1983,9 +1997,12 @@ begin
     VR := RectF(L, R.Top, L + Item.Width, R.Bottom);
     if (I = FDownFixedColIndex) and (Row = FDownFixedRowIndex) then
       DoDrawFixedColBackground(Canvas, VR, AOpacity);
-    if Assigned(FOnDrawFixedCellsText) then
-      FOnDrawFixedCellsText(Self, Canvas, I, Row, Item, VR, LText)
-    else begin
+    if Assigned(FOnDrawFixedCellsText) then begin
+      DefaultDraw := False;
+      FOnDrawFixedCellsText(Self, Canvas, I, Row, Item, VR, LText, DefaultDraw);
+    end else
+      DefaultDraw := True;
+    if DefaultDraw then begin
       VR := RectF(VR.Left + Item.Padding.Left, VR.Top + Item.Padding.Top,
         VR.Right - Item.Padding.Right, VR.Bottom - Item.Padding.Bottom);
       DoDrawFixedCellsText(Canvas, I, Row, Item, VR, AOpacity, LText);
@@ -2001,7 +2018,7 @@ var
   XOffset: Double;
   I, J, K, M, N, LI: Integer;
   Item: TGridColumnItem;
-  LDrawLine, LDrawFixedRow: Boolean;
+  LDrawLine, LDrawFixedRow, DefaultDraw: Boolean;
   LR, VR: TRectF;
   LOpacity: Single;
   LState: TGridFixedHeaderState;
@@ -2171,8 +2188,11 @@ begin
 
           // 画文字
           if Assigned(FOnDrawFixedColText) then begin
-            FOnDrawFixedColText(Self, Canvas, Item, RectF(V + LW, H, W + LW - DH - VR.Right, LH + FFixedRowHeight));
-          end else begin
+            DefaultDraw := False;
+            FOnDrawFixedColText(Self, Canvas, Item, RectF(V + LW, H, W + LW - DH - VR.Right, LH + FFixedRowHeight), DefaultDraw);
+          end else
+            DefaultDraw := True;
+          if DefaultDraw then begin
             with Item.Padding do begin
               VR.Left := V + LW + Left;
               VR.Top := H + Top;
@@ -2327,9 +2347,12 @@ begin
     if (I = FDownFixedColIndex) and (FDownFixedRowIndex < 0) then
       DoDrawFixedColBackground(Canvas, VR, LOpacity);
 
-    if Assigned(FOnDrawFixedColText) then
-      FOnDrawFixedColText(Self, Canvas, Item, VR)
-    else begin
+    if Assigned(FOnDrawFixedColText) then begin
+      DefaultDraw := False;
+      FOnDrawFixedColText(Self, Canvas, Item, VR, DefaultDraw);
+    end else
+      DefaultDraw := True;
+    if DefaultDraw then begin
       VR := RectF(VR.Left + Item.Padding.Left, VR.Top + Item.Padding.Top,
         VR.Right - Item.Padding.Right, VR.Bottom - Item.Padding.Bottom);
       DoDrawFixedCellsText(Canvas, I, -1, Item, VR, LOpacity, Item.Title);
@@ -3812,6 +3835,7 @@ const
 var
   DrawState: TViewState;
   B: Boolean;
+  LV: Double;
   Item: TGridColumnItem;
   CellSet: TGridCellSettings;
   LGravity: TLayoutGravity;
@@ -3923,7 +3947,7 @@ begin
       CheckBox:  // 画复选框
         begin
           if LExistAdapter then
-            B := FAdapter.Cells[Item.ColIndex, ARow] = '1'  // 单元格内容为1时，认为是选中状态
+            B := FAdapter.CellChecked[Item.ColIndex, ARow] // 单元格内容为1时，认为是选中状态
           else
             B := False;
 
@@ -3955,7 +3979,24 @@ begin
           FGridRes.Drawable.Draw(Canvas, GetIconDrawRect(Item, R, CSelectIconSize, CSelectIconSize), 0, 0, [], LOpacity * Item.Opacity);
         end;
       Image: ;
-      ProgressBar: ;
+      ProgressBar: // 进度条
+        begin
+          if LExistAdapter then begin
+            LV := FAdapter.GetCellDataPercentage(Item.ColIndex, ARow);
+            if LV > 1 then LV := 1;
+            if LV < 0 then LV := 0;
+          end else
+            LV := 0;
+
+          FTempCellBrush.Color := GridView.FText.ColorProgressBar;
+          Canvas.FillRect(
+            RectF(
+              R.Left + Item.Padding.Left,
+              R.Top + Item.Padding.Top,
+              R.Left + (R.Right - Item.Padding.Right - R.Left) * LV,
+              R.Bottom - Item.Padding.Bottom
+            ), 0, 0, [], LOpacity * Item.Opacity, FTempCellBrush);
+        end;
       CustomDraw: ;
     end;
   end;
@@ -5327,6 +5368,12 @@ begin
   Result := GetCells(ACol, ARow) = '1';
 end;
 
+function TGridAdapterBase.GetCellDataPercentage(const ACol,
+  ARow: Integer): Double;
+begin
+  Result := StrToFloatDef(GetCells(ACol, ARow), 0.0);
+end;
+
 function TGridAdapterBase.GetCellHeight(const ACol, ARow: Integer): Single;
 begin
   Result := ItemDefaultHeight;
@@ -6200,6 +6247,7 @@ begin
   FColor := TAlphaColorRec.Black;
   FSelect := TAlphaColorRec.White;
   FEnabled := TAlphaColorRec.Gray;
+  FProgressBar := TAlphaColorRec.Gray;
   FOpacity := 1;
 end;
 
@@ -6255,6 +6303,14 @@ procedure TGridTextSettings.SetOpacity(const Value: Single);
 begin
   if FOpacity <> Value then begin
     FOpacity := Value;
+    DoColorChanged(Self);
+  end;
+end;
+
+procedure TGridTextSettings.SetProgressBarColor(const Value: TAlphaColor);
+begin
+  if FProgressBar <> Value then begin
+    FProgressBar := Value;
     DoColorChanged(Self);
   end;
 end;
@@ -7161,6 +7217,8 @@ begin
     if TDBGridView(GridView).FDataLink.Active then begin
       if TDBGridView.IsBlob(F.DataType) then
         Result := '{BLOB}'
+      else if Assigned(F.OnGetText) then
+        Result := F.DisplayText
       else
         Result := F.AsString; //.DisplayText;
     end else
@@ -7444,6 +7502,14 @@ procedure TGridColumnsSetting.DefineProperties(Filer: TFiler);
 begin
   inherited;
   Filer.DefineProperty('ColumnsData', ReadCollumnsData, WriteCollumnsData, Assigned(FColumns));
+end;
+
+function TGridColumnsSetting.GetTextSettings: TGridTextSettings;
+begin
+  if Assigned(FOwner) and Assigned(FOwner.FFixedSetting) then
+    Result := FOwner.FFixedSetting.TextSettings
+  else
+    Result := nil;
 end;
 
 procedure TGridColumnsSetting.ReadCollumnsData(Reader: TReader);

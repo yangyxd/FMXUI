@@ -43,6 +43,8 @@ type
     procedure GridView1TitleClick(Sender: TObject; Item: TGridColumnItem);
     procedure GridView1TitleDbClick(Sender: TObject; Item: TGridColumnItem);
     procedure GridView1CellDbClick(Sender: TObject; const ACell: TGridCell);
+    procedure GridView1DrawFixedColText(Sender: TObject; Canvas: TCanvas;
+      Item: TGridColumnItem; const R: TRectF; var DefaultDraw: Boolean);
   private
     { Private declarations }
   protected
@@ -148,6 +150,19 @@ procedure TFrameGridView.GridView1CellDbClick(Sender: TObject;
   const ACell: TGridCell);
 begin
   //ShowMessage(Format('DbClick Cell Row: %d, Col: %d.', [ACell.Row, Acell.Col]));
+end;
+
+procedure TFrameGridView.GridView1DrawFixedColText(Sender: TObject;
+  Canvas: TCanvas; Item: TGridColumnItem; const R: TRectF;
+  var DefaultDraw: Boolean);
+begin     
+  if (Item.ColIndex = 1) and (Item.RowIndex = 0) then begin
+    // 红色字体显示第2列第0行表头
+    GridView1.FixedTextSettings.CustomColor := TAlphaColorrec.Red;
+    GridView1.FixedTextSettings.Draw(Canvas, Item.DisplayText, R, Item.Opacity * GridView1.Opacity, 
+      TViewState.Custom, GridView1.FixedTextSettings.Gravity);
+  end else
+    DefaultDraw := True;
 end;
 
 procedure TFrameGridView.GridView1TitleClick(Sender: TObject;

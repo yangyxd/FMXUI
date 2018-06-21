@@ -94,7 +94,7 @@ type
     procedure btnNextClick(Sender: TObject);
     procedure edtWidthExit(Sender: TObject);
     procedure GridViewDrawFixedColText(Sender: TObject; Canvas: TCanvas;
-      Item: TGridColumnItem; const R: TRectF);
+      Item: TGridColumnItem; const R: TRectF; var DefaultDraw: Boolean);
     procedure edtFieldNameExit(Sender: TObject);
     procedure edtWeightExit(Sender: TObject);
   private
@@ -414,7 +414,7 @@ begin
 end;
 
 procedure TGridColumnsDesigner.GridViewDrawFixedColText(Sender: TObject;
-  Canvas: TCanvas; Item: TGridColumnItem; const R: TRectF);
+  Canvas: TCanvas; Item: TGridColumnItem; const R: TRectF; var DefaultDraw: Boolean);
 var
   VR: TRectF;
 begin

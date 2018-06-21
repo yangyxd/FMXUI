@@ -82,12 +82,11 @@ object GridColumnsDesigner: TGridColumnsDesigner
     Size.PlatformDefault = False
     TabOrder = 2
     object Label1: TLabel
-      AutoSize = True
       StyledSettings = [Family, Size, FontColor]
       Position.X = 8.000000000000000000
       Position.Y = 12.000000000000000000
-      Size.Width = 49.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Width = 73.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'Gravity:'
@@ -97,7 +96,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 758.000000000000000000
       Position.Y = 12.000000000000000000
       Size.Width = 52.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       Text = 'Opacity:'
     end
@@ -121,7 +120,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 237.000000000000000000
       Position.Y = 71.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       Text = 'RowsPan:'
     end
@@ -141,7 +140,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 334.000000000000000000
       Position.Y = 44.000000000000000000
       Size.Width = 57.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       Text = 'Bottom:'
     end
@@ -198,12 +197,11 @@ object GridColumnsDesigner: TGridColumnsDesigner
       OnClick = cbDataTypeClick
     end
     object Label5: TLabel
-      AutoSize = True
       StyledSettings = [Family, Size, FontColor]
       Position.X = 180.000000000000000000
       Position.Y = 12.000000000000000000
-      Size.Width = 66.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Width = 101.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'DataType:'
@@ -213,7 +211,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 346.000000000000000000
       Position.Y = 71.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       Text = 'ColsPan:'
     end
@@ -233,7 +231,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 6.000000000000000000
       Position.Y = 44.000000000000000000
       Size.Width = 123.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       Text = 'Padding:   Left:'
     end
@@ -253,7 +251,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 141.000000000000000000
       Position.Y = 44.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       Text = 'Top:'
     end
@@ -273,7 +271,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 232.000000000000000000
       Position.Y = 44.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       Text = 'Right:'
     end
@@ -293,7 +291,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 760.000000000000000000
       Position.Y = 43.000000000000000000
       Size.Width = 57.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       Text = 'Tag:'
     end
@@ -360,9 +358,9 @@ object GridColumnsDesigner: TGridColumnsDesigner
     end
     object ckWordWrap: TCheckBox
       Position.X = 383.000000000000000000
-      Position.Y = 96.000000000000000000
+      Position.Y = 92.000000000000000000
       Size.Width = 96.000000000000000000
-      Size.Height = 19.000000000000000000
+      Size.Height = 25.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 22
       Text = 'WordWrap'
@@ -374,7 +372,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 366.000000000000000000
       Position.Y = 12.000000000000000000
       Size.Width = 57.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'Title:'
@@ -398,7 +396,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 635.000000000000000000
       Position.Y = 96.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'RowCount:'
@@ -422,7 +420,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 748.000000000000000000
       Position.Y = 96.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'ColCount:'
@@ -458,7 +456,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 558.000000000000000000
       Position.Y = 12.000000000000000000
       Size.Width = 57.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'Field:'
@@ -482,7 +480,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 493.000000000000000000
       Position.Y = 97.000000000000000000
       Size.Width = 105.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'FixedColCount:'
@@ -504,7 +502,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 8.000000000000000000
       Position.Y = 71.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'Width:'
@@ -515,7 +513,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 120.000000000000000000
       Position.Y = 71.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 16.000000000000000000
+      Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'Weight:'

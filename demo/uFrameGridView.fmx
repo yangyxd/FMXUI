@@ -1,5 +1,5 @@
 object FrameGridView: TFrameGridView
-  Size.Width = 423.000000000000000000
+  Size.Width = 497.000000000000000000
   Size.Height = 616.000000000000000000
   Size.PlatformDefault = False
   object GridView1: TStringGridView
@@ -22,7 +22,7 @@ object FrameGridView: TFrameGridView
     Background.ItemPressed.Kind = Solid
     Gravity = None
     Margins.Top = 4.000000000000000000
-    Size.Width = 423.000000000000000000
+    Size.Width = 497.000000000000000000
     Size.Height = 356.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 14
@@ -37,7 +37,7 @@ object FrameGridView: TFrameGridView
       'm_1":{"ColIndex":1,"RowIndex":-1,"Gravity":5,"Padding":[3,3,3,3]' +
       ',"Title":"\u56FA\u5B9A\u5217"},"Item_0_0":{"Width":100,"ColIndex' +
       '":0,"Gravity":5,"Padding":[3,3,3,3]},"Item_1_0":{"Width":100,"Co' +
-      'lIndex":1,"Gravity":5,"Padding":[3,3,3,3],"ColsPan":2,"Title":"\' +
+      'lIndex":1,"Gravity":9,"Padding":[3,3,3,3],"ColsPan":2,"Title":"\' +
       'u5408\u5E76\u5217\u5934"},"Item_2_0":{"Width":100,"ColIndex":2,"' +
       'Gravity":5,"Padding":[3,3,3,3]},"Item_3_0":{"Width":100,"ColInde' +
       'x":3,"Gravity":5,"Padding":[3,3,3,3]},"Item_4_0":{"Width":100,"C' +
@@ -48,19 +48,20 @@ object FrameGridView: TFrameGridView
       'tem_8_0":{"Width":100,"ColIndex":8,"Gravity":5,"Padding":[3,3,3,' +
       '3]},"Item_9_0":{"Width":100,"ColIndex":9,"Gravity":5,"Padding":[' +
       '3,3,3,3]},"Item_0_1":{"Width":100,"ColIndex":0,"RowIndex":1,"Gra' +
-      'vity":5,"Padding":[3,3,3,3]},"Item_1_1":{"Width":100,"ColIndex":' +
-      '1,"RowIndex":1,"Gravity":5,"Padding":[3,3,3,3],"Title":"2"},"Ite' +
-      'm_2_1":{"Width":100,"ColIndex":2,"RowIndex":1,"Gravity":5,"Paddi' +
-      'ng":[3,3,3,3],"Title":"3"},"Item_3_1":{"Width":100,"ColIndex":3,' +
-      '"RowIndex":1,"Gravity":5,"Padding":[3,3,3,3]},"Item_4_1":{"Width' +
-      '":100,"ColIndex":4,"RowIndex":1,"Gravity":5,"Padding":[3,3,3,3]}' +
-      ',"Item_5_1":{"Width":100,"ColIndex":5,"RowIndex":1,"Gravity":5,"' +
-      'Padding":[3,3,3,3]},"Item_6_1":{"Width":100,"ColIndex":6,"RowInd' +
-      'ex":1,"Gravity":5,"Padding":[3,3,3,3]},"Item_7_1":{"Width":100,"' +
-      'ColIndex":7,"RowIndex":1,"Gravity":5,"Padding":[3,3,3,3]},"Item_' +
-      '8_1":{"Width":100,"ColIndex":8,"RowIndex":1,"Gravity":5,"Padding' +
-      '":[3,3,3,3]},"Item_9_1":{"Width":100,"ColIndex":9,"RowIndex":1,"' +
-      'Gravity":5,"Padding":[3,3,3,3]}}'
+      'vity":5,"DataType":1,"Padding":[3,3,3,3]},"Item_1_1":{"Width":10' +
+      '0,"ColIndex":1,"RowIndex":1,"Gravity":5,"DataType":4,"Padding":[' +
+      '3,3,3,3],"Title":"2"},"Item_2_1":{"Width":100,"ColIndex":2,"RowI' +
+      'ndex":1,"Gravity":9,"DataType":2,"Padding":[3,3,3,3],"Title":"3"' +
+      '},"Item_3_1":{"Width":100,"ColIndex":3,"RowIndex":1,"Gravity":5,' +
+      '"Padding":[3,3,3,3]},"Item_4_1":{"Width":100,"ColIndex":4,"RowIn' +
+      'dex":1,"Gravity":5,"Padding":[3,3,3,3]},"Item_5_1":{"Width":100,' +
+      '"ColIndex":5,"RowIndex":1,"Gravity":5,"Padding":[3,3,3,3]},"Item' +
+      '_6_1":{"Width":100,"ColIndex":6,"RowIndex":1,"Gravity":5,"Paddin' +
+      'g":[3,3,3,3]},"Item_7_1":{"Width":100,"ColIndex":7,"RowIndex":1,' +
+      '"Gravity":5,"Padding":[3,3,3,3]},"Item_8_1":{"Width":100,"ColInd' +
+      'ex":8,"RowIndex":1,"Gravity":5,"Padding":[3,3,3,3]},"Item_9_1":{' +
+      '"Width":100,"ColIndex":9,"RowIndex":1,"Gravity":5,"Padding":[3,3' +
+      ',3,3]}}'
     FixedSettings.Brush.ItemDefault.Kind = Gradient
     FixedSettings.Brush.ItemDefault.Gradient.Points = <
       item
@@ -84,7 +85,7 @@ object FrameGridView: TFrameGridView
     FixedSettings.ColWidth = 50.000000000000000000
     FixedSettings.Divider = claRoyalblue
     FixedSettings.TextRowIndex = #34892#21495
-    FixedSettings.FooterBgColor = claPalegreen
+    FixedSettings.FooterBgColor = claLightblue
     FixedSettings.FlatCols = True
     FooterStyle = None
     DragScroll = True
@@ -93,6 +94,7 @@ object FrameGridView: TFrameGridView
     OnTitleDbClick = GridView1TitleDbClick
     OnCellClick = GridView1CellClick
     OnCellDbClick = GridView1CellDbClick
+    OnDrawFixedColText = GridView1DrawFixedColText
     ColCount = 10
     RowCount = 50
     ShowColIndex = True
@@ -102,7 +104,7 @@ object FrameGridView: TFrameGridView
     Background.ItemDefault.Color = claPurple
     Background.ItemDefault.Kind = Solid
     Gravity = None
-    Size.Width = 423.000000000000000000
+    Size.Width = 497.000000000000000000
     Size.Height = 50.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
@@ -144,7 +146,7 @@ object FrameGridView: TFrameGridView
       Background.Border.Color.Enabled = claNull
       Weight = 1.000000000000000000
       Margins.Right = 50.000000000000000000
-      Size.Width = 323.000000000000000000
+      Size.Width = 397.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       Position.X = 50.000000000000000000
@@ -164,7 +166,7 @@ object FrameGridView: TFrameGridView
     Background.ItemPressed.Color = xFFD9D9D9
     Background.ItemPressed.Kind = Solid
     Gravity = None
-    Size.Width = 423.000000000000000000
+    Size.Width = 497.000000000000000000
     Size.Height = 182.000000000000000000
     Size.PlatformDefault = False
     Position.Y = 434.000000000000000000
@@ -208,7 +210,7 @@ object FrameGridView: TFrameGridView
     HeightSize = WrapContent
     Gravity = None
     Margins.Top = 2.000000000000000000
-    Size.Width = 423.000000000000000000
+    Size.Width = 497.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
     Position.Y = 52.000000000000000000
@@ -220,7 +222,7 @@ object FrameGridView: TFrameGridView
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
-      Size.Width = 84.599998474121090000
+      Size.Width = 99.400001525878910000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 10
@@ -234,10 +236,10 @@ object FrameGridView: TFrameGridView
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
-      Size.Width = 84.599998474121090000
+      Size.Width = 99.400001525878910000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 84.599998474121090000
+      Position.X = 99.400001525878910000
       TabOrder = 16
       OnClick = ButtonView3Click
       Text = #20462#25913#34892#25968
@@ -249,10 +251,10 @@ object FrameGridView: TFrameGridView
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
-      Size.Width = 84.599998474121090000
+      Size.Width = 99.400001525878910000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 169.199996948242200000
+      Position.X = 198.800003051757800000
       TabOrder = 11
       OnClick = ButtonView4Click
       Text = #20462#25913#21015#25968
@@ -264,10 +266,10 @@ object FrameGridView: TFrameGridView
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
-      Size.Width = 84.599998474121090000
+      Size.Width = 99.399993896484380000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 253.799987792968800000
+      Position.X = 298.200012207031300000
       TabOrder = 12
       OnClick = ButtonView2Click
       Text = #21462#28040#36873#20013
@@ -279,10 +281,10 @@ object FrameGridView: TFrameGridView
       Padding.Top = 4.000000000000000000
       Padding.Right = 4.000000000000000000
       Padding.Bottom = 4.000000000000000000
-      Size.Width = 84.600006103515630000
+      Size.Width = 99.399993896484380000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 338.399993896484400000
+      Position.X = 397.600006103515600000
       TabOrder = 13
       OnClick = ButtonView1Click
       Text = #28165#31354#34920#26684
