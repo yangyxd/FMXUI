@@ -41,6 +41,7 @@ type
   /// </summary>
   IListAdapter = interface
     ['{5CC5F4AB-2D8C-4A84-98A7-51566E38EA47}']
+    function DisableCache: Boolean;
     function GetCount: Integer;
     function GetItemID(const Index: Integer): Int64;
     function GetItem(const Index: Integer): Pointer;
@@ -527,6 +528,7 @@ type
     procedure ItemMeasureHeight(const Index: Integer; var AHeight: Single); virtual;
   protected
     { IListAdapter }
+    function DisableCache: Boolean; virtual;
     function GetCount: Integer; virtual; abstract;
     function GetItem(const Index: Integer): Pointer; virtual;
     function IndexOf(const AItem: Pointer): Integer; virtual;
@@ -602,7 +604,7 @@ type
     procedure Add(const V: TArray<string>); overload; virtual;
     procedure Insert(const Index: Integer; const V: string); virtual;
     procedure Delete(const Index: Integer); virtual;
-    procedure SetArrayLength(const ACount: Integer);
+    procedure SetArrayLength(const ACount: Integer); virtual;
     property Items[const Index: Integer]: string read GetItemValue write SetItemValue; default;
     property Strings: TStrings read GetList write SetList;
     property StringArray: TArray<string> read GetArray write SetArray;
@@ -643,9 +645,11 @@ type
     procedure SetChecks(const Value: TArray<Boolean>);
     function GetChecks: TArray<Boolean>;
   protected
+    function DisableCache: Boolean; override;
     procedure DoCheckChange(Sender: TObject);
     function GetView(const Index: Integer; ConvertView: TViewBase; Parent: TViewGroup): TViewBase; override;
   public
+    procedure SetArrayLength(const ACount: Integer); override;
     procedure Insert(const Index: Integer; const V: string); override;
     procedure Delete(const Index: Integer); override;
     property Checks: TArray<Boolean> read GetChecks write SetChecks;
@@ -2087,7 +2091,10 @@ procedure TListViewContent.DoRealign;
     if FViews.ContainsKey(I) then begin
       AH := H;
       // 获取一个列表项视图
-      ItemView := FViews[I];
+      if FAdapter.DisableCache() then
+        ItemView := FAdapter.GetView(I, FViews[I], TViewGroup(Self))
+      else
+        ItemView := FViews[I];
 
       // 如果返回nil, 抛出错误
       if not Assigned(ItemView) then
@@ -3061,6 +3068,11 @@ begin
   DoInitData;
 end;
 
+function TListAdapterBase.DisableCache: Boolean;
+begin
+  Result := False;
+end;
+
 procedure TListAdapterBase.DoInitData;
 begin
 end;
@@ -3383,6 +3395,11 @@ begin
   FChecks.Delete(Index);
 end;
 
+function TStringsListCheckAdapter.DisableCache: Boolean;
+begin
+  Result := True;
+end;
+
 procedure TStringsListCheckAdapter.DoCheckChange(Sender: TObject);
 var
   V: Boolean;
@@ -3443,15 +3460,18 @@ begin
   end else
     ViewItem := TControl(ConvertView) as TListViewItemCheck;
 
+
   ViewItem.BeginUpdate;
   ViewItem.Tag := Index;   // 使用 Tag 记录索引号
   ViewItem.OnClick := DoCheckChange;
-  ViewItem.CheckBox1.IsChecked := ItemCheck[Index];
+  ViewItem.CheckBox1.IsChecked := not ItemCheck[Index];
   ViewItem.HeightSize := TViewSize.WrapContent;
   ViewItem.DoRealign;
   ViewItem.TextView1.Text := Items[Index];
   ViewItem.Height := ViewItem.TextView1.Size.Height;
   ViewItem.EndUpdate;
+  ViewItem.CheckBox1.IsChecked := ItemCheck[Index];
+
   Result := TViewBase(ViewItem);
 end;
 
@@ -3461,6 +3481,12 @@ begin
   inherited;
   if FChecks.Len >= Index + 1 then
     FChecks.Insert(Index, False);
+end;
+
+procedure TStringsListCheckAdapter.SetArrayLength(const ACount: Integer);
+begin
+  inherited SetArrayLength(ACount);
+  FChecks.Len := ACount;
 end;
 
 procedure TStringsListCheckAdapter.SetChecks(const Value: TArray<Boolean>);
@@ -3539,6 +3565,7 @@ begin
   ViewItem.TextView1.Text := Items[Index];
   ViewItem.Height := ViewItem.TextView1.Height;
   ViewItem.EndUpdate;
+
   Result := TViewBase(ViewItem);
 end;
 

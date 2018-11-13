@@ -1,9 +1,13 @@
 ﻿FMXUI  (YangYxd)
 
 【当前版本】
-  2018.06.21.001
+  2018.11.13.001
 
 【主要更改】
+ - -----------------------------------
+ - 2018.11.13 
+ * 修复ListView多选Demo显示错误的问题（根本原因是CheckBox的问题）
+ * IListAdapter接口增加DisableCache函数，碰到像CheckBox这种情况，可以不使用缓存
  - -----------------------------------
  - 2018.06.21 
  * DBGrid功能加强，OnDrawFixedColText，OnDrawFixedCellsText事件增加DefaultDraw参数，设为True时继续执行默认绘制

@@ -42,7 +42,7 @@ end;
 procedure TFrameListViewTest.DoShow;
 var
   I: Integer;
-  Adapter: TStringsListAdapter;
+  Adapter: TStringsListCheckAdapter;
 begin
   inherited;
 
