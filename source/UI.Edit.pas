@@ -241,6 +241,9 @@ type
     function ITextInput.GetSelection = GetSelText;
     function ITextInput.GetSelectionRect = GetSelRect;
     function GetSelectionBounds: TRect;
+    {$IF CompilerVersion >= 33}
+    function GetSelectionPointSize: TSizeF;
+    {$ENDIF}
     function HasText: Boolean;
     {$IFDEF ANDROID}
     procedure UpdateAndroidKeyboardServiceState;
@@ -1856,6 +1859,14 @@ function TCustomEditView.GetSelectionBounds: TRect;
 begin
   Result := Rect(Model.SelStart, 0, Model.SelStart + Model.SelLength, 0);
 end;
+
+{$IF CompilerVersion >= 33}
+function TCustomEditView.GetSelectionPointSize: TSizeF;
+begin
+  Result.Width := Model.SelLength;
+  Result.Height := 0;
+end;
+{$ENDIF}
 
 function TCustomEditView.GetSelfCaret: TCaret;
 begin
