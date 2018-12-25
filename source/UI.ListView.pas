@@ -3408,6 +3408,8 @@ begin
   ItemCheck[TControl(Sender).Tag] := V;
   if Sender is TListViewItemCheck then
     TListViewItemCheck(Sender).CheckBox1.IsChecked := V;
+  if Assigned(ListView.FOnItemClick) then
+    ListView.FOnItemClick(ListView, TControl(Sender).Tag, TControl(Sender));
 end;
 
 function TStringsListCheckAdapter.GetChecks: TArray<Boolean>;
