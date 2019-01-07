@@ -550,7 +550,7 @@ end;
 function PackText(const AText: string): string;
 begin
   if not AText.IsEmpty then
-    Result := Format('[%d]%s', [AText.Length, AText])
+    Result := Format('%s', [AText]) // Format('[%d]%s', [AText.Length, AText])
   else
     Result := string.Empty;
 end;
