@@ -71,12 +71,12 @@ object FrameDateView: TFrameDateView
     Gravity = None
     Margins.Top = 50.000000000000000000
     Size.Width = 344.000000000000000000
-    Size.Height = 460.000000000000000000
+    Size.Height = 360.000000000000000000
     Size.PlatformDefault = False
     Position.Y = 100.000000000000000000
     TabOrder = 1
     AutoSize = True
-    Options = [coShowNavigation, coShowWeek, coCalendarWeeks, coTodayHighlight, coShowTodayButton, coShowClearButton, coShowLunar, coShowTerm, coShowRowLines, coShowWeekLine]
+    Options = [coShowNavigation, coShowWeek, coCalendarWeeks, coTodayHighlight, coShowTodayButton, coShowClearButton, coShowTerm, coShowRowLines, coShowWeekLine]
     WeekStart = 1
     DaysOfWeekHighlighted = [Week1]
     DateTime = 43096.596909282410000000
