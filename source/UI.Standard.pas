@@ -2338,10 +2338,12 @@ procedure TScrollView.FreeScrollbar;
 begin
   AutoCapture := False;
   if Assigned(FScrollV) then begin
+    FScrollV.OnChange := nil;
     RemoveComponent(FScrollV);
     FreeAndNil(FScrollV);
   end;
   if Assigned(FScrollH) then begin
+    FScrollH.OnChange := nil;
     RemoveComponent(FScrollH);
     FreeAndNil(FScrollH);
   end;
@@ -2566,7 +2568,7 @@ begin
         Exit;
       end;
       FLastViewportPosition := LViewportPosition;
-      if UV then begin
+      if UV and Assigned(FScrollV) then begin
         UpdateVScrollBar(LViewportPosition.Y, Height - Padding.Top - Padding.Bottom);
         if (LViewportPosition.Y = 0) or (LViewportPosition.Y >= GetMaxScrollViewPos) then
           VScrollChange(FScrollV);
