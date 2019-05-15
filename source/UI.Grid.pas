@@ -3146,14 +3146,39 @@ begin
 end;
 
 function TGridBase.ObjectAtPoint(AScreenPoint: TPointF): IControl;
-{$IFNDEF NEXTGEN}var P: TPointF; O: TObject; {$ENDIF}
+{$IFNDEF NEXTGEN}
+
+  function ScrollWidth(Obj: TScrollBar): Single;
+  begin
+    if Assigned(Obj) then
+      Result := Obj.Width
+    else
+      Result := 0;
+
+    Result := Max(Result, 10);
+  end;
+
+  function ScrollHeight(Obj: TScrollBar): Single;
+  begin
+    if Assigned(Obj) then
+      Result := Obj.Height
+    else
+      Result := 0;
+
+    Result := Max(Result, 10);
+  end;
+
+var
+  P: TPointF;
+  O: TObject;
+{$ENDIF}
 begin
   Result := inherited;
   {$IFNDEF NEXTGEN}
   if DragScroll then begin // 如果允许拖动
     P := ScreenToLocal(AScreenPoint);
-    if (P.X > FContentViews.Left) and (P.X < Width - Max(VScrollBar.Width, 10)) and
-     (P.Y > FContentViews.Top) and (P.Y < Height - Max(HScrollBar.Height, 10)) then
+    if (P.X > FContentViews.Left) and (P.X < Width - ScrollWidth(VScrollBar)) and
+     (P.Y > FContentViews.Top) and (P.Y < Height - ScrollHeight(HScrollBar)) then
     begin
       if Assigned(Result) then
         O := Result.GetObject
