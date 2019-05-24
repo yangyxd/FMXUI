@@ -29,6 +29,10 @@ type
     ButtonView9: TButtonView;
     ButtonView13: TButtonView;
     ButtonView14: TButtonView;
+    ButtonView15: TButtonView;
+    ButtonView16: TButtonView;
+    ButtonView17: TButtonView;
+    ButtonView18: TButtonView;
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
     procedure ButtonView3Click(Sender: TObject);
@@ -44,6 +48,10 @@ type
     procedure ButtonView9Click(Sender: TObject);
     procedure ButtonView13Click(Sender: TObject);
     procedure ButtonView14Click(Sender: TObject);
+    procedure ButtonView15Click(Sender: TObject);
+    procedure ButtonView16Click(Sender: TObject);
+    procedure ButtonView17Click(Sender: TObject);
+    procedure ButtonView18Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -60,7 +68,7 @@ implementation
 uses
   uFrameListViewTest,
   ui_PopupMenu,
-  UI.Dialog, UI.Async, uFrameDialog_CustomView;
+  UI.Dialog, UI.Async, uFrameDialog_CustomView, uFrameDialog_CustomViewVertical;
 
 { TFrmaeDialog }
 
@@ -143,6 +151,63 @@ end;
 procedure TFrmaeDialog.ButtonView14Click(Sender: TObject);
 begin
   TDialog.ShowView(Self, TView(Sender), TMainPopupMenu, 0, 0, TDialogViewPosition.Bottom);
+end;
+
+procedure TFrmaeDialog.ButtonView15Click(Sender: TObject);
+begin
+  TDialogBuilder.Create(Self)
+    .SetPosition(TDialogViewPosition.Top)
+    .SetMessage('我是一个位于顶部的消息框。')
+    .Show;
+end;
+
+procedure TFrmaeDialog.ButtonView16Click(Sender: TObject);
+begin
+  TDialogBuilder.Create(Self)
+    .SetPosition(TDialogViewPosition.Bottom)
+    .SetMessage('我是一个位于底部的消息框。这里显示消息内容')
+    .SetNegativeButton('Negative',
+      procedure (Dialog: IDialog; Which: Integer) begin
+        Hint(Dialog.Builder.NegativeButtonText);
+      end
+    )
+    .SetNeutralButton('Neutral',
+      procedure (Dialog: IDialog; Which: Integer) begin
+        Hint(Dialog.Builder.NeutralButtonText);
+      end
+    )
+    .SetPositiveButton('Positive',
+      procedure (Dialog: IDialog; Which: Integer) begin
+        Hint(Dialog.Builder.PositiveButtonText);
+      end
+    )
+    .Show;
+end;
+
+procedure TFrmaeDialog.ButtonView17Click(Sender: TObject);
+var
+  View: TFrameDialogCustomViewVertical;
+begin
+  View := TFrameDialogCustomViewVertical.Create(Self);
+  TDialogBuilder.Create(Self)
+    .SetView(View)
+    .SetWidth(50)
+    .SetPosition(TDialogViewPosition.Left)
+    .SetMessage('我是一个位于左侧的消息框。')
+    .Show;
+end;
+
+procedure TFrmaeDialog.ButtonView18Click(Sender: TObject);
+var
+  View: TFrameDialogCustomViewVertical;
+begin
+  View := TFrameDialogCustomViewVertical.Create(Self);
+  TDialogBuilder.Create(Self)
+    .SetView(View)
+    .SetWidth(50)
+    .SetPosition(TDialogViewPosition.Right)
+    .SetMessage('我是一个位于右侧的消息框。')
+    .Show;
 end;
 
 procedure TFrmaeDialog.ButtonView1Click(Sender: TObject);

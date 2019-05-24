@@ -468,6 +468,11 @@
             <FormType>fmx</FormType>
             <DesignClass>TFrame</DesignClass>
         </DCCReference>
+        <DCCReference Include="uFrameDialog_CustomViewVertical.pas">
+            <Form>FrameDialogCustomViewVertical</Form>
+            <FormType>fmx</FormType>
+            <DesignClass>TFrame</DesignClass>
+        </DCCReference>
         <None Include="CMOV.inc"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
