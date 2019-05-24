@@ -930,6 +930,7 @@ begin
   FRootBackColor := TAlphaColorRec.Null;
   FIcon := nil;
   FWordWrap := True;
+  FPosition := TDialogViewPosition.Center;
 end;
 
 function TDialogBuilder.CreateDialog: IDialog;
@@ -1681,7 +1682,11 @@ begin
   if (not (csDestroying in ComponentState)) and Assigned(FViewRoot) and
    (FViewRoot.ChildrenCount = 1) and (FViewRoot.FLayBubble = nil)
   then
+    {$IF CompilerVersion >= 30}
+    FViewRoot.Children[0].Parent := nil;
+    {$ELSE}
     FViewRoot.Controls[0].Parent := nil;
+    {$END}
 end;
 
 procedure TDialog.DoRootClick(Sender: TObject);
@@ -1696,7 +1701,11 @@ begin
     Result := FViewRoot.FLayBubble
   else begin
     if FViewRoot.ChildrenCount = 1 then
+      {$IF CompilerVersion >= 30}
+      Result := FViewRoot.Children[0]
+      {$ELSE}
       Result := FViewRoot.Controls[0]
+      {$END}
     else
       Result := nil;
   end;
