@@ -1686,7 +1686,7 @@ begin
     FViewRoot.Children[0].Parent := nil;
     {$ELSE}
     FViewRoot.Controls[0].Parent := nil;
-    {$END}
+    {$ENDIF}
 end;
 
 procedure TDialog.DoRootClick(Sender: TObject);
@@ -1700,12 +1700,8 @@ begin
   if Assigned(FViewRoot.FLayBubble) then
     Result := FViewRoot.FLayBubble
   else begin
-    if FViewRoot.ChildrenCount = 1 then
-      {$IF CompilerVersion >= 30}
-      Result := FViewRoot.Children[0]
-      {$ELSE}
+    if FViewRoot.{$IF CompilerVersion >= 30}ControlsCount{$ELSE}ChildrenCount{$ENDIF} = 1 then
       Result := FViewRoot.Controls[0]
-      {$END}
     else
       Result := nil;
   end;
