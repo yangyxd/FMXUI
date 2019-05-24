@@ -585,6 +585,36 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
     TFrameAnimator.AnimateFloat(Self, 'Position.X', NewValue, AEvent);
   end;
 
+  // 顶部移入移出, 右边进入
+  procedure DoTopMoveInOut();
+  var
+    LForm: TCustomForm;
+    Y: Single;
+  begin
+    if IsIn then begin
+      Self.Opacity := 1;
+      if not SwitchFlag then begin
+        Self.Position.Y := - Self.Height;
+        Y := 0;
+        LForm := Self.ParentForm;
+        if Assigned(LForm) then
+          Y := LForm.Padding.Top;
+        TFrameAnimator.AnimateFloat(Self, 'Position.Y', Y, AEvent);
+      end else if Assigned(AEvent) then
+        TFrameAnimator.DelayExecute(Self, AEvent, 0.2);
+    end else begin
+      if FinishIsFreeApp then begin
+        if Assigned(AEvent) then
+          AEvent(Self);
+        Exit;
+      end;
+      if SwitchFlag then
+        TFrameAnimator.AnimateFloat(Self, 'Position.Y', - Self.Height, AEvent, 0.1)
+      else if Assigned(AEvent) then
+        TFrameAnimator.DelayExecute(Self, AEvent, 0.65);
+    end;
+  end;
+
   // 底部移入移出, 右边进入
   procedure DoBottomMoveInOut();
   var
@@ -634,6 +664,8 @@ begin
         DoFadeInOut;
       TFrameAniType.MoveInOut:
         DoMoveInOut;
+      TFrameAniType.TopMoveInOut:
+        DoTopMoveInOut;
       TFrameAniType.BottomMoveInOut:
         DoBottomMoveInOut;
     else

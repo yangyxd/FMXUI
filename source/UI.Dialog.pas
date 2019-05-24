@@ -1392,6 +1392,23 @@ var
     end;
   end;
 
+  // 从顶部弹出
+  procedure DoTopMoveInOut();
+  var
+    NewValue: Single;
+  begin
+    if Assigned(AniView) and Assigned(FViewRoot) then begin
+      if IsIn then begin
+        AniView.Position.Y := - AniView.Height;
+        NewValue := 0;
+        TFrameAnimator.AnimateFloat(AniView, 'Position.Y', NewValue, AEvent);
+      end else begin
+        NewValue := - FViewRoot.Height - AniView.Height;
+        TFrameAnimator.AnimateFloat(AniView, 'Position.Y', NewValue, AEvent, 0.05);
+      end;
+    end;
+  end;
+
   // 从底部弹出
   procedure DoBottomMoveInOut();
   var
@@ -1481,6 +1498,8 @@ begin
   case Ani of
     TFrameAniType.FadeInOut:
       DoFadeInOut;
+    TFrameAniType.TopMoveInOut:
+      DoTopMoveInOut;
     TFrameAniType.BottomMoveInOut:
       DoBottomMoveInOut;
     TFrameAniType.LeftSlideMenu:
