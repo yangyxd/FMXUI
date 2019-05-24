@@ -5885,7 +5885,7 @@ begin
     if IsAW then AWidth := 0;
     if IsAH then AHeight := 0;
 
-    for I := 0 to ChildrenCount - 1 do begin
+    for I := 0 to {$IF CompilerVersion >= 30}ControlsCount{$ELSE}ChildrenCount{$END} - 1 do begin
       Control := Controls[I];
       if not Control.Visible then Continue;
       {$IFDEF MSWINDOWS}

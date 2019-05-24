@@ -1146,7 +1146,7 @@ end;
 
 procedure TFrameView.HideWaitDialog;
 begin
-  if (not IsDestroy) and Assigned(FWaitDialog) then begin
+  if (not IsDestroy) and Assigned(FWaitDialog) and (not IsWaitDismiss) then begin
     FWaitDialog.Dismiss;
     FWaitDialog := nil;
   end;
