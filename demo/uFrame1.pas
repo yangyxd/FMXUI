@@ -86,17 +86,30 @@ uses
 
 procedure TFrame1.ButtonView10Click(Sender: TObject);
 begin
-  if TView(Sender).Tag = 0 then begin
-    TView(Sender).Tag := 1;
-    TDialog.ShowView(Self, TView(Sender), TFramePopMenu, 0, 0,
-      TDialogViewPosition.LeftFill, True,
-      TFrameAniType.LeftSlideMenu);
-  end else begin
-    TView(Sender).Tag := 0;
-    TDialog.ShowView(Self, TView(Sender), TFramePopMenu, 0, 0,
-      TDialogViewPosition.RightFill, True,
-      TFrameAniType.RightSlideMenu);
+  case TView(Sender).Tag of
+    0, 4: begin
+      TDialog.ShowView(Self, TView(Sender), TFramePopMenu, 0, 0,
+        TDialogViewPosition.LeftFill, True,
+        TFrameAniType.LeftSlideMenu);
+      TView(Sender).Tag := 0;
+    end;
+    1: begin
+      TDialog.ShowView(Self, TView(Sender), TFramePopMenu, 0, 0,
+        TDialogViewPosition.RightFill, True,
+        TFrameAniType.RightSlideMenu);
+    end;
+    2: begin
+      TDialog.ShowView(Self, TView(Sender), TFramePopMenu, 0, 0,
+        TDialogViewPosition.Top, True,
+        TFrameAniType.TopMoveInOut);
+    end;
+    3: begin
+      TDialog.ShowView(Self, TView(Sender), TFramePopMenu, 0, 0,
+        TDialogViewPosition.Bottom, True,
+        TFrameAniType.BottomMoveInOut);
+    end;
   end;
+  TView(Sender).Tag := TView(Sender).Tag + 1;
 end;
 
 procedure TFrame1.ButtonView11Click(Sender: TObject);
@@ -136,7 +149,7 @@ end;
 
 procedure TFrame1.ButtonView1Click(Sender: TObject);
 begin
-  StartFrame(TFrame2);
+  StartFrame(TFrame2, TButtonView(Sender).Text, TFrameAniType.TopMoveInOut);
 end;
 
 procedure TFrame1.ButtonView2Click(Sender: TObject);

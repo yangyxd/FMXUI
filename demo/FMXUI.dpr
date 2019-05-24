@@ -30,7 +30,8 @@ uses
   uFrameCameraViewer in 'uFrameCameraViewer.pas' {FrameCameraViewer: TFrame},
   uFrameVertScrollView in 'uFrameVertScrollView.pas' {FrameVertScrollView: TFrame},
   uFrameHorzScrollView in 'uFrameHorzScrollView.pas' {FrameHorzScrollView: TFrame},
-  uFrameDateView in 'uFrameDateView.pas' {FrameDateView: TFrame};
+  uFrameDateView in 'uFrameDateView.pas' {FrameDateView: TFrame},
+  uFrameDialog_CustomViewVertical in 'uFrameDialog_CustomViewVertical.pas' {FrameDialogCustomViewVertical: TFrame};
 
 {$R *.res}
 

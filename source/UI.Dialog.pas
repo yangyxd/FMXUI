@@ -592,10 +592,11 @@ type
     FMaskVisible: Boolean;
     FCheckedItem: Integer;
     FTag: Integer;
-    
+
     FWidth: Single;
     FMaxHeight: Single;
     FListItemDefaultHeight: Single;
+    FPosition: TDialogViewPosition;
 
     [Weak] FTarget: TControl;
     FTargetOffsetX, FTargetOffsetY: Single;
@@ -676,6 +677,11 @@ type
     function SetDownPopup(ATarget: TControl; const XOffset, YOffset: Single;
       Gravity: TLayoutGravity = TLayoutGravity.LeftBottom;
       MaskVisible: Boolean = False): TDialogBuilder;
+
+    /// <summary>
+    /// 设置位置
+    /// </summary>
+    function SetPosition(APosition: TDialogViewPosition): TDialogBuilder;
 
     /// <summary>
     /// 设置是否自动换行（列表项）
@@ -1256,6 +1262,13 @@ begin
   FOnKeyListener := AListener;
 end;
 
+function TDialogBuilder.SetPosition(
+  APosition: TDialogViewPosition): TDialogBuilder;
+begin
+  Result := Self;
+  FPosition := APosition;
+end;
+
 function TDialogBuilder.SetPositiveButton(const AText: string;
   AListener: TOnDialogClickListenerA): TDialogBuilder;
 begin
@@ -1392,6 +1405,23 @@ var
     end;
   end;
 
+  // 从顶部弹出
+  procedure DoTopMoveInOut();
+  var
+    NewValue: Single;
+  begin
+    if Assigned(AniView) and Assigned(FViewRoot) then begin
+      if IsIn then begin
+        AniView.Position.Y := - AniView.Height;
+        NewValue := 0;
+        TFrameAnimator.AnimateFloat(AniView, 'Position.Y', NewValue, AEvent);
+      end else begin
+        NewValue := - FViewRoot.Height - AniView.Height;
+        TFrameAnimator.AnimateFloat(AniView, 'Position.Y', NewValue, AEvent, 0.05);
+      end;
+    end;
+  end;
+
   // 从底部弹出
   procedure DoBottomMoveInOut();
   var
@@ -1481,6 +1511,8 @@ begin
   case Ani of
     TFrameAniType.FadeInOut:
       DoFadeInOut;
+    TFrameAniType.TopMoveInOut:
+      DoTopMoveInOut;
     TFrameAniType.BottomMoveInOut:
       DoBottomMoveInOut;
     TFrameAniType.LeftSlideMenu:
@@ -2022,12 +2054,9 @@ begin
   FIsDowPopup := False;
   
   if Assigned(FBuilder.FTarget) then begin
-
     FIsDowPopup := True;
     InitDownPopupView();
-
   end else begin
-
     if ABuilder.View <> nil then
       // 附加 View 的对话框
       InitExtPopView()
@@ -2044,12 +2073,11 @@ begin
     else
       // 基本对话框
       InitDefaultPopView();
-
   end;
 
   InitOK();
   
-  FViewRoot.FIsDownPopup := FIsDowPopup;    
+  FViewRoot.FIsDownPopup := FIsDowPopup;
 end;
 
 procedure TCustomAlertDialog.DoApplyTitle;
@@ -2882,10 +2910,41 @@ begin
     FLayBubble.Background.YRadius := StyleMgr.FBackgroundRadius;
   end;
   FLayBubble.Background.ItemDefault.Kind := TViewBrushKind.Solid;
-  FLayBubble.Layout.CenterInParent := True;
-  FLayBubble.Clickable := True;    
+  FLayBubble.Clickable := True;
   FLayBubble.WidthSize := TViewSize.FillParent;
     
+  case FDialog.Builder.FPosition of
+    TDialogViewPosition.Top: begin
+      FLayBubble.Layout.CenterHorizontal := True;
+      FLayBubble.Layout.AlignParentTop := True;
+    end;
+    TDialogViewPosition.Bottom: begin
+      FLayBubble.Layout.CenterHorizontal := True;
+      FLayBubble.Layout.AlignParentBottom := True;
+    end;
+    TDialogViewPosition.LeftBottom: begin
+      FLayBubble.Layout.AlignParentLeft := True;
+      FLayBubble.Layout.AlignParentBottom := True;
+    end;
+    TDialogViewPosition.RightBottom: begin
+      FLayBubble.Layout.AlignParentRight := True;
+      FLayBubble.Layout.AlignParentBottom := True;
+    end;
+    TDialogViewPosition.Left: begin
+      FLayBubble.Layout.CenterVertical := True;
+      FLayBubble.Layout.AlignParentLeft := True;
+    end;
+    TDialogViewPosition.Right: begin
+      FLayBubble.Layout.CenterVertical := True;
+      FLayBubble.Layout.AlignParentRight := True;
+    end;
+    TDialogViewPosition.Center: begin
+      FLayBubble.Layout.CenterInParent := True;
+    end;
+    TDialogViewPosition.LeftFill: ;
+    TDialogViewPosition.RightFill: ;
+  end;
+
   FLayBubble.HeightSize := TViewSize.WrapContent;
   FLayBubble.Orientation := TOrientation.Vertical;
   FLayBubble.CanFocus := False;
