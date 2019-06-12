@@ -167,6 +167,9 @@ type
     FTitleSpaceHeight: Single;
     FTitleSpaceColor: TAlphaColor;
     FMaxWidth: Integer;
+    FMessageTextMargins: TBounds;
+    FMessageTextGravity: TLayoutGravity;
+    FTitleTextBold: Boolean;
 
     FListItemPressedColor: TAlphaColor;
     FListItemDividerColor: TAlphaColor;
@@ -176,6 +179,8 @@ type
     procedure SetButtonTextColor(const Value: TTextColor);
     function IsStoredBackgroundRadius: Boolean;
     function IsStoredTitleSpaceHeight: Boolean;
+    function GetMessageTextMargins: TBounds;
+    procedure SetMessageTextMargins(const Value: TBounds);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -190,10 +195,15 @@ type
     property TitleTextColor: TAlphaColor read FTitleTextColor write FTitleTextColor default COLOR_TitleTextColor;
     // 主体区背景颜色
     property BodyBackgroundColor: TAlphaColor read FBodyBackgroundColor write FBodyBackgroundColor default COLOR_BodyBackgroundColor;
+
     // 消息文本颜色
     property MessageTextColor: TAlphaColor read FMessageTextColor write FMessageTextColor default COLOR_MessageTextColor;
     // 消息文本背景颜色
     property MessageTextBackground: TAlphaColor read FMessageTextBackground write FMessageTextBackground default COLOR_MessageTextBackground;
+    // 消息文本外边距
+    property MessageTextMargins: TBounds  read GetMessageTextMargins write SetMessageTextMargins;
+    // 消息文本重力
+    property MessageTextGravity: TLayoutGravity read FMessageTextGravity write FMessageTextGravity default TLayoutGravity.CenterVertical;
 
     // 等待消息框背景颜色
     property ProcessBackgroundColor: TAlphaColor read FProcessBackgroundColor write FProcessBackgroundColor default COLOR_ProcessBackgroundColor;
@@ -209,11 +219,13 @@ type
     property TitleGravity: TLayoutGravity read FTitleGravity write FTitleGravity default Title_Gravity;
     // 标题栏高度
     property TitleHeight: Integer read FTitleHeight write FTitleHeight default SIZE_TitleHeight;
+    // 标题栏粗体
+    property TitleTextBold: Boolean read FTitleTextBold write FTitleTextBold default False;
     // 标题文本大小
     property TitleTextSize: Integer read FTitleTextSize write FTitleTextSize default FONT_TitleTextSize;
     // 消息文本大小
     property MessageTextSize: Integer read FMessageTextSize write FMessageTextSize default FONT_MessageTextSize;
-    // 消息文本大小
+    // 按钮文本大小
     property ButtonTextSize: Integer read FButtonTextSize write FButtonTextSize default FONT_ButtonTextSize;
     // 图标大小
     property IconSize: Integer read FIconSize write FIconSize default SIZE_ICON;
@@ -608,14 +620,23 @@ type
     FPositiveButtonText: string;
     FPositiveButtonListener: TOnDialogClickListener;
     FPositiveButtonListenerA: TOnDialogClickListenerA;
+    FPositiveButtonSize: Single;
+    FPositiveButtonColor: Int64;
+    FPositiveButtonStyle: TFontStyles;
 
     FNegativeButtonText: string;
     FNegativeButtonListener: TOnDialogClickListener;
     FNegativeButtonListenerA: TOnDialogClickListenerA;
+    FNegativeButtonSize: Single;
+    FNegativeButtonColor: Int64;
+    FNegativeButtonStyle: TFontStyles;
 
     FNeutralButtonText: string;
     FNeutralButtonListener: TOnDialogClickListener;
     FNeutralButtonListenerA: TOnDialogClickListenerA;
+    FNeutralButtonSize: Single;
+    FNeutralButtonColor: Int64;
+    FNeutralButtonStyle: TFontStyles;
 
     FOnCancelListener: TOnDialogListener;
     FOnCancelListenerA: TOnDialogListenerA;
@@ -693,16 +714,19 @@ type
     /// </summary>
     function SetPositiveButton(const AText: string; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
     function SetPositiveButton(const AText: string; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
+    function SetPositiveButtonStyle(const AColor: Int64; const AStyle: TFontStyles = []; const ASize: Single = -1): TDialogBuilder; overload;
     /// <summary>
     /// 设置否定按钮
     /// </summary>
     function SetNegativeButton(const AText: string; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
     function SetNegativeButton(const AText: string; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
+    function SetNegativeButtonStyle(const AColor: Int64; const AStyle: TFontStyles = []; const ASize: Single = -1): TDialogBuilder; overload;
     /// <summary>
     /// 设置中间按钮
     /// </summary>
     function SetNeutralButton(const AText: string; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
     function SetNeutralButton(const AText: string; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
+    function SetNeutralButtonStyle(const AColor: Int64; const AStyle: TFontStyles = []; const ASize: Single = -1): TDialogBuilder; overload;
 
     /// <summary>
     /// 设置是否可以取消
@@ -821,7 +845,7 @@ type
     property MaskVisible: Boolean read FMaskVisible write FMaskVisible;
     property RootBackColor: TAlphaColor read FRootBackColor write FRootBackColor;
     property ClickButtonDismiss: Boolean read FClickButtonDismiss write FClickButtonDismiss;
-    property CheckedItem: Integer read FCheckedItem; 
+    property CheckedItem: Integer read FCheckedItem;
     property CheckedItems: TArray<Boolean> read FCheckedItems;
     property CheckedCount: Integer read GetCheckedCount;
 
@@ -834,14 +858,23 @@ type
     property PositiveButtonText: string read FPositiveButtonText;
     property PositiveButtonListener: TOnDialogClickListener read FPositiveButtonListener;
     property PositiveButtonListenerA: TOnDialogClickListenerA read FPositiveButtonListenerA;
+    property PositiveButtonSize: Single read FPositiveButtonSize;
+    property PositiveButtonColor: Int64 read FPositiveButtonColor;
+    property PositiveButtonStyle: TFontStyles read FPositiveButtonStyle;
 
     property NegativeButtonText: string read FNegativeButtonText;
     property NegativeButtonListener: TOnDialogClickListener read FNegativeButtonListener;
     property NegativeButtonListenerA: TOnDialogClickListenerA read FNegativeButtonListenerA;
+    property NegativeButtonSize: Single read FNegativeButtonSize;
+    property NegativeButtonColor: Int64 read FNegativeButtonColor;
+    property NegativeButtonStyle: TFontStyles read FNegativeButtonStyle;
 
     property NeutralButtonText: string read FNeutralButtonText;
     property NeutralButtonListener: TOnDialogClickListener read FNeutralButtonListener;
     property NeutralButtonListenerA: TOnDialogClickListenerA read FNeutralButtonListenerA;
+    property NeutralButtonSize: Single read FNeutralButtonSize;
+    property NeutralButtonColor: Int64 read FNeutralButtonColor;
+    property NeutralButtonStyle: TFontStyles read FNeutralButtonStyle;
 
     property OnCancelListener: TOnDialogListener read FOnCancelListener;
     property OnCancelListenerA: TOnDialogListenerA read FOnCancelListenerA;
@@ -931,6 +964,10 @@ begin
   FIcon := nil;
   FWordWrap := True;
   FPosition := TDialogViewPosition.Center;
+
+  FPositiveButtonColor := -1;
+  FNegativeButtonColor := -1;
+  FNeutralButtonColor := -1;
 end;
 
 function TDialogBuilder.CreateDialog: IDialog;
@@ -1004,7 +1041,7 @@ end;
 function TDialogBuilder.SetData(const V: TValue): TDialogBuilder;
 begin
   Result := Self;
-  FData := V; 
+  FData := V;
 end;
 
 function TDialogBuilder.SetDownPopup(ATarget: TControl; const XOffset,
@@ -1275,7 +1312,16 @@ function TDialogBuilder.SetPositiveButton(const AText: string;
 begin
   Result := Self;
   FPositiveButtonText := AText;
-  FPositiveButtonListenerA := AListener;    
+  FPositiveButtonListenerA := AListener;
+end;
+
+function TDialogBuilder.SetPositiveButtonStyle(const AColor: Int64;
+  const AStyle: TFontStyles; const ASize: Single): TDialogBuilder;
+begin
+  Result := Self;
+  FPositiveButtonSize := ASize;
+  FPositiveButtonColor := AColor;
+  FPositiveButtonStyle := AStyle;
 end;
 
 function TDialogBuilder.SetRootBackColor(const V: TAlphaColor): TDialogBuilder;
@@ -1357,12 +1403,30 @@ begin
   FNegativeButtonListenerA := AListener;
 end;
 
+function TDialogBuilder.SetNegativeButtonStyle(const AColor: Int64;
+  const AStyle: TFontStyles; const ASize: Single): TDialogBuilder;
+begin
+  Result := Self;
+  FNegativeButtonSize := ASize;
+  FNegativeButtonColor := AColor;
+  FNegativeButtonStyle := AStyle;
+end;
+
 function TDialogBuilder.SetNeutralButton(const AText: string;
   AListener: TOnDialogClickListenerA): TDialogBuilder;
 begin
   Result := Self;
   FNeutralButtonText := AText;
   FNeutralButtonListenerA := AListener;
+end;
+
+function TDialogBuilder.SetNeutralButtonStyle(const AColor: Int64;
+  const AStyle: TFontStyles; const ASize: Single): TDialogBuilder;
+begin
+  Result := Self;
+  FNeutralButtonSize := ASize;
+  FNeutralButtonColor := AColor;
+  FNeutralButtonStyle := AStyle;
 end;
 
 { TDialog }
@@ -2057,7 +2121,7 @@ begin
   if ABuilder = nil then Exit;
 
   FIsDowPopup := False;
-  
+
   if Assigned(FBuilder.FTarget) then begin
     FIsDowPopup := True;
     InitDownPopupView();
@@ -2081,7 +2145,7 @@ begin
   end;
 
   InitOK();
-  
+
   FViewRoot.FIsDownPopup := FIsDowPopup;
 end;
 
@@ -2215,6 +2279,20 @@ begin
 end;
 
 procedure TCustomAlertDialog.InitDefaultPopView;
+
+  procedure SetButton(var B: TButtonView; FText: string;
+    FSize: Single; FColor: Int64; FStyle: TFontStyles);
+  begin
+    B.Text := FText;
+    B.OnClick := DoButtonClick;
+    if FSize > 0 then
+      B.TextSettings.Font.Size := FSize;
+    if FColor > -1 then
+      B.TextSettings.Color.Default := FColor;
+    if FStyle <> [] then
+      B.TextSettings.Font.Style := FStyle;
+  end;
+
 var
   StyleManager: TDialogStyleManager;
   BtnCount: Integer;
@@ -2244,11 +2322,11 @@ begin
   if Builder.FWidth > 0 then begin
     FViewRoot.FLayBubble.WidthSize := TViewSize.CustomSize;
     FViewRoot.FLayBubble.Size.Width := Builder.FWidth;
-    FViewRoot.FLayBubble.MaxWidth := Builder.FWidth;       
+    FViewRoot.FLayBubble.MaxWidth := Builder.FWidth;
     FViewRoot.FLayBubble.AdjustViewBounds := True;
   end else
     FViewRoot.FLayBubble.WidthSize := TViewSize.FillParent;
-    
+
   if FBuilder.FMaxHeight > 0 then
     FViewRoot.FLayBubble.MaxHeight := FBuilder.FMaxHeight;
 
@@ -2285,8 +2363,8 @@ begin
   if Builder.PositiveButtonText = '' then
     FViewRoot.FButtonPositive.Visible := False
   else begin
-    FViewRoot.FButtonPositive.Text := Builder.PositiveButtonText;
-    FViewRoot.FButtonPositive.OnClick := DoButtonClick;
+    SetButton(FViewRoot.FButtonPositive, Builder.PositiveButtonText,
+      Builder.PositiveButtonSize, Builder.PositiveButtonColor, Builder.PositiveButtonStyle);
     Inc(BtnCount);
     FViewRoot.FButtonPositive.Background.Corners := [TCorner.BottomLeft];
     FButtomRadius := FViewRoot.FButtonPositive;
@@ -2294,8 +2372,8 @@ begin
   if Builder.NegativeButtonText = '' then
     FViewRoot.FButtonNegative.Visible := False
   else begin
-    FViewRoot.FButtonNegative.Text := Builder.NegativeButtonText;
-    FViewRoot.FButtonNegative.OnClick := DoButtonClick;
+    SetButton(FViewRoot.FButtonNegative, Builder.NegativeButtonText,
+      Builder.NegativeButtonSize, Builder.NegativeButtonColor, Builder.NegativeButtonStyle);
     Inc(BtnCount);
     if BtnCount = 1 then
       FViewRoot.FButtonNegative.Background.Corners := [TCorner.BottomLeft];
@@ -2310,8 +2388,8 @@ begin
         FButtomRadius.Background.Corners := [TCorner.BottomRight];
     end;
   end else begin
-    FViewRoot.FButtonNeutral.Text := Builder.NeutralButtonText;
-    FViewRoot.FButtonNeutral.OnClick := DoButtonClick;
+    SetButton(FViewRoot.FButtonNeutral, Builder.NeutralButtonText,
+      Builder.NeutralButtonSize, Builder.NeutralButtonColor, Builder.NeutralButtonStyle);
     Inc(BtnCount);
     if BtnCount = 1 then
       FViewRoot.FButtonNeutral.Background.Corners := [TCorner.BottomLeft, TCorner.BottomRight]
@@ -2404,7 +2482,7 @@ begin
 
 //  FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
 //  FViewRoot.Background.ItemDefault.Color := $7f33cc33;
-  
+
 //  FViewRoot.FLayBubble.Background.ItemDefault.Kind := TViewBrushKind.Solid;
 //  FViewRoot.FLayBubble.Background.ItemDefault.Color := $7f33ccff;
 
@@ -2504,7 +2582,7 @@ begin
       else
         FViewRoot.FListView.MaxHeight := BodyMH;
     end;
-  end;   
+  end;
 
   if Assigned(FViewRoot.FTitleSpace) then begin
     if FViewRoot.FTitleView.Visible = False then
@@ -2516,7 +2594,7 @@ begin
   end;
 
   if Builder.FMaskVisible then
-    SetBackColor(Sytle.FDialogMaskColor);    
+    SetBackColor(Sytle.FDialogMaskColor);
 
   if FBuilder.View <> nil then
     // 附加 View 的对话框
@@ -2530,12 +2608,12 @@ begin
   else if (Length(FBuilder.FItemArray) > 0) or
     (Assigned(FBuilder.Items) and (FBuilder.Items.Count > 0)) then
     // 列表框
-    InitListPopView(); 
+    InitListPopView();
 end;
 
 procedure TCustomAlertDialog.InitExtPopView;
 begin
-  if not FIsDowPopup then    
+  if not FIsDowPopup then
     InitDefaultPopView;
   FViewRoot.FMsgBody.Visible := True;
   if Assigned(FViewRoot.FMsgMessage) then
@@ -2618,7 +2696,7 @@ procedure TCustomAlertDialog.InitMultiPopView;
 var
   ListView: TListViewEx;
 begin
-  if not FIsDowPopup then 
+  if not FIsDowPopup then
     InitDefaultPopView;
   FViewRoot.FMsgBody.Visible := True;
   if Assigned(FViewRoot.FMsgMessage) then begin
@@ -2639,7 +2717,7 @@ procedure TCustomAlertDialog.InitSinglePopView;
 var
   ListView: TListViewEx;
 begin
-  if not FIsDowPopup then 
+  if not FIsDowPopup then
     InitDefaultPopView;
   FViewRoot.FMsgBody.Visible := True;
   if Assigned(FViewRoot.FMsgMessage) then begin
@@ -2719,7 +2797,7 @@ end;
 procedure TDialogView.DoRealign;
 begin
   inherited DoRealign;
-  if (not FDisableAlign) and FIsDownPopup then 
+  if (not FDisableAlign) and FIsDownPopup then
     TAlertDialog(FDialog).AdjustDownPopupPosition;
 end;
 
@@ -2809,7 +2887,7 @@ end;
 
 procedure TDialogView.InitMessage(StyleMgr: TDialogStyleManager);
 begin
-  if FMsgMessage <> nil then Exit;  
+  if FMsgMessage <> nil then Exit;
   // 内容区
   FMsgMessage := TTextView.Create(Owner);
   {$IFDEF MSWINDOWS}
@@ -2820,7 +2898,7 @@ begin
   FMsgMessage.WidthSize := TViewSize.FillParent;
   FMsgMessage.HeightSize := TViewSize.WrapContent;
   FMsgMessage.Padding.Rect := RectF(8, 8, 8, 12);
-  FMsgMessage.Gravity := TLayoutGravity.CenterVertical;
+  FMsgMessage.Gravity := StyleMgr.MessageTextGravity;
   FMsgMessage.TextSettings.WordWrap := True;
   FMsgMessage.TextSettings.Color.Default := StyleMgr.MessageTextColor;
   FMsgMessage.TextSettings.Font.Size := StyleMgr.MessageTextSize;
@@ -2831,6 +2909,7 @@ begin
   FMsgMessage.Drawable.Padding := 8;
   FMsgMessage.Background.ItemDefault.Color := StyleMgr.MessageTextBackground;
   FMsgMessage.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+  FMsgMessage.Margins.Assign(StyleMgr.MessageTextMargins);
 end;
 
 procedure TDialogView.InitOK;
@@ -2917,7 +2996,7 @@ begin
   FLayBubble.Background.ItemDefault.Kind := TViewBrushKind.Solid;
   FLayBubble.Clickable := True;
   FLayBubble.WidthSize := TViewSize.FillParent;
-    
+
   case FDialog.Builder.FPosition of
     TDialogViewPosition.Top: begin
       FLayBubble.Layout.CenterHorizontal := True;
@@ -2954,9 +3033,9 @@ begin
   FLayBubble.Orientation := TOrientation.Vertical;
   FLayBubble.CanFocus := False;
   FLayBubble.AdjustViewBounds := True;
-  if StyleMgr.MaxWidth > 0 then  
+  if StyleMgr.MaxWidth > 0 then
     FLayBubble.MaxWidth := StyleMgr.MaxWidth;
-  FLayBubble.MaxHeight := Height - FLayBubble.Margins.Top - FLayBubble.Margins.Bottom;   
+  FLayBubble.MaxHeight := Height - FLayBubble.Margins.Top - FLayBubble.Margins.Bottom;
 
   // 标题栏
   FTitleView := TTextView.Create(Owner);
@@ -2966,6 +3045,8 @@ begin
   FTitleView.Parent := FLayBubble;
   FTitleView.ClipChildren := True;
   FTitleView.TextSettings.Font.Size := StyleMgr.TitleTextSize;
+  if StyleMgr.TitleTextBold then
+    FTitleView.TextSettings.Font.Style := [TFontStyle.fsBold];
   FTitleView.TextSettings.Color.Default := StyleMgr.TitleTextColor;
   FTitleView.Gravity := StyleMgr.TitleGravity;
   FTitleView.Padding.Rect := RectF(8, 4, 8, 4);
@@ -3054,15 +3135,20 @@ begin
   FProcessTextColor := COLOR_ProcessTextColor;
   FBackgroundColor := COLOR_BackgroundColor;
   FBodyBackgroundColor := COLOR_BodyBackgroundColor;
+
   FMessageTextBackground := COLOR_MessageTextBackground;
   FMessageTextColor := COLOR_MessageTextColor;
   FMessageTextSize := FONT_MessageTextSize;
+  FMessageTextMargins := TBounds.Create(TRectF.Empty);
+  FMessageTextGravity := TLayoutGravity.CenterVertical;
+
   FTitleTextSize := FONT_TitleTextSize;
   FButtonTextSize := FONT_ButtonTextSize;
   FIconSize := SIZE_ICON;
   FTitleHeight := SIZE_TitleHeight;
   FTitleGravity := Title_Gravity;
   FBackgroundRadius := SIZE_BackgroundRadius;
+  FTitleTextBold := False;
 
   FButtonColor := TButtonViewColor.Create();
   FButtonColor.Default := COLOR_ButtonColor;
@@ -3096,10 +3182,16 @@ destructor TDialogStyleManager.Destroy;
 begin
   if (DefaultStyleManager = Self) and (not (csDesigning in ComponentState)) then
     DefaultStyleManager := nil;
+  FreeAndNil(FMessageTextMargins);
   FreeAndNil(FButtonColor);
   FreeAndNil(FButtonBorder);
   FreeAndNil(FButtonTextColor);
   inherited;
+end;
+
+function TDialogStyleManager.GetMessageTextMargins: TBounds;
+begin
+  Result := FMessageTextMargins;
 end;
 
 function TDialogStyleManager.IsStoredBackgroundRadius: Boolean;
@@ -3127,6 +3219,11 @@ begin
   FButtonTextColor.Assign(Value);
 end;
 
+
+procedure TDialogStyleManager.SetMessageTextMargins(const Value: TBounds);
+begin
+  FMessageTextMargins.Assign(Value);
+end;
 
 { TProgressDialog }
 

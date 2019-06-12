@@ -33,6 +33,7 @@ type
     ButtonView16: TButtonView;
     ButtonView17: TButtonView;
     ButtonView18: TButtonView;
+    ButtonView19: TButtonView;
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
     procedure ButtonView3Click(Sender: TObject);
@@ -52,9 +53,14 @@ type
     procedure ButtonView16Click(Sender: TObject);
     procedure ButtonView17Click(Sender: TObject);
     procedure ButtonView18Click(Sender: TObject);
+    procedure ButtonView19Click(Sender: TObject);
   private
     { Private declarations }
   protected
+    // 初始事件
+    procedure DoCreate(); override;
+    // 释放事件
+    procedure DoFree(); override;
     // 显示事件
     procedure DoShow(); override;
   public
@@ -69,6 +75,9 @@ uses
   uFrameListViewTest,
   ui_PopupMenu,
   UI.Dialog, UI.Async, uFrameDialog_CustomView, uFrameDialog_CustomViewVertical;
+
+var
+  IosStyleManager: TDialogStyleManager;
 
 { TFrmaeDialog }
 
@@ -207,6 +216,26 @@ begin
     .SetWidth(50)
     .SetPosition(TDialogViewPosition.Right)
     .SetMessage('我是一个位于右侧的消息框。')
+    .Show;
+end;
+
+procedure TFrmaeDialog.ButtonView19Click(Sender: TObject);
+begin
+  TDialogBuilder.Create(Self)
+    .SetStyleManager(IosStyleManager)
+    .SetTitle('我是标题文本')
+    .SetMessage('我是一个消息框。这里显示消息内容')
+    .SetNegativeButton('Negative',
+      procedure (Dialog: IDialog; Which: Integer) begin
+        Hint(Dialog.Builder.NegativeButtonText);
+      end
+    )
+    .SetNegativeButtonStyle(TAlphaColors.Red, [TFontStyle.fsBold])
+    .SetPositiveButton('Positive',
+      procedure (Dialog: IDialog; Which: Integer) begin
+        Hint(Dialog.Builder.PositiveButtonText);
+      end
+    )
     .Show;
 end;
 
@@ -351,6 +380,32 @@ begin
       end
     )
     .Show;
+end;
+
+procedure TFrmaeDialog.DoCreate;
+begin
+  inherited;
+  IosStyleManager := TDialogStyleManager.Create(nil);
+  IosStyleManager.BackgroundColor := $FF999999;
+  IosStyleManager.BackgroundRadius := 15;
+  IosStyleManager.TitleHeight := 55;
+  IosStyleManager.TitleTextBold := True;
+  IosStyleManager.TitleGravity := TLayoutGravity.CenterHBottom;
+  IosStyleManager.TitleTextSize := 17;
+  IosStyleManager.TitleTextColor := $FF1A1A1A;
+  IosStyleManager.TitleSpaceColor := IosStyleManager.BodyBackgroundColor;
+  IosStyleManager.MessageTextMargins.Left := 10;
+  IosStyleManager.MessageTextMargins.Right := 10;
+  IosStyleManager.MessageTextMargins.Bottom := 15;
+  IosStyleManager.MessageTextColor := $FF030303;
+  IosStyleManager.MessageTextGravity := TLayoutGravity.Center;
+  IosStyleManager.ButtonTextColor.Default := $FF0D69FF;
+end;
+
+procedure TFrmaeDialog.DoFree;
+begin
+  inherited;
+  FreeAndNil(IosStyleManager);
 end;
 
 procedure TFrmaeDialog.DoShow;

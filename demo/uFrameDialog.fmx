@@ -528,6 +528,31 @@ object FrmaeDialog: TFrmaeDialog
         Text = #21491#20391#23545#35805#26694
         TextSettings.Gravity = Center
       end
+      object ButtonView19: TButtonView
+        Background.Border.Color.Default = claNull
+        Background.Border.Color.Pressed = claNull
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Selected = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Top = 8.000000000000000000
+        Margins.Bottom = 4.000000000000000000
+        Size.Width = 280.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 12.000000000000000000
+        Position.Y = 764.000000000000000000
+        TabOrder = 19
+        OnClick = ButtonView19Click
+        Text = 'IOS'#23545#35805#26694
+        TextSettings.Gravity = Center
+      end
     end
   end
 end
