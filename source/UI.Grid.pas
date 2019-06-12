@@ -608,7 +608,7 @@ type
   protected
     FDownPos: TPointF;
     FRBRect: TRectF;
-    
+
     FSelectCell: TGridCell;   // 当前选择的单元格
     FSelectClickRef: Integer; // 当前选中格子点击次数
 
@@ -5249,7 +5249,7 @@ var
 begin
   if (ACell.Row < 0) then
     Exit;
-    
+
   DH := GridView.GetDividerHeight;
   X := GridView.HScrollBarValue;
   Y := GridView.VScrollBarValue;
@@ -5259,16 +5259,29 @@ begin
   if ACell.Row <= FFirstRowIndex then begin
     V := FViewTop;
     for I := FFirstRowIndex downto ACell.Row do
-      V := V - RowHeight[I] - DH; 
+      V := V - RowHeight[I] - DH;
     Y := Y - (FViewTop - V);
   end else if (ACell.Row >= FLastFullRowIndex) then begin
-    V := FViewFullBottom;
-    for I := FLastFullRowIndex to ACell.Row do 
-      V := V + RowHeight[I] + DH;
-    Y := Y + (V - FViewFullBottom);
+    if FViewFullBottom = -1 then begin
+      V := FViewTop;
+      for I := 0 to FLastRowIndex do begin
+        if V + RowHeight[I] + DH > FViewTop + FViewHeight then begin
+          FLastFullRowIndex := I - 1;
+          FViewFullBottom := V;
+          Break;
+        end;
+        V := V + RowHeight[I] + DH;
+      end;
+    end;
+    if FViewFullBottom > -1 then begin
+      V := FViewFullBottom;
+      for I := FLastFullRowIndex to ACell.Row do
+        V := V + RowHeight[I] + DH;
+      Y := Y + (V - FViewFullBottom);
+    end;
   end;
 
-  if ACell.Col >= 0 then begin  
+  if ACell.Col >= 0 then begin
     W := Width;
     {$IFNDEF NEXTGEN}
     if Assigned(GridView.FScrollV) and (GridView.FScrollV.Visible) then
@@ -5291,7 +5304,7 @@ begin
     end;  
   end;
 
-  if (LX <> X) or (LY <> Y) then   
+  if (LX <> X) or (LY <> Y) then
     GridView.ScrollTo(X, Y);
 end;
 

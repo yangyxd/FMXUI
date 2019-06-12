@@ -31,7 +31,7 @@ end;
 
 procedure HideWaitDialog;
 begin
-  if Assigned(FWaitDialog) then begin
+  if Assigned(FWaitDialog) and (not FWaitDialog.IsDismiss) then begin
     FWaitDialog.Dismiss;
     FWaitDialog := nil;
   end;

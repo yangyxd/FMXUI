@@ -202,6 +202,7 @@ object FrameGridView: TFrameGridView
     FixedSettings.Footer = #21512#35745
     FooterStyle = DataTotal
     DragScroll = True
+    OnDrawCells = DBGridView1DrawCells
     DataSource = DataSource1
     ShowCheck = False
   end
