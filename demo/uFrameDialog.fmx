@@ -82,7 +82,7 @@ object FrmaeDialog: TFrmaeDialog
       Padding.Right = 12.000000000000000000
       Padding.Bottom = 12.000000000000000000
       Size.Width = 304.000000000000000000
-      Size.Height = 768.000000000000000000
+      Size.Height = 936.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
       Orientation = Vertical
@@ -105,7 +105,7 @@ object FrmaeDialog: TFrmaeDialog
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 12.000000000000000000
-        TabOrder = 17
+        TabOrder = 18
         OnClick = ButtonView1Click
         Text = #25991#26412#23545#35805#26694
         TextSettings.Gravity = Center
@@ -129,7 +129,7 @@ object FrmaeDialog: TFrmaeDialog
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 52.000000000000000000
-        TabOrder = 16
+        TabOrder = 17
         OnClick = ButtonView10Click
         Text = #26631#39064#25991#26412#23545#35805#26694
         TextSettings.Gravity = Center
@@ -153,7 +153,7 @@ object FrmaeDialog: TFrmaeDialog
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 92.000000000000000000
-        TabOrder = 15
+        TabOrder = 16
         OnClick = ButtonView2Click
         Text = #24102#25353#38062#30340#25991#26412#23545#35805#26694
         TextSettings.Gravity = Center
@@ -177,7 +177,7 @@ object FrmaeDialog: TFrmaeDialog
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 132.000000000000000000
-        TabOrder = 14
+        TabOrder = 15
         OnClick = ButtonView3Click
         Text = #24102#26631#39064#26639#30340#23545#35805#26694
         TextSettings.Gravity = Center
@@ -201,7 +201,7 @@ object FrmaeDialog: TFrmaeDialog
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 172.000000000000000000
-        TabOrder = 10
+        TabOrder = 11
         OnClick = ButtonView13Click
         Text = #24377#20986#19979#25289#21015#34920
         TextSettings.Gravity = Center
@@ -250,7 +250,7 @@ object FrmaeDialog: TFrmaeDialog
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 260.000000000000000000
-        TabOrder = 13
+        TabOrder = 14
         OnClick = ButtonView4Click
         Text = #21015#34920#23545#35805#26694
         TextSettings.Gravity = Center
@@ -276,7 +276,7 @@ object FrmaeDialog: TFrmaeDialog
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 300.000000000000000000
-        TabOrder = 12
+        TabOrder = 13
         OnClick = ButtonView5Click
         Text = #21333#36873#21015#34920#23545#35805#26694
         TextSettings.Gravity = Center
@@ -327,7 +327,7 @@ object FrmaeDialog: TFrmaeDialog
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 380.000000000000000000
-        TabOrder = 9
+        TabOrder = 10
         OnClick = ButtonView11Click
         Text = #21333#36873#21015#34920#23545#35805#26694' ('#22810')'
         TextSettings.Gravity = Center
@@ -351,7 +351,7 @@ object FrmaeDialog: TFrmaeDialog
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 420.000000000000000000
-        TabOrder = 11
+        TabOrder = 12
         OnClick = ButtonView9Click
         Text = #22810#21015#21015#34920#23545#35805#26694
         TextSettings.Gravity = Center
@@ -376,7 +376,7 @@ object FrmaeDialog: TFrmaeDialog
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 468.000000000000000000
-        TabOrder = 8
+        TabOrder = 9
         OnClick = ButtonView7Click
         Text = #31561#24453#23545#35805#26694
         TextSettings.Gravity = Center
@@ -402,7 +402,7 @@ object FrmaeDialog: TFrmaeDialog
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 508.000000000000000000
-        TabOrder = 7
+        TabOrder = 8
         OnClick = ButtonView8Click
         Text = #31561#24453#23545#35805#26694' ('#20801#35768#21462#28040')'
         TextSettings.Gravity = Center
@@ -426,7 +426,7 @@ object FrmaeDialog: TFrmaeDialog
         Size.PlatformDefault = False
         Position.X = 12.000000000000000000
         Position.Y = 548.000000000000000000
-        TabOrder = 6
+        TabOrder = 7
         OnClick = ButtonView12Click
         Text = #33258#23450#20041'View'#23545#35805#26694
         TextSettings.Gravity = Center
@@ -551,6 +551,78 @@ object FrmaeDialog: TFrmaeDialog
         TabOrder = 19
         OnClick = ButtonView19Click
         Text = 'IOS'#23545#35805#26694
+        TextSettings.Gravity = Center
+      end
+      object ButtonView20: TButtonView
+        Background.Border.Color.Default = claNull
+        Background.Border.Color.Pressed = claNull
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Selected = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Bottom = 4.000000000000000000
+        Size.Width = 280.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 12.000000000000000000
+        Position.Y = 804.000000000000000000
+        TabOrder = 21
+        OnClick = ButtonView20Click
+        Text = 'IOS'#24213#37096#23545#35805#26694
+        TextSettings.Gravity = Center
+      end
+      object ButtonView21: TButtonView
+        Background.Border.Color.Default = claNull
+        Background.Border.Color.Pressed = claNull
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Selected = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Bottom = 4.000000000000000000
+        Size.Width = 280.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 12.000000000000000000
+        Position.Y = 844.000000000000000000
+        TabOrder = 20
+        OnClick = ButtonView21Click
+        Text = 'IOS'#26631#39064#26639#23545#35805#26694
+        TextSettings.Gravity = Center
+      end
+      object ButtonView22: TButtonView
+        Background.Border.Color.Default = claNull
+        Background.Border.Color.Pressed = claNull
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Selected = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Background.Border.Style = None
+        WidthSize = FillParent
+        Padding.Left = 4.000000000000000000
+        Padding.Top = 4.000000000000000000
+        Padding.Right = 4.000000000000000000
+        Padding.Bottom = 4.000000000000000000
+        Margins.Bottom = 4.000000000000000000
+        Size.Width = 280.000000000000000000
+        Size.Height = 36.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 12.000000000000000000
+        Position.Y = 884.000000000000000000
+        TabOrder = 6
+        OnClick = ButtonView22Click
+        Text = 'IOS'#33258#23450#20041'View'#23545#35805#26694
         TextSettings.Gravity = Center
       end
     end

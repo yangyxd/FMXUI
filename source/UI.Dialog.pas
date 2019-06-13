@@ -61,6 +61,8 @@ const
   BUTTON_NEGATIVE = -2;
   // The identifier for the neutral button.
   BUTTON_NEUTRAL = -3;
+  // The identifier for the cancel button.
+  BUTTON_CANCEL = -4;
 
 const
   // 颜色、字体等默认设置项
@@ -124,6 +126,7 @@ const
   SIZE_BackgroundRadius = 13;
   SIZE_TitleHeight = 50;
   {$ENDIF}
+  SIZE_ButtonHeight = 42;
   SIZE_ICON = 32;
   SIZE_ButtonBorder = 0.6;
 
@@ -173,6 +176,7 @@ type
 
     FListItemPressedColor: TAlphaColor;
     FListItemDividerColor: TAlphaColor;
+    FButtonHeight: Integer;
 
     procedure SetButtonColor(const Value: TButtonViewColor);
     procedure SetButtonBorder(const Value: TViewBorder);
@@ -227,6 +231,8 @@ type
     property MessageTextSize: Integer read FMessageTextSize write FMessageTextSize default FONT_MessageTextSize;
     // 按钮文本大小
     property ButtonTextSize: Integer read FButtonTextSize write FButtonTextSize default FONT_ButtonTextSize;
+    // 按钮高度
+    property ButtonHeight: Integer read FButtonHeight write FButtonHeight default SIZE_ButtonHeight;
     // 图标大小
     property IconSize: Integer read FIconSize write FIconSize default SIZE_ICON;
     // 最大宽度
@@ -321,6 +327,7 @@ type
     [Weak] FDialog: IDialog;
   protected
     FLayBubble: TLinearLayout;
+    FLayBubbleBottom: TLinearLayout;
     FTitleView: TTextView;
     FTitleSpace: TView;
     FMsgBody: TLinearLayout;
@@ -329,6 +336,8 @@ type
     FButtonPositive: TButtonView;
     FButtonNegative: TButtonView;
     FButtonNeutral: TButtonView;
+    FCancelButtonLayout: TLinearLayout;
+    FButtonCancel: TButtonView;
     FListView: TListViewEx;
     FAnilndictor: TAniIndicator;
     FIsDownPopup: Boolean;
@@ -357,6 +366,8 @@ type
     property ButtonPositive: TButtonView read FButtonPositive;
     property ButtonNegative: TButtonView read FButtonNegative;
     property ButtonNeutral: TButtonView read FButtonNeutral;
+    property CancelButtonLayout: TLinearLayout read FCancelButtonLayout;
+    property ButtonCancel: TButtonView read FButtonCancel;
 
     property Dialog: IDialog read FDialog write FDialog;
   end;
@@ -638,6 +649,13 @@ type
     FNeutralButtonColor: Int64;
     FNeutralButtonStyle: TFontStyles;
 
+    FCancelButtonText: string;
+    FCancelButtonListener: TOnDialogClickListener;
+    FCancelButtonListenerA: TOnDialogClickListenerA;
+    FCancelButtonSize: Single;
+    FCancelButtonColor: Int64;
+    FCancelButtonStyle: TFontStyles;
+
     FOnCancelListener: TOnDialogListener;
     FOnCancelListenerA: TOnDialogListenerA;
     FOnKeyListener: TOnDialogKeyListener;
@@ -727,6 +745,12 @@ type
     function SetNeutralButton(const AText: string; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
     function SetNeutralButton(const AText: string; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
     function SetNeutralButtonStyle(const AColor: Int64; const AStyle: TFontStyles = []; const ASize: Single = -1): TDialogBuilder; overload;
+    /// <summary>
+    /// 设置底部取消按钮
+    /// </summary>
+    function SetCancelButton(const AText: string; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
+    function SetCancelButton(const AText: string; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
+    function SetCancelButtonStyle(const AColor: Int64; const AStyle: TFontStyles = []; const ASize: Single = -1): TDialogBuilder; overload;
 
     /// <summary>
     /// 设置是否可以取消
@@ -876,6 +900,13 @@ type
     property NeutralButtonColor: Int64 read FNeutralButtonColor;
     property NeutralButtonStyle: TFontStyles read FNeutralButtonStyle;
 
+    property CancelButtonText: string read FCancelButtonText;
+    property CancelButtonListener: TOnDialogClickListener read FCancelButtonListener;
+    property CancelButtonListenerA: TOnDialogClickListenerA read FCancelButtonListenerA;
+    property CancelButtonSize: Single read FCancelButtonSize;
+    property CancelButtonColor: Int64 read FCancelButtonColor;
+    property CancelButtonStyle: TFontStyles read FCancelButtonStyle;
+
     property OnCancelListener: TOnDialogListener read FOnCancelListener;
     property OnCancelListenerA: TOnDialogListenerA read FOnCancelListenerA;
     property OnKeyListener: TOnDialogKeyListener read FOnKeyListener;
@@ -968,6 +999,7 @@ begin
   FPositiveButtonColor := -1;
   FNegativeButtonColor := -1;
   FNeutralButtonColor := -1;
+  FCancelButtonColor := -1;
 end;
 
 function TDialogBuilder.CreateDialog: IDialog;
@@ -1024,6 +1056,31 @@ function TDialogBuilder.SetCancelable(ACancelable: Boolean): TDialogBuilder;
 begin
   Result := Self;
   FCancelable := ACancelable;
+end;
+
+function TDialogBuilder.SetCancelButton(const AText: string;
+  AListener: TOnDialogClickListener): TDialogBuilder;
+begin
+  Result := Self;
+  FCancelButtonText := AText;
+  FCancelButtonListener := AListener;
+end;
+
+function TDialogBuilder.SetCancelButton(const AText: string;
+  AListener: TOnDialogClickListenerA): TDialogBuilder;
+begin
+  Result := Self;
+  FCancelButtonText := AText;
+  FCancelButtonListenerA := AListener;
+end;
+
+function TDialogBuilder.SetCancelButtonStyle(const AColor: Int64;
+  const AStyle: TFontStyles; const ASize: Single): TDialogBuilder;
+begin
+  Result := Self;
+  FCancelButtonSize := ASize;
+  FCancelButtonColor := AColor;
+  FCancelButtonStyle := AStyle;
 end;
 
 function TDialogBuilder.SetClickButtonDismiss(V: Boolean): TDialogBuilder;
@@ -2192,6 +2249,13 @@ begin
           Builder.NeutralButtonListener(Self, BUTTON_NEUTRAL)
         else
           FAllowDismiss := True;
+      end else if Sender = FViewRoot.FButtonCancel then begin
+        if Assigned(Builder.FCancelButtonListenerA) then
+          Builder.FCancelButtonListenerA(Self, BUTTON_CANCEL)
+        else if Assigned(Builder.CancelButtonListener) then
+          Builder.CancelButtonListener(Self, BUTTON_CANCEL)
+        else
+          FAllowDismiss := True;
       end;
     except
     end;
@@ -2398,6 +2462,16 @@ begin
   end;
   if (BtnCount = 0) and (FViewRoot.FButtonLayout <> nil) then begin
     FViewRoot.FButtonLayout.Visible := False;
+  end;
+  if FViewRoot.FButtonCancel <> nil then begin
+    if Builder.CancelButtonText = '' then
+      FViewRoot.FButtonCancel.Visible := False
+    else begin
+      FViewRoot.FButtonCancel.Background.Corners := [TCorner.TopLeft, TCorner.TopRight, TCorner.BottomLeft, TCorner.BottomRight];
+      SetButton(FViewRoot.FButtonCancel, Builder.CancelButtonText,
+        Builder.CancelButtonSize, Builder.CancelButtonColor, Builder.CancelButtonStyle);
+      FViewRoot.FLayBubble.Margins.Bottom := FViewRoot.FButtonCancel.MinHeight + 30;
+    end;
   end;
 
   if (Builder.Title = '') or (BtnCount = 0) then begin
@@ -2639,7 +2713,6 @@ begin
   end;
 
   if not Assigned(Adapter) then begin
-
     if Length(FBuilder.FItemArray) > 0 then begin
       if IsMulti then begin
         Adapter := TStringsListCheckAdapter.Create(Builder.FItemArray);
@@ -2667,7 +2740,6 @@ begin
     if FBuilder.FListItemDefaultHeight > 0 then
       TStringsListAdapter(Adapter).DefaultItemHeight := FBuilder.FListItemDefaultHeight;
     TStringsListAdapter(Adapter).WordWrap := FBuilder.FWordWrap;
-
   end;
 
   ListView.Adapter := Adapter;
@@ -2823,12 +2895,12 @@ procedure TDialogView.InitButton(StyleMgr: TDialogStyleManager);
     ABrush.Kind := TBrushKind.Solid;
   end;
 
-  function CreateButton: TButtonView;
+  function CreateButton(Parent: TFmxObject): TButtonView;
   begin
     Result := TButtonView.Create(Owner);
-    Result.Parent := FButtonLayout;
+    Result.Parent := Parent;
     Result.Weight := 1;
-    Result.MinHeight := 42;
+    Result.MinHeight := StyleMgr.ButtonHeight;
     Result.Gravity := TLayoutGravity.Center;
     Result.Paddings := '4';
     Result.CanFocus := True;
@@ -2861,10 +2933,24 @@ begin
   FButtonLayout.Orientation := TOrientation.Horizontal;
   FButtonLayout.HeightSize := TViewSize.WrapContent;
   // 按钮
-  FButtonPositive := CreateButton();
+  FButtonPositive := CreateButton(FButtonLayout);
   FButtonPositive.Default := True;
-  FButtonNegative := CreateButton();
-  FButtonNeutral := CreateButton();
+  FButtonNegative := CreateButton(FButtonLayout);
+  FButtonNeutral := CreateButton(FButtonLayout);
+
+  if Assigned(FLayBubbleBottom) then begin
+    // 按钮布局层
+    FCancelButtonLayout := TLinearLayout.Create(Owner);
+    {$IFDEF MSWINDOWS}
+    FCancelButtonLayout.Name := 'CancelButtonLayout' + IntToStr(DialogRef);
+    {$ENDIF}
+    FCancelButtonLayout.Parent := FLayBubbleBottom;
+    FCancelButtonLayout.WidthSize := TViewSize.FillParent;
+    FCancelButtonLayout.Orientation := TOrientation.Horizontal;
+    FCancelButtonLayout.HeightSize := TViewSize.WrapContent;
+    // 按钮
+    FButtonCancel := CreateButton(FCancelButtonLayout);
+  end;
 end;
 
 procedure TDialogView.InitList(StyleMgr: TDialogStyleManager);
@@ -2976,67 +3062,74 @@ begin
 end;
 
 procedure TDialogView.InitView(StyleMgr: TDialogStyleManager);
+
+  function InitLayBubble(FName: string; FPosition: TDialogViewPosition): TLinearLayout;
+  begin
+    Result := TLinearLayout.Create(Owner);
+    {$IFDEF MSWINDOWS}
+    Result.Name := FName + IntToStr(DialogRef);
+    {$ENDIF}
+    // 消息框主体
+    Result.Parent := Self;
+    Result.Margin := '16';
+    Result.ClipChildren := True;
+    if FDialog.Builder.FUseRootBackColor then
+      Result.Background.ItemDefault.Color := FDialog.Builder.FRootBackColor
+    else begin
+      Result.Background.ItemDefault.Color := StyleMgr.BackgroundColor;
+      Result.Background.XRadius := StyleMgr.FBackgroundRadius;
+      Result.Background.YRadius := StyleMgr.FBackgroundRadius;
+    end;
+    Result.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+    Result.Clickable := True;
+    Result.WidthSize := TViewSize.FillParent;
+
+    case FPosition of
+      TDialogViewPosition.Top: begin
+        Result.Layout.CenterHorizontal := True;
+        Result.Layout.AlignParentTop := True;
+      end;
+      TDialogViewPosition.Bottom: begin
+        Result.Layout.CenterHorizontal := True;
+        Result.Layout.AlignParentBottom := True;
+      end;
+      TDialogViewPosition.LeftBottom: begin
+        Result.Layout.AlignParentLeft := True;
+        Result.Layout.AlignParentBottom := True;
+      end;
+      TDialogViewPosition.RightBottom: begin
+        Result.Layout.AlignParentRight := True;
+        Result.Layout.AlignParentBottom := True;
+      end;
+      TDialogViewPosition.Left: begin
+        Result.Layout.CenterVertical := True;
+        Result.Layout.AlignParentLeft := True;
+      end;
+      TDialogViewPosition.Right: begin
+        Result.Layout.CenterVertical := True;
+        Result.Layout.AlignParentRight := True;
+      end;
+      TDialogViewPosition.Center: begin
+        Result.Layout.CenterInParent := True;
+      end;
+      TDialogViewPosition.LeftFill: ;
+      TDialogViewPosition.RightFill: ;
+    end;
+
+    Result.HeightSize := TViewSize.WrapContent;
+    Result.Orientation := TOrientation.Vertical;
+    Result.CanFocus := False;
+    Result.AdjustViewBounds := True;
+    if StyleMgr.MaxWidth > 0 then
+      Result.MaxWidth := StyleMgr.MaxWidth;
+    Result.MaxHeight := Height - Result.Margins.Top - Result.Margins.Bottom;
+  end;
+
 begin
   CanFocus := False;
-  FLayBubble := TLinearLayout.Create(Owner);
-  {$IFDEF MSWINDOWS}
-  FLayBubble.Name := 'LayBubble' + IntToStr(DialogRef);
-  {$ENDIF}
-  // 消息框主体
-  FLayBubble.Parent := Self;
-  FLayBubble.Margin := '16';
-  FLayBubble.ClipChildren := True;
-  if FDialog.Builder.FUseRootBackColor then
-    FLayBubble.Background.ItemDefault.Color := FDialog.Builder.FRootBackColor
-  else begin
-    FLayBubble.Background.ItemDefault.Color := StyleMgr.BackgroundColor;
-    FLayBubble.Background.XRadius := StyleMgr.FBackgroundRadius;
-    FLayBubble.Background.YRadius := StyleMgr.FBackgroundRadius;
-  end;
-  FLayBubble.Background.ItemDefault.Kind := TViewBrushKind.Solid;
-  FLayBubble.Clickable := True;
-  FLayBubble.WidthSize := TViewSize.FillParent;
-
-  case FDialog.Builder.FPosition of
-    TDialogViewPosition.Top: begin
-      FLayBubble.Layout.CenterHorizontal := True;
-      FLayBubble.Layout.AlignParentTop := True;
-    end;
-    TDialogViewPosition.Bottom: begin
-      FLayBubble.Layout.CenterHorizontal := True;
-      FLayBubble.Layout.AlignParentBottom := True;
-    end;
-    TDialogViewPosition.LeftBottom: begin
-      FLayBubble.Layout.AlignParentLeft := True;
-      FLayBubble.Layout.AlignParentBottom := True;
-    end;
-    TDialogViewPosition.RightBottom: begin
-      FLayBubble.Layout.AlignParentRight := True;
-      FLayBubble.Layout.AlignParentBottom := True;
-    end;
-    TDialogViewPosition.Left: begin
-      FLayBubble.Layout.CenterVertical := True;
-      FLayBubble.Layout.AlignParentLeft := True;
-    end;
-    TDialogViewPosition.Right: begin
-      FLayBubble.Layout.CenterVertical := True;
-      FLayBubble.Layout.AlignParentRight := True;
-    end;
-    TDialogViewPosition.Center: begin
-      FLayBubble.Layout.CenterInParent := True;
-    end;
-    TDialogViewPosition.LeftFill: ;
-    TDialogViewPosition.RightFill: ;
-  end;
-
-  FLayBubble.HeightSize := TViewSize.WrapContent;
-  FLayBubble.Orientation := TOrientation.Vertical;
-  FLayBubble.CanFocus := False;
-  FLayBubble.AdjustViewBounds := True;
-  if StyleMgr.MaxWidth > 0 then
-    FLayBubble.MaxWidth := StyleMgr.MaxWidth;
-  FLayBubble.MaxHeight := Height - FLayBubble.Margins.Top - FLayBubble.Margins.Bottom;
-
+  FLayBubble := InitLayBubble('LayBubble', FDialog.Builder.FPosition);
+  if (FDialog.Builder.FPosition = TDialogViewPosition.Bottom) and (FDialog.Builder.CancelButtonText <> '') then
+    FLayBubbleBottom := InitLayBubble('LayBubbleBottom', TDialogViewPosition.Bottom);
   // 标题栏
   FTitleView := TTextView.Create(Owner);
   {$IFDEF MSWINDOWS}
@@ -3144,6 +3237,7 @@ begin
 
   FTitleTextSize := FONT_TitleTextSize;
   FButtonTextSize := FONT_ButtonTextSize;
+  FButtonHeight := SIZE_ButtonHeight;
   FIconSize := SIZE_ICON;
   FTitleHeight := SIZE_TitleHeight;
   FTitleGravity := Title_Gravity;

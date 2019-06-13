@@ -34,6 +34,9 @@ type
     ButtonView17: TButtonView;
     ButtonView18: TButtonView;
     ButtonView19: TButtonView;
+    ButtonView20: TButtonView;
+    ButtonView21: TButtonView;
+    ButtonView22: TButtonView;
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
     procedure ButtonView3Click(Sender: TObject);
@@ -54,6 +57,9 @@ type
     procedure ButtonView17Click(Sender: TObject);
     procedure ButtonView18Click(Sender: TObject);
     procedure ButtonView19Click(Sender: TObject);
+    procedure ButtonView20Click(Sender: TObject);
+    procedure ButtonView21Click(Sender: TObject);
+    procedure ButtonView22Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -76,8 +82,18 @@ uses
   ui_PopupMenu,
   UI.Dialog, UI.Async, uFrameDialog_CustomView, uFrameDialog_CustomViewVertical;
 
+type
+  /// <summary>
+  /// 单选列表适配器
+  /// </summary>
+  TStringsListAdapter = class(UI.ListView.TStringsListAdapter)
+  protected
+    function GetView(const Index: Integer; ConvertView: TViewBase; Parent: TViewGroup): TViewBase; override;
+  end;
+
 var
   IosStyleManager: TDialogStyleManager;
+  IosTitleStyleManager: TDialogStyleManager;
 
 { TFrmaeDialog }
 
@@ -223,7 +239,6 @@ procedure TFrmaeDialog.ButtonView19Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetStyleManager(IosStyleManager)
-    .SetTitle('我是标题文本')
     .SetMessage('我是一个消息框。这里显示消息内容')
     .SetNegativeButton('Negative',
       procedure (Dialog: IDialog; Which: Integer) begin
@@ -243,6 +258,69 @@ procedure TFrmaeDialog.ButtonView1Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetMessage('我是一个消息框。')
+    .Show;
+end;
+
+procedure TFrmaeDialog.ButtonView20Click(Sender: TObject);
+begin
+  TDialogBuilder.Create(Self)
+    .SetStyleManager(IosTitleStyleManager)
+    .SetPosition(TDialogViewPosition.Bottom)
+    .SetTitle('我是标题文本')
+    .SetMessage('我是一个消息框。这里显示<b><font color="#000080">消息内容</font></b>', True)
+    .SetItems(['列表项 - 1', '列表项 - 2', '列表项 - 3', '列表项 - 4', '列表项 - 5'],
+      procedure (Dialog: IDialog; Which: Integer) begin
+        Hint(Dialog.Builder.ItemArray[Which]);
+      end
+    )
+    .SetOnInitListAdapterA(
+      procedure (Dialog: IDialog; Builder: TDialogBuilder; var Adapter: IListAdapter) begin
+        Adapter := TStringsListAdapter.Create(Builder.ItemArray);
+        TDialog(Dialog).RootView.ListView.ShowScrollBars := False;
+      end
+    )
+    .SetCancelButton('Cancel',
+      procedure (Dialog: IDialog; Which: Integer) begin
+        Hint(Dialog.Builder.CancelButtonText);
+      end
+    )
+    .Show;
+end;
+
+procedure TFrmaeDialog.ButtonView21Click(Sender: TObject);
+begin
+  TDialogBuilder.Create(Self)
+    .SetStyleManager(IosTitleStyleManager)
+    .SetTitle('我是标题文本')
+    .SetMessage('我是一个消息框。这里显示消息内容')
+    .SetNegativeButton('Negative',
+      procedure (Dialog: IDialog; Which: Integer) begin
+        Hint(Dialog.Builder.NegativeButtonText);
+      end
+    )
+    .SetNegativeButtonStyle(TAlphaColors.Red, [TFontStyle.fsBold])
+    .SetPositiveButton('Positive',
+      procedure (Dialog: IDialog; Which: Integer) begin
+        Hint(Dialog.Builder.PositiveButtonText);
+      end
+    )
+    .Show;
+end;
+
+procedure TFrmaeDialog.ButtonView22Click(Sender: TObject);
+var
+  View: TFrameDialogCustomView;
+begin
+  View := TFrameDialogCustomView.Create(Self);
+  TDialogBuilder.Create(Self)
+    .SetStyleManager(IosStyleManager)
+    .SetView(View)
+    .SetPosition(TDialogViewPosition.Bottom)
+    .SetCancelButton('Cancel',
+      procedure (Dialog: IDialog; Which: Integer) begin
+        Hint(Dialog.Builder.CancelButtonText);
+      end
+    )
     .Show;
 end;
 
@@ -386,32 +464,67 @@ procedure TFrmaeDialog.DoCreate;
 begin
   inherited;
   IosStyleManager := TDialogStyleManager.Create(nil);
-  IosStyleManager.BackgroundColor := $FF999999;
   IosStyleManager.BackgroundRadius := 15;
-  IosStyleManager.TitleHeight := 55;
-  IosStyleManager.TitleTextBold := True;
-  IosStyleManager.TitleGravity := TLayoutGravity.CenterHBottom;
-  IosStyleManager.TitleTextSize := 17;
-  IosStyleManager.TitleTextColor := $FF1A1A1A;
-  IosStyleManager.TitleSpaceColor := IosStyleManager.BodyBackgroundColor;
+  IosStyleManager.MessageTextMargins.Top := 15;
   IosStyleManager.MessageTextMargins.Left := 10;
   IosStyleManager.MessageTextMargins.Right := 10;
   IosStyleManager.MessageTextMargins.Bottom := 15;
   IosStyleManager.MessageTextColor := $FF030303;
   IosStyleManager.MessageTextGravity := TLayoutGravity.Center;
   IosStyleManager.ButtonTextColor.Default := $FF0D69FF;
+  IosStyleManager.ButtonHeight := 50;
+
+  IosTitleStyleManager := TDialogStyleManager.Create(nil);
+  IosTitleStyleManager.BackgroundRadius := 15;
+  IosTitleStyleManager.TitleHeight := 55;
+  IosTitleStyleManager.TitleTextBold := True;
+  IosTitleStyleManager.TitleGravity := TLayoutGravity.CenterHBottom;
+  IosTitleStyleManager.TitleTextSize := 17;
+  IosTitleStyleManager.TitleTextColor := $FF1A1A1A;
+  IosTitleStyleManager.TitleSpaceColor := IosStyleManager.BodyBackgroundColor;
+  IosTitleStyleManager.MessageTextMargins.Left := 10;
+  IosTitleStyleManager.MessageTextMargins.Right := 10;
+  IosTitleStyleManager.MessageTextMargins.Bottom := 10;
+  IosTitleStyleManager.MessageTextColor := $FF030303;
+  IosTitleStyleManager.MessageTextGravity := TLayoutGravity.Center;
+  IosTitleStyleManager.ButtonTextColor.Default := $FF0D69FF;
+  IosTitleStyleManager.ButtonHeight := 50;
 end;
 
 procedure TFrmaeDialog.DoFree;
 begin
-  inherited;
   FreeAndNil(IosStyleManager);
+  FreeAndNil(IosTitleStyleManager);
+
+  inherited;
 end;
 
 procedure TFrmaeDialog.DoShow;
 begin
   inherited;
   tvTitle.Text := Title;
+end;
+
+{ TStringsListAdapter }
+
+function TStringsListAdapter.GetView(const Index: Integer;
+  ConvertView: TViewBase; Parent: TViewGroup): TViewBase;
+var
+  ViewItem: TListTextItem;
+begin
+  if (ConvertView = nil) or (not (ConvertView is TListTextItem)) then begin
+    ViewItem := TListTextItem.Create(Parent);
+    ViewItem.Parent := Parent;
+    ViewItem.Width := Parent.Width;
+    ViewItem.MinHeight := ItemDefaultHeight;
+    ViewItem.TextSettings.Font.Size := FFontSize;
+    ViewItem.TextSettings.WordWrap := FWordWrap;
+    ViewItem.Gravity := TLayoutGravity.Center;
+    ViewItem.Padding.Rect := RectF(8, 8, 8, 8);
+    ViewItem.CanFocus := False;
+  end else
+    ViewItem := ConvertView as TListTextItem;
+  Result := inherited GetView(Index, ViewItem, Parent);
 end;
 
 end.
