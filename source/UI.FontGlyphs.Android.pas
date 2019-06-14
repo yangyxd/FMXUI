@@ -41,17 +41,25 @@ begin
   //Font
   try
     FamilyName := StringToJString(CurrentSettings.Family);
+    {$IF CompilerVersion > 30}
     if not CurrentSettings.Style.Slant.IsRegular and not CurrentSettings.Style.Weight.IsRegular then
       TypefaceFlag := TJTypeface.JavaClass.BOLD_ITALIC
+    else if not CurrentSettings.Style.Weight.IsRegular then
+      TypefaceFlag := TJTypeface.JavaClass.BOLD
+    else if not CurrentSettings.Style.Slant.IsRegular then
+      TypefaceFlag := TJTypeface.JavaClass.ITALIC
     else
-      if not CurrentSettings.Style.Weight.IsRegular then
-        TypefaceFlag := TJTypeface.JavaClass.BOLD
-      else
-        if not CurrentSettings.Style.Slant.IsRegular then
-          TypefaceFlag := TJTypeface.JavaClass.ITALIC
-        else
-          TypefaceFlag := TJTypeface.JavaClass.NORMAL;
-
+      TypefaceFlag := TJTypeface.JavaClass.NORMAL;
+    {$ELSE}
+    if (TFontStyle.fsBold in CurrentSettings.Style) and (TFontStyle.fsItalic in CurrentSettings.Style) then
+      TypefaceFlag := TJTypeface.JavaClass.BOLD_ITALIC
+    else if (TFontStyle.fsBold in CurrentSettings.Style) then
+      TypefaceFlag := TJTypeface.JavaClass.BOLD
+    else if (TFontStyle.fsItalic in CurrentSettings.Style) then
+      TypefaceFlag := TJTypeface.JavaClass.ITALIC
+    else
+      TypefaceFlag := TJTypeface.JavaClass.NORMAL;
+    {$ENDIF}
     FontFile := TPath.GetDocumentsPath + PathDelim + CurrentSettings.Family + '.ttf';
     if FileExists(FontFile) then
       Typeface := TJTypeface.JavaClass.createFromFile(StringToJString(FontFile))
