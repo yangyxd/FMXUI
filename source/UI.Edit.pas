@@ -546,11 +546,11 @@ begin
     TLinkObservers.ControlValueModified(AObservers);
 end;
 
-{$IFDEF ANDROID}
+{$IF Defined(ANDROID) and (CompilerVersion <= 32)}
 function PackText(const AText: string): string;
 begin
   if not AText.IsEmpty then
-    Result := Format('%s', [AText]) // Format('[%d]%s', [AText.Length, AText])
+    Result := Format('[%d]%s', [AText.Length, AText])
   else
     Result := string.Empty;
 end;
@@ -1916,7 +1916,7 @@ begin
   Result.Top := Trunc(LineTop);
   Result.Bottom := Result.Top + LineHeight;
   {$IFNDEF ANDROID}
-  if GetOriginCaretPosition <= Model.SelStart then
+  if GetOriginCaretPosition <= Min(Model.SelStart, Model.SelStart + Model.SelLength) then
     Offset := FTextService.CombinedText.Length - FTextService.Text.Length
   else
     Offset := 0;
@@ -2482,7 +2482,7 @@ begin
   if FTextService.CombinedText <> LText then
   begin
     FTextLayout.Text := LText;
-    {$IFNDEF ANDROID}
+    {$IF (not Defined(ANDROID)) or (CompilerVersion > 32)}
     FTextService.Text := LText;
     {$ELSE}
     FTextService.Text := PackText(LText);
@@ -2670,11 +2670,11 @@ begin
   begin
     FTextService.MaxLength := Model.MaxLength;
     FTextLayout.Text := Model.Text;
-{$IFNDEF ANDROID}
+    {$IF (not Defined(ANDROID)) or (CompilerVersion > 32)}
     FTextService.Text := Model.Text;
-{$ELSE}
+    {$ELSE}
     FTextService.Text := PackText(Model.Text);
-{$ENDIF}
+    {$ENDIF}
     if FTextService.CaretPosition.X > Model.Text.Length then
       SetCaretPosition(Text.Length);
   end;
@@ -2989,6 +2989,16 @@ end;
 
 procedure TCustomEditView.SetTextInternal(const Value: string);
 begin
+{$IF CompilerVersion > 32}
+  {$IFDEF ANDROID}
+  FTextService.Text := Value;
+  Model.Text := Value;
+  {$ELSE}
+  Model.Text := Value;
+  FTextService.Text := Model.Text;
+  {$ENDIF}
+  FTextLayout.Text := Model.Text;
+{$ELSE}
   Model.Text := Value;
   FTextLayout.Text := Model.Text;
   {$IFNDEF ANDROID}
@@ -2996,6 +3006,7 @@ begin
   {$ELSE}
   FTextService.Text := PackText(Model.Text);
   {$ENDIF}
+{$ENDIF}
   UpdateCaretPosition;
 end;
 
@@ -3205,18 +3216,23 @@ end;
 procedure TCustomEditView.UpdateSelectionPointPositions;
 var
   R: TRectF;
+  IsParentFocused: Boolean;
 begin
-  Model.Caret.TemporarilyHidden := Model.HasSelection and
-    (Assigned(ParentControl)) and ParentControl.IsFocused;
+  IsParentFocused := (ParentControl <> nil) and ParentControl.IsFocused;
+  Model.Caret.TemporarilyHidden := Model.HasSelection and IsParentFocused;
   if HaveSelectionPickers then
   begin
-    FLeftSelPt.Visible := (Model.SelLength > 0) and ParentControl.IsFocused and (Model.SelStart + 1 >= FFirstVisibleChar);
-    FRightSelPt.Visible := (Model.SelLength > 0) and ParentControl.IsFocused and (GetCharX(Model.SelStart + Model.SelLength) < ContentRect.Right);
+    FLeftSelPt.Visible := (Model.SelLength > 0) and IsParentFocused and (Model.SelStart + 1 >= FFirstVisibleChar);
+    FRightSelPt.Visible := (Model.SelLength > 0) and IsParentFocused and (GetCharX(Model.SelStart + Model.SelLength) < ContentRect.Right);
 
     R := GetSelRect;
 
     FLeftSelPt.Position.X := R.Left;
-    FLeftSelPt.Position.Y := R.Top - 2 * FLeftSelPt.GripSize;
+    {$IF Defined(ANDROID) and (CompilerVersion > 32)}
+      FLeftSelPt.Position.Y := R.Bottom + 2 * FLeftSelPt.GripSize;
+    {$ELSE}
+      FLeftSelPt.Position.Y := R.Top - 2 * FLeftSelPt.GripSize;
+    {$ENDIF}
 
     FRightSelPt.Position.X := R.Right;
     FRightSelPt.Position.Y := R.Bottom + 2 * FLeftSelPt.GripSize;
