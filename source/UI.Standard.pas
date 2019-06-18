@@ -873,11 +873,9 @@ type
     procedure DoRealign; override;
     procedure DoAdjustSize; virtual;
     function GetDefaultSize: TSizeF; override;
-    function GetFirstParent: TFmxObject;
     procedure DoChanged(Sender: TObject); virtual;
     procedure DoTextChanged(Sender: TObject); virtual;
     procedure DoMatrixChanged(Sender: TObject); override;
-    procedure AncestorParentChanged; override;
     procedure PaddingChanged; override;
     function GetViewText: string;
   public
@@ -3601,9 +3599,11 @@ begin
     Exit;
   FDisableAlign := True;
   P := FTargetView.LocalToAbsolute(TPointF.Zero);
+  if Parent is TControl then
+    P := P - TControl(Parent).LocalToAbsolute(TPointF.Zero);
   Position.Point := PointF(
     P.X + FTargetView.Width - Width * 0.65 + Margins.Left,
-    P.Y - Height * 0.35 + Margins.Top{$IFDEF ANDROID} - TView.GetStatusHeight{$ENDIF});
+    P.Y - Height * 0.35 + Margins.Top);
   FDisableAlign := False;
 end;
 
@@ -3621,20 +3621,6 @@ end;
 function TBadgeView.GetDefaultSize: TSizeF;
 begin
   Result := TSizeF.Create(16, 16);
-end;
-
-function TBadgeView.GetFirstParent: TFmxObject;
-begin
-  Result := Self;
-  while Result.Parent <> nil do begin
-    if csDesigning in ComponentState then begin
-      if Result.Parent.ClassName = 'TControlForm' then
-        Break;
-    end;
-    Result := Result.Parent;
-    if Result is TCustomForm then
-      Break;
-  end;
 end;
 
 function TBadgeView.GetIcon: TBrush;
@@ -3737,18 +3723,6 @@ begin
   if FAutoSize and (not FAdjustSizeing) then
     DoAdjustSize;
   DoRealign;
-end;
-
-procedure TBadgeView.AncestorParentChanged;
-var
-  LParent: TFmxObject;
-begin
-  inherited AncestorParentChanged;
-  if csDesigning in ComponentState then begin
-    LParent := GetFirstParent;
-    if (Parent <> LParent) and (LParent <> nil) and (LParent <> Self) then
-      Parent := LParent;
-  end;
 end;
 
 procedure TBadgeView.SetAutoSize(const Value: Boolean);

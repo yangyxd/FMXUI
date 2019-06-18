@@ -154,6 +154,7 @@ begin
   ViewItem.TextView1.Text := ANode.Data.Name;
   ViewItem.TextView2.Text := ANode.Data.Phone;
   ViewItem.View1.Background.ItemDefault.Color := ANode.Data.Color;
+  ViewItem.BadgeView1.Value := Index + 1;
   ViewItem.EndUpdate;
   Result := TViewBase(ViewItem);
 end;

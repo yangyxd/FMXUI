@@ -14,6 +14,7 @@ type
     TextView1: TTextView;
     TextView2: TTextView;
     View2: TView;
+    BadgeView1: TBadgeView;
   private
     { Private declarations }
   public

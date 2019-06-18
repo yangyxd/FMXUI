@@ -205,6 +205,7 @@ begin
   ViewItem.TextView1.Text := Item.Name;
   ViewItem.TextView2.Text := Item.Phone;
   ViewItem.View1.Background.ItemDefault.Color := Item.Color;
+  ViewItem.BadgeView1.Value := Index + 1;
   ViewItem.EndUpdate;
   Result := TViewBase(ViewItem);
 end;

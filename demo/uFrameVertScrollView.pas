@@ -45,6 +45,7 @@ type
     TextView8: TTextView;
     TextView9: TTextView;
     TextView10: TTextView;
+    BadgeView1: TBadgeView;
     procedure btnBackClick(Sender: TObject);
     procedure VertScrollView1PullRefresh(Sender: TObject);
     procedure VertScrollView1PullLoad(Sender: TObject);
