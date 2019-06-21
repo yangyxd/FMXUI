@@ -237,6 +237,10 @@ type
     function GetData: TValue; override;
     procedure SetData(const Value: TValue); override;
 
+    /// <summary>
+    /// 检测是否允许释放
+    /// </summary>
+    function DoCanFree(): Boolean; virtual;
     // 检查是否需要释放，如果需要，就释放掉
     function CheckFree(): Boolean;
     // 检查所属窗体是否还存在 Frame
@@ -721,22 +725,18 @@ function TFrameView.CheckFree: Boolean;
 begin
   Result := False;
   if Assigned(Parent) then begin
-    if not Assigned(Parent.Parent) then begin
-      if (Parent is TForm) then begin
-        if (CheckChildern()) then begin
-          {$IFDEF POSIX}
-            {$IFDEF DEBUG}
-            (Parent as TForm).Close;
-            {$ELSE}
-            Kill(0, SIGKILL);
-            {$ENDIF}
-          {$ELSE}
-          (Parent as TForm).Close;
-          {$ENDIF}
-          Result := True;
-          Exit;
-        end;
-      end;
+    if (Parent is TForm) and DoCanFree then begin
+      {$IFDEF POSIX}
+        {$IFDEF DEBUG}
+        (Parent as TForm).Close;
+        {$ELSE}
+        Kill(0, SIGKILL);
+        {$ENDIF}
+      {$ELSE}
+      (Parent as TForm).Close;
+      {$ENDIF}
+      Result := True;
+      Exit;
     end;
     {$IFDEF MSWINDOWS}
     if Assigned(ParentForm) then
@@ -933,6 +933,11 @@ end;
 function TFrameView.DoCanFinish: Boolean;
 begin
   Result := True;
+end;
+
+function TFrameView.DoCanFree: Boolean;
+begin
+  Result := not Assigned(Parent.Parent) and CheckChildern();
 end;
 
 procedure TFrameView.DoCreate;
