@@ -852,6 +852,7 @@ type
     FAutoSize: Boolean;
     FAdjustSizeing: Boolean;
     FValueOutTail: string;
+    FGravity: TLayoutGravity;
     procedure SetValue(const Value: Integer);
     procedure SetMaxValue(const Value: Integer);
     procedure SetTargetView(const Value: IView);
@@ -867,6 +868,8 @@ type
     function GetValue: Integer;
     function GetMaxValue: Integer;
     function GetStyle: TBadgeStyle;
+    procedure MarginsChanged(Sender: TObject);
+    procedure SetGravity(const Value: TLayoutGravity);
   protected
     procedure Paint; override;
     procedure Resize; override;
@@ -920,6 +923,10 @@ type
     /// 当 Style 为 Icon 时，要显示的图标
     /// </summary>
     property Icon: TBrush read GetIcon write SetIcon;
+    /// <summary>
+    /// 重力。也就是组件的位于容器的位置。
+    /// </summary>
+    property Gravity: TLayoutGravity read FGravity write SetGravity default TLayoutGravity.RightTop;
 
     property Width;
     property Height;
@@ -3520,6 +3527,8 @@ begin
   SetAcceptsControls(False);
   if csDesigning in ComponentState then
     GetIcon;
+  Margins.OnChange := MarginsChanged;
+  FGravity := TLayoutGravity.RightTop;
 end;
 
 destructor TBadgeView.Destroy;
@@ -3601,9 +3610,45 @@ begin
   P := FTargetView.LocalToAbsolute(TPointF.Zero);
   if Parent is TControl then
     P := P - TControl(Parent).LocalToAbsolute(TPointF.Zero);
-  Position.Point := PointF(
-    P.X + FTargetView.Width - Width * 0.65 + Margins.Left,
-    P.Y - Height * 0.35 + Margins.Top);
+  case FGravity of
+    TLayoutGravity.None: ;
+    TLayoutGravity.LeftTop:
+      Position.Point := PointF(
+        P.X - Width * 0.35 + Margins.Left,
+        P.Y - Height * 0.35 + Margins.Top);
+    TLayoutGravity.LeftBottom:
+      Position.Point := PointF(
+        P.X - Width * 0.35 + Margins.Left,
+        P.Y + FTargetView.Height - Height * 0.65 + Margins.Top);
+    TLayoutGravity.RightTop:
+      Position.Point := PointF(
+        P.X + FTargetView.Width - Width * 0.65 + Margins.Left,
+        P.Y - Height * 0.35 + Margins.Top);
+    TLayoutGravity.RightBottom:
+      Position.Point := PointF(
+        P.X + FTargetView.Width - Width * 0.65 + Margins.Left,
+        P.Y + FTargetView.Height - Height * 0.65 + Margins.Top);
+    TLayoutGravity.CenterVertical:
+      Position.Point := PointF(
+        P.X - Width * 0.35 + Margins.Left,
+        P.Y + (FTargetView.Height - Height) / 2 + Margins.Top);
+    TLayoutGravity.CenterHorizontal:
+      Position.Point := PointF(
+        P.X + (FTargetView.Width - Width) / 2 + Margins.Left,
+        P.Y - Height * 0.35 + Margins.Top);
+    TLayoutGravity.CenterHBottom:
+      Position.Point := PointF(
+        P.X + (FTargetView.Width - Width) / 2 + Margins.Left,
+        P.Y + FTargetView.Height - Height * 0.65 + Margins.Top);
+    TLayoutGravity.CenterVRight:
+      Position.Point := PointF(
+        P.X + FTargetView.Width - Width * 0.65 + Margins.Left,
+        P.Y + (FTargetView.Height - Height) / 2 + Margins.Top);
+    TLayoutGravity.Center:
+      Position.Point := PointF(
+        P.X + (FTargetView.Width - Width) / 2 + Margins.Left,
+        P.Y + (FTargetView.Height - Height) / 2 + Margins.Top);
+  end;
   FDisableAlign := False;
 end;
 
@@ -3679,6 +3724,11 @@ begin
     Result := (FValue > 0)
 end;
 
+procedure TBadgeView.MarginsChanged(Sender: TObject);
+begin
+  DoRealign;
+end;
+
 procedure TBadgeView.PaddingChanged;
 begin
   inherited PaddingChanged;
@@ -3739,6 +3789,15 @@ end;
 procedure TBadgeView.SetBackground(const Value: TBadgeBackground);
 begin
   FBackground.Assign(Value);
+end;
+
+procedure TBadgeView.SetGravity(const Value: TLayoutGravity);
+begin
+  if FGravity <> Value then begin
+    FGravity := Value;
+    DoRealign;
+    Repaint;
+  end;
 end;
 
 procedure TBadgeView.SetIcon(const Value: TBrush);
