@@ -205,6 +205,7 @@ begin
   ViewItem.TextView1.Text := Item.Name;
   ViewItem.TextView2.Text := Item.Phone;
   ViewItem.View1.Background.ItemDefault.Color := Item.Color;
+  ViewItem.BadgeView1.Enabled := Index < 9;
   ViewItem.BadgeView1.Visible := Index < 9;
   case Index mod 9 of
     0..2: ViewItem.BadgeView1.Background.Color := TAlphaColors.Red;
@@ -223,7 +224,9 @@ begin
     8: ViewItem.BadgeView1.Gravity := TLayoutGravity.RightBottom;
   end;
   ViewItem.BadgeView1.Value := Index + 1;
+  ViewItem.BadgeView2.Enabled := Index = 1;
   ViewItem.BadgeView2.Visible := Index = 1;
+  ViewItem.BadgeView3.Enabled := Index mod 2 = 1;
   ViewItem.BadgeView3.Visible := Index mod 2 = 1;
   ViewItem.EndUpdate;
   Result := TViewBase(ViewItem);

@@ -844,6 +844,7 @@ type
 
     procedure Realign;
     procedure SetVisible(const Value: Boolean);
+    function GetEnabled: Boolean;
 
     property Value: Integer read GetValue write SetValue;
     property MaxValue: Integer read GetMaxValue write SetMaxValue;
@@ -3837,7 +3838,7 @@ end;
 procedure TView.DoMatrixChanged(Sender: TObject);
 begin
   inherited DoMatrixChanged(Sender);
-  if Assigned(FBadgeView) then begin 
+  if Assigned(FBadgeView) and FBadgeView.GetEnabled then begin
     FBadgeView.SetVisible(Visible);
     if Visible then
       FBadgeView.Realign;
