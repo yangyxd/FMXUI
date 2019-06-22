@@ -7400,9 +7400,9 @@ object FramePopMenu: TFramePopMenu
           E6BC339E7C599E3AB26C0FCB5EDB33457DDFD43054CB5738ED2232CF0AFACAA8
           E19ABE285FCDD387B3BE2BEDFF03665DE0F4D566A4210000000049454E44AE42
           6082}
-        Image.ItemDefault.Bitmap.WrapMode = Tile
+        Image.ItemDefault.Bitmap.WrapMode = TileStretch
         Image.ItemDefault.Kind = Patch9Bitmap
-        ScaleType = FitCenter
+        ScaleType = CenterInside
       end
     end
     object View3: TView
