@@ -9,7 +9,7 @@ FMXUI
   - **Friendly** Introduce some Java-Style usage
   - **Powerful** Supports various common usage
   - **Easy** - Extremely easy to learn and use, friendly construction
-  - **Free** Under BSD license, you can use it anywhere whatever you want
+  - **Free** Under MIT license, you can use it anywhere whatever you want
 
 ## Requirement
   Delphi 10 +
