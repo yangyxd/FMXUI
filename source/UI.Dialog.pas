@@ -318,6 +318,7 @@ type
   TOnDialogListener = procedure (Dialog: IDialog) of object;
   TOnDialogListenerA = reference to procedure (Dialog: IDialog);
   TOnDialogInitListAdapterA = reference to procedure (Dialog: IDialog; Builder: TDialogBuilder; var Adapter: IListAdapter);
+  TOnDialogInitA = reference to procedure (Dialog: IDialog; Builder: TDialogBuilder);
 
   /// <summary>
   /// 对话框视图 (不要直接使用它)
@@ -669,6 +670,7 @@ type
     FOnClickListenerA: TOnDialogClickListenerA;
 
     FOnInitListAdapterA: TOnDialogInitListAdapterA;
+    FOnInitA: TOnDialogInitA;
 
     function GetCheckedCount: Integer;
   public
@@ -679,6 +681,11 @@ type
     function Show(): IDialog; overload;
     function Show(OnDismissListener: TOnDialogListener): IDialog; overload;
     function Show(OnDismissListener: TOnDialogListenerA): IDialog; overload;
+
+    /// <summary>
+    /// 设置Dialog初始化事件
+    /// </summary>
+    function SetOnInitA(AListener: TOnDialogInitA): TDialogBuilder;
 
     /// <summary>
     /// 设置一个对话框样式管理器，不设置则会自动查找，找不到则使用默认样式
@@ -1014,6 +1021,8 @@ begin
     Dlg.SetOnCancelListenerA(FOnCancelListenerA);
     if Assigned(FOnKeyListener) then
       Dlg.SetOnKeyListener(FOnKeyListener);
+    if Assigned(FOnInitA) then
+      FOnInitA(Dlg, Self);
     Result := Dlg;
   except
     FreeAndNil(Dlg);
@@ -1320,6 +1329,12 @@ function TDialogBuilder.SetOnCancelListener(
 begin
   Result := Self;
   FOnCancelListenerA := AListener;
+end;
+
+function TDialogBuilder.SetOnInitA(AListener: TOnDialogInitA): TDialogBuilder;
+begin
+  Result := Self;
+  FOnInitA := AListener;
 end;
 
 function TDialogBuilder.SetOnInitListAdapterA(
