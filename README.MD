@@ -1,4 +1,4 @@
-FMXUI  (YangYxd)
+FMXUI
 ==========
 
 ## Other
@@ -73,7 +73,6 @@ FMXUI  (YangYxd)
   FMXUI QQ Group: 325337654  
   QDAC QQ Group: 250530692  
 
-## License
+## License MIT
 
-  FMXUI is under the BSD license.  
-  Copyright (C) 2016 YangYxd. All rights reserved.    
+  Copyright (C) 2016 YangYxd.
