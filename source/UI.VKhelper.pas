@@ -2,7 +2,7 @@
 {                                                       }
 {       FMXUI 虚拟键遮挡问题处理单元                    }
 {                                                       }
-{       版权所有 (C) 2018 by YangYxd                    }
+{       版权所有 (C) 2019 by Kngstr                     }
 {                                                       }
 {*******************************************************}
 
@@ -16,11 +16,26 @@ unit UI.VKhelper;
 
 interface
 
-{$DEFINE FMXUI}  // 是否支持 FMXUI
-
 uses
   Classes, SysUtils, Math,
   FMX.Controls, FMX.Layouts, System.Types, System.Messaging;
+
+type
+  TControlHelper = class helper for TControl
+    function OffsetOf(AParent: TControl): TPointF;
+    function LocalToParent(AParent: TControl; APoint: TPointF)
+      : TPointF; overload;
+    function LocalToParent(AParent: TControl; R: TRectF): TRectF; overload;
+  end;
+
+  TScrollBoxHelper = class helper for TCustomScrollBox
+  public
+    procedure ScrollInView(ACtrl: TControl);
+  end;
+
+  TFocusChanged = class(TMessage)
+
+  end;
 
 function IsVirtalKeyboardVisible: Boolean;
 function GetVirtalKeyboardBounds: TRectF; overload;
@@ -31,28 +46,23 @@ var
   /// 是否启用本单元防虚拟键盘遮档功能
   /// </summary>
   EnableVirtalKeyboardHelper: Boolean = True;
-  /// <summary>
-  /// 是否启用调节父窗口大小（能更好的适用于底部是文本框的布局）
-  /// </summary>
-  EnableAdjustFormSize: Boolean = False;
 
-  EnableReturnKeyHook: Boolean = False;
+  //EnableReturnKeyHook: Boolean = False;
 
 implementation
 
 uses
-  {$IFDEF FMXUI}
-  UI.Base, UI.Standard,
-  {$ENDIF}
   FMX.Text, FMX.Scrollbox, FMX.VirtualKeyboard, FMX.Forms,
-  FMX.Platform, TypInfo, FMX.InertialMovement,
+  FMX.Platform, TypInfo,
   {$IFDEF ANDROID}
-  Androidapi.JNI.Os, Androidapi.Helpers, Androidapi.JNI.JavaTypes,
-  FMX.Platform.Android, FMX.Helpers.Android,
+  FMX.Platform.Android, FMX.Helpers.Android, Androidapi.Helpers,
   FMX.VirtualKeyboard.Android, Androidapi.JNI.GraphicsContentViewText,
   Androidapi.JNI.Embarcadero,
   {$IF RTLVersion>=32}
   Androidapi.NativeActivity, Androidapi.AppGlue,
+  {$ENDIF}
+  {$IF RTLVersion=33}
+  FMX.Platform.UI.Android,
   {$ENDIF}
   {$ENDIF}
   {$IFDEF IOS}
@@ -62,33 +72,6 @@ uses
   FMX.Types, System.UITypes, System.Rtti;
 
 type
-  PAdjustItem = ^TAdjustItem;
-  TAdjustItem = record
-    Prior: PAdjustItem;
-    Control: TControl;
-    LastMargin: TPointF;
-    LastViewPos: TPointF;
-    LastBounds: TRectF;
-    LastAlign: TAlignLayout;
-  end;
-
-  TFocusChanged = class(TMessage)
-  end;
-
-  TQAdjustStack = class
-  private
-    function GetLastCtrl: TControl;
-  protected
-    FLast: PAdjustItem;
-    function GetAdjusted: Boolean;
-    procedure RemoveLast;
-  public
-    procedure Save(ACtrl: TControl);
-    procedure Restore;
-    procedure Remove(ACtrl: TComponent);
-    property Adjusted: Boolean read GetAdjusted;
-    property LastControl: TControl read GetLastCtrl;
-  end;
 
   TVKNextHelper = class(TFmxObject)
   protected
@@ -99,37 +82,27 @@ type
 
   TVKStateHandler = class(TComponent)
   protected
+    class var FContentRect: TRect;
+  protected
     FVKMsgId: Integer; // TVKStateChangeMessage 消息的订阅ID
     FSizeMsgId: Integer; // TSizeChangedMessage 消息的订阅ID
     FIdleMsgId: Integer;
+    FLastIdleTick: Cardinal;
     FLastControl: TControl;
-    [Weak] FLastForm: TCustomForm;
+    FLastRect: TRectF;
     [Weak] FLastFocused: IControl;
-    FAdjustStack: TQAdjustStack; // 最后一次调整的ScrollBox
-    {$IFDEF ANDROID}
-    FVKState: PByte;
-  class var
-    FContentRect: TRect;
-    {$IF RTLVersion>=32}
-    FLastContentRectChanged: TOnContentRectChanged;
-    procedure DoContentRectChanged(const App: TAndroidApplicationGlue; const ARect: TRect);
-    {$ENDIF}
-    {$ENDIF}
-    procedure DoVKVisibleChanged(const Sender: TObject; const Msg: System.Messaging.TMessage);
-    procedure DoSizeChanged(const Sender: TObject; const Msg: System.Messaging.TMessage);
-    procedure DoAppIdle(const Sender: TObject; const Msg: System.Messaging.TMessage);
-    procedure Notification(AComponent: TComponent; Operation: TOperation); override;
-    function AdjustByLayout(ARoot: TFMXObject; AVOffset: Single): Single;
-    function AdjustByScrollBox(AScrollBox: TCustomScrollBox; AVOffset: Single): Single; overload;
-    {$IFDEF FMXUI}
-    function AdjustByScrollBox(AScrollBox: TVertScrollView; AVOffset: Single): Single; overload;
-    {$ENDIF}
-    function AdjustByPresentedScrollBox(AScrollBox: TCustomPresentedScrollBox; AVOffset: Single): Single;
-    procedure AdjustCtrl(ACtrl: TControl; AVKBounds, ACtrlBounds: TRectF; AVKVisible: Boolean);
+    FCaretTarget: TPointF;
+    FAdjusting: Boolean;
+    procedure DoVKVisibleChanged(const Sender: TObject;
+      const Msg: System.Messaging.TMessage);
+    procedure DoAppIdle(const Sender: TObject;
+      const Msg: System.Messaging.TMessage);
+    procedure Notification(AComponent: TComponent;
+      Operation: TOperation); override;
+    procedure AdjustCtrl(ACtrl: TControl; AVKBounds: TRectF;
+      AVKVisible: Boolean);
     function NeedAdjust(ACtrl: TControl; var ACaretRect: TRectF): Boolean;
-    function IsAnimating(AniCalculations: TAniCalculations): Boolean;
     procedure AdjustIfNeeded;
-    procedure RestoreAdjustForm();
   public
     constructor Create(AOwner: TComponent); overload; override;
     destructor Destroy; override;
@@ -139,11 +112,11 @@ type
 
 var
   VKHandler: TVKStateHandler;
-  {$IFDEF IOS}
-  _IOS_VKBounds: TRectF;
+{$IFDEF ANDROID}
+  {$IF RTLVersion>=33}// 10.3+
+  _AndroidVKBounds: TRectF;
   {$ENDIF}
 
-{$IFDEF ANDROID}
 function JRectToRectF(R: JRect): TRectF;
 begin
   Result.Left := R.Left;
@@ -157,46 +130,60 @@ var
   TotalRect: JRect;
   Content, Total: TRectF;
   ContentRect: JRect;
+  AView: JView;
 begin
   TotalRect := TJRect.Create;
   ContentRect := TJRect.Create;
-  MainActivity.getWindow.getDecorView.getWindowVisibleDisplayFrame(ContentRect);
+  AView := TAndroidHelper.Activity.getWindow.getDecorView;
+  AView.getDrawingRect(ContentRect);
   Content := JRectToRectF(ContentRect);
   TVKStateHandler.FContentRect := Content.Truncate;
-  MainActivity.getWindow.getDecorView.getDrawingRect(TotalRect);
+  AView.getDrawingRect(TotalRect);
   Total := JRectToRectF(TotalRect);
   Result.Left := Trunc(Total.Left);
-  Result.Top := Trunc(Total.Top + Content.Height);
+  Result.Top := Trunc(Total.Top + AView.getHeight);
   Result.Right := Trunc(Total.Right);
   Result.Bottom := Trunc(Total.Bottom);
 end;
 
-function GetVirtalKeyboardBounds: TRectF; overload;
-var
-  b: TRect;
+function GetVirtalKeyboardBounds(var ARect: TRectF): Boolean; overload;
 begin
-  b := GetVKPixelBounds;
-  Result := TRectF.Create(ConvertPixelToPoint(b.TopLeft),
-    ConvertPixelToPoint(b.BottomRight));
-end;
-
-function GetVirtalKeyboardBounds(var ARect: TRect): Boolean; overload;
-begin
+{$IF RTLVersion>=33}// 10.3+
+  if MainActivity.getVirtualKeyboard.isVirtualKeyboardShown then begin
+    ARect := _AndroidVKBounds;
+    Result := not ARect.IsEmpty;
+  end
+  else begin
+    ARect := TRectF.Empty;
+    Result := False;
+  end;
+{$ELSE}
   ARect := GetVKPixelBounds;
   Result := ARect.Bottom <> TVKStateHandler.FContentRect.Bottom;
   ARect := TRectF.Create(ConvertPixelToPoint(ARect.TopLeft),
     ConvertPixelToPoint(ARect.BottomRight)).Truncate;
+{$ENDIF}
 end;
 
-function GetVirtalKeyboardBounds(var ARect: TRectF): Boolean; overload;
+function GetVirtalKeyboardBounds: TRectF; overload;
+var
+  b: TRectF;
 begin
-  ARect := TRectF.Create(GetVKPixelBounds);
-  Result := ARect.Bottom <> TVKStateHandler.FContentRect.Bottom;
-  ARect := TRectF.Create(ConvertPixelToPoint(ARect.TopLeft),
-    ConvertPixelToPoint(ARect.BottomRight)).Truncate;
+  if not GetVirtalKeyboardBounds(Result) then
+    Result := TRectF.Empty;
+end;
+
+function GetVirtalKeyboardBounds(var ARect: TRect): Boolean; overload;
+var
+  R: TRectF;
+begin
+  Result := GetVirtalKeyboardBounds(R);
+  ARect := R.Truncate;
 end;
 {$ELSE}
 {$IFDEF IOS}
+  _IOS_VKBounds: TRectF;
+
 function GetVirtalKeyboardBounds: TRectF; overload;
 var
   ATop: Integer;
@@ -236,370 +223,149 @@ end;
 
 function GetVirtalKeyboardBounds(var ARect: TRect): Boolean; overload;
 begin
-  Result := false;
+  Result := False;
 end;
 {$ENDIF}
 {$ENDIF}
 
+// 根据MainActivity的可视区域和绘图区域大小来确定是否显示了虚拟键盘
 function IsVirtalKeyboardVisible: Boolean;
 {$IFDEF NEXTGEN}var R: TRect; {$ENDIF}
 begin
   {$IFDEF NEXTGEN}
   Result := GetVirtalKeyboardBounds(R);
   {$ELSE}
-  Result := false;
+  Result := False;
   {$ENDIF}
 end;
 
-procedure BeginUpdate(AObj: TFMXObject);
+{ TControlHelper }
+
+function TControlHelper.LocalToParent(AParent: TControl;
+  APoint: TPointF): TPointF;
+var
+  AOffset: TPointF;
 begin
-  if AObj is TControl then
-    (AObj as TControl).BeginUpdate
-  else if AObj is TCustomForm then
-    (AObj as TCustomForm).BeginUpdate;
+  AOffset := OffsetOf(AParent);
+  Result.X := APoint.X + AOffset.X;
+  Result.Y := APoint.Y + AOffset.Y;
 end;
 
-procedure EndUpdate(AObj: TFMXObject);
+function TControlHelper.LocalToParent(AParent: TControl; R: TRectF): TRectF;
+var
+  AOffset: TPointF;
 begin
-  if AObj is TControl then
-    (AObj as TControl).EndUpdate
-  else if AObj is TCustomForm then
-    (AObj as TCustomForm).EndUpdate;
+  AOffset := OffsetOf(AParent);
+  Result := R;
+  Result.Offset(AOffset.X, AOffset.Y);
+end;
+
+function TControlHelper.OffsetOf(AParent: TControl): TPointF;
+var
+  ACtrl: TControl;
+begin
+  ACtrl := Self;
+  Result.X := 0;
+  Result.Y := 0;
+  while (ACtrl <> nil) and (ACtrl <> AParent) do begin
+    Result.X := Result.X + ACtrl.Position.X;
+    Result.Y := Result.Y + ACtrl.Position.Y;
+    ACtrl := ACtrl.ParentControl;
+  end;
+  if not Assigned(ACtrl) then
+    raise Exception.CreateFmt('指定的控件 %s 不是 %s 的子控件', [Name, AParent.Name]);
+end;
+
+{ TScrollBoxHelper }
+
+procedure TScrollBoxHelper.ScrollInView(ACtrl: TControl);
+var
+  R, LR: TRectF;
+  dx, dy: Single;
+begin
+  R := ACtrl.LocalToParent(Self, ACtrl.LocalRect);
+  LR := LocalRect;
+  if not LR.Contains(R) then begin
+    if R.Left > LR.Right then
+      dx := LR.Right - R.Right
+    else if R.Right < R.Left then
+      dx := R.Left
+    else
+      dx := 0;
+    if R.Top > LR.Bottom then
+      dy := LR.Bottom - R.Bottom
+    else if R.Bottom < LR.Top then
+      dy := R.Top
+    else
+      dy := 0;
+    ScrollBy(dx, dy);
+  end;
 end;
 
 { TVKStateHandler }
 
-/// Adjust by layout,return the real adjust offset
-function TVKStateHandler.AdjustByLayout(ARoot: TFMXObject; AVOffset: Single): Single;
-var
-  ALayout: TControl;
-
-  // 移动指定父上的子对象到新的父对象
-  procedure MoveCtrls(AOldParent, ANewParent: TFMXObject);
-  var
-    I: Integer;
-    AChild: TFMXObject;
-  begin
-    I := 0;
-    BeginUpdate(AOldParent);
-    BeginUpdate(ANewParent);
-    try
-      while I < AOldParent.ChildrenCount do begin
-        AChild := AOldParent.Children[I];
-        if AChild <> ANewParent then begin
-          if AChild.Parent = AOldParent then begin
-            AChild.Parent := ANewParent;
-            Continue;
-          end;
-        end;
-        Inc(I);
-      end;
-    finally
-      EndUpdate(AOldParent);
-      EndUpdate(ANewParent);
-    end;
-  end;
-
-  function RootLayout(ARoot: TFMXObject): TControl;
-  var
-    ACtrl: TComponent;
-    I: Integer;
-    ALastRootStyle: string;
-  begin
-    Result := nil;
-
-    if (ARoot.ComponentCount > 0) then begin
-      for I := 0 to ARoot.ComponentCount - 1 do begin
-        ACtrl := ARoot.Components[I];
-        if ACtrl is TLayout then begin
-          Result := ACtrl as TLayout;
-          if Result.TagObject <> Self then
-            Result := nil;
-        end;
-      end;
-    end;
-
-    if Result = nil then begin
-      if ARoot is TCustomForm then begin
-        with ARoot as TCustomForm do begin
-          ALastRootStyle := StyleLookup;
-          StyleLookup := '';
-        end;
-      end else
-        ALastRootStyle := '';
-
-      Result := TLayout.Create(ARoot);
-      Result.Parent := ARoot;
-      Result.TagObject := Self;
-      with ARoot as IContainerObject do
-        Result.SetBounds(0, 0, ContainerWidth, ContainerHeight);
-      MoveCtrls(ARoot, Result);
-
-      // 修正窗体样式被错误删除造成的问题
-      if Length(ALastRootStyle) > 0 then
-        (ARoot as TCustomForm).StyleLookup := ALastRootStyle;
-    end;
-  end;
-
-begin
-  ALayout := RootLayout(ARoot); // 确认存在用于调整的根布局
-  FAdjustStack.Save(ALayout);
-  ALayout.Position.Y := ALayout.Position.Y + AVOffset;
-  Result := AVOffset;
-end;
-
-function TVKStateHandler.AdjustByPresentedScrollBox(AScrollBox: TCustomPresentedScrollBox; AVOffset: Single): Single;
-var
-  ALastY: Single;
-begin
-  FAdjustStack.Save(AScrollBox);
-  ALastY := AScrollBox.ViewportPosition.Y;
-  AScrollBox.ViewportPosition.Offset(0, AVOffset + ALastY);
-  // AScrollBox.ScrollBy(0, AVOffset);
-  Result := ALastY - AScrollBox.ViewportPosition.Y;
-end;
-
-{$IFDEF FMXUI}
-function TVKStateHandler.AdjustByScrollBox(AScrollBox: TVertScrollView; AVOffset: Single): Single;
-var
-  ALastY: Single;
-begin
-  FAdjustStack.Save(AScrollBox);
-  ALastY := AScrollBox.ViewportPosition.Y;
-  AScrollBox.ScrollBy(0, AVOffset);
-  Result := ALastY - AScrollBox.ViewportPosition.Y;
-end;
-{$ENDIF}
-
-function TVKStateHandler.AdjustByScrollBox(AScrollBox: TCustomScrollBox; AVOffset: Single): Single;
-var
-  ALastY: Single;
-begin
-  FAdjustStack.Save(AScrollBox);
-  ALastY := AScrollBox.ViewportPosition.Y;
-  AScrollBox.ScrollBy(0, AVOffset);
-  Result := ALastY - AScrollBox.ViewportPosition.Y;
-end;
-
-{$IFNDEF FMXUI}
-var
-  StatusHeight: Single = 0;
-
-function GetParentForm(AObj: TFmxObject): TCustomForm;
-var
-  V: TFmxObject;
-begin
-  Result := nil;
-  if not Assigned(AObj) then
-    Exit;
-  V := AObj.Parent;
-  while Assigned(V) do begin
-    if V is TCustomForm then begin
-      Result := V as TCustomForm;
-      Break;
-    end;
-    V := V.Parent;
-  end;
-end;
-{$ENDIF}
-
-procedure TVKStateHandler.AdjustCtrl(ACtrl: TControl;
-  AVKBounds, ACtrlBounds: TRectF; AVKVisible: Boolean);
+procedure TVKStateHandler.AdjustCtrl(ACtrl: TControl; AVKBounds: TRectF;
+  AVKVisible: Boolean);
 var
   ACaretRect: TRectF;
-  AForm: TCustomForm;
-
-  function TryByScrollBox(AParent: TFMXObject; var AOffset: Single): TFMXObject;
-  begin
-    Result := AParent.Parent;
-
-    // 父有滚动框，则尝试滚动解决
-    while Assigned(AParent) and (AOffset < 0) do begin
-      if AParent is TCustomScrollBox then begin
-        // 正在滚动时不需要调整
-        if IsAnimating((AParent as TCustomScrollBox).AniCalculations) then begin
-          AOffset := 0;
-          Exit;
-        end;
-        AOffset := AOffset - AdjustByScrollBox(AParent as TCustomScrollBox, AOffset)
-      {$IFDEF FMXUI}
-      end else if AParent is TVertScrollView then begin
-        AOffset := AOffset - AdjustByScrollBox(AParent as TVertScrollView, AOffset)
-      {$ENDIF}
-      end else if AParent is TCustomPresentedScrollBox then begin
-        AOffset := AOffset - AdjustByPresentedScrollBox(AParent as TCustomPresentedScrollBox, AOffset)
-      end;
-      Result := AParent;
-      AParent := AParent.Parent;
-    end;
-  end;
-
-  // 将指定的区域移动可视区
-  procedure ScrollInToRect;
-  var
-    AParent: TFMXObject;
-    AOffset: Single;
-  begin
-    AOffset := AVKBounds.Top - ACaretRect.Bottom;
-    AParent := TryByScrollBox(ACtrl, AOffset);
-    if AOffset < 0 then
-      AdjustByLayout(AParent, AOffset);
-  end;
-
-  procedure AddNextHelper;
-  var
-    AHelper: TVKNextHelper;
-    I: Integer;
-    AVKCtrl: IVirtualKeyboardControl;
-  begin
-    if Supports(ACtrl, IVirtualKeyboardControl, AVKCtrl) then begin
-      for I := 0 to ACtrl.ComponentCount - 1 do begin
-        if ACtrl.Components[I] is TVKNextHelper then
-          Exit;
-      end;
-      AHelper := TVKNextHelper.Create(ACtrl);
-      AHelper.SetParent(ACtrl);
-    end;
-  end;
-
+  AForm: TCommonCustomForm;
+  I: Integer;
+  ADelta: Integer;
 begin
-  if AVKVisible and EnableVirtalKeyboardHelper then begin
-
-    if EnableAdjustFormSize then begin
-      AForm := GetParentForm(ACtrl);
-      if Assigned(AForm) then begin
-        if Assigned(FLastForm) and (FLastForm <> AForm) then
-          FLastForm.Padding.Bottom := 0;
-        FLastForm := AForm;
-        FLastForm.Padding.Bottom := AVKBounds.Height - {$IFNDEF FMXUI}StatusHeight{$ELSE}TView.GetStatusHeight{$ENDIF};
-      end;
+  if EnableVirtalKeyboardHelper and AVKVisible and Assigned(ACtrl) then begin
+    AForm := (ACtrl.Root as TCommonCustomForm);
+    if FLastControl <> ACtrl then begin
+      if Assigned(FLastControl) then
+        FLastControl.RemoveFreeNotification(Self);
+      FLastControl := ACtrl;
+      FLastControl.FreeNotification(Self);
+      FLastRect := AForm.Padding.Rect;
     end;
-
     if NeedAdjust(ACtrl, ACaretRect) then begin
-      if FLastControl <> ACtrl then begin
-        if Assigned(FLastControl) then
-          FLastControl.RemoveFreeNotification(Self);
-        FLastControl := ACtrl;
-        FLastControl.FreeNotification(Self);
-      end;
-
-      ScrollInToRect;
+      if (ACaretRect.Bottom > AVKBounds.Top) or (AForm.Padding.Top < 0) or
+        (ACaretRect.Top < 0) then
+        ADelta := Trunc(ACaretRect.Bottom - AVKBounds.Top)
+      else
+        ADelta := 0;
+      AForm.Padding.Rect := RectF(AForm.Padding.Left, AForm.Padding.Top - ADelta,
+        AForm.Padding.Right, AForm.Padding.Bottom + ADelta);
     end;
-
-    if EnableReturnKeyHook then
-      AddNextHelper;
-
-  end else begin
-
-    RestoreAdjustForm();
-    FAdjustStack.Restore;
+  end
+  else if Assigned(FLastControl) then begin
+    AForm := (FLastControl.Root as TCommonCustomForm);
+    AForm.Padding.Rect := FLastRect;
     FLastControl := nil;
     FLastFocused := nil;
   end;
 end;
 
 procedure TVKStateHandler.AdjustIfNeeded;
-
-  {$IFDEF ANDROID}
-  procedure UpdateAndroidKeyboardServiceState;
-  var
-    ASvc: IFMXVirtualKeyboardService;
-    AContext: TRttiContext;
-    AType: TRttiType;
-    AField: TRttiField;
-    AInst: TVirtualKeyboardAndroid;
-  begin
-    if not Assigned(FVKState) then begin
-      if (not Assigned(Screen.FocusControl)) and
-        TPlatformServices.Current.SupportsPlatformService(IFMXVirtualKeyboardService, ASvc) then
-      begin
-        AInst := ASvc as TVirtualKeyboardAndroid;
-        AContext := TRttiContext.Create;
-        AType := AContext.GetType(TVirtualKeyboardAndroid);
-        AField := AType.GetField('FState');
-        if Assigned(AField) and (AField.GetValue(AInst).AsOrdinal <> 0) then begin
-          FVKState := PByte(AInst);
-          Inc(FVKState, AField.Offset);
-        end;
-      end;
-    end;
-
-    if Assigned(FVKState) and (FVKState^ <> 0) then
-      FVKState^ := 0;
-  end;
-  {$ENDIF}
-
-  {$IFDEF IOS}
-  procedure VKHide;
-  var
-    ASvc: IFMXVirtualKeyboardService;
-  begin
-    if TPlatformServices.Current.SupportsPlatformService(IFMXVirtualKeyboardService, ASvc) then
-      ASvc.HideVirtualKeyboard;
-  end;
-  {$ENDIF}
-
-  procedure RestoreCtrls;
-  begin
-    {$IFDEF ANDROID}
-    // if not Assigned(Screen.FocusControl) then
-    // UpdateAndroidKeyboardServiceState;
-    {$ENDIF}
-    RestoreAdjustForm();
-    if Assigned(FLastControl) then
-      AdjustCtrl(FLastControl, RectF(0, 0, 0, 0), FLastControl.AbsoluteRect, false);
-  end;
-
-  procedure CheckHidden;
-  var
-    ACaretRect: TRectF;
-    ACtrl: TControl;
-  begin
-    if Assigned(Screen.FocusControl) then begin
-      ACtrl := Screen.FocusControl.GetObject as TControl;
-      if Assigned(ACtrl) then begin
-        if NeedAdjust(ACtrl, ACaretRect) then
-          AdjustCtrl(ACtrl, GetVirtalKeyboardBounds, ACtrl.AbsoluteRect, True);
-      end;
-    end else begin
-      {$IFDEF IOS}
-      VKHide;
-      {$ENDIF}
-      RestoreCtrls;
-    end;
-  end;
-
+var
+  ACtrl: TControl;
 begin
-  if IsVirtalKeyboardVisible then // 解决掉虚拟键盘隐藏后的问题
-    CheckHidden
+  if IsVirtalKeyboardVisible then begin // 解决掉虚拟键盘隐藏后的问题
+    ACtrl := Screen.FocusControl as TControl;
+    AdjustCtrl(ACtrl, GetVirtalKeyboardBounds, True);
+  end
   else
-    RestoreCtrls;
+    AdjustCtrl(nil, RectF(0, 0, 0, 0), False)
 end;
 
 // 构造函数，订阅消息
 constructor TVKStateHandler.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FAdjustStack := TQAdjustStack.Create;
-  FVKMsgId := TMessageManager.DefaultManager.SubscribeToMessage(TVKStateChangeMessage, DoVKVisibleChanged);
-  FSizeMsgId := TMessageManager.DefaultManager.SubscribeToMessage(TSizeChangedMessage, DoSizeChanged);
-  FIdleMsgId := TMessageManager.DefaultManager.SubscribeToMessage(TIdleMessage, DoAppIdle);
-  {$IF DEFINED(Android) and (RTLVersion>=32)}
-  with TAndroidApplicationGlue(PANativeActivity(System.DelphiActivity).instance) do
-  begin
-    FLastContentRectChanged := OnContentRectEvent;
-    OnContentRectEvent := DoContentRectChanged;
-  end;
-  {$ENDIF}
+  FVKMsgId := TMessageManager.DefaultManager.SubscribeToMessage
+    (TVKStateChangeMessage, DoVKVisibleChanged);
+  FIdleMsgId := TMessageManager.DefaultManager.SubscribeToMessage(TIdleMessage,
+    DoAppIdle);
 end;
 
 // 析构函数，取消消息订阅
 destructor TVKStateHandler.Destroy;
 begin
   TMessageManager.DefaultManager.Unsubscribe(TVKStateChangeMessage, FVKMsgId);
-  TMessageManager.DefaultManager.Unsubscribe(TSizeChangedMessage, FSizeMsgId);
   TMessageManager.DefaultManager.Unsubscribe(TIdleMessage, FIdleMsgId);
-  FAdjustStack.Restore;
   inherited;
 end;
 
@@ -616,45 +382,9 @@ begin
     TMessageManager.DefaultManager.SendMessage(Sender, TFocusChanged.Create);
     FLastFocused := Screen.FocusControl;
   end;
-  AdjustIfNeeded;
-end;
-
-{$IF DEFINED(ANDROID) and (RTLVersion>=32)}
-procedure TVKStateHandler.DoContentRectChanged
-  (const App: TAndroidApplicationGlue; const ARect: TRect);
-var
-  svc: IFMXScreenService;
-  //AScale: Single;
-  //ACtrl: TControl;
-  //AVKRect: TRectF;
-begin
-  if ARect <> FContentRect then begin
-    if TPlatformServices.Current.SupportsPlatformService(IFMXScreenService, svc) then
-    begin
-      // AScale := svc.GetScreenScale;
-      FContentRect := ARect;
-      // TRectF.Create(ARect.Left/AScale,ARect.Top/AScale,ARect.Right/AScale,ARect.Bottom/AScale).Truncate;
-    end;
-    FLastContentRectChanged(App, ARect);
+  if TThread.GetTickCount - FLastIdleTick > 100 then begin
+    FLastIdleTick := TThread.GetTickCount;
     AdjustIfNeeded;
-  end;
-end;
-{$ENDIF}
-
-/// 在横竖屏切换时，处理控件位置
-procedure TVKStateHandler.DoSizeChanged(const Sender: TObject;
-  const Msg: System.Messaging.TMessage);
-var
-  ASizeMsg: TSizeChangedMessage absolute Msg;
-  R: TRect;
-begin
-  if Sender = Screen.ActiveForm then begin
-    RestoreAdjustForm();
-    FAdjustStack.Restore;
-    if GetVirtalKeyboardBounds(R) then begin
-      TMessageManager.DefaultManager.SendMessage(Sender,
-        TVKStateChangeMessage.Create(True, R));
-    end
   end;
 end;
 
@@ -665,63 +395,69 @@ var
   AVKMsg: TVKStateChangeMessage absolute Msg;
   ACtrl: TControl;
 begin
+  {$IFDEF IOS}
+  _IOS_VKBounds := TRectF.Create(AVKMsg.KeyboardBounds);
+  {$ENDIF}
+{$IFDEF ANDROID}
+  {$IF RTLVersion>=33}// 10.3+
+  _AndroidVKBounds := TRectF.Create(AVKMsg.KeyboardBounds);
+  {$ENDIF}
+{$ENDIF}
   if AVKMsg.KeyboardVisible then begin // 键盘可见
-    {$IFDEF IOS}
-    _IOS_VKBounds := TRectF.Create(AVKMsg.KeyboardBounds);
-    {$ENDIF}
     if Screen.FocusControl <> nil then begin
       ACtrl := Screen.FocusControl.GetObject as TControl;
-      AdjustCtrl(ACtrl, GetVirtalKeyboardBounds, ACtrl.AbsoluteRect, True);
+      AdjustCtrl(ACtrl, GetVirtalKeyboardBounds, True);
     end;
-  end else begin
-    RestoreAdjustForm();
-    {$IFDEF IOS}
-    _IOS_VKBounds := TRectF.Empty;
-    {$ENDIF}
-    FAdjustStack.Restore;
-  end;
+  end
+  else
+    AdjustCtrl(nil, RectF(0, 0, 0, 0), False);
 end;
 
-function TVKStateHandler.IsAnimating(AniCalculations: TAniCalculations): Boolean;
-var
-  AContext: TRttiContext;
-  AType: TRttiType;
-  AField: TRttiField;
-begin
-  AContext := TRttiContext.Create;
-  AType := AContext.GetType(AniCalculations.ClassType);
-  if Assigned(AType) then begin
-    AField := AType.GetField('FStarted');
-    if Assigned(AField) then
-      Result := AField.GetValue(AniCalculations).AsBoolean
-    else
-      Result := false;
-  end else
-    Result := false;
-end;
-
+// 响应组件释放通知，以避免访问无效地址
 function TVKStateHandler.NeedAdjust(ACtrl: TControl;
   var ACaretRect: TRectF): Boolean;
 var
   ACaret: ICaret;
-  ACaretObj: TCustomCaret;
+  AFlasher: IFlasher;
   ACtrlBounds, AVKBounds: TRectF;
 
-  function GetRootTop: Single;
+  function ClientToParent(ARoot: TControl): TPointF;
   var
-    ALayout: TLayout;
-    AObj: TFMXObject;
+    AParent: TControl;
   begin
-    AObj := ACtrl.Root.GetObject;
-    Result := 0;
-    if AObj is TForm then begin
-      if TForm(AObj).ChildrenCount > 0 then begin
-        AObj := TForm(AObj).Children[0];
-        if AObj is TLayout then begin
-          ALayout := AObj as TLayout;
-          Result := ALayout.Position.Y;
-        end;
+    AParent := ACtrl;
+    Result := AFlasher.Pos;
+    while AParent <> ARoot do begin
+      if AParent is TCustomScrollBox then
+        Result := Result - TCustomScrollBox(AParent).ViewportPosition
+      else if AParent is TCustomPresentedScrollBox then
+        Result := Result - TCustomPresentedScrollBox(AParent).ViewportPosition;
+      Result := Result + AParent.Position.Point;
+      AParent := AParent.ParentControl;
+    end;
+  end;
+
+  function CaretVisible: Boolean;
+  var
+    pt: TPointF;
+    AParent, AChild: TControl;
+  begin
+    pt := AFlasher.Pos;
+    AChild := ACtrl;
+    Result := AFlasher.Visible;
+    while Assigned(AChild) and Result do begin
+      if AChild is TCustomScrollBox then begin
+        pt := pt - TCustomScrollBox(AChild).ViewportPosition;
+        if not AChild.LocalRect.Contains(pt) then
+          Result := False;
+      end
+      else if AChild is TCustomPresentedScrollBox then begin
+        pt := pt - TCustomPresentedScrollBox(AChild).ViewportPosition;
+        if not AChild.LocalRect.Contains(pt) then
+          Result := False;
       end;
+      pt := pt + AChild.Position.Point;
+      AChild := AChild.ParentControl;
     end;
   end;
 
@@ -729,25 +465,29 @@ begin
   if Supports(ACtrl, ICaret, ACaret) then begin
     AVKBounds := GetVirtalKeyboardBounds;
     ACtrlBounds := ACtrl.AbsoluteRect;
-
-    ACaretObj := ACaret.GetObject;
-    ACaretRect.TopLeft := ACtrl.LocalToAbsolute(ACaretObj.Pos);
-    ACaretRect.Right := ACaretRect.Left + ACaretObj.Size.cx + 1;
-    ACaretRect.Bottom := ACaretRect.Top + ACaretObj.Size.cy + 1; // 下面加点余量
-
-    if ACaretRect.Bottom > ACtrlBounds.Bottom then begin
-      if ACtrl is TCustomPresentedScrollBox then begin
-        AdjustByPresentedScrollBox(ACtrl as TCustomPresentedScrollBox,
-          ACtrlBounds.Bottom - ACaretRect.Bottom);
-        Result := false;
-        Exit;
+    AFlasher := ACaret.GetObject.Flasher;
+    if CaretVisible then begin
+      ACaretRect.TopLeft := ClientToParent(nil);
+      // 加上标题栏的高度
+      ACaretRect.TopLeft := ACaretRect.TopLeft +
+        (ACtrl.Root as TCommonCustomForm).ClientToScreen(PointF(0, 0));
+      if FAdjusting and (not SameValue(ACaretRect.Top, FCaretTarget.Y, 1.0)) then
+        Result := False;
+      FAdjusting := False;
+      ACaretRect.Right := ACaretRect.Left + AFlasher.Size.cx;
+      ACaretRect.Bottom := ACaretRect.Top + AFlasher.Size.cy + 20; // 下面加点余量
+      Result := ACaretRect.IntersectsWith(AVKBounds) or (ACaretRect.Top < 0) or
+        (ACaretRect.Top > AVKBounds.Bottom);
+      if Result then begin
+        FCaretTarget.Y := ACaretRect.Top + ACaretRect.Bottom - AVKBounds.Top;
+        FAdjusting := True;
       end;
-    end;
-
-    Result := ACaretRect.IntersectsWith(AVKBounds) or (ACaretRect.Top < 0) or
-      (ACaretRect.Top > AVKBounds.Bottom);
-  end else
-    Result := false;
+    end
+    else
+      Result := False;
+  end
+  else
+    Result := False;
 end;
 
 // 响应组件释放通知，以避免访问无效地址
@@ -759,120 +499,9 @@ begin
       FLastControl.RemoveFreeNotification(Self);
       FLastControl := nil;
       FLastFocused := nil;
-    end else
-      FAdjustStack.Remove(AComponent);
+    end
   end;
   inherited;
-end;
-
-procedure TVKStateHandler.RestoreAdjustForm;
-begin
-  if Assigned(FLastForm) then begin
-    FLastForm.Padding.Bottom := 0;
-    FLastForm := nil;
-  end;
-end;
-
-{ TQAdjustStack }
-
-function TQAdjustStack.GetAdjusted: Boolean;
-begin
-  Result := Assigned(FLast);
-end;
-
-function TQAdjustStack.GetLastCtrl: TControl;
-begin
-  if Assigned(FLast) then
-    Result := FLast.Control
-  else
-    Result := nil;
-end;
-
-procedure TQAdjustStack.Remove(ACtrl: TComponent);
-var
-  ANext, ACurrent: PAdjustItem;
-begin
-  if Assigned(ACtrl) then begin
-    ACurrent := FLast;
-    ANext := nil;
-    while Assigned(ACurrent) do begin
-      if ACurrent.Control = ACtrl then begin
-        if Assigned(ANext) then
-          ANext.Prior := ACurrent.Prior
-        else
-          FLast := ACurrent.Prior;
-        Dispose(ACurrent);
-        break;
-      end;
-      ANext := ACurrent;
-      ACurrent := ANext.Prior;
-    end;
-    ACtrl.RemoveFreeNotification(VKHandler);
-  end;
-end;
-
-procedure TQAdjustStack.RemoveLast;
-var
-  APrior: PAdjustItem;
-begin
-  if Assigned(FLast) then begin
-    APrior := FLast.Prior;
-    Dispose(FLast);
-    FLast := APrior;
-  end;
-end;
-
-procedure TQAdjustStack.Restore;
-var
-  APrior: PAdjustItem;
-begin
-  while Assigned(FLast) do begin
-    APrior := FLast.Prior;
-    with FLast^ do begin
-      if Control is TCustomScrollBox then begin
-        Control.Margins.Bottom := LastMargin.Y;
-        Control.Margins.Left := LastMargin.X;
-        (Control as TCustomScrollBox).ViewportPosition := LastViewPos;
-      end else if Control is TCustomPresentedScrollBox then begin
-        Control.Margins.Bottom := LastMargin.Y;
-        Control.Margins.Left := LastMargin.X;
-        (Control as TCustomPresentedScrollBox).ViewportPosition := LastViewPos;
-      end else begin
-        if LastAlign = TAlignLayout.None then
-          Control.Position.Point := LastMargin
-        else begin
-          Control.BoundsRect := LastBounds;
-          Control.Align := LastAlign;
-        end;
-      end;
-    end;
-    Dispose(FLast);
-    FLast := APrior;
-  end;
-end;
-
-procedure TQAdjustStack.Save(ACtrl: TControl);
-var
-  AItem: PAdjustItem;
-begin
-  New(AItem);
-  AItem.Prior := FLast;
-  AItem.Control := ACtrl;
-  if ACtrl is TCustomScrollBox then begin
-    AItem.LastViewPos := (ACtrl as TCustomScrollBox).ViewportPosition;
-    AItem.LastMargin.X := ACtrl.Margins.Left;
-    AItem.LastMargin.Y := ACtrl.Margins.Bottom;
-  end else if ACtrl is TCustomPresentedScrollBox then begin
-    AItem.LastViewPos := (ACtrl as TCustomPresentedScrollBox).ViewportPosition;
-    AItem.LastMargin.X := ACtrl.Margins.Left;
-    AItem.LastMargin.Y := ACtrl.Margins.Bottom;
-  end else begin
-    AItem.LastMargin := ACtrl.Position.Point;
-    AItem.LastBounds := ACtrl.BoundsRect;
-    AItem.LastAlign := ACtrl.Align;
-  end;
-  FLast := AItem;
-  ACtrl.FreeNotification(VKHandler);
 end;
 
 { TVKNextHelper }
@@ -921,43 +550,12 @@ begin
   end;
 end;
 
-{$IFNDEF FMXUI}
-{$IFDEF ANDROID}
-procedure DoInitFrameStatusHeight();
-var
-  resourceId: Integer;
-begin
-  if TJBuild_VERSION.JavaClass.SDK_INT < 19 then
-    Exit;
-  try
-    resourceId := {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
-      .getResources().getIdentifier(
-        StringToJString('status_bar_height'),
-        StringToJString('dimen'),
-        StringToJString('android'));
-    if resourceId <> 0 then begin
-      StatusHeight := {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
-        .getResources().getDimensionPixelSize(resourceId);
-      if StatusHeight > 0 then
-        StatusHeight := StatusHeight / {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF}
-          .getResources().getDisplayMetrics().scaledDensity;
-    end else
-      StatusHeight := 0;
-  except
-  end;
-end;
-{$ENDIF}{$ENDIF}
-
 initialization
   // 仅支持Android+IOS
   {$IF DEFINED(ANDROID) OR DEFINED(IOS)}
   VKHandler := TVKStateHandler.Create(nil);
   {$ENDIF}
-  EnableReturnKeyHook := True;
-  {$IFNDEF FMXUI}
-  {$IFDEF ANDROID}
-  DoInitFrameStatusHeight();
-  {$ENDIF}{$ENDIF}
+  //EnableReturnKeyHook := True;
 
 finalization
   {$IF DEFINED(ANDROID)  OR DEFINED(IOS)}
