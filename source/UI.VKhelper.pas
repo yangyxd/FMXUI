@@ -89,6 +89,7 @@ type
     FIdleMsgId: Integer;
     FLastIdleTick: Cardinal;
     FLastControl: TControl;
+    FLastControlForm: TCommonCustomForm;
     FLastRect: TRectF;
     [Weak] FLastFocused: IControl;
     FCaretTarget: TPointF;
@@ -103,6 +104,7 @@ type
       AVKVisible: Boolean);
     function NeedAdjust(ACtrl: TControl; var ACaretRect: TRectF): Boolean;
     procedure AdjustIfNeeded;
+    procedure Restore;
   public
     constructor Create(AOwner: TComponent); overload; override;
     destructor Destroy; override;
@@ -319,7 +321,19 @@ begin
         FLastControl.RemoveFreeNotification(Self);
       FLastControl := ACtrl;
       FLastControl.FreeNotification(Self);
-      FLastRect := AForm.Padding.Rect;
+      {$IFDEF DEBUG}
+      if Assigned(FLastControl) then
+        Log.d(Format('---FLastControl: %s-----', [FLastControl.Name]))
+      else
+        Log.d(Format('---FLastControl: nil-----', [FLastControl.Name]));
+      {$ENDIF}
+      if FLastControlForm <> AForm then begin
+        if Assigned(FLastControlForm) then
+          FLastControlForm.RemoveFreeNotification(Self);
+        FLastControlForm := AForm;
+        FLastControlForm.FreeNotification(Self);
+        FLastRect := AForm.Padding.Rect;
+      end;
     end;
     if NeedAdjust(ACtrl, ACaretRect) then begin
       if (ACaretRect.Bottom > AVKBounds.Top) or (AForm.Padding.Top < 0) or
@@ -327,15 +341,20 @@ begin
         ADelta := Trunc(ACaretRect.Bottom - AVKBounds.Top)
       else
         ADelta := 0;
-      AForm.Padding.Rect := RectF(AForm.Padding.Left, AForm.Padding.Top - ADelta,
-        AForm.Padding.Right, AForm.Padding.Bottom + ADelta);
+      //ÒÆ²»¶¯£¿
+      if AForm.Padding.Bottom + ADelta < AVKBounds.Height then
+        AForm.Padding.Rect := RectF(AForm.Padding.Left, AForm.Padding.Top - ADelta,
+          AForm.Padding.Right, AForm.Padding.Bottom + ADelta);
+
+      {$IFDEF DEBUG}
+      if Assigned(AForm) then
+        with AForm.Padding.Rect do
+          Log.d(Format('----Form Padding: %2f %2f %2f %2f-----', [Left, Top, Right, Bottom]));
+      {$ENDIF}
     end;
   end
   else if Assigned(FLastControl) then begin
-    AForm := (FLastControl.Root as TCommonCustomForm);
-    AForm.Padding.Rect := FLastRect;
-    FLastControl := nil;
-    FLastFocused := nil;
+    Restore;
   end;
 end;
 
@@ -497,11 +516,37 @@ begin
   if Operation = opRemove then begin
     if AComponent = FLastControl then begin
       FLastControl.RemoveFreeNotification(Self);
-      FLastControl := nil;
-      FLastFocused := nil;
+      Restore;
+    end else if AComponent = FLastControlForm then begin
+      FLastControlForm.RemoveFreeNotification(Self);
+      Restore;
     end
   end;
   inherited;
+end;
+
+procedure TVKStateHandler.Restore;
+var
+  AForm: TCommonCustomForm;
+begin
+  if Assigned(FLastControl) then
+    AForm := (FLastControl.Root as TCommonCustomForm)
+  else
+    AForm := nil;
+  if (not Assigned(AForm)) and Assigned(FLastControlForm) then
+    AForm := FLastControlForm;
+  if Assigned(AForm) and (AForm.Padding.Rect <> FLastRect) then
+    AForm.Padding.Rect := FLastRect;
+
+  FLastControl := nil;
+  FLastControlForm := nil;
+  FLastFocused := nil;
+
+  {$IFDEF DEBUG}
+  if Assigned(AForm) then
+    with AForm.Padding.Rect do
+      Log.d(Format('---x-Form Padding: %2f %2f %2f %2f-----', [Left, Top, Right, Bottom]));
+  {$ENDIF}
 end;
 
 { TVKNextHelper }
