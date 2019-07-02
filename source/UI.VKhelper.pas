@@ -126,7 +126,7 @@ begin
   Result.Bottom := R.Bottom;
 end;
 
-function GetVKPixelBounds: TRect;
+function GetVKPixelBounds: TRectF;
 var
   TotalRect: JRect;
   Content, Total: TRectF;
@@ -141,10 +141,10 @@ begin
   TVKStateHandler.FContentRect := Content.Truncate;
   AView.getDrawingRect(TotalRect);
   Total := JRectToRectF(TotalRect);
-  Result.Left := Trunc(Total.Left);
-  Result.Top := Trunc(Total.Top + AView.getHeight);
-  Result.Right := Trunc(Total.Right);
-  Result.Bottom := Trunc(Total.Bottom);
+  Result.Left := Total.Left;
+  Result.Top := Total.Top + AView.getHeight;
+  Result.Right := Total.Right;
+  Result.Bottom := Total.Bottom;
 end;
 
 function GetVirtalKeyboardBounds(var ARect: TRectF): Boolean; overload;
@@ -162,7 +162,7 @@ begin
   ARect := GetVKPixelBounds;
   Result := ARect.Bottom <> TVKStateHandler.FContentRect.Bottom;
   ARect := TRectF.Create(ConvertPixelToPoint(ARect.TopLeft),
-    ConvertPixelToPoint(ARect.BottomRight)).Truncate;
+    ConvertPixelToPoint(ARect.BottomRight));
 {$ENDIF}
 end;
 
