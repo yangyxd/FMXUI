@@ -2,7 +2,7 @@
 {                                                       }
 {       FMXUI 虚拟键遮挡问题处理单元                    }
 {                                                       }
-{       版权所有 (C) 2019 by Kngstr                     }
+{       版权所有 (C) 2019 by KngStr                     }
 {                                                       }
 {*******************************************************}
 
@@ -23,8 +23,7 @@ uses
 type
   TControlHelper = class helper for TControl
     function OffsetOf(AParent: TControl): TPointF;
-    function LocalToParent(AParent: TControl; APoint: TPointF)
-      : TPointF; overload;
+    function LocalToParent(AParent: TControl; APoint: TPointF): TPointF; overload;
     function LocalToParent(AParent: TControl; R: TRectF): TRectF; overload;
   end;
 
@@ -204,11 +203,9 @@ var
 begin
   ATemp := GetVirtalKeyboardBounds;
   Result := not ATemp.IsEmpty;
-  if Result then
-  begin
+  if Result then begin
     if TPlatformServices.Current.SupportsPlatformService(IFMXScreenService,
-      AService) then
-    begin
+      AService) then begin
       AScale := AService.GetScreenScale;
       ARect.Left := Trunc(ATemp.Left * AScale);
       ARect.Top := Trunc(ATemp.Top * AScale);
@@ -243,8 +240,7 @@ end;
 
 { TControlHelper }
 
-function TControlHelper.LocalToParent(AParent: TControl;
-  APoint: TPointF): TPointF;
+function TControlHelper.LocalToParent(AParent: TControl; APoint: TPointF): TPointF;
 var
   AOffset: TPointF;
 begin
@@ -315,7 +311,6 @@ var
   ADelta: Integer;
 begin
   if EnableVirtalKeyboardHelper and AVKVisible and Assigned(ACtrl) then begin
-    AForm := (ACtrl.Root as TCommonCustomForm);
     if FLastControl <> ACtrl then begin
       if Assigned(FLastControl) then
         FLastControl.RemoveFreeNotification(Self);
@@ -327,13 +322,14 @@ begin
       else
         Log.d(Format('---FLastControl: nil-----', [FLastControl.Name]));
       {$ENDIF}
-      if FLastControlForm <> AForm then begin
-        if Assigned(FLastControlForm) then
-          FLastControlForm.RemoveFreeNotification(Self);
-        FLastControlForm := AForm;
-        FLastControlForm.FreeNotification(Self);
-        FLastRect := AForm.Padding.Rect;
-      end;
+    end;
+    AForm := (ACtrl.Root as TCommonCustomForm);
+    if FLastControlForm <> AForm then begin
+      if Assigned(FLastControlForm) then
+        FLastControlForm.RemoveFreeNotification(Self);
+      FLastControlForm := AForm;
+      FLastControlForm.FreeNotification(Self);
+      FLastRect := AForm.Padding.Rect;
     end;
     if NeedAdjust(ACtrl, ACaretRect) then begin
       if (ACaretRect.Bottom > AVKBounds.Top) or (AForm.Padding.Top < 0) or
@@ -349,7 +345,8 @@ begin
       {$IFDEF DEBUG}
       if Assigned(AForm) then
         with AForm.Padding.Rect do
-          Log.d(Format('----Form Padding: %2f %2f %2f %2f-----', [Left, Top, Right, Bottom]));
+          Log.d(Format('---ACaretRect.Bottom:%.2f-AVKBounds.Top:%.2f-Form Padding: %2f %2f %2f %2f-----',
+            [ACaretRect.Bottom, AVKBounds.Top, Left, Top, Right, Bottom]));
       {$ENDIF}
     end;
   end
@@ -367,7 +364,7 @@ begin
     AdjustCtrl(ACtrl, GetVirtalKeyboardBounds, True);
   end
   else
-    AdjustCtrl(nil, RectF(0, 0, 0, 0), False)
+    AdjustCtrl(nil, RectF(0, 0, 0, 0), False);
 end;
 
 // 构造函数，订阅消息
@@ -474,7 +471,9 @@ var
         pt := pt - TCustomPresentedScrollBox(AChild).ViewportPosition;
         if not AChild.LocalRect.Contains(pt) then
           Result := False;
-      end;
+      end
+      else if AChild.ClipChildren and not AChild.LocalRect.Contains(pt) then
+        Result := False;
       pt := pt + AChild.Position.Point;
       AChild := AChild.ParentControl;
     end;
@@ -501,6 +500,10 @@ begin
         FCaretTarget.Y := ACaretRect.Top + ACaretRect.Bottom - AVKBounds.Top;
         FAdjusting := True;
       end;
+      {$IFDEF DEBUG}
+      with ACaretRect do
+        Log.d(Format('----ACaretRect: %2f %2f %2f %2f-----', [Left, Top, Right, Bottom]));
+      {$ENDIF}
     end
     else
       Result := False;
