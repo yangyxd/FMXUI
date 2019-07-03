@@ -563,7 +563,7 @@ begin
       begin
         if (FOwner.MonitorIndex = 0) then begin
           PMinMaxInfo(lParam).ptMaxSize.X := Screen.WorkAreaWidth;
-          PMinMaxInfo(lParam).ptMaxSize.Y := Screen.WorkAreaHeight; 
+          PMinMaxInfo(lParam).ptMaxSize.Y := Screen.WorkAreaHeight;
           Result := 0;
           Exit;
         end;

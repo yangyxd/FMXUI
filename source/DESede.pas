@@ -66,8 +66,8 @@ begin
   if (Length(Result) > Length(S)) then
     // 如果temp不够24位
     Move(Pointer(S)^, Result[0], Length(S))
-  else 
-    Move(Pointer(S)^, Result[0], Length(Result));    
+  else
+    Move(Pointer(S)^, Result[0], Length(Result));
 end;
 
 type
@@ -212,8 +212,8 @@ begin
   // return the keys we've created
 end; // end of des_createKeys
 
-function DESedeStream(const InStream, OutStream: TStream; const Key: TBytes; 
-  EncryptMode: Boolean; IvBytes: TBytes; CBCMode: Boolean = True; PaddingZero: Boolean = False): Boolean; 
+function DESedeStream(const InStream, OutStream: TStream; const Key: TBytes;
+  EncryptMode: Boolean; IvBytes: TBytes; CBCMode: Boolean = True; PaddingZero: Boolean = False): Boolean;
 const
   spfunction1: array [0 .. 63] of UInt32 = ($1010400, 0, $10000, $1010404,
     $1010004, $10404, $4, $10000, $400, $1010400, $1010404, $400, $1000404,
@@ -284,7 +284,7 @@ const
     $10041000);
 var
   Keys: TUint32s;
-  i, j, keyslen, iterations: Integer; 
+  i, j, keyslen, iterations: Integer;
   m, len, BufLen: Integer;
   looping: array of Integer;
   endloop, loopinc: Integer;
@@ -306,13 +306,13 @@ begin
       PaddingCount := 0;
   end else
     PaddingCount := 0;
-  
+
   j := Length(IvBytes);
   SetLength(IvBytes, 8);
-  for i := j to 7 do 
+  for i := j to 7 do
     IvBytes[i] := 0;
-    
-  SetLength(keys, 0);       
+
+  SetLength(keys, 0);
   des_createKeys(Key, keys);
   keyslen := length(keys);
   if keyslen = 32 then
@@ -321,11 +321,11 @@ begin
     iterations := 9;
 
   ReadCount := 0;
-  m := 0; 
+  m := 0;
   cbcleft := 0;
   cbcleft2 := 0;
   cbcright := 0;
-  cbcright2 := 0;  
+  cbcright2 := 0;
 
   if iterations = 3 then begin
     if EncryptMode then begin
@@ -363,7 +363,7 @@ begin
       looping[7] := -2;
       looping[8] := -2;
     end;
-  end; 
+  end;
 
   if CBCMode then begin // CBC mode (这里也是关键C#DES加密默认是CBC模式)
     cbcleft := (ord(IvBytes[0]) shl 24) or (ord(IvBytes[1]) shl 16) or
@@ -376,7 +376,7 @@ begin
   len := ProcessCount + PaddingCount;
   while m < len do begin
     BufLen := 8;
-    if (ReadCount + BufLen) > ProcessCount then 
+    if (ReadCount + BufLen) > ProcessCount then
       BufLen := ProcessCount - ReadCount;
     if BufLen > 0 then
       InStream.Read(StrByte, BufLen);
@@ -414,7 +414,7 @@ begin
         cbcright := right;
       end;
     end;
-    
+
     // first each 64 but chunk of the message must be permuted according to IP
     temp := ((left shr 4) xor right) and $0F0F0F0F;
     right := right xor temp;
@@ -496,7 +496,7 @@ begin
         right := right xor cbcright2;
       end;
     end;
-    
+
     OutByte[0] := left shr 24;
     OutByte[1] := (left shr 16) and $FF;
     OutByte[2] := (left shr 8) and $FF;
@@ -518,7 +518,7 @@ begin
               break;
             end;
           end;
-          
+
         end else begin
           PaddingCount := OutByte[7];
           if PaddingCount > 8 then PaddingCount := 0;
@@ -526,11 +526,11 @@ begin
             BufLen := 8 - PaddingCount;
           if BufLen < 0 then BufLen := 0;
         end;
-        
+
       end;
     end;
-    
-    if BufLen > 0 then 
+
+    if BufLen > 0 then
       OutStream.Write(OutByte, BufLen);
   end;
 
@@ -560,9 +560,9 @@ begin
     Result := ''
   else
     Result := DESedeEncrypt(@Data[0], Length(Data), Key);
-end;    
+end;
 
-function DESedeEncrypt(Data: Pointer; Size: Cardinal; const Key: TBytes): RawByteString; 
+function DESedeEncrypt(Data: Pointer; Size: Cardinal; const Key: TBytes): RawByteString;
 var
   FIn: TPointerStream;
   FOut: TPointerStream;
@@ -585,11 +585,11 @@ begin
     DESedeEncrypt(FIn, FOut, Key);
   finally
     FIn.Free;
-    FOut.Free;  
+    FOut.Free;
   end;
 end;
 
-function DESedeEncrypt(const InStream, OutStream: TStream; const Key: TBytes): Boolean; 
+function DESedeEncrypt(const InStream, OutStream: TStream; const Key: TBytes): Boolean;
 begin
   Result := DESedeStream(InStream, OutStream, Key, True, [], False, False);
 end;

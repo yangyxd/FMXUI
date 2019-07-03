@@ -54,7 +54,7 @@ type
   end;
 
 // ±àÂë
-  
+
 function Base64Encode(const Input, Output: TStream): Int64; overload;
 function Base64Encode(const Input: Pointer; ASize: Int64): TBytes; overload;
 function Base64Encode(const Input: TBytes): TBytes; overload;
@@ -73,7 +73,7 @@ function Base64Decode(const Input: string): TBytes; overload;
 function Base64Decode(const Input: Pointer; ASize: Int64): TBytes; overload;
 function Base64Decode(const Input: TBytes): TBytes; overload;
 
-function Base64ToStr(const Input: string; IsUTF8: Boolean = True): string; overload; 
+function Base64ToStr(const Input: string; IsUTF8: Boolean = True): string; overload;
 function Base64ToStr(const Input: Pointer; ASize: Int64; IsUTF8: Boolean = True): string; overload;
 {$IFNDEF WIN32}
 function Base64ToStr(const Input: RawByteString; IsUTF8: Boolean = True): string; overload;
@@ -359,7 +359,7 @@ begin
     System.SetLength(Result,0);
 end;
 
-function EstimateDecodeLength(const InputLength: Int64): Int64; 
+function EstimateDecodeLength(const InputLength: Int64): Int64;
 begin
   Result := (InputLength shr 2) * 3 + 4;
 end;
@@ -476,7 +476,7 @@ begin
     end;
   end;
   Result := IntPtr(POut) - IntPtr(Output);
-end; 
+end;
 {$ELSE}
 const
   Base64_Chars: array[0..63] of AnsiChar = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -501,7 +501,7 @@ asm
     mov     ecx, 3
     div     ecx              // edx = SourceSize % 3
     mov     ecx, eax         // ecx = SourceSize / 3
-    test    edx, edx         
+    test    edx, edx
     jz      @@1
     inc     eax              // eax = (SourceSize + 2) / 3
   @@1:
@@ -768,7 +768,7 @@ end;
 function Base64Decode(const Input, Output: TStream): Int64;
 begin
   Result := 0;
-end; 
+end;
 
 function Base64Decode(const Input: Pointer; ASize: Int64; const CharSize: SmallInt): TBytes; overload;
 var
@@ -785,23 +785,23 @@ function Base64Decode(const Input: string): TBytes;
 const
   CharSize = SizeOf(Char);
 begin
-  Result := Base64Decode(PByte(Input), Length(Input), CharSize); 
+  Result := Base64Decode(PByte(Input), Length(Input), CharSize);
 end;
 
-function Base64Decode(const Input: Pointer; ASize: Int64): TBytes; 
+function Base64Decode(const Input: Pointer; ASize: Int64): TBytes;
 begin
-  Result := Base64Decode(Input, ASize, 1); 
+  Result := Base64Decode(Input, ASize, 1);
 end;
 
-function Base64Decode(const Input: TBytes): TBytes; 
+function Base64Decode(const Input: TBytes): TBytes;
 begin
   if Length(Input) > 0 then begin
     Result := Base64Decode(@Input[0], Length(Input), 1);
   end else
-    SetLength(Result, 0);  
+    SetLength(Result, 0);
 end;
 
-function Base64ToStr(const Input: Pointer; ASize: Int64; IsUTF8: Boolean; 
+function Base64ToStr(const Input: Pointer; ASize: Int64; IsUTF8: Boolean;
   CharSize: Integer): string; overload;
 var
   Len: Integer;
@@ -824,14 +824,14 @@ begin
     Result := '';
 end;
 
-function Base64ToStr(const Input: string; IsUTF8: Boolean): string;  
+function Base64ToStr(const Input: string; IsUTF8: Boolean): string;
 const
   CharSize = Sizeof(Char);
 begin
-  Result := Base64ToStr(Pointer(Input), Length(Input), IsUTF8, CharSize);  
+  Result := Base64ToStr(Pointer(Input), Length(Input), IsUTF8, CharSize);
 end;
 
-function Base64ToStr(const Input: Pointer; ASize: Int64; IsUTF8: Boolean): string; 
+function Base64ToStr(const Input: Pointer; ASize: Int64; IsUTF8: Boolean): string;
 begin
   Result := Base64ToStr(Input, ASize, IsUTF8, 1);
 end;

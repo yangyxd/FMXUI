@@ -3,7 +3,7 @@ unit uFrameDialog;
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
   UI.Frame, UI.Base, FMX.Controls.Presentation, UI.Standard, FMX.Layouts,
   System.ImageList, FMX.ImgList, FMX.Menus, UI.ListView;

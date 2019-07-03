@@ -52,7 +52,7 @@ uses
   FMX.Types, FMX.Controls, FMX.Forms, FMX.StdCtrls, FMX.Utils,
   FMX.ListView, FMX.ListView.Appearances, FMX.ListView.Types;
 
-const       
+const
   // 没有点击按钮
   BUTTON_NONE = 0;
   // The identifier for the positive button.
@@ -3310,7 +3310,7 @@ end;
 
 function TDialogStyleManager.IsStoredTitleSpaceHeight: Boolean;
 begin
-  Result := FTitleSpaceHeight <> SIZE_TitleSpaceHeight;  
+  Result := FTitleSpaceHeight <> SIZE_TitleSpaceHeight;
 end;
 
 procedure TDialogStyleManager.SetButtonBorder(const Value: TViewBorder);
@@ -3367,7 +3367,7 @@ begin
   if Style = nil then
     Style := GetDefaultStyleMgr;
 
-  // 初始化基础     
+  // 初始化基础
   FViewRoot := TDialogView.Create(Owner);
   FViewRoot.Dialog := Self;
   FViewRoot.BeginUpdate;

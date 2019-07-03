@@ -3,7 +3,7 @@ unit uFrameGridView;
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
   {$IF CompilerVersion >= 31}
   FMX.DialogService,
@@ -183,11 +183,11 @@ end;
 procedure TFrameGridView.GridView1DrawFixedColText(Sender: TObject;
   Canvas: TCanvas; Item: TGridColumnItem; const R: TRectF;
   var DefaultDraw: Boolean);
-begin     
+begin
   if (Item.ColIndex = 1) and (Item.RowIndex = 0) then begin
     // 红色字体显示第2列第0行表头
     GridView1.FixedTextSettings.CustomColor := TAlphaColorrec.Red;
-    GridView1.FixedTextSettings.Draw(Canvas, Item.DisplayText, R, Item.Opacity * GridView1.Opacity, 
+    GridView1.FixedTextSettings.Draw(Canvas, Item.DisplayText, R, Item.Opacity * GridView1.Opacity,
       TViewState.Custom, GridView1.FixedTextSettings.Gravity);
   end else
     DefaultDraw := True;

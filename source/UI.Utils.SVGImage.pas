@@ -85,12 +85,12 @@ type
 
     procedure DoChange();
 
-    procedure FillText(const Canvas: TCanvas; const ARect: TRectF; const AText: string; 
+    procedure FillText(const Canvas: TCanvas; const ARect: TRectF; const AText: string;
       const AColor: TAlphaColor; const AOpacity: Single;
       const Flags: TFillTextFlags; const ATextAlign: TTextAlign;
       const AVTextAlign: TTextAlign = TTextAlign.Center); overload;
-      
-    procedure TextSize(const AText: string; var ASize: TSizeF; const SceneScale: Single; 
+
+    procedure TextSize(const AText: string; var ASize: TSizeF; const SceneScale: Single;
       const MaxWidth: Single = -1; AWordWrap: Boolean = False);
   public
     constructor Create;
@@ -138,9 +138,9 @@ begin
       List := TStringList.Create;
       try
         List.DelimitedText := S;
-        if List.Count = 2 then 
+        if List.Count = 2 then
           FViewBox := PointF(StrToFloatDef(List[0], LSize.X), StrToFloatDef(List[1], LSize.Y))
-        else if List.Count = 4 then              
+        else if List.Count = 4 then
           FViewBox := PointF(StrToFloatDef(List[2], LSize.X), StrToFloatDef(List[3], LSize.Y))
         else
           FViewBox := LSize;
@@ -475,10 +475,10 @@ var
         SetLength(LPoints, List.Count div 2);
         I := 0;
         while I < List.Count do begin
-          LPoints[J] := PointF(StrToFloatDef(List[I], 0) + Offset, StrToFloatDef(List[I + 1], 0) + Offset);  
+          LPoints[J] := PointF(StrToFloatDef(List[I], 0) + Offset, StrToFloatDef(List[I + 1], 0) + Offset);
           Inc(I, 2);
-          Inc(J);  
-        end;          
+          Inc(J);
+        end;
       end else begin
         SetLength(LPoints, List.Count);
         for I := 0 to List.Count - 1 do begin
@@ -553,15 +553,15 @@ var
   begin
     DefStrokeSize := Canvas.Stroke.Thickness;
     DefFontSize := FLayout.Font.Size;
-    DefFontName := FLayout.Font.Family; 
+    DefFontName := FLayout.Font.Family;
     DefFontAnchor := FontAnchor;
-    
+
     for I := 0 to Nodes.Count - 1 do begin
       Item := Nodes.Items[I];
       if Item = nil then Continue;
       LName := LowerCase(Item.Name);
       Canvas.Stroke.Thickness := DefStrokeSize;
-            
+
       if (LName = 'g') or (LName = 'a') then begin
         // À©Õ¹
         Canvas.Font.Size := FData.ReadFloat(Item, 'font-size', 12);
@@ -632,7 +632,7 @@ var
           if FontAnchor = 3 then
             FontAnchor := DefFontAnchor;
           case FontAnchor of
-            1: // middle 
+            1: // middle
               W := X + ASize.Width * 0.5 + RX;
             2: // end
               W := X + RX;
@@ -663,9 +663,9 @@ var
     DefFillColor := Canvas.Fill.Color;
     DefStrokeSize := Canvas.Stroke.Thickness;
     DefFontSize := FLayout.Font.Size;
-    DefFontName := FLayout.Font.Family; 
+    DefFontName := FLayout.Font.Family;
     DefFontAnchor := FontAnchor;
-    
+
     for I := 0 to Nodes.Count - 1 do begin
       Item := Nodes.Items[I];
       if Item = nil then Continue;
@@ -712,11 +712,11 @@ var
         Y := FData.ReadFloat(Item, 'y') * SY;
         RX := FData.ReadFloat(Item, 'rx') * SX;
         RY := FData.ReadFloat(Item, 'ry') * SY;
-        if RX > 0 then          
+        if RX > 0 then
           BX := Max(0, RX - LD * 0.5)
         else
           BX := RX;
-        if RY > 0 then         
+        if RY > 0 then
           BY := Max(0, RY - LD * 0.5)
         else
           BY := RY;
@@ -794,28 +794,28 @@ var
         Y := FData.ReadFloat(Item, 'y') * SY;
         RX := FData.ReadFloat(Item, 'dx') * SX;
         RY := FData.ReadFloat(Item, 'dy') * SX;
-        
+
         if Item.ChildNodes.Count = 0 then begin
-          LData := Item.Text;  
+          LData := Item.Text;
           TextSize(LData, ASize, Canvas.Scale);
           if FontAnchor = 3 then
             FontAnchor := DefFontAnchor;
           case FontAnchor of
-            1: // middle 
+            1: // middle
               FillText(Canvas,
-                RectF(X - ASize.Width * 0.5 + RX, Y - ASize.Height + RY, X + ASize.Width * 0.5 + RX, Y + RY), 
+                RectF(X - ASize.Width * 0.5 + RX, Y - ASize.Height + RY, X + ASize.Width * 0.5 + RX, Y + RY),
                 LData, Canvas.Fill.Color, FillOpacity, [],
-                TTextAlign.Leading, TTextAlign.Trailing);                
+                TTextAlign.Leading, TTextAlign.Trailing);
             2: // end
               FillText(Canvas,
-                RectF(X - ASize.Width + RX, Y - ASize.Height + RY, X + RX, Y + RY), 
+                RectF(X - ASize.Width + RX, Y - ASize.Height + RY, X + RX, Y + RY),
                 LData, Canvas.Fill.Color, FillOpacity, [],
-                TTextAlign.Leading, TTextAlign.Trailing); 
+                TTextAlign.Leading, TTextAlign.Trailing);
           else  // start
             FillText(Canvas,
-              RectF(X + RX, Y - ASize.Height + RY, X + ASize.Width + RX, Y + RY), 
+              RectF(X + RX, Y - ASize.Height + RY, X + ASize.Width + RX, Y + RY),
               LData, Canvas.Fill.Color, FillOpacity, [],
-              TTextAlign.Leading, TTextAlign.Trailing);   
+              TTextAlign.Leading, TTextAlign.Trailing);
           end;
         end;
         FLayout.Font.Size := DefFontSize;
@@ -954,7 +954,7 @@ begin
     FreeAndNil(FBitmap);
     Exit;
   end;
-  if not Assigned(FBitmap) then 
+  if not Assigned(FBitmap) then
     InitBitmap;
   FBitmap.SetSize(FData.Size.Width, FData.Size.Height);
   DrawSVG;
@@ -1046,7 +1046,7 @@ begin
   with FLayout do begin
     BeginUpdate;
     TopLeft := TPointF.Zero;
-    if MaxWidth < 0 then    
+    if MaxWidth < 0 then
       MaxSize := TTextLayout.MaxLayoutSize
     else
       MaxSize := PointF(MaxWidth, $FFFFFF);

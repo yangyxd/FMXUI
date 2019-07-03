@@ -177,7 +177,7 @@ begin
     if FileExists(fname) then DeleteFile(fname);
     {$ENDIF}
   end;
-  if Trace <> nil then Exit;  
+  if Trace <> nil then Exit;
   {$IFDEF DebugApp}
   Trace := TDebugTrace.Create;
   {$ELSE} {$IFDEF OuputFileLog}
@@ -252,7 +252,7 @@ procedure LogRemoteDebugSvrAddr(const RemoteAddr: string; RemotePort: Word);
 begin
   if UdpTrace <> nil then begin
     {$IFDEF UseUDP}
-    TRemoteDebugTrace(UdpTrace).RemoteAddr := RemoteAddr;     
+    TRemoteDebugTrace(UdpTrace).RemoteAddr := RemoteAddr;
     TRemoteDebugTrace(UdpTrace).RemotePort := RemotePort;
     {$ENDIF}
   end;
@@ -286,7 +286,7 @@ begin
 end;
 
 procedure TDebugTrace.SetBufferSize(Value: Integer);
-begin   
+begin
 end;
 
 procedure TDebugTrace.Write(sev: TTraceSeverity; const text: string);
@@ -296,7 +296,7 @@ begin
   UnLock;
 end;
 
-procedure TDebugTrace.Writeln(sev: TTraceSeverity; const text: string); 
+procedure TDebugTrace.Writeln(sev: TTraceSeverity; const text: string);
 {$IFDEF DebugApp}var Msg: string;{$ENDIF}
 begin
   {$IFDEF WRITEDEBUG}
@@ -334,7 +334,7 @@ end;
 
 procedure TRemoteDebugTrace.prepare;
 begin
-  if (not udp.Active) then 
+  if (not udp.Active) then
     udp.Active := True;
 end;
 

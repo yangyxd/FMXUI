@@ -5,7 +5,7 @@ interface
 uses
   ui_CustomListView,
   System.Generics.Collections,
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
   UI.Frame, UI.Base, UI.Standard, UI.ListView;
 

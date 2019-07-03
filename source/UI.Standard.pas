@@ -2959,7 +2959,7 @@ begin
       LViewportPosition.Y := FAniCalculations.MaxTarget.Point.Y;
     UpdateVScrollBar(LViewportPosition.Y, R.Height);
     if (Assigned(AScroll)) then begin
-      if (AScroll.Visible <> FCanScrollV) or (AScroll.Visible and (FShowScrollBars = False)) then begin     
+      if (AScroll.Visible <> FCanScrollV) or (AScroll.Visible and (FShowScrollBars = False)) then begin
         AScroll.Visible := FCanScrollV and FShowScrollBars and (not FInVisible);
         DoScrollVisibleChange;
       end;
@@ -2976,7 +2976,7 @@ begin
       LViewportPosition.X := FAniCalculations.MaxTarget.Point.X;
     UpdateHScrollBar(LViewportPosition.X, R.Width);
     if (Assigned(AScroll)) then begin
-      if (AScroll.Visible <> FCanScrollH) or (AScroll.Visible and (FShowScrollBars = False)) then begin     
+      if (AScroll.Visible <> FCanScrollH) or (AScroll.Visible and (FShowScrollBars = False)) then begin
         AScroll.Visible := FCanScrollH and FShowScrollBars and (not FInVisible);
         DoScrollVisibleChange;
       end;
