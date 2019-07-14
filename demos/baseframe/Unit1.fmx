@@ -1,0 +1,18 @@
+object Form1: TForm1
+  Left = 0
+  Top = 0
+  ClientHeight = 699
+  ClientWidth = 417
+  Fill.Kind = Solid
+  Quality = HighQuality
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnShow = FormShow
+  DesignerMasterStyle = 0
+  object ToastManager1: TToastManager
+    Left = 88
+    Top = 120
+  end
+end
