@@ -97,6 +97,7 @@ object CustomListView_ListItem: TCustomListView_ListItem
       Size.PlatformDefault = False
       Position.X = 52.599998474121090000
       Position.Y = 4.699999809265137000
+      Enabled = False
     end
     object BadgeView2: TBadgeView
       AutoSize = False
@@ -204,6 +205,8 @@ object CustomListView_ListItem: TCustomListView_ListItem
       Position.X = 166.199996948242200000
       Position.Y = 8.500000000000000000
       Margins.Left = 15.000000000000000000
+      Enabled = False
+      Visible = False
     end
     object BadgeView3: TBadgeView
       AutoSize = False
@@ -220,6 +223,8 @@ object CustomListView_ListItem: TCustomListView_ListItem
       Position.X = 335.500000000000000000
       Position.Y = 31.000000000000000000
       Margins.Left = -3.000000000000000000
+      Enabled = False
+      Visible = False
     end
   end
 end

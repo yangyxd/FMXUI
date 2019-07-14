@@ -937,6 +937,7 @@ type
     property RotationCenter;
     property Margins;
     property Padding;
+    property Enabled;
     property Visible;
     property OnPaint;
   end;
