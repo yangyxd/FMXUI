@@ -1711,7 +1711,9 @@ end;
 
 destructor TDialog.Destroy;
 begin
-  AtomicDecrement(DialogRef);
+  {$IFNDEF MSWINDOWS}
+  AtomicDecrement(DialogRef);// may cause duplicate name
+  {$ENDIF}
   if Assigned(Self) then begin
     FIsDismiss := True;
     if (FViewRoot <> nil) then begin

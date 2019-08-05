@@ -26,12 +26,12 @@ var
 
 function IsWaitDismiss: Boolean;
 begin
-  Result := Assigned(FWaitDialog) and (FWaitDialog.IsDismiss)
+  Result := (not Assigned(FWaitDialog)) or (FWaitDialog.IsDismiss)
 end;
 
 procedure HideWaitDialog;
 begin
-  if Assigned(FWaitDialog) and (not FWaitDialog.IsDismiss) then begin
+  if not IsWaitDismiss then begin
     FWaitDialog.Dismiss;
     FWaitDialog := nil;
   end;
@@ -55,7 +55,7 @@ end;
 
 procedure ShowWaitDialog(const AMsg: string; ACancelable: Boolean);
 begin
-  if (not Assigned(FWaitDialog)) or (FWaitDialog.IsDismiss) then begin
+  if IsWaitDismiss then begin
     FWaitDialog := nil;
     FWaitDialog := TProgressDialog.Create(Application.MainForm);
   end;
@@ -69,7 +69,7 @@ end;
 
 procedure UpdateWaitDialog(const AMsg: string);
 begin
-  if (not Assigned(FWaitDialog)) or (FWaitDialog.IsDismiss) then
+  if IsWaitDismiss then
     Exit;
   if Assigned(FWaitDialog.RootView) then begin
     FWaitDialog.Message := AMsg;

@@ -1041,7 +1041,7 @@ end;
 
 function TFrameView.GetIsWaitDismiss: Boolean;
 begin
-  Result := IsDestroy or (Assigned(FWaitDialog) and (FWaitDialog.IsDismiss));
+  Result := IsDestroy or (not Assigned(FWaitDialog)) or FWaitDialog.IsDismiss;
 end;
 
 function TFrameView.GetParams: TFrameParams;
@@ -1151,7 +1151,7 @@ end;
 
 procedure TFrameView.HideWaitDialog;
 begin
-  if (not IsDestroy) and Assigned(FWaitDialog) and (not IsWaitDismiss) then begin
+  if not IsWaitDismiss then begin
     FWaitDialog.Dismiss;
     FWaitDialog := nil;
   end;
@@ -1402,7 +1402,7 @@ end;
 
 procedure TFrameView.ShowWaitDialog(const AMsg: string; ACancelable: Boolean);
 begin
-  if (not Assigned(FWaitDialog)) or (FWaitDialog.IsDismiss) then begin
+  if IsWaitDismiss then begin
     FWaitDialog := nil;
     FWaitDialog := TProgressDialog.Create(Self);
   end;
@@ -1467,7 +1467,7 @@ end;
 
 procedure TFrameView.UpdateWaitDialog(const AMsg: string);
 begin
-  if (not Assigned(FWaitDialog)) or (FWaitDialog.IsDismiss) then
+  if IsWaitDismiss then
     Exit;
   if Assigned(FWaitDialog.RootView) then begin
     FWaitDialog.Message := AMsg;
