@@ -1929,7 +1929,8 @@ begin
   inherited Create(AOwner);
   Clickable := True;
   CanFocus := True;
-  Padding.Rect := RectF(4, 4, 4, 4);
+  Padding.DefaultValue := RectF(4, 4, 4, 4);
+  Padding.Rect := Padding.DefaultValue;
   Gravity := TLayoutGravity.Center;
   if not Assigned(FBackground) then
     FBackground := CreateBackground;

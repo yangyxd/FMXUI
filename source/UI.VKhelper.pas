@@ -338,7 +338,7 @@ begin
       else
         ADelta := 0;
       //ÒÆ²»¶¯£¿
-      if AForm.Padding.Bottom + ADelta < AVKBounds.Height then
+      if AForm.Padding.Bottom < AVKBounds.Height then
         AForm.Padding.Rect := RectF(AForm.Padding.Left, AForm.Padding.Top - ADelta,
           AForm.Padding.Right, AForm.Padding.Bottom + ADelta);
 
