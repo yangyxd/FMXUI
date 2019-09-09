@@ -2253,7 +2253,16 @@ end;
 
 procedure TScrollView.DoScrollVisibleChange;
 begin
-  Realign;
+  if not FDisableAlign then
+    Realign
+  else begin
+    if Assigned(FScrollV) and FScrollV.Visible then
+      FScrollV.SetBounds(Width - FScrollV.Width - Padding.Left - Padding.Right,
+        0, FScrollV.Width, Height - Padding.Top - Padding.Bottom);
+    if Assigned(FScrollH) and FScrollH.Visible then
+      FScrollH.SetBounds(0, Height - FScrollH.Height - Padding.Top - Padding.Bottom,
+        Width - Padding.Left - Padding.Right, FScrollH.Height);
+  end;
 end;
 
 procedure TScrollView.DoUpdateAniCalculations(const AAniCalculations: TScrollCalculations);
