@@ -125,7 +125,9 @@ type
   /// </summary>
   TListViewState = (None {无},  PullChangeing,
     PullDownStart {下拉开始}, PullDownOK {下拉到位}, PullDownFinish {下拉松开}, PullDownComplete {下拉完成},
-    PullUpStart {上拉开始}, PullUpOK {下拉到位}, PullUpFinish {上拉松开}, PullUpComplete {上拉完成}
+    PullUpStart {上拉开始}, PullUpOK {上拉到位}, PullUpFinish {上拉松开}, PullUpComplete {上拉完成},
+    PullLeftStart {左拉开始}, PullLeftOK {左拉到位}, PullLeftFinish {左拉松开}, PullLeftComplete {左拉完成},
+    PullRightStart {右拉开始}, PullRightOK {右拉到位}, PullRightFinish {右拉松开}, PullRightComplete {右拉完成}
   );
 
   /// <summary>
@@ -143,10 +145,16 @@ type
     /// </summary>
     procedure SetStateHint(const State: TListViewState; const Msg: string);
     function GetVisible: Boolean;
+    function GetOrientation: TOrientation;
+    procedure SetOrientation(AOrientation: TOrientation);
     /// <summary>
     /// 可视状态
     /// </summary>
     property Visible: Boolean read GetVisible;
+    /// <summary>
+    /// 方向
+    /// </summary>
+    property Orientation: TOrientation read GetOrientation write SetOrientation;
   end;
 
   /// <summary>

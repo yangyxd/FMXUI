@@ -75,6 +75,7 @@ object FrameVertScrollView: TFrameVertScrollView
     TabOrder = 2
     DragScroll = True
     EnablePullRefresh = True
+    EnablePullLoad = True
     OnPullRefresh = VertScrollView1PullRefresh
     OnPullLoad = VertScrollView1PullLoad
     object LinearLayout2: TLinearLayout
@@ -93,10 +94,6 @@ object FrameVertScrollView: TFrameVertScrollView
       Orientation = Vertical
       object ButtonView2: TButtonView
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 8.000000000000000000
         Size.Width = 430.000000000000000000
         Size.Height = 42.000000000000000000
@@ -109,10 +106,6 @@ object FrameVertScrollView: TFrameVertScrollView
       end
       object ButtonView3: TButtonView
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 8.000000000000000000
         Size.Width = 430.000000000000000000
         Size.Height = 42.000000000000000000
@@ -125,10 +118,6 @@ object FrameVertScrollView: TFrameVertScrollView
       end
       object ButtonView4: TButtonView
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 8.000000000000000000
         Size.Width = 430.000000000000000000
         Size.Height = 42.000000000000000000
@@ -141,10 +130,6 @@ object FrameVertScrollView: TFrameVertScrollView
       end
       object ButtonView7: TButtonView
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 8.000000000000000000
         Size.Width = 430.000000000000000000
         Size.Height = 42.000000000000000000
@@ -157,10 +142,6 @@ object FrameVertScrollView: TFrameVertScrollView
       end
       object ButtonView9: TButtonView
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 8.000000000000000000
         Size.Width = 430.000000000000000000
         Size.Height = 42.000000000000000000
@@ -173,10 +154,6 @@ object FrameVertScrollView: TFrameVertScrollView
       end
       object ButtonView10: TButtonView
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 8.000000000000000000
         Size.Width = 430.000000000000000000
         Size.Height = 42.000000000000000000
@@ -189,10 +166,6 @@ object FrameVertScrollView: TFrameVertScrollView
       end
       object ButtonView11: TButtonView
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 8.000000000000000000
         Size.Width = 430.000000000000000000
         Size.Height = 42.000000000000000000
@@ -205,10 +178,6 @@ object FrameVertScrollView: TFrameVertScrollView
       end
       object ButtonView12: TButtonView
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 8.000000000000000000
         Size.Width = 430.000000000000000000
         Size.Height = 42.000000000000000000
@@ -284,10 +253,6 @@ object FrameVertScrollView: TFrameVertScrollView
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Size.Width = 430.000000000000000000
         Size.Height = 36.000000000000000000
         Size.PlatformDefault = False
