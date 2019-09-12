@@ -5,13 +5,14 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
-  UI.Frame, UI.Standard, UI.Base, UI.Edit, FMX.Controls.Presentation,
-  UI.Calendar;
+  FMX.Controls.Presentation, FMX.InertialMovement,
+  UI.Frame, UI.Standard, UI.Base, UI.Edit, UI.Calendar;
 
 type
   TFrameVertScrollView = class(TFrame)
     LinearLayout1: TLinearLayout;
     tvTitle: TTextView;
+    RelativeLayout1: TRelativeLayout;
     VertScrollView2: TVertScrollView;
     LinearLayout2: TLinearLayout;
     ButtonView2: TButtonView;
@@ -22,20 +23,12 @@ type
     ButtonView10: TButtonView;
     ButtonView11: TButtonView;
     ButtonView12: TButtonView;
-    ButtonView13: TButtonView;
-    TextView3: TTextView;
-    EditView1: TEditView;
     TextView4: TTextView;
-    EditView2: TEditView;
-    EditView3: TEditView;
-    EditView4: TEditView;
-    EditView5: TEditView;
-    EditView6: TEditView;
-    EditView7: TEditView;
-    EditView8: TEditView;
-    EditView9: TEditView;
-    HorzScrollView1: THorzScrollView;
+    EditView1: TEditView;
+    ButtonView13: TButtonView;
     CalendarView1: TCalendarView;
+    TextView3: TTextView;
+    HorzScrollView1: THorzScrollView;
     LinearLayout3: TLinearLayout;
     TextView1: TTextView;
     TextView2: TTextView;
@@ -45,12 +38,26 @@ type
     TextView8: TTextView;
     TextView9: TTextView;
     TextView10: TTextView;
+    EditView2: TEditView;
+    EditView3: TEditView;
+    EditView4: TEditView;
+    EditView5: TEditView;
+    EditView6: TEditView;
+    EditView7: TEditView;
+    EditView8: TEditView;
+    EditView9: TEditView;
     BadgeView1: TBadgeView;
+    TextView11: TTextView;
     procedure btnBackClick(Sender: TObject);
     procedure VertScrollView1PullRefresh(Sender: TObject);
     procedure VertScrollView1PullLoad(Sender: TObject);
+    procedure VertScrollView2ViewportPositionChange(Sender: TObject;
+      const OldViewportPosition, NewViewportPosition: TPointD;
+      const ContentSizeChanged: Boolean);
   private
     { Private declarations }
+  protected
+    procedure DoCreate; override;
   public
     { Public declarations }
   end;
@@ -62,6 +69,15 @@ implementation
 procedure TFrameVertScrollView.btnBackClick(Sender: TObject);
 begin
   Finish;
+end;
+
+procedure TFrameVertScrollView.DoCreate;
+begin
+  inherited;
+
+  TextView11.Text := Format(' %d / %d ', [
+    1,
+    Trunc(VertScrollView2.ContentBounds.Height / VertScrollView2.Height)]);
 end;
 
 procedure TFrameVertScrollView.VertScrollView1PullLoad(Sender: TObject);
@@ -84,6 +100,15 @@ begin
       Hint('Ë¢ÐÂÍê³É');
     end
   , 3.5);
+end;
+
+procedure TFrameVertScrollView.VertScrollView2ViewportPositionChange(
+  Sender: TObject; const OldViewportPosition, NewViewportPosition: TPointD;
+  const ContentSizeChanged: Boolean);
+begin
+  TextView11.Text := Format(' %d / %d ', [
+    Trunc(NewViewportPosition.Y / VertScrollView2.Height) + 1,
+    Trunc(VertScrollView2.ContentBounds.Height / VertScrollView2.Height)]);
 end;
 
 end.

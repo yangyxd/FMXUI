@@ -302,6 +302,8 @@ type
 type
   TScrollView = class;
   TOnCalcContentBoundsEvent = procedure (Sender: TObject; var ContentBounds: TRectF) of object;
+  TPositionChangeEvent = procedure(Sender: TObject; const OldViewportPosition,
+    NewViewportPosition: TPointD; const ContentSizeChanged: Boolean) of object;
   PRectD = ^TRectD;
 
   /// <summary>
@@ -324,6 +326,7 @@ type
     FScrollbarWidth: Single;
 
     FOnScrollChange: TNotifyEvent;
+    FOnViewportPositionChange: TPositionChangeEvent;
 
     function GetViewportPosition: TPointD;
     procedure SetViewportPosition(const Value: TPointD);
@@ -402,6 +405,7 @@ type
     function GetHScrollBar: TScrollBar; override;
     function GetContentBounds: TRectD; override;
     function GetScrollSmallChangeFraction: Single;  override;
+    procedure ViewportPositionChange(const OldViewportPosition, NewViewportPosition: TPointD; const ContentSizeChanged: boolean); virtual;
 
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
@@ -476,6 +480,7 @@ type
     // 滚动条最小改变值
     property ScrollSmallChangeFraction: Single read GetScrollSmallChangeFraction write SetScrollSmallChangeFraction stored IsStoredScrollSmallChangeFraction;
     property OnScrollChange: TNotifyEvent read FOnScrollChange write FOnScrollChange;
+    property OnViewportPositionChange: TPositionChangeEvent read FOnViewportPositionChange write FOnViewportPositionChange;
   published
   end;
 
@@ -636,6 +641,7 @@ type
     property OnPullLoad: TNotifyEvent read FOnPullLoad write FOnPullLoad;
 
     property OnScrollChange;
+    property OnViewportPositionChange;
   end;
 
   /// <summary>
@@ -2590,7 +2596,6 @@ begin
         NeedRePaint := False;
         Exit;
       end;
-      FLastViewportPosition := LViewportPosition;
       if UV and Assigned(FScrollV) then begin
         UpdateVScrollBar(LViewportPosition.Y, Height - Padding.Top - Padding.Bottom);
         if (LViewportPosition.Y = 0) or (LViewportPosition.Y >= GetMaxScrollViewPos) then
@@ -2598,6 +2603,14 @@ begin
       end;
       if UH then
         UpdateHScrollBar(LViewportPosition.X, Width - Padding.Left - Padding.Right);
+
+      if FLastViewportPosition <> LViewportPosition then
+        try
+          ViewportPositionChange(FLastViewportPosition, LViewportPosition, UV or UH);
+        finally
+          FLastViewportPosition := LViewportPosition;
+        end;
+
       if not (csDesigning in ComponentState) then begin
         if (not FAniCalculations.Animation) then
           FAniCalculations.UpdatePosImmediately(True)
@@ -3031,6 +3044,13 @@ begin
     AScroll.Height := 6;
     {$ENDIF}
   end;
+end;
+
+procedure TScrollView.ViewportPositionChange(const OldViewportPosition,
+  NewViewportPosition: TPointD; const ContentSizeChanged: boolean);
+begin
+  if Assigned(FOnViewportPositionChange) then
+    FOnViewportPositionChange(Self, OldViewportPosition, NewViewportPosition, ContentSizeChanged);
 end;
 
 procedure TScrollView.VScrollChange(Sender: TObject);
