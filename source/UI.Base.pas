@@ -1457,6 +1457,8 @@ type
     function FindStyleResource<T: TFmxObject>(const AStyleLookup: string; var AResource: T): Boolean; overload;
     function FindAndCloneStyleResource<T: TFmxObject>(const AStyleLookup: string; var AResource: T): Boolean;
 
+    { ITriggerEffect }
+    procedure ApplyTriggerEffect(const AInstance: TFmxObject; const ATrigger: string); override;
     { ITriggerAnimation }
     procedure StartTriggerAnimation(const AInstance: TFmxObject; const ATrigger: string); override;
     procedure StartTriggerAnimationWait(const AInstance: TFmxObject; const ATrigger: string); override;
@@ -3662,6 +3664,12 @@ begin
     (Assigned(ParentControl)) and (ParentControl is TRelativeLayout);
 end;
 
+procedure TView.ApplyTriggerEffect(const AInstance: TFmxObject;
+  const ATrigger: string);
+begin
+  // inherited; disable all effect
+end;
+
 function TView.CanAnimation: Boolean;
 begin
   Result := False;
@@ -4950,23 +4958,13 @@ end;
 procedure TView.StartTriggerAnimation(const AInstance: TFmxObject;
   const ATrigger: string);
 begin
-  DisableDisappear := True;
-  try
-    inherited;
-  finally
-    DisableDisappear := False;
-  end;
+  // inherited; disable all effect
 end;
 
 procedure TView.StartTriggerAnimationWait(const AInstance: TFmxObject;
   const ATrigger: string);
 begin
-  DisableDisappear := True;
-  try
-    inherited;
-  finally
-    DisableDisappear := False;
-  end;
+  // inherited; disable all effect
 end;
 
 procedure TView.StartWindowDrag;
