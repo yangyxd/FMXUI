@@ -73,6 +73,7 @@ object FrameListViewGroup: TFrameListViewGroup
     TabOrder = 1
     Divider = xAFE3E4E5
     ScrollSmallChangeFraction = 200.000000000000000000
+    OnItemClick = ListViewItemClick
     DragScroll = True
     EnablePullRefresh = False
     EnablePullLoad = False

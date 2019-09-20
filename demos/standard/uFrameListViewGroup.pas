@@ -30,6 +30,8 @@ type
     ListView: TListViewEx;
     btnBack: TTextView;
     procedure btnBackClick(Sender: TObject);
+    procedure ListViewItemClick(Sender: TObject; ItemIndex: Integer;
+      const ItemView: TControl);
   private
     { Private declarations }
     FAdapter: TCustomListDataAdapter;
@@ -122,6 +124,18 @@ procedure TFrameListViewGroup.DoShow;
 begin
   inherited;
   tvTitle.Text := Title;
+end;
+
+procedure TFrameListViewGroup.ListViewItemClick(Sender: TObject;
+  ItemIndex: Integer; const ItemView: TControl);
+begin
+  with FAdapter.FList.Items[ItemIndex] do
+    if ItemView is TCustomListView_ListItem then begin
+      Hint(Format('点击了%d. Level:%d. Name:%s', [Index, Level, Data.Name]));
+      Hint(TCustomListView_ListItem(ItemView).TextView1.Text);
+    end
+    else
+      Hint(Format('点击了分组%d. Level:%d. Name:%s', [Index, Level, Data.Name]));
 end;
 
 { TDataItem }
