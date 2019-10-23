@@ -707,16 +707,16 @@ function TFrameView.CheckChildern: Boolean;
 var
   I: Integer;
 begin
-  if (Parent is TForm) then begin  
+  if (Parent is TForm) then begin
     Result := True;
-    if Parent.ChildrenCount >= 2 then begin    
+    if Parent.ChildrenCount >= 2 then begin
       for I := 0 to Parent.ChildrenCount - 1 do begin
         if (Parent.Children[I] <> Self) and (Parent.Children[I] is FMX.Forms.TFrame) then begin
           Result := False;
           Exit;
         end;
       end;
-    end;  
+    end;
   end else
     Result := False;
 end;
@@ -798,8 +798,8 @@ class function TFrameView.CreateFrame(Parent: TFmxObject;
       end;
     end;
   end;
-  {$ENDIF}      
-  
+  {$ENDIF}
+
 var
   Dlg: IDialog;
 begin
@@ -808,12 +808,12 @@ begin
     try
       {$IFDEF ANDROID}
       // 检测是否是第一次创建 Frame
-      if FFirstCreateFrame then begin  
+      if FFirstCreateFrame then begin
         DoUpdateParentFormState(Parent);
-        FFirstCreateFrame := False;  
+        FFirstCreateFrame := False;
       end;
       {$ENDIF}
-      
+
       // 检测是否是存在Dialog
       if Parent is TControl then begin
         Dlg := TDialog.GetDialog(Parent as TControl);
@@ -1041,7 +1041,7 @@ end;
 
 function TFrameView.GetIsWaitDismiss: Boolean;
 begin
-  Result := IsDestroy or (Assigned(FWaitDialog) and (FWaitDialog.IsDismiss));
+  Result := IsDestroy or (not Assigned(FWaitDialog)) or FWaitDialog.IsDismiss;
 end;
 
 function TFrameView.GetParams: TFrameParams;
@@ -1089,7 +1089,7 @@ function TFrameView.GetStatusColor: TAlphaColor;
       Result := F.Fill.Color;
   end;
   {$ENDIF}
-  
+
   {$IFDEF ANDROID}
   function ExecuteAndroid(): TAlphaColor;
   var
@@ -1151,7 +1151,7 @@ end;
 
 procedure TFrameView.HideWaitDialog;
 begin
-  if (not IsDestroy) and Assigned(FWaitDialog) and (not IsWaitDismiss) then begin
+  if not IsWaitDismiss then begin
     FWaitDialog.Dismiss;
     FWaitDialog := nil;
   end;
@@ -1193,7 +1193,7 @@ begin
     Application.Title := Title;
     if Assigned(Parent) and (Parent is TCustomForm) then
       TCustomForm(Parent).Caption := Title;
-  end;    
+  end;
   if TriggerOnShow then
     DoShow()
   else
@@ -1267,15 +1267,15 @@ end;
 
 class procedure TFrameView.SetDefaultStatusColor(const Value: TAlphaColor);
 begin
-  if FDefaultStatusColor <> Value then begin  
+  if FDefaultStatusColor <> Value then begin
     FDefaultStatusColor := Value;
     {$IFDEF NEXTGEN}
     // 在移动平台时，设置状态条颜色时，如果背景颜色为透明，且状态条高度>0时，
     // 将背景颜色设为白色
     if (Value and $FF000000 > 0) and (FDefaultBackColor = 0){$IFDEF ANDROID} and (TView.GetStatusHeight > 0){$ENDIF} then
-      FDefaultBackColor := $fff1f2f3; 
+      FDefaultBackColor := $fff1f2f3;
     {$ENDIF}
-  end;  
+  end;
 end;
 
 procedure TFrameView.SetParams(const Value: TFrameParams);
@@ -1308,9 +1308,9 @@ procedure TFrameView.SetStatusColor(const Value: TAlphaColor);
     F.Fill.Color := Value;
   end;
   {$ENDIF}
-  
+
   {$IFDEF ANDROID}
-  procedure ExecuteAndroid();   
+  procedure ExecuteAndroid();
   var
     F: TCustomForm;
     {$IF CompilerVersion > 30}
@@ -1321,7 +1321,7 @@ procedure TFrameView.SetStatusColor(const Value: TAlphaColor);
       F := ParentForm;
       if not Assigned(F) then
         Exit;
-      F.Fill.Color := Value;        
+      F.Fill.Color := Value;
     end else begin
       {$IF CompilerVersion > 30} // Delphi 10.1 之后的版本
       if TJBuild_VERSION.JavaClass.SDK_INT < 21 then
@@ -1351,7 +1351,7 @@ begin
   ExecuteIOS();
   {$ENDIF}
   {$IFDEF ANDROID}
-  ExecuteAndroid(); 
+  ExecuteAndroid();
   {$ENDIF}
 end;
 
@@ -1402,7 +1402,7 @@ end;
 
 procedure TFrameView.ShowWaitDialog(const AMsg: string; ACancelable: Boolean);
 begin
-  if (not Assigned(FWaitDialog)) or (FWaitDialog.IsDismiss) then begin
+  if IsWaitDismiss then begin
     FWaitDialog := nil;
     FWaitDialog := TProgressDialog.Create(Self);
   end;
@@ -1418,7 +1418,7 @@ function TFrameView.StartFrame(FrameClass: TFrameViewClass;
   const Title: string; Ani: TFrameAniType): TFrameView;
 begin
   Result := MakeFrame(FrameClass);
-  if Assigned(Result) then begin  
+  if Assigned(Result) then begin
     Result.Title := Title;
     Hide(Ani);
     Result.Show(Ani, nil);
@@ -1429,7 +1429,7 @@ function TFrameView.StartFrame(FrameClass: TFrameViewClass; const Title: string;
   const Data: TValue; Ani: TFrameAniType): TFrameView;
 begin
   Result := MakeFrame(FrameClass);
-  if Assigned(Result) then begin  
+  if Assigned(Result) then begin
     Result.Title := Title;
     Result.Data := Data;
     Hide(Ani);
@@ -1467,7 +1467,7 @@ end;
 
 procedure TFrameView.UpdateWaitDialog(const AMsg: string);
 begin
-  if (not Assigned(FWaitDialog)) or (FWaitDialog.IsDismiss) then
+  if IsWaitDismiss then
     Exit;
   if Assigned(FWaitDialog.RootView) then begin
     FWaitDialog.Message := AMsg;
@@ -1479,7 +1479,7 @@ function TFrameView.StartFrame(FrameClass: TFrameViewClass;
   Params: TFrameParams; Ani: TFrameAniType): TFrameView;
 begin
   Result := MakeFrame(FrameClass);
-  if Assigned(Result) then begin  
+  if Assigned(Result) then begin
     Result.Params := Params;
     Hide(Ani);
     Result.Show(Ani, nil);
@@ -1489,7 +1489,7 @@ end;
 function TFrameView.StartFrame(FrameClass: TFrameViewClass; Ani: TFrameAniType): TFrameView;
 begin
   Result := MakeFrame(FrameClass);
-  if Assigned(Result) then begin  
+  if Assigned(Result) then begin
     Hide(Ani);
     Result.Show(Ani, nil);
   end;

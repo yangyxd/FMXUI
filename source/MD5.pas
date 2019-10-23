@@ -3,7 +3,7 @@
 {       author: YangYxd  2014.11.10                     }
 {                                                       }
 {*******************************************************}
-{   
+{
  ver 1.0.0.1  by YangYxd 2015.07.23
  ----------------------------------------------------------------------------
   - 基于IdHttp中的MD5算法修改
@@ -120,7 +120,7 @@ begin
     end;
   end;
 end;
-  
+
 function ToHexBytes(const AValue: TBytes; ALowerCase: Boolean): string;
 begin
   Result := BinToHex(Pointer(AValue), Length(AValue), ALowerCase);
@@ -215,7 +215,7 @@ begin
   end;
 end;
 
-procedure MD4_MDCoder(var FState: T4x4LongWordRecord; var FCBuffer: T512BitRecord); 
+procedure MD4_MDCoder(var FState: T4x4LongWordRecord; var FCBuffer: T512BitRecord);
 var
   A, B, C, D, i : Cardinal;
   buff : T16x4LongWordRecord; // 64-byte buffer
@@ -455,7 +455,7 @@ begin
   // A straight assignment would be by ref on dotNET.
   for I := 0 to 3 do
     FState[I] := MD4_INIT_VALUES[I];
-  
+
   while LSize - AStream.Position >= 64 do begin
     AStream.Read(FCBuffer, 64);
     MDCoder(FState, FCBuffer);
@@ -591,7 +591,7 @@ begin
   Result := string(ToHex(MD5_HashValue(S)));
 end;
 
-function MD5Hex(Stream: TStream): string; 
+function MD5Hex(Stream: TStream): string;
 begin
   Result := string(ToHex(MD4_HashValue(Stream, @MD5_MDCoder)));
 end;

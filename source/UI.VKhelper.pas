@@ -338,7 +338,7 @@ begin
       else
         ADelta := 0;
       //移不动？
-      if AForm.Padding.Bottom + ADelta < AVKBounds.Height then
+      if AForm.Padding.Bottom < AVKBounds.Height then
         AForm.Padding.Rect := RectF(AForm.Padding.Left, AForm.Padding.Top - ADelta,
           AForm.Padding.Right, AForm.Padding.Bottom + ADelta);
 
@@ -486,9 +486,11 @@ begin
     AFlasher := ACaret.GetObject.Flasher;
     if CaretVisible then begin
       ACaretRect.TopLeft := ClientToParent(nil);
+      {$IF RTLVersion < 33}
       // 加上标题栏的高度
       ACaretRect.TopLeft := ACaretRect.TopLeft +
         (ACtrl.Root as TCommonCustomForm).ClientToScreen(PointF(0, 0));
+      {$ENDIF}
       if FAdjusting and (not SameValue(ACaretRect.Top, FCaretTarget.Y, 1.0)) then
         Result := False;
       FAdjusting := False;

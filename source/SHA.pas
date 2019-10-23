@@ -3,7 +3,7 @@
 {       author: YangYxd  2014.11.10                     }
 {                                                       }
 {*******************************************************}
-{   
+{
  ver 1.0.0.2  by YangYxd 2018.01.24
  ----------------------------------------------------------------------------
   - 将QDAC中的digest加入，略作修改，感谢QDAC作者swish (www.qdac.cc)
@@ -178,10 +178,10 @@ begin
   Result := TMemoryStream.Create;
   Result.Write(LValue[0], Length(LValue));
   {$ELSE}
-  Result := TPointerStream.Create;  
+  Result := TPointerStream.Create;
   TPointerStream(Result).SetPointer(Pointer(V), Length(V));
   {$ENDIF}
-  Result.Position := 0;        
+  Result.Position := 0;
 end;
 
 const

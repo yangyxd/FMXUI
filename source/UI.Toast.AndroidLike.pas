@@ -173,7 +173,7 @@ end;
 
 procedure TToast.ShowToast(const AMsg: string);
 begin
-  if AMsg = '' then Exit;  
+  if AMsg = '' then Exit;
   FQueue.Enqueue(AMsg);
   FTimer.Enabled := True;
 end;

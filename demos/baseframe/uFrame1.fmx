@@ -1,0 +1,53 @@
+object Frame1: TFrame1
+  Size.Width = 371.000000000000000000
+  Size.Height = 541.000000000000000000
+  Size.PlatformDefault = False
+  object LinearLayout1: TLinearLayout
+    Align = Top
+    Background.ItemDefault.Color = claPurple
+    Background.ItemDefault.Kind = Solid
+    Gravity = None
+    Size.Width = 371.000000000000000000
+    Size.Height = 50.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Orientation = Horizontal
+    object tvTitle: TTextView
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      Clickable = True
+      CaptureDragForm = True
+      Weight = 1.000000000000000000
+      HitTest = True
+      Size.Width = 371.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      Text = 'FMXUI Base Frame Demo'
+      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
+    end
+  end
+  object ListViewEx1: TListViewEx
+    Align = Client
+    Gravity = None
+    Size.Width = 371.000000000000000000
+    Size.Height = 491.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    ColumnCount = 2
+    Divider = xAFE3E4E5
+    OnItemClick = ListViewEx1ItemClick
+    EnablePullRefresh = False
+    EnablePullLoad = False
+  end
+end

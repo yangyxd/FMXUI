@@ -125,7 +125,9 @@ type
   /// </summary>
   TListViewState = (None {无},  PullChangeing,
     PullDownStart {下拉开始}, PullDownOK {下拉到位}, PullDownFinish {下拉松开}, PullDownComplete {下拉完成},
-    PullUpStart {上拉开始}, PullUpOK {下拉到位}, PullUpFinish {上拉松开}, PullUpComplete {上拉完成}
+    PullUpStart {上拉开始}, PullUpOK {上拉到位}, PullUpFinish {上拉松开}, PullUpComplete {上拉完成},
+    PullLeftStart {左拉开始}, PullLeftOK {左拉到位}, PullLeftFinish {左拉松开}, PullLeftComplete {左拉完成},
+    PullRightStart {右拉开始}, PullRightOK {右拉到位}, PullRightFinish {右拉松开}, PullRightComplete {右拉完成}
   );
 
   /// <summary>
@@ -143,10 +145,16 @@ type
     /// </summary>
     procedure SetStateHint(const State: TListViewState; const Msg: string);
     function GetVisible: Boolean;
+    function GetOrientation: TOrientation;
+    procedure SetOrientation(AOrientation: TOrientation);
     /// <summary>
     /// 可视状态
     /// </summary>
     property Visible: Boolean read GetVisible;
+    /// <summary>
+    /// 方向
+    /// </summary>
+    property Orientation: TOrientation read GetOrientation write SetOrientation;
   end;
 
   /// <summary>
@@ -172,7 +180,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    
+
     procedure AddPath(const PathData: string; const SW, SH: Single);
 
     function GetAccessoryImage(AAccessory: TViewAccessoryType): TBitmap;
@@ -1008,7 +1016,7 @@ type
       State: TViewState = TViewState.None); overload;
 
     // 计算 Text 真实大小
-    procedure TextSize(const AText: string; var ASize: TSizeF; const SceneScale: Single; 
+    procedure TextSize(const AText: string; var ASize: TSizeF; const SceneScale: Single;
       const MaxWidth: Single = -1; AWordWrap: Boolean = False);
 
     procedure Draw(const Canvas: TCanvas; const R: TRectF;
@@ -1082,9 +1090,9 @@ type
     function Text: string;
   end;
 
-  THtmlDataList = TList<THtmlTextItem>;  
+  THtmlDataList = TList<THtmlTextItem>;
 
-  TViewLinkClickEvent = procedure (Sender: TObject; const Text, URL: string) of object;    
+  TViewLinkClickEvent = procedure (Sender: TObject; const Text, URL: string) of object;
 
   TViewHtmlText = class(TPersistent)
   private const
@@ -1097,19 +1105,19 @@ type
     FRealHtmlText: string;
     FFont: TFont;
     FReplace: Boolean;
-    
+
     FLinkHrefs: TStrings;
     FLinkRange: TArray<TRectF>;
     FLinkRangeCount: Integer;
     FLinkHot: Integer;
 
     FDefaultCursor: TCursor;
-    
+
     procedure SetHtmlText(const Value: string);
   protected
     procedure ParseHtmlText(const Text: string); virtual;
     function GetHtmlText: string; virtual;
-    function ReplaceValue(const Value: string): string;    
+    function ReplaceValue(const Value: string): string;
     function PointInLink(const X, Y: Single): Integer;
   public
     constructor Create(const AHtmlText: string = '');
@@ -1125,13 +1133,13 @@ type
     procedure CalcTextSize(Canvas: TCanvas; TextSet: UI.Base.TTextSettings; const R: TRectF;
       var ASize: TSizeF);
 
-    procedure MouseDown(Sender: TView; Button: TMouseButton; Shift: TShiftState; X, Y: Single); 
+    procedure MouseDown(Sender: TView; Button: TMouseButton; Shift: TShiftState; X, Y: Single);
     procedure MouseMove(Sender: TView; X, Y: Single);
-    procedure MouseUp(Sender: TView; Button: TMouseButton; Shift: TShiftState; X, Y: Single); 
+    procedure MouseUp(Sender: TView; Button: TMouseButton; Shift: TShiftState; X, Y: Single);
     procedure MouseLeave(Sender: TView);
 
     property Text: string read FText;
-    property List: THtmlDataList read FList;  
+    property List: THtmlDataList read FList;
     property LinkHot: Integer read FLinkHot;
     property DefaultCursor: TCursor read FDefaultCursor write FDefaultCursor;
   published
@@ -1449,6 +1457,8 @@ type
     function FindStyleResource<T: TFmxObject>(const AStyleLookup: string; var AResource: T): Boolean; overload;
     function FindAndCloneStyleResource<T: TFmxObject>(const AStyleLookup: string; var AResource: T): Boolean;
 
+    { ITriggerEffect }
+    procedure ApplyTriggerEffect(const AInstance: TFmxObject; const ATrigger: string); override;
     { ITriggerAnimation }
     procedure StartTriggerAnimation(const AInstance: TFmxObject; const ATrigger: string); override;
     procedure StartTriggerAnimationWait(const AInstance: TFmxObject; const ATrigger: string); override;
@@ -1703,7 +1713,7 @@ type
   published
     property Orientation;
   end;
-  
+
   /// <summary>
   /// 相对布局
   /// </summary>
@@ -1893,18 +1903,18 @@ function ComponentStateToString(const State: TComponentState): string;
     PV := PChar(V);
     PM := PV + Length(V);
     while PV < PM do begin
-      P^ := PV^;     
+      P^ := PV^;
       Inc(P);
-      Inc(PV); 
+      Inc(PV);
     end;
   end;
-    
+
 var
   P, P1: PChar;
 begin
   SetLength(Result, 256);
   P := PChar(Result);
-  P1 := P;   
+  P1 := P;
   if csLoading in State then Write(P, 'csLoading,');
   if csReading in State then Write(P, 'csReading,');
   if csWriting in State then Write(P, 'csWriting,');
@@ -2881,16 +2891,16 @@ begin
   case FPosition of
     TDrawablePosition.Left:
       begin
-        if ExecDraw then begin        
+        if ExecDraw then begin
           DR.Left := R.Left;
           DR.Top := R.Top + (SH - FHeight) / 2;
           DR.Right := DR.Left + FWidth;
-          DR.Bottom := DR.Top + FHeight;  
+          DR.Bottom := DR.Top + FHeight;
           DrawStateTo(Canvas, DR, AState);
         end;
         R.Left := R.Left + FWidth + FPadding;
       end;
-    TDrawablePosition.Right: 
+    TDrawablePosition.Right:
       begin
         if ExecDraw then begin
           DR.Left := R.Right - FWidth;
@@ -2901,7 +2911,7 @@ begin
         end;
         R.Right := R.Right - FWidth - FPadding;
       end;
-    TDrawablePosition.Top: 
+    TDrawablePosition.Top:
       begin
         if ExecDraw then begin
           DR.Left := R.Left + (SW - FWidth) / 2;
@@ -3343,7 +3353,7 @@ end;
 
 procedure TViewColor.SetEnabled(const Value: TAlphaColor);
 begin
-  if FEnabled <> Value then begin  
+  if FEnabled <> Value then begin
     FEnabled := Value;
     EnabledChange := True;
     DoChange(Self);
@@ -3352,7 +3362,7 @@ end;
 
 procedure TViewColor.SetFocused(const Value: TAlphaColor);
 begin
-  if Focused <> Value then begin  
+  if Focused <> Value then begin
     FFocused := Value;
     FocusedChange := True;
     DoChange(Self);
@@ -3361,7 +3371,7 @@ end;
 
 procedure TViewColor.SetHovered(const Value: TAlphaColor);
 begin
-  if FHovered <> Value then begin  
+  if FHovered <> Value then begin
     FHovered := Value;
     HoveredChange := True;
     DoChange(Self);
@@ -3370,7 +3380,7 @@ end;
 
 procedure TViewColor.SetPressed(const Value: TAlphaColor);
 begin
-  if FPressed <> Value then begin  
+  if FPressed <> Value then begin
     FPressed := Value;
     PressedChange := True;
     DoChange(Self);
@@ -3379,7 +3389,7 @@ end;
 
 procedure TViewColor.SetSelected(const Value: TAlphaColor);
 begin
-  if FSelected <> Value then begin  
+  if FSelected <> Value then begin
     FSelected := Value;
     SelectedChange := True;
     DoChange(Self);
@@ -3389,7 +3399,7 @@ end;
 procedure TViewColor.SetValue(const Index: Integer; const Value: TAlphaColor);
 begin
   SetColor(TViewState(Index), Value);
-end;  
+end;
 
 { TTextColor }
 
@@ -3400,7 +3410,7 @@ end;
 
 procedure TTextColor.SetHintText(const Value: TAlphaColor);
 begin
-  if FHintText <> Value then begin  
+  if FHintText <> Value then begin
     FHintText := Value;
     DoChange(Self);
   end;
@@ -3654,6 +3664,12 @@ begin
     (Assigned(ParentControl)) and (ParentControl is TRelativeLayout);
 end;
 
+procedure TView.ApplyTriggerEffect(const AInstance: TFmxObject;
+  const ATrigger: string);
+begin
+  // inherited; disable all effect
+end;
+
 function TView.CanAnimation: Boolean;
 begin
   Result := False;
@@ -3832,7 +3848,7 @@ begin
 end;
 
 procedure TView.DoLinkClick(const Text, URL: string);
-begin 
+begin
 end;
 
 procedure TView.DoMatrixChanged(Sender: TObject);
@@ -4224,7 +4240,7 @@ begin
   try
     FType := FContext.GetType(Instance.ClassType);
     FFiled := FType.GetField(Name);
-    if not Assigned(FFiled) then  
+    if not Assigned(FFiled) then
       Result := T(nil)
     else
       Result := FFiled.GetValue(Instance).AsType<T>();
@@ -4859,15 +4875,15 @@ end;
 
 procedure TView.SetOrientation(const Value: TOrientation);
 begin
-  if FOrientation <> Value then begin  
+  if FOrientation <> Value then begin
     FOrientation := Value;
     DoOrientation();
   end;
 end;
 
 procedure TView.SetPaddings(const Value: string);
-var 
-  V: Single; 
+var
+  V: Single;
 begin
   if Assigned(Padding) and GetFloatValue(Value, V) then
     Padding.Rect := RectF(V, V, V, V);
@@ -4942,23 +4958,13 @@ end;
 procedure TView.StartTriggerAnimation(const AInstance: TFmxObject;
   const ATrigger: string);
 begin
-  DisableDisappear := True;
-  try
-    inherited;
-  finally
-    DisableDisappear := False;
-  end;
+  // inherited; disable all effect
 end;
 
 procedure TView.StartTriggerAnimationWait(const AInstance: TFmxObject;
   const ATrigger: string);
 begin
-  DisableDisappear := True;
-  try
-    inherited;
-  finally
-    DisableDisappear := False;
-  end;
+  // inherited; disable all effect
 end;
 
 procedure TView.StartWindowDrag;
@@ -5569,7 +5575,7 @@ begin
         {$IFDEF MSWINDOWS}
         if IsDesignerControl(Control) then Continue;
         {$ENDIF}
-        
+
         if IsAW then begin
           V := Control.Position.X + Control.Width + Control.Margins.Right;
           if V > AWidth then
@@ -5615,7 +5621,7 @@ begin
     {$IFDEF MSWINDOWS}
     if IsDesignerControl(Control) then Continue;
     {$ENDIF}
-    
+
     // 如果还没有找到需要自动大小的组件，则进行检测
     if (AControl = nil) then begin
       View := nil;
@@ -5900,7 +5906,7 @@ begin
       {$IFDEF MSWINDOWS}
       if IsDesignerControl(Control) then Continue;
       {$ENDIF}
-      
+
       if IsAW then begin
         V := Control.Width + Control.Position.X + Control.Margins.Right + Padding.Right;
         if V > AWidth then
@@ -6635,7 +6641,7 @@ begin
   with FLayout do begin
     BeginUpdate;
     TopLeft := TPointF.Zero;
-    if MaxWidth < 0 then    
+    if MaxWidth < 0 then
       MaxSize := TTextLayout.MaxLayoutSize
     else
       MaxSize := PointF(MaxWidth, $FFFFFF);
@@ -7373,10 +7379,10 @@ begin
       H := SH;
     end;
     if W <= 1 then W := SWH;
-    if H <= 1 then H := SWH;      
+    if H <= 1 then H := SWH;
     SX := SWH / W;
-    if SWH / H < SX then      
-      SX := SWH / H;      
+    if SWH / H < SX then
+      SX := SWH / H;
     if (SX <> 1) then
       Path.Scale(SX, SX);
     AAcc.Canvas.BeginScene;
@@ -8167,7 +8173,7 @@ begin
           TLayoutGravity.CenterVertical, TLayoutGravity.Center, TLayoutGravity.CenterVRight:
             // 居中
             VT := CurPos.Y + (LItemHeight - (VH + Control.Margins.Top + Control.Margins.Bottom)) * 0.5 + Control.Margins.Top;
-        else 
+        else
           begin
             case Control.Align of
               TAlignLayout.Top, TAlignLayout.MostTop:
@@ -8198,13 +8204,13 @@ begin
     if (WidthSize = TViewSize.WrapContent) then begin
       if LColumns > CtrlCount then
         LColumns := CtrlCount;
-      VW := LColumns * (LItemWidth + FHorizontalSpacing) + FHorizontalSpacing + Padding.Left + Padding.Right; 
+      VW := LColumns * (LItemWidth + FHorizontalSpacing) + FHorizontalSpacing + Padding.Left + Padding.Right;
       PW := GetParentMaxWidth;
       if (VW > PW) and (PW > 0) then
         VW := PW;
     end else
       VW := Width;
-    
+
     if (HeightSize = TViewSize.WrapContent) then begin
       VH := CurPos.Y + LItemHeight + Padding.Bottom;
       if FSpacingBorder then
@@ -8212,11 +8218,11 @@ begin
       PW := GetParentMaxHeight;
       if (VH > PW) and (PW > 0) then
         VH := PW;
-    end else 
+    end else
       VH := Height;
 
     if (WidthSize = TViewSize.WrapContent) or (HeightSize = TViewSize.WrapContent) then begin
-      if (Height <> VH) or (Width <> VW) then      
+      if (Height <> VH) or (Width <> VW) then
         SetBounds(Position.X, Position.Y, VW, VH);
     end;
 
@@ -8651,7 +8657,7 @@ end;
 { TViewHtmlText }
 
 type
-  TViewHtmlReadAttr = reference to procedure (var Item: THtmlTextItem; const Key, Value: string);  
+  TViewHtmlReadAttr = reference to procedure (var Item: THtmlTextItem; const Key, Value: string);
 
 procedure TViewHtmlText.Assign(Source: TPersistent);
 begin
@@ -8740,7 +8746,7 @@ var
     Include(Result, V);
   end;
 
-  procedure DrawText(const LText: string; const Item: THtmlTextItem; const LColor: TAlphaColor; 
+  procedure DrawText(const LText: string; const Item: THtmlTextItem; const LColor: TAlphaColor;
     var X, Y: Single; var S: TSizeF);
   begin
     TextSet.FillText(Canvas, RectF(X, Y, R.Right, R.Bottom), LText, Opacity, LColor,
@@ -8753,14 +8759,14 @@ var
   end;
 
   // Flag 非0时用于计算大小
-  procedure DrawWordWarpText(const LText: string; const Item: THtmlTextItem; const LColor: TAlphaColor; 
+  procedure DrawWordWarpText(const LText: string; const Item: THtmlTextItem; const LColor: TAlphaColor;
     var X, Y: Single; const LX, MW: Single; var S: TSizeF; Flag: Integer = 0);
   var
     J: Integer;
     P, PE, P1: PChar;
     LW: Single;
     LTmp: string;
-  begin  
+  begin
     if MW < CharW then
       Exit;
 
@@ -8782,8 +8788,8 @@ var
         end;
       end;
 
-      if Flag = 0 then begin 
-        TextSet.WordWrap := True; 
+      if Flag = 0 then begin
+        TextSet.WordWrap := True;
         DrawText(LText, Item, LColor, X, Y, S);
         TextSet.WordWrap := False;
       end else begin
@@ -8794,7 +8800,7 @@ var
       if S.Height > CharH then begin  // 超链接换行后，尾部不再跟其它内容
         Y := Y + S.Height;
         X := LX;
-      end;       
+      end;
 
     end else begin
       // 自动换行
@@ -8805,21 +8811,21 @@ var
         if J < 1 then Break;
 
         SetString(LTmp, P, Min(PE - P, J));
-        if J > 1 then begin 
+        if J > 1 then begin
           TextSet.TextSize(LTmp, S, Canvas.Scale);
           if X + S.Width > MW then begin
             P1 := P + J;
             while P1 > P do begin
-              SetString(LTmp, P, P1 - P);  
+              SetString(LTmp, P, P1 - P);
               TextSet.TextSize(LTmp, S, Canvas.Scale);
               if X + S.Width < MW then
                 Break;
               Dec(P1);
-            end; 
+            end;
             J := P1 - P;
             if J < 1 then Break;
           end;
-        end;   
+        end;
 
         if Flag = 0 then
           DrawText(LTmp, Item, LColor, X, Y, S)
@@ -8863,7 +8869,7 @@ var
         Continue;
       end;
 
-      SetString(LText, Item.P, Item.Len);   
+      SetString(LText, Item.P, Item.Len);
 
       if FReplace then
         LText := ReplaceValue(LText);
@@ -8879,7 +8885,7 @@ var
 
     S.Height := Y + S.Height;
   end;
-  
+
 var
   I: Integer;
   Item: THtmlTextItem;
@@ -8919,14 +8925,14 @@ begin
   if ASize <> nil then begin
     // 测算高度
     ASize.Width := S.Width;
-    ASize.Height := S.Height;  
-      
+    ASize.Height := S.Height;
+
     TextSet.WordWrap := LWordWarp;
     TextSet.Font.Assign(FFont);
     TextSet.Font.OnChanged := LFontChange;
-    
+
     Exit;
-  end;  
+  end;
 
   UpdateXY(X, Y, S);
   if LWordWarp then begin
@@ -8972,7 +8978,7 @@ begin
         DrawText(LText, Item, LColor, X, Y, S);
       end;
     end;
-    
+
   finally
     TextSet.WordWrap := LWordWarp;
     TextSet.Font.Assign(FFont);
@@ -9023,7 +9029,7 @@ var
   I: Integer;
 begin
   I := PointInLink(X, Y);
-  if I <> FLinkHot then begin 
+  if I <> FLinkHot then begin
     FLinkHot := I;
     if I >= 0 then
       Sender.Cursor := crHandPoint
@@ -9127,7 +9133,7 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
       while (P < PE) and (P^ <> '=') do
         Inc(P);
       if (P >= PE) then Break;
-      
+
       SetString(Key, P1, P - P1);
       Trim(Key);
 
@@ -9148,8 +9154,8 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
         SetString(Value, P1, P - P1);
       end;
 
-      if Key <> '' then      
-        OnReadAttr(Item, Key, Value);       
+      if Key <> '' then
+        OnReadAttr(Item, Key, Value);
     end;
   end;
   {$WARNINGS ON}
@@ -9175,7 +9181,7 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
 
       if StrLComp(P, 'font', 4) = 0 then begin  // font
         Inc(P, 4);
-        ReadProperty(Item, P, PE, 
+        ReadProperty(Item, P, PE,
           procedure (var Item: THtmlTextItem; const Key, Value: string)
           begin
             if Key = 'color' then
@@ -9186,16 +9192,16 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
         );
       end else if StrLComp(P, 'a ', 2) = 0 then begin  // a 超链接
         Inc(P, 1);
-        ReadProperty(Item, P, PE, 
+        ReadProperty(Item, P, PE,
           procedure (var Item: THtmlTextItem; const Key, Value: string)
           begin
-            if Key = 'href' then begin                
+            if Key = 'href' then begin
               if not Assigned(FLinkHrefs) then
                 FLinkHrefs := TStringList.Create;
-              Item.LinkURL := FLinkHrefs.IndexOf(Value);              
+              Item.LinkURL := FLinkHrefs.IndexOf(Value);
               if Item.LinkURL < 0 then begin
                 Item.LinkURL := FLinkHrefs.Count;
-                FLinkHrefs.Add(Value);              
+                FLinkHrefs.Add(Value);
               end;
               Item.Link := FLinkRangeCount;
               Inc(FLinkRangeCount);
@@ -9420,7 +9426,7 @@ end;
 
 function TViewHtmlText.PointInLink(const X, Y: Single): Integer;
 var
-  I: Integer;  
+  I: Integer;
   P: TPointF;
 begin
   P := PointF(X, Y);
@@ -9428,18 +9434,18 @@ begin
     if IsPointInRect(P, FLinkRange[I]) then begin
       Result := I;
       Exit;
-    end;        
+    end;
   end;
   Result := -1;
 end;
 
 function TViewHtmlText.ReplaceValue(const Value: string): string;
-begin   
-  Result := StringReplace(Value, '&#60;', '<', [rfReplaceAll]);   
-  Result := StringReplace(Result, '&#62;', '>', [rfReplaceAll]);   
-  Result := StringReplace(Result, '&#61;', '=', [rfReplaceAll]);   
+begin
+  Result := StringReplace(Value, '&#60;', '<', [rfReplaceAll]);
+  Result := StringReplace(Result, '&#62;', '>', [rfReplaceAll]);
+  Result := StringReplace(Result, '&#61;', '=', [rfReplaceAll]);
   Result := StringReplace(Result, '&lt;', '<', [rfReplaceAll]);
-  Result := StringReplace(Result, '&gt;', '>', [rfReplaceAll]);   
+  Result := StringReplace(Result, '&gt;', '>', [rfReplaceAll]);
 end;
 
 procedure TViewHtmlText.SetHtmlText(const Value: string);
@@ -9453,19 +9459,19 @@ begin
     if Pos('&', Value) > 0 then begin
       FReplace := True;
       FRealHtmlText := Value;
-      FRealHtmlText := StringReplace(FRealHtmlText, '&#32;', ' ', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&#33;', '!', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&#34;', '"', [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#32;', ' ', [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#33;', '!', [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#34;', '"', [rfReplaceAll]);
       FRealHtmlText := StringReplace(FRealHtmlText, '&#35;', '#', [rfReplaceAll]);
-      FRealHtmlText := StringReplace(FRealHtmlText, '&#36;', '$', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&#37;', '%', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&#38;', '&', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&#39;', '''', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&#64;', '@', [rfReplaceAll]); 
-      FRealHtmlText := StringReplace(FRealHtmlText, '&nbsp;', ' ', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&amp;', '&', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&quot;', '"', [rfReplaceAll]);   
-      FRealHtmlText := StringReplace(FRealHtmlText, '&apos;', '''', [rfReplaceAll]);  
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#36;', '$', [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#37;', '%', [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#38;', '&', [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#39;', '''', [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&#64;', '@', [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&nbsp;', ' ', [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&amp;', '&', [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&quot;', '"', [rfReplaceAll]);
+      FRealHtmlText := StringReplace(FRealHtmlText, '&apos;', '''', [rfReplaceAll]);
       FRealHtmlText := StringReplace(FRealHtmlText, '&cent;', #$FFE0, [rfReplaceAll]);
       FRealHtmlText := StringReplace(FRealHtmlText, '&pound;', #$FFE1, [rfReplaceAll]);
       FRealHtmlText := StringReplace(FRealHtmlText, '&yen;', #$FFE5, [rfReplaceAll]);
@@ -9474,7 +9480,7 @@ begin
       FRealHtmlText := StringReplace(FRealHtmlText, '&copy;', #$00a9, [rfReplaceAll]);
       FRealHtmlText := StringReplace(FRealHtmlText, '&reg;', #$00ae, [rfReplaceAll]);
       FRealHtmlText := StringReplace(FRealHtmlText, '&trade;', string(#8482), [rfReplaceAll]);
-      FRealHtmlText := StringReplace(FRealHtmlText, '&trade;', string(#8482), [rfReplaceAll]);   
+      FRealHtmlText := StringReplace(FRealHtmlText, '&trade;', string(#8482), [rfReplaceAll]);
       FRealHtmlText := StringReplace(FRealHtmlText, '&times;', #$00d7, [rfReplaceAll]);
       FRealHtmlText := StringReplace(FRealHtmlText, '&divide;', #$00f7, [rfReplaceAll]);
       FRealHtmlText := StringReplace(FRealHtmlText, '&plusmn;', #$00b1, [rfReplaceAll]);

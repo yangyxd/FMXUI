@@ -64,7 +64,7 @@ type
     H: Single;
   end;
 
-  TListDividerView = class(TView);   
+  TListDividerView = class(TView);
 
   TListTextItem = class(TTextView)
   private const
@@ -135,7 +135,7 @@ type
     //FItemViews: TDictionary<Pointer, Integer>; // 当前显示的控件及索引号
     FItemViews: TIntHash; // 当前显示的控件及索引号
     FItemClick: TDictionary<Pointer, TNotifyEvent>; // 当前显示的控件的原始事件字典
-    
+
     FFirstRowIndex: Integer;  // 当前显示的第一行行号
     FLastRowIndex: Integer;   // 当前显示的最后一行行号
     FCount: Integer;          // 列表项总数
@@ -363,7 +363,7 @@ type
 
     // 清空数据
     procedure Clear;
-     
+
     // 通知数据发生改变
     procedure NotifyDataChanged; virtual;
 
@@ -791,11 +791,11 @@ begin
       FContentViews.FHeader.DoUpdateState(TListViewState.PullDownFinish, 0);
       FContentViews.FState := TListViewState.PullDownFinish;
       if Assigned(FOnPullRefresh) then
-        FOnPullRefresh(Self); 
+        FOnPullRefresh(Self);
       Exit;
-    end; 
+    end;
   end;
-  
+
   // 上拉加载更多
   if FEnablePullLoad then begin
     if Assigned(FContentViews) and (FContentViews.FState = TListViewState.PullUpOK) then
@@ -1004,9 +1004,9 @@ begin
       Height - Padding.Bottom - Padding.Top);
 
     inherited DoRealign;
-    
+
     // 固定列宽
-    if FContentViews.FColumnWidth > 0 then begin  
+    if FContentViews.FColumnWidth > 0 then begin
       I := AbsoluteColumnCount;
       if I <> FContentViews.FLastColumnCount then
         DoColumnCountChange(I);
@@ -1537,7 +1537,7 @@ begin
     FDividerHeight := Value;
     if csDesigning in ComponentState then
       Exit;
-    if not (csLoading in ComponentState) then begin     
+    if not (csLoading in ComponentState) then begin
       FLocalDividerHeight := FDividerHeight;
       RealignContent;
       Invalidate;
@@ -2023,7 +2023,7 @@ procedure TListViewContent.DoRealign;
       H := Ctrl.Height;
 
       //LogD(Format('V: %.2f, ScrollV: %.2f, Top: %.2f, ScrollMove: %.2f', [V, LS.ScrollValue, V - LS.ScrollValue, LS.MoveSpace]));
-      
+
       Ctrl.SetBounds(LS.Left, V - LS.ScrollValue, FSize.Width, H);
       Ctrl.Visible := True;
       Ctrl.HitTest := True;
@@ -2224,11 +2224,11 @@ procedure TListViewContent.DoRealign;
 
       // 更新完大小后，如果高度还是不一致，则使用实际的视图高度
       if ItemView.Height <> AH then begin
-        AH := ItemView.Height;   
+        AH := ItemView.Height;
         // 重新设置位置
         ItemView.SetBounds(X, V - AH - LS.ScrollValue - LS.DividerH, LS.ColumnW, AH);
       end;
-      
+
     end else begin
       // 更新大小并显示出来
       ItemView.SetBounds(X, V - LS.ScrollValue, LS.ColumnW, AH);
@@ -2839,7 +2839,7 @@ begin
         X := FLastColumnWidth;
         for I := 0 to FLastColumnCount - 1 do begin
           Canvas.FillRect(RectF(X, LY, X + DividerHeight, Y),
-            0, 0, [], ListView.Opacity, FDividerBrush); 
+            0, 0, [], ListView.Opacity, FDividerBrush);
           X := X + DividerHeight + FLastColumnWidth;
         end;
       end;
@@ -2883,7 +2883,7 @@ function TListViewContent.GetAbsoluteColumnCount: Integer;
 begin
   if FColumnWidth > 0 then begin
     Result := Trunc((Width + ListView.FDividerHeight) / (FColumnWidth + ListView.FDividerHeight));
-    if Result < 1 then Result := 1;    
+    if Result < 1 then Result := 1;
   end else
     Result := FColumnCount;
 end;
