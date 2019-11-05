@@ -4989,7 +4989,6 @@ begin
       FixedRowHeight(LS);
 
     DoChangeEditor(LS);
-
   finally
     FDisablePaint := LDisablePaint;
     EndUpdate;
@@ -5024,7 +5023,6 @@ begin
       Exit;
     end;
     if (gvAlwaysShowEditor in GridView.FOptions) or (FSelectClickRef > 0) then begin
-
       if (FSelectCell.Col < 0) then
         Item := nil
       else
@@ -5754,15 +5752,11 @@ begin
 
     try
       if NewCol < ACol then begin
-
         for I := NewCol to ACol do
           UpdateItem(I);
-
       end else begin
-
         for I := NewCol downto ACol do
           UpdateItem(I);
-
       end;
     finally
       FOwner.FData.OnFreeItem := LNotify;

@@ -132,6 +132,11 @@ type
     procedure SetFilterChar(const Value: string);
     function GetText: string;
   protected
+    ///<summary>Initial text filtering before calling <c>DoTruncating</c></summary>
+    function DoFiltering(const Value: string): string; virtual;
+    ///<summary>Maximum available text length filtering before calling <c>DoValidating</c></summary>
+    function DoTruncating(const Value: string): string; virtual;
+    ///<summary>Validate inputing text. Calling before OnChangeTracking</summary>
     function DoValidating(const Value: string): string; virtual;
     function DoValidate(const Value: string): string; virtual;
     procedure DoChangeTracking; virtual;
@@ -859,17 +864,27 @@ begin
     FOnChangeTracking(Owner);
 end;
 
+function TEditDataModel.DoFiltering(const Value: string): string;
+begin
+  Result := FilterText(Value, FilterChar);
+end;
+
+function TEditDataModel.DoTruncating(const Value: string): string;
+begin
+  Result := TruncateText(Value, MaxLength);
+end;
+
 function TEditDataModel.DoValidate(const Value: string): string;
 begin
-  Result := TruncateText(FilterText(Value, FilterChar), FMaxLength);
-  if (Owner <> nil) and (Owner is TCustomEdit) and Assigned(FOnValidate) and not (csLoading in Owner.ComponentState) then
+  Result := DoTruncating(DoFiltering(Value));
+  if (Owner <> nil) and (Owner is TCustomEditView) and Assigned(FOnValidate) and not (csLoading in Owner.ComponentState) then
     FOnValidate(Owner, Result);
 end;
 
 function TEditDataModel.DoValidating(const Value: string): string;
 begin
   Result := Value;
-  if (Owner <> nil) and (Owner is TCustomEdit) and Assigned(FOnValidating) and not (csLoading in Owner.ComponentState) then
+  if (Owner <> nil) and (Owner is TCustomEditView) and Assigned(FOnValidating) and not (csLoading in Owner.ComponentState) then
     FOnValidating(Owner, Result);
 end;
 
@@ -901,7 +916,7 @@ end;
 
 procedure TEditDataModel.SetCaretPosition(const Value: Integer);
 begin
-  FCaretPosition := Value;
+  FCaretPosition := EnsureRange(Value, 0, FTextSettingsInfo.Text.Length);
   SendMessage<Integer>(MM_EDIT_CARETPOSITION_CHANGED, Value);
 end;
 
@@ -922,8 +937,7 @@ begin
   begin
     FFilterChar := Value;
     OldText := FTextSettingsInfo.Text;
-    FTextSettingsInfo.Text := DoValidating(
-      TruncateText(FilterText(FTextSettingsInfo.Text, FilterChar), MaxLength));
+    FTextSettingsInfo.Text := DoValidating(DoTruncating(DoFiltering(FTextSettingsInfo.Text)));
     if FTextSettingsInfo.Text <> OldText then
     begin
       DoChangeTracking;
@@ -965,7 +979,7 @@ begin
   if MaxLength <> Value then
   begin
     FMaxLength := Max(0, Value);
-    Text := TruncateText(Text, FMaxLength);
+    Text := DoTruncating(Text);
     Change;
     SendMessage<Integer>(MM_EDIT_MAXLENGTH_CHANGED, Value);
   end;
@@ -1024,8 +1038,7 @@ begin
   if Text <> Value then
   begin
     OldText := FTextSettingsInfo.Text;
-    FTextSettingsInfo.Text := DoValidating(
-      TruncateText(FilterText(Value, FilterChar), MaxLength));
+    FTextSettingsInfo.Text := DoValidating(DoTruncating(DoFiltering(Value)));
     if FTextSettingsInfo.Text <> OldText then
     begin
       DoChangeTracking;
@@ -1090,8 +1103,9 @@ begin
     LongTap(LocalPoint.X, LocalPoint.Y);
   end
   else if EventInfo.GestureID = igiDoubleTap then
-    DblTap;
-  inherited;
+    DblTap
+  else
+    inherited;
 end;
 
 procedure TCustomEditView.CopyToClipboard;
@@ -2353,6 +2367,7 @@ begin
 
     if (Ord(KeyChar) >= 32) and not Model.ReadOnly then
     begin
+    {$IF (not Defined(ANDROID)) or (CompilerVersion < 33)}
       FCharsBuffer := FCharsBuffer + KeyChar;
       if not KeyChar.IsHighSurrogate then
       begin
@@ -2367,6 +2382,10 @@ begin
         DoTyping;
       end;
       KeyHandled := True;
+    {$ELSE}
+      // On the Android we use proxy native EditText for inputting any kind of text. So implementation TTextService takes
+      // care on any kind of text inputting. Therefore, we don't need to intercept inputting latin chars also.
+    {$ENDIF}
     end;
     //if ResourceControl <> nil then
     //  ResourceControl.UpdateEffects;
@@ -2769,15 +2788,19 @@ end;
 
 procedure TCustomEditView.SelectWord;
 var
-  SelBeg, SelEnd: Integer;
+  WordBeginIndex, WordEndIndex: Integer;
+  CaretPos: Integer;
 begin
   if Text.Length = 0 then
     Exit;
 
-  if FindWordBound(Text, GetOriginCaretPosition, SelBeg, SelEnd) then begin
-    Model.SelStart := SelBeg;
-    Model.SelLength := Max(SelEnd - Model.SelStart + 1, 0);
-  end else
+  CaretPos := GetOriginCaretPosition;
+  if FindWordBound(Text, CaretPos, WordBeginIndex, WordEndIndex) and InRange(CaretPos, WordBeginIndex, WordEndIndex + 1) then
+  begin
+    Model.SelStart := WordBeginIndex;
+    Model.SelLength := Max(WordEndIndex - Model.SelStart + 1, 0);
+  end
+  else
     Model.SelLength := 0;
 end;
 
@@ -2966,7 +2989,9 @@ end;
 
 procedure TCustomEditView.SetSelStart(const Value: Integer);
 begin
+  Model.SelLength := 0;
   Model.SelStart := Value;
+  Model.CaretPosition := Value;
 end;
 
 procedure TCustomEditView.SetText(const Value: string);
