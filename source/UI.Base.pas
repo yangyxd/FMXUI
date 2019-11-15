@@ -2770,6 +2770,8 @@ procedure TDrawableBase.SetBitmap(State: TViewState; const Value: TBitmap);
 var V: TBrush;
 begin
   V := GetBrush(State, True);
+  if (V.Bitmap = nil) or (V.Bitmap.Bitmap = nil) then
+    Exit;
   if Assigned(Value) then
     V.Bitmap.Bitmap.Assign(Value)
   else
@@ -8034,7 +8036,7 @@ begin
         Continue;
       {$ENDIF}
 
-      if CurPos.X > AW then begin
+      if CurPos.X >= AW then begin
         if (LStretchMode = TViewStretchMode.SpacingWidthUniform) or (not FSpacingBorder) then
           CurPos.X := Padding.Left
         else
