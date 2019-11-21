@@ -5331,7 +5331,6 @@ begin
     FVideoCamera.SampleBufferToBitmap(FBuffer, True);
 
     if FBuffer.Width > 0 then begin
-
       FLocker.Enter;
       try
         if (FDrawBmp.Width = 0) then begin
@@ -5339,6 +5338,7 @@ begin
           if (FDrawBmp.Width = 0) then
             Exit;
         end;
+        FDrawBmp.Clear(0);
         FDrawBmp.Canvas.BeginScene;
         FDrawBmp.Canvas.DrawBitmap(FBuffer, RectF(0, 0, FBuffer.Width, FBuffer.Height),
           RectF(0, 0, FDrawBmp.Width, FDrawBmp.Height), 1, True);
@@ -5346,7 +5346,6 @@ begin
       finally
         FLocker.Leave;
       end;
-
     end;
   end;
 end;
