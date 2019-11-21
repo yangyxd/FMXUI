@@ -4,9 +4,13 @@ interface
 
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, UI.Base,
-  FMX.Controls.Presentation, FMX.StdCtrls, UI.Standard, UI.Toast, FMX.Layouts,
-  UI.ListView, UI.Dialog, FMX.DateTimeCtrls, UI.VKhelper;
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
+  FMX.Controls.Presentation, FMX.StdCtrls, FMX.Layouts, FMX.DateTimeCtrls,
+{$IF DEFINED(ANDROID) AND (RTLVersion >= 33)}
+  Androidapi.Helpers, Androidapi.JNI.Os,
+  System.Permissions,
+{$ENDIF}
+  UI.Base, UI.Standard, UI.Toast, UI.ListView, UI.Dialog, UI.VKhelper;
 
 type
   TForm1 = class(TForm)
@@ -15,6 +19,10 @@ type
     procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
+    {$IF DEFINED(ANDROID) AND (RTLVersion >= 33)}
+    procedure PermissionsCheck;
+    procedure PermissionsResultHandler(const APermissions: TArray<string>; const AGrantResults: TArray<TPermissionStatus>);
+    {$ENDIF}
   public
     { Public declarations }
   end;
@@ -42,6 +50,32 @@ end;
 procedure TForm1.FormShow(Sender: TObject);
 begin
   TFrame1.ShowFrame(Self, 'FMXUI Demo');
+
+  {$IF DEFINED(ANDROID) AND (RTLVersion >= 33)}
+  PermissionsCheck;
+  {$ENDIF}
 end;
+
+{$IF DEFINED(ANDROID) AND (RTLVersion >= 33)}
+procedure TForm1.PermissionsCheck;
+begin
+  if TJBuild_VERSION.JavaClass.SDK_INT >= 23 then
+    PermissionsService.RequestPermissions([JStringToString(TJManifest_permission.JavaClass.CAMERA),
+       JStringToString(TJManifest_permission.JavaClass.READ_EXTERNAL_STORAGE),
+       JStringToString(TJManifest_permission.JavaClass.WRITE_EXTERNAL_STORAGE)], PermissionsResultHandler);
+end;
+
+procedure TForm1.PermissionsResultHandler(const APermissions: TArray<string>;
+  const AGrantResults: TArray<TPermissionStatus>);
+begin
+  if PermissionsService.IsEveryPermissionGranted(
+    [JStringToString(TJManifest_permission.JavaClass.CAMERA),
+     JStringToString(TJManifest_permission.JavaClass.READ_EXTERNAL_STORAGE),
+     JStringToString(TJManifest_permission.JavaClass.WRITE_EXTERNAL_STORAGE)]) then
+    Toast('Permission granted')
+  else
+    Toast('Permission not granted');
+end;
+{$ENDIF}
 
 end.
