@@ -37,6 +37,7 @@ type
     ButtonView20: TButtonView;
     ButtonView21: TButtonView;
     ButtonView22: TButtonView;
+    tvMore: TTextView;
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
     procedure ButtonView3Click(Sender: TObject);
@@ -60,6 +61,7 @@ type
     procedure ButtonView20Click(Sender: TObject);
     procedure ButtonView21Click(Sender: TObject);
     procedure ButtonView22Click(Sender: TObject);
+    procedure tvMoreClick(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -503,6 +505,28 @@ procedure TFrmaeDialog.DoShow;
 begin
   inherited;
   tvTitle.Text := Title;
+end;
+
+procedure TFrmaeDialog.tvMoreClick(Sender: TObject);
+begin
+  TDialogBuilder.Create(Self)
+      .SetItems(['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'],
+        procedure (Dialog: IDialog; Which: Integer)
+        begin
+          Dialog.AsyncDismiss;
+        end
+      )
+      .SetOnInitListAdapterA(
+        procedure (Dialog: IDialog; Builder: TDialogBuilder; var Adapter: IListAdapter)
+        begin
+          TDialog(Dialog).RootView.ListView.ShowScrollBars := False;
+        end
+      )
+      .SetWidth(160)
+      //.SetMaxHeight(320)
+      .SetDownPopup(TView(Sender), 3, 0, TLayoutGravity.RightBottom)
+      .SetListItemDefaultHeight(30)
+      .Show;
 end;
 
 { TStringsListAdapter }

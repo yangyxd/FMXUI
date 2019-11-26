@@ -27,7 +27,7 @@ object FrmaeDialog: TFrmaeDialog
       Size.Width = 50.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 3
+      TabOrder = 4
       OnClick = btnBackClick
       TextSettings.Color.Default = claWhite
       TextSettings.Color.Focused = claNull
@@ -48,7 +48,6 @@ object FrmaeDialog: TFrmaeDialog
       Background.Border.Color.Checked = claNull
       Background.Border.Color.Enabled = claNull
       Weight = 1.000000000000000000
-      Margins.Right = 50.000000000000000000
       Size.Width = 220.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
@@ -62,6 +61,35 @@ object FrmaeDialog: TFrmaeDialog
       TextSettings.Font.Size = 18.000000000000000000
       TextSettings.Gravity = Center
     end
+    object tvMore: TTextView
+      Background.ItemPressed.Color = x7F000000
+      Background.ItemPressed.Kind = Solid
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      Clickable = True
+      HeightSize = FillParent
+      HitTest = True
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 270.000000000000000000
+      TabOrder = 3
+      OnClick = tvMoreClick
+      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
+      Drawable.Position = Center
+      Drawable.ItemDefault.Kind = AccessoryBitmap
+      Drawable.ItemDefault.Accessory.Accessory = Ellipses
+    end
   end
   object VertScrollBox1: TVertScrollBox
     Align = Client
@@ -69,7 +97,7 @@ object FrmaeDialog: TFrmaeDialog
     Size.Height = 583.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
-    Viewport.Width = 320.000000000000000000
+    Viewport.Width = 304.000000000000000000
     Viewport.Height = 583.000000000000000000
     object LinearLayout2: TLinearLayout
       Align = Top
@@ -95,10 +123,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -119,10 +143,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -143,10 +163,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -167,10 +183,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -191,10 +203,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -215,10 +223,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -239,10 +243,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
@@ -266,10 +266,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -293,10 +289,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -317,10 +309,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -341,10 +329,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -365,10 +349,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
@@ -392,10 +372,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -416,10 +392,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -440,10 +412,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
@@ -465,10 +433,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -489,10 +453,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -513,10 +473,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -537,10 +493,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Top = 8.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
@@ -562,10 +514,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -586,10 +534,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
@@ -610,10 +554,6 @@ object FrmaeDialog: TFrmaeDialog
         Background.Border.Color.Enabled = claNull
         Background.Border.Style = None
         WidthSize = FillParent
-        Padding.Left = 4.000000000000000000
-        Padding.Top = 4.000000000000000000
-        Padding.Right = 4.000000000000000000
-        Padding.Bottom = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
         Size.Width = 280.000000000000000000
         Size.Height = 36.000000000000000000
