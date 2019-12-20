@@ -346,6 +346,7 @@ type
     procedure AfterDialogKey(var Key: Word; Shift: TShiftState); override;
     procedure Resize; override;
     procedure DoRealign; override;
+    function GetTabStopController: ITabStopController; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -2897,6 +2898,11 @@ begin
   inherited DoRealign;
   if (not FDisableAlign) and FIsDownPopup then
     TAlertDialog(FDialog).AdjustDownPopupPosition;
+end;
+
+function TDialogView.GetTabStopController: ITabStopController;
+begin
+  Result := Self;
 end;
 
 procedure TDialogView.Hide;

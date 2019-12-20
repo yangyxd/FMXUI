@@ -10,6 +10,7 @@
  * 修正TGridsLayout部分情况下丢失控件（感谢报告：海歌）
  * 修正TCameraViewer部分情况下绿屏（感谢报告：凌风）
  * 更改SetDownPopup重力为相对于锚点位置（感谢报告：Jiang）
+ * TDialogView添加TabStop响应，焦点切换停留在当前TDialogView（感谢报告：惠子）
  - -----------------------------------
  - 2019.10.23
  * EditView兼容10.3
