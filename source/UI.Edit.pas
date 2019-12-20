@@ -305,7 +305,12 @@ type
     procedure MMMaxLengthChanged(var Message: TDispatchMessage); message MM_EDIT_MAXLENGTH_CHANGED;
     /// <summary>Notification about changing a <c>TextPrompt</c> property</summary>
     procedure MMPromptTextChanged(var Message: TDispatchMessage); message MM_EDIT_PROMPTTEXT_CHANGED;
+    /// <summary>Notification about changing of <c>CaretPosition</c> property value</summary>
     procedure MMCaretPositionChanged(var Message: TDispatchMessageWithValue<Integer>); message MM_EDIT_CARETPOSITION_CHANGED;
+    {$IF CompilerVersion >= 32}
+    /// <summary>Notification about changing of <c>FilterChar</c> property value</summary>
+    procedure MMFilterCharChanged(var Message: TDispatchMessage); message MM_EDIT_FILTERCHAR_CHANGED;
+    {$ENDIF}
     { Messages from PresentationProxy }
     procedure PMInit(var Message: TDispatchMessage); message PM_INIT;
     procedure PMGetTextContentRect(var Message: TDispatchMessageWithValue<TRectF>); message PM_EDIT_GET_TEXT_CONTENT_RECT;
@@ -936,6 +941,9 @@ begin
   if FFilterChar <> Value then
   begin
     FFilterChar := Value;
+    {$IF CompilerVersion >= 32}
+    SendMessage<string>(MM_EDIT_FILTERCHAR_CHANGED, Value);
+    {$ENDIF}
     OldText := FTextSettingsInfo.Text;
     FTextSettingsInfo.Text := DoValidating(DoTruncating(DoFiltering(FTextSettingsInfo.Text)));
     if FTextSettingsInfo.Text <> OldText then
@@ -2450,6 +2458,14 @@ end;
 procedure TCustomEditView.MMEditButtonsChanged(var Message: TDispatchMessage);
 begin
 end;
+
+{$IF CompilerVersion >= 32}
+procedure TCustomEditView.MMFilterCharChanged(var Message: TDispatchMessage);
+begin
+  if FTextService <> nil then
+    FTextService.FilterChar := Model.FilterChar;
+end;
+{$ENDIF}
 
 procedure TCustomEditView.MMImeModeChanged(var AMessage: TDispatchMessage);
 begin
