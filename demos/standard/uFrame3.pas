@@ -16,6 +16,7 @@ type
     ButtonView1: TButtonView;
     ButtonView2: TButtonView;
     btnBack: TTextView;
+    ButtonView3: TButtonView;
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
     procedure btnBackClick(Sender: TObject);

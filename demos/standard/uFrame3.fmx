@@ -68,10 +68,6 @@ object Frame3: TFrame3
       Background.Border.Color.Checked = claNull
       Background.Border.Color.Enabled = claNull
       Background.Border.Kind = None
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
       Size.Width = 224.000000000000000000
       Size.Height = 41.000000000000000000
       Size.PlatformDefault = False
@@ -87,23 +83,67 @@ object Frame3: TFrame3
     object ButtonView2: TButtonView
       Layout.Below = ButtonView1
       Layout.AlignRight = ButtonView1
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
       Margins.Top = 12.000000000000000000
       Size.Width = 225.000000000000000000
       Size.Height = 41.000000000000000000
       Size.PlatformDefault = False
       Position.X = 15.000000000000000000
       Position.Y = 77.000000000000000000
-      TabOrder = 3
+      TabOrder = 4
       OnClick = ButtonView2Click
       TextSettings.Gravity = Center
       HtmlText = #26597#30475'<font color="blue">Android</font>   '#29256#26412
       Drawable.SizeWidth = 24
       Drawable.SizeHeight = 24
       Drawable.ItemDefault.Kind = AccessoryBitmap
+      Drawable.ItemDefault.Accessory.Color = claSlateblue
+    end
+    object ButtonView3: TButtonView
+      Background.XRadius = 5.000000000000000000
+      Background.YRadius = 5.000000000000000000
+      Background.ItemDefault.Kind = Gradient
+      Background.ItemDefault.Gradient.Points = <
+        item
+          Color = xE736BCFF
+          Offset = 0.000000000000000000
+        end
+        item
+          Color = xE7139DEA
+          Offset = 0.990000009536743200
+        end>
+      Background.ItemDefault.Gradient.StartPosition.X = 0.500000000000000000
+      Background.ItemDefault.Gradient.StopPosition.X = 0.499999970197677600
+      Background.Border.Width = 5.000000000000000000
+      Background.Border.Style = LineBottom
+      Background.Border.Gradient.Points = <
+        item
+          Color = x11000000
+          Offset = 0.000000000000000000
+        end
+        item
+          Color = x31000000
+          Offset = 0.990000009536743200
+        end>
+      Background.Border.Gradient.StartPosition.X = 0.500000000000000000
+      Background.Border.Gradient.StopPosition.X = 0.499999970197677600
+      Background.Border.Kind = Gradient
+      Layout.Below = ButtonView2
+      Layout.AlignRight = ButtonView2
+      Margins.Top = 12.000000000000000000
+      Size.Width = 223.000000000000000000
+      Size.Height = 52.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 17.000000000000000000
+      Position.Y = 130.000000000000000000
+      TabOrder = 3
+      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Gravity = Center
+      HtmlText = #25105#20351#29992#20102'<font color="blue">Gradient</font>  '#23646#24615
+      Drawable.SizeWidth = 24
+      Drawable.SizeHeight = 24
       Drawable.ItemDefault.Accessory.Color = claSlateblue
     end
   end
