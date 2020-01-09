@@ -5460,9 +5460,7 @@ begin
 
       if (HeightSize = TViewSize.WrapContent) and (Height <> VH) then
         SetBounds(Left, Top, VW, VH);
-
     end;
-
   end else
     inherited DoRealign;
   FDisableAlign := False;
@@ -5550,11 +5548,8 @@ begin
 
       if IsASW then AWidth := AWidth + Padding.Left + Padding.Right;
       if IsASH then AHeight := AHeight + Padding.Top + Padding.Bottom;
-
     end;
-
   end else begin
-
     if FDisableAlign then
       Exit;
 
@@ -8036,7 +8031,8 @@ begin
         Continue;
       {$ENDIF}
 
-      if CurPos.X >= AW then begin
+      // 有些宽度除不尽，差值在2以内
+      if Ceil(CurPos.X) >= AW then begin
         if (LStretchMode = TViewStretchMode.SpacingWidthUniform) or (not FSpacingBorder) then
           CurPos.X := Padding.Left
         else
@@ -8196,7 +8192,6 @@ begin
         Control.SetBounds(VL, VT, VW, VH);
       end else
         Control.SetBounds(VL, VT, VW, VH);
-
     end;
 
     if FLastRows = 1 then

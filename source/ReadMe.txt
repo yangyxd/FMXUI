@@ -13,6 +13,7 @@
  * TDialogView添加TabStop响应，焦点切换停留在当前TDialogView（感谢报告：惠子）
  * 修正EditView安卓下FilterChar失效的问题（感谢报告：猴哥）
  * 修正TListViewEx的子项部分情况下无法使用Margins和Padding的问题（感谢报告：凌风）
+ * 修正部分情况下TGridsLayout和TTextView的大小错误问题
  - -----------------------------------
  - 2019.10.23
  * EditView兼容10.3

@@ -1557,38 +1557,30 @@ begin
     end else
       if not FText.CalcTextObjectSize(Text, V, Scene.GetSceneScale, nil, ASize) then Exit;
 
-    if ASize.Width < GetDrawableWidth then
-      ASize.Width := GetDrawableWidth;
-    if ASize.Height < GetDrawableHeight then
-      ASize.Height := GetDrawableHeight;
-
-    if (WidthSize = TViewSize.WrapContent) and (HeightSize = TViewSize.WrapContent) then begin
-      V := GetDrawableWidth;
+    // 自动宽度
+    if WidthSize = TViewSize.WrapContent then begin
       AWidth := ASize.Width + Padding.Left + Padding.Right;
-      AHeight := ASize.Height + Padding.Top + Padding.Bottom;
-      if (V > 0) and (FDrawable.Position in [TDrawablePosition.Left, TDrawablePosition.Right]) then
-        AWidth := AWidth + V + FDrawable.Padding;
-      V := GetDrawableHeight;
-      if (V > 0) and (FDrawable.Position in [TDrawablePosition.Top, TDrawablePosition.Bottom]) then
-        AHeight := AHeight + V + FDrawable.Padding;
-    end else if WidthSize = TViewSize.WrapContent then begin
       V := GetDrawableWidth;
       if (V > 0) and (FDrawable.Position in [TDrawablePosition.Left, TDrawablePosition.Right]) then
-        AWidth := ASize.Width + Padding.Left + Padding.Right + V + FDrawable.Padding
-      else
-        AWidth := ASize.Width + Padding.Left + Padding.Right;
-    end else if HeightSize = TViewSize.WrapContent then begin
+        AWidth := AWidth + V + FDrawable.Padding
+      else if AWidth < V then
+        AWidth := V;
+    end;
+
+    // 自动高度
+    if HeightSize = TViewSize.WrapContent then begin
+      AHeight := ASize.Height + Padding.Top + Padding.Bottom;
       V := GetDrawableHeight;
       if (V > 0) and (FDrawable.Position in [TDrawablePosition.Top, TDrawablePosition.Bottom]) then
-        AHeight := ASize.Height + Padding.Top + Padding.Bottom + V + FDrawable.Padding
-      else
-        AHeight := ASize.Height + Padding.Top + Padding.Bottom;
+        AHeight := AHeight + V + FDrawable.Padding
+      else if AHeight < V then
+        AHeight := V;
     end;
 
     if FScrollbar <> TViewScroll.None then begin
-      V := GetDrawableWidth;
       VW := ASize.Width + Padding.Left + Padding.Right;
       VH := ASize.Height + Padding.Top + Padding.Bottom;
+      V := GetDrawableWidth;
       if (V > 0) and (FDrawable.Position in [TDrawablePosition.Left, TDrawablePosition.Right]) then
         VW := VW + V + FDrawable.Padding;
       V := GetDrawableHeight;
