@@ -2194,6 +2194,7 @@ procedure TListViewContent.DoRealign;
         MaxH := View.MaxHeight;
         if (MaxH > 0) and (AH > MaxH) then AH := MaxH;
         if (MinH > 0) and (AH < MinH) then AH := MinH;
+        AH := AH + View.Margins.Top + View.Margins.Bottom + ItemView.Padding.Top + ItemView.Padding.Bottom;
       end else
         AH := ItemView.Height;
 
