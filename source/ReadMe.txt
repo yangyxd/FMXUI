@@ -14,6 +14,7 @@
  * 修正EditView安卓下FilterChar失效的问题（感谢报告：猴哥）
  * 修正TListViewEx的子项部分情况下无法使用Margins和Padding的问题（感谢报告：凌风）
  * 修正部分情况下TGridsLayout和TTextView的大小错误问题
+ * 修正TListViewEx使用TFrame在win下鼠标移出点击状态不会消失的问题（感谢报告：ying32）
  - -----------------------------------
  - 2019.10.23
  * EditView兼容10.3

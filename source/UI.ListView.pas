@@ -812,12 +812,14 @@ end;
 procedure TListViewEx.CheckMouseLeftState;
 begin
   {$IFNDEF NEXTGEN}
+  if (not Assigned(Self)) or (csDestroying in ComponentState) then
+    Exit;
   // 检查鼠标左键是否松开
   if DragScroll and (not FMouseEnter) then begin
     {$IFDEF MSWINDOWS}
     if GetAsyncKeyState(VK_LBUTTON) = 0 then
       MouseUp(TMouseButton.mbLeft, [], FMovePos.X, FMovePos.Y)
-    else
+    else if Assigned(Self) and (not (csDestroying in ComponentState)) then
       TFrameAnimator.DelayExecute(Self,
         procedure(Sender: TObject)
         begin
@@ -2158,6 +2160,7 @@ procedure TListViewContent.DoRealign;
           // 如果是一个 Frame，让它可以点击
           // 设置点击事件，设置鼠村按下和松开事件时重绘
           ItemView.HitTest := True;
+          ItemView.AutoCapture := True;
           ItemView.OnPainting := DoPaintFrame;
           ItemView.OnMouseDown := DoMouseDownFrame;
           ItemView.OnMouseUp := DoMouseDownFrame;

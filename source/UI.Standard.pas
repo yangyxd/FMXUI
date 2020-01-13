@@ -5390,17 +5390,18 @@ end;
 procedure TPullScrollView.CheckMouseLeftState;
 begin
   {$IFNDEF NEXTGEN}
+  if (not Assigned(Self)) or (csDestroying in ComponentState) then
+    Exit;
   // 检查鼠标左键是否松开
-  if Assigned(Self) and DragScroll and (not FMouseEnter) then begin
+  if DragScroll and (not FMouseEnter) then begin
     {$IFDEF MSWINDOWS}
     if GetAsyncKeyState(VK_LBUTTON) = 0 then
       MouseUp(TMouseButton.mbLeft, [], FMovePos.X, FMovePos.Y)
-    else if (not (csDestroying in ComponentState)) then
+    else if Assigned(Self) and (not (csDestroying in ComponentState)) then
       TFrameAnimator.DelayExecute(Self,
         procedure(Sender: TObject)
         begin
-          if (not (csDestroying in ComponentState)) then
-            CheckMouseLeftState;
+          CheckMouseLeftState;
         end,
       0.05);
     {$ENDIF}
