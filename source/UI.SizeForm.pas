@@ -34,6 +34,7 @@ type
     FShowShadow: Boolean;
     {$IFDEF MSWINDOWS}
     FHwnd: HWND;
+    FResizable: Boolean;
     {$ENDIF}
     procedure SetShowShadow(const Value: Boolean);
     function GetMonitorIndex: Integer;
@@ -49,6 +50,7 @@ type
 
     function GetShadowColor: TAlphaColor; virtual;
     function GetShadowBackgroundColor: TAlphaColor; virtual;
+    function GetSceneScale: Single;
 
     procedure InitShadowForm();
   public
@@ -88,6 +90,10 @@ type
     /// 是否显示阴影
     /// </summary>
     property ShowShadow: Boolean read FShowShadow write SetShowShadow default False;
+    /// <summary>
+    /// 是否可以改变大小
+    /// </summary>
+    property Resizable: Boolean read FResizable write FResizable default True;
   end;
 
 
@@ -137,9 +143,10 @@ type
 
 {$IFDEF MSWINDOWS}
 const
+  FormFlags = SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE;
   WM_SYNC_SIZE = WM_USER + 920;
-type
 
+type
   TMonitor = record
     Handle: HMONITOR;
     MonitorNum: Integer;
@@ -207,6 +214,7 @@ begin
   inherited;
   FSizeWH := 10;
   FShadowForm := nil;
+  FResizable := True;
 end;
 
 procedure TSizeForm.DBClickTitle(Sender: TObject);
@@ -281,15 +289,17 @@ begin
         end;
         Exit;
       end;
-      FResizeMode := CalcResizeMode(X, Y);
-      UpdateCurror(FResizeMode);
-      if FResizeMode = TResizeMode.Normal then
-        Exit;
-      FMousePos := PointF(X, Y);
-      FDownPos := FMousePos;
-      FResizeSize := PointF(Width, Height);
-      FDownSize := FResizeSize;
-      FWinService.SetCapture(Self);
+      if FResizable then begin
+        FResizeMode := CalcResizeMode(X, Y);
+        UpdateCurror(FResizeMode);
+        if FResizeMode = TResizeMode.Normal then
+          Exit;
+        FMousePos := PointF(X, Y);
+        FDownPos := FMousePos;
+        FResizeSize := PointF(Width, Height);
+        FDownSize := FResizeSize;
+        FWinService.SetCapture(Self);
+      end;
     end;
   end;
 end;
@@ -297,8 +307,9 @@ end;
 procedure TSizeForm.MouseMove(Shift: TShiftState; X, Y: Single);
 var
   P: TPointF;
+  LScale: Single;
 begin
-  if (FResizeMode <> TResizeMode.Normal) and (ssLeft in Shift) then begin
+  if FResizable and (FResizeMode <> TResizeMode.Normal) and (ssLeft in Shift) then begin
     Engage;
     try
       P.X := Left;
@@ -347,17 +358,18 @@ begin
             FResizeSize.X := Round(FResizeSize.X + (X - FMousePos.X));
           end;
       end;
+      LScale := GetSceneScale;
       {$IFDEF MSWINDOWS}
       if Assigned(FShadowForm) then begin
         Lockwindowupdate(FHwnd);
-        SetWindowPos(FHwnd, HWND_TOP, Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y), SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE);
+        SetWindowPos(FHwnd, HWND_TOP, Round(P.X), Round(P.Y), Round(FResizeSize.X * LScale), Round(FResizeSize.Y * LScale), FormFlags);
         Lockwindowupdate(0);
         TShadowForm(FShadowForm).UpdateBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y));
         UpdateWindow(FHwnd);
       end else
-        SetBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y));
+        SetBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X * LScale), Round(FResizeSize.Y * LScale));
       {$ELSE}
-      SetBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y));
+      SetBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X * LScale), Round(FResizeSize.Y * LScale));
       {$ENDIF}
       FMousePos := PointF(X, Y);
     finally
@@ -382,7 +394,7 @@ begin
     FMouseDraging := False;
     ReleaseCapture;
   end;
-  if FResizeMode <> TResizeMode.Normal then begin
+  if FResizable and (FResizeMode <> TResizeMode.Normal) then begin
     FResizeMode := TResizeMode.Normal;
     ReleaseCapture;
   end;
@@ -445,6 +457,14 @@ begin
   Self.WindowState := TWindowState.wsNormal;
 end;
 
+function TSizeForm.GetSceneScale: Single;
+begin
+  if Handle <> nil then
+    Result := Handle.Scale
+  else
+    Result := 1;
+end;
+
 function TSizeForm.GetShadowBackgroundColor: TAlphaColor;
 begin
   Result := $ffffffff;
@@ -499,7 +519,6 @@ begin
   {$ENDIF}
 
   if Assigned(FOwner) then begin
-
     UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height);
 
     {$IFDEF MSWINDOWS}
@@ -509,7 +528,6 @@ begin
     FOldWndProc := GetWindowLongPtr(FHwnd, GWL_WNDPROC);
     SetWindowLongPtr(FHwnd, GWL_WNDPROC, NativeInt(@WindowProc));
     {$ENDIF}
-
   end;
 end;
 
@@ -540,13 +558,17 @@ end;
 procedure TShadowForm.UpdateBounds(ALeft, ATop, AWidth, AHeight, Flags: Integer);
 var
   R: TRect;
+  LScale: Single;
 begin
-  R.Left := ALeft - FShadowSize;
-  R.Top := ATop - FShadowSize;
-  R.Right := R.Left + FShadowSize * 2 + AWidth;
-  R.Bottom := R.Top + FShadowSize * 2 + AHeight;
+  LScale := FOwner.GetSceneScale;
+
+  R.Left := ALeft - Round(FShadowSize * LScale);
+  R.Top := ATop - Round(FShadowSize * LScale);
+  R.Right := R.Left + Round((AWidth + FShadowSize * 2) * LScale);
+  R.Bottom := R.Top + Round((AHeight + FShadowSize * 2) * LScale);
+
   {$IFDEF MSWINDOWS}
-  Flags := Flags or SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE;
+  Flags := Flags or FormFlags;
   SetWindowPos(FMHwnd, HWND_TOP, R.Left, R.Top, R.Width, R.Height, Flags);
   //UpdateWindow(FMHwnd);
   {$ELSE}
@@ -557,6 +579,8 @@ end;
 {$IFDEF MSWINDOWS}
 function TShadowForm.ParentWindowProc(Wnd: HWND; Msg: UINT; wParam: wParam;
   lParam: lParam): LRESULT;
+var
+  LScale: Single;
 begin
   case Msg of
     WM_GETMINMAXINFO:
@@ -573,11 +597,12 @@ begin
   case Msg of
     WM_MOVE:
       begin
+        LScale := FOwner.GetSceneScale;
         if (FOwner.WindowState = TWindowState.wsNormal) and (Abs(Self.Width - FOwner.Width) > FShadowSize * 2) then
           UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height)
         else
-          SetWindowPos(FMHwnd, HWND_TOP, FOwner.Left - FShadowSize, FOwner.Top - FShadowSize, 0, 0,
-            SWP_NOSIZE or SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE);
+          SetWindowPos(FMHwnd, HWND_TOP, FOwner.Left - Round(FShadowSize * LScale), FOwner.Top - Round(FShadowSize * LScale), 0, 0,
+            SWP_NOSIZE or FormFlags);
       end;
     WM_ACTIVATE, WM_NCACTIVATE:
       begin

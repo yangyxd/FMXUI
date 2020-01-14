@@ -1,4 +1,4 @@
-unit Unit1;
+unit Unit2;
 
 interface
 
@@ -9,25 +9,21 @@ uses
   UI.Standard, FMX.Effects, FMX.Controls.Presentation, FMX.StdCtrls;
 
 type
-  TForm1 = class(TSizeForm)
+  TForm2 = class(TSizeForm)
     layTitle: TLinearLayout;
     tvTitle: TTextView;
     btnMin: TTextView;
-    btnMax: TTextView;
     btnClose: TTextView;
     layBackground: TLinearLayout;
-    btnRestore: TTextView;
     layBody: TRelativeLayout;
-    Timer1: TTimer;
+    btnOk: TButtonView;
+    btnCancel: TButtonView;
+    txvMsg: TTextView;
     procedure FormCreate(Sender: TObject);
     procedure btnCloseMouseEnter(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
-    procedure btnMaxClick(Sender: TObject);
-    procedure btnRestoreClick(Sender: TObject);
     procedure btnMinClick(Sender: TObject);
     procedure btnMinMouseLeave(Sender: TObject);
-    procedure layTitleDblClick(Sender: TObject);
-    procedure ButtonView1Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -38,17 +34,28 @@ type
     procedure AniTextViewBackgroundColor(Sender: TObject; IsIn: Boolean);
   end;
 
-var
-  Form1: TForm1;
+function TextDialog(AText: string): TModalResult;
 
 implementation
 
 {$R *.fmx}
 
-uses
-  Unit2;
+function TextDialog(AText: string): TModalResult;
+var
+  Form2: TForm2;
+  LScale: Single;
+begin
+  Application.CreateForm(TForm2, Form2);
+  LScale := Form2.GetSceneScale;
+  Form2.txvMsg.Text := AText;
+  Form2.Left := Application.MainForm.Left + (Round(Application.MainForm.Width * LScale) - Form2.Width) div 2;
+  Form2.Top := Application.MainForm.Top + (Round(Application.MainForm.Height * LScale) - Form2.Height) div 2;
+  Form2.btnOk.SetFocus;
+  Result := Form2.ShowModal;
+  Form2.Free;
+end;
 
-procedure TForm1.AniTextViewBackgroundColor(Sender: TObject; IsIn: Boolean);
+procedure TForm2.AniTextViewBackgroundColor(Sender: TObject; IsIn: Boolean);
 var
   SrcColor, DsetColor: TAlphaColor;
 begin
@@ -62,75 +69,42 @@ begin
   TFrameAnimator.AnimateColor(TTextView(Sender), 'Background.ItemHovered.Color', DsetColor);
 end;
 
-procedure TForm1.btnCloseClick(Sender: TObject);
+procedure TForm2.btnCloseClick(Sender: TObject);
 begin
-  if TextDialog('Are you sure to quit?') = mrOk then
-    Close;
+  ModalResult := mrClose;
 end;
 
-procedure TForm1.btnCloseMouseEnter(Sender: TObject);
+procedure TForm2.btnCloseMouseEnter(Sender: TObject);
 begin
   AniTextViewBackgroundColor(Sender, True);
 end;
 
-procedure TForm1.btnMaxClick(Sender: TObject);
-begin
-  btnMax.Visible := False;
-  btnRestore.Visible := True;
-  ShowMax();
-  layTitle.CaptureDragForm := False;
-end;
-
-procedure TForm1.btnMinClick(Sender: TObject);
+procedure TForm2.btnMinClick(Sender: TObject);
 begin
   ShowMin();
 end;
 
-procedure TForm1.btnMinMouseLeave(Sender: TObject);
+procedure TForm2.btnMinMouseLeave(Sender: TObject);
 begin
   AniTextViewBackgroundColor(Sender, False);
 end;
 
-procedure TForm1.btnRestoreClick(Sender: TObject);
-begin
-  btnRestore.Visible := False;
-  btnMax.Visible := True;
-  ShowReSize();
-  layTitle.CaptureDragForm := True;
-end;
-
-procedure TForm1.ButtonView1Click(Sender: TObject);
-begin
-  Timer1.Enabled := not Timer1.Enabled;
-end;
-
-procedure TForm1.FormCreate(Sender: TObject);
+procedure TForm2.FormCreate(Sender: TObject);
 begin
   tvTitle.Text := Self.Caption;
+
+  Resizable := False;
   ShowShadow := True;  // ´ò¿ªÒõÓ°
 end;
 
-function TForm1.GetShadowBackgroundColor: TAlphaColor;
+function TForm2.GetShadowBackgroundColor: TAlphaColor;
 begin
   Result := Fill.Color;
 end;
 
-function TForm1.GetShadowColor: TAlphaColor;
+function TForm2.GetShadowColor: TAlphaColor;
 begin
   Result := $7f101010;
-end;
-
-procedure TForm1.layTitleDblClick(Sender: TObject);
-begin
-  if btnMax.Visible then begin
-    btnMaxClick(Sender);
-  end else begin
-    TFrameAnimator.DelayExecute(Self,
-      procedure (Sender: TObject)
-      begin
-        btnRestoreClick(Sender);
-      end, 0.08);
-  end;
 end;
 
 end.
