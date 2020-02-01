@@ -307,7 +307,9 @@ end;
 procedure TSizeForm.MouseMove(Shift: TShiftState; X, Y: Single);
 var
   P: TPointF;
+  {$IFDEF MSWINDOWS}
   LScale: Single;
+  {$ENDIF}
 begin
   if FResizable and (FResizeMode <> TResizeMode.Normal) and (ssLeft in Shift) then begin
     Engage;
@@ -358,18 +360,18 @@ begin
             FResizeSize.X := Round(FResizeSize.X + (X - FMousePos.X));
           end;
       end;
-      LScale := GetSceneScale;
       {$IFDEF MSWINDOWS}
       if Assigned(FShadowForm) then begin
+        LScale := GetSceneScale;
         Lockwindowupdate(FHwnd);
         SetWindowPos(FHwnd, HWND_TOP, Round(P.X), Round(P.Y), Round(FResizeSize.X * LScale), Round(FResizeSize.Y * LScale), FormFlags);
         Lockwindowupdate(0);
         TShadowForm(FShadowForm).UpdateBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y));
         UpdateWindow(FHwnd);
       end else
-        SetBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X * LScale), Round(FResizeSize.Y * LScale));
+        SetBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y));
       {$ELSE}
-      SetBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X * LScale), Round(FResizeSize.Y * LScale));
+      SetBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y));
       {$ENDIF}
       FMousePos := PointF(X, Y);
     finally
@@ -556,22 +558,25 @@ begin
 end;
 
 procedure TShadowForm.UpdateBounds(ALeft, ATop, AWidth, AHeight, Flags: Integer);
+
+  function GetRect(AScale: Single): TRect;
+  begin
+    Result.Left := ALeft - Round(FShadowSize * AScale);
+    Result.Top := ATop - Round(FShadowSize * AScale);
+    Result.Right := Result.Left + Round((AWidth + FShadowSize * 2) * AScale);
+    Result.Bottom := Result.Top + Round((AHeight + FShadowSize * 2) * AScale);
+  end;
+
 var
   R: TRect;
-  LScale: Single;
 begin
-  LScale := FOwner.GetSceneScale;
-
-  R.Left := ALeft - Round(FShadowSize * LScale);
-  R.Top := ATop - Round(FShadowSize * LScale);
-  R.Right := R.Left + Round((AWidth + FShadowSize * 2) * LScale);
-  R.Bottom := R.Top + Round((AHeight + FShadowSize * 2) * LScale);
-
   {$IFDEF MSWINDOWS}
+  R := GetRect(FOwner.GetSceneScale);
   Flags := Flags or FormFlags;
   SetWindowPos(FMHwnd, HWND_TOP, R.Left, R.Top, R.Width, R.Height, Flags);
   //UpdateWindow(FMHwnd);
   {$ELSE}
+  R := GetRect(1.0);
   SetBounds(R);
   {$ENDIF}
 end;
@@ -597,12 +602,13 @@ begin
   case Msg of
     WM_MOVE:
       begin
-        LScale := FOwner.GetSceneScale;
         if (FOwner.WindowState = TWindowState.wsNormal) and (Abs(Self.Width - FOwner.Width) > FShadowSize * 2) then
           UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height)
-        else
+        else begin
+          LScale := FOwner.GetSceneScale;
           SetWindowPos(FMHwnd, HWND_TOP, FOwner.Left - Round(FShadowSize * LScale), FOwner.Top - Round(FShadowSize * LScale), 0, 0,
             SWP_NOSIZE or FormFlags);
+        end;
       end;
     WM_ACTIVATE, WM_NCACTIVATE:
       begin
