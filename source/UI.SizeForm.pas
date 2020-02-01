@@ -134,7 +134,8 @@ type
     {$ENDIF}
 
     procedure DoShow; override;
-    procedure UpdateBounds(ALeft, ATop, AWidth, AHeight: Integer; Flags: Integer = 0);
+    procedure UpdateBounds(ALeft, ATop, AWidth, AHeight: Integer;
+      AUpdateSize: Boolean = True; AUpdateZOrder: Boolean = False);
 
     property Owner: TSizeForm read FOwner;
     property ShadowSize: Integer read FShadowSize write FShadowSize;
@@ -143,7 +144,6 @@ type
 
 {$IFDEF MSWINDOWS}
 const
-  FormFlags = SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE;
   WM_SYNC_SIZE = WM_USER + 920;
 
 type
@@ -364,7 +364,7 @@ begin
       if Assigned(FShadowForm) then begin
         LScale := GetSceneScale;
         Lockwindowupdate(FHwnd);
-        SetWindowPos(FHwnd, HWND_TOP, Round(P.X), Round(P.Y), Round(FResizeSize.X * LScale), Round(FResizeSize.Y * LScale), FormFlags);
+        SetWindowPos(FHwnd, HWND_TOP, Round(P.X), Round(P.Y), Round(FResizeSize.X * LScale), Round(FResizeSize.Y * LScale), SWP_NOREDRAW or SWP_NOACTIVATE or SWP_NOZORDER or SWP_DEFERERASE);
         Lockwindowupdate(0);
         TShadowForm(FShadowForm).UpdateBounds(Round(P.X), Round(P.Y), Round(FResizeSize.X), Round(FResizeSize.Y));
         UpdateWindow(FHwnd);
@@ -557,7 +557,8 @@ begin
   FShadow.Enabled := True;
 end;
 
-procedure TShadowForm.UpdateBounds(ALeft, ATop, AWidth, AHeight, Flags: Integer);
+procedure TShadowForm.UpdateBounds(ALeft, ATop, AWidth, AHeight: Integer;
+  AUpdateSize, AUpdateZOrder: Boolean);
 
   function GetRect(AScale: Single): TRect;
   begin
@@ -569,11 +570,18 @@ procedure TShadowForm.UpdateBounds(ALeft, ATop, AWidth, AHeight, Flags: Integer)
 
 var
   R: TRect;
+  {$IFDEF MSWINDOWS}
+  Flags: Integer;
+  {$ENDIF}
 begin
   {$IFDEF MSWINDOWS}
   R := GetRect(FOwner.GetSceneScale);
-  Flags := Flags or FormFlags;
-  SetWindowPos(FMHwnd, HWND_TOP, R.Left, R.Top, R.Width, R.Height, Flags);
+  Flags := SWP_NOREDRAW or SWP_NOACTIVATE or SWP_DEFERERASE;
+  if not AUpdateSize then
+    Flags := Flags or SWP_NOSIZE;
+  if not AUpdateZOrder then
+    Flags := Flags or SWP_NOZORDER;
+  SetWindowPos(FMHwnd, FHwnd, R.Left, R.Top, R.Width, R.Height, Flags);
   //UpdateWindow(FMHwnd);
   {$ELSE}
   R := GetRect(1.0);
@@ -604,15 +612,12 @@ begin
       begin
         if (FOwner.WindowState = TWindowState.wsNormal) and (Abs(Self.Width - FOwner.Width) > FShadowSize * 2) then
           UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height)
-        else begin
-          LScale := FOwner.GetSceneScale;
-          SetWindowPos(FMHwnd, HWND_TOP, FOwner.Left - Round(FShadowSize * LScale), FOwner.Top - Round(FShadowSize * LScale), 0, 0,
-            SWP_NOSIZE or FormFlags);
-        end;
+        else
+          UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height, False);
       end;
     WM_ACTIVATE, WM_NCACTIVATE:
       begin
-        UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height, 0);
+        UpdateBounds(FOwner.Left, FOwner.Top, FOwner.Width, FOwner.Height, True, True);
       end;
     WM_SHOWWINDOW:
       begin
