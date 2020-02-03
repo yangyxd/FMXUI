@@ -64,6 +64,7 @@ type
     procedure tvMoreClick(Sender: TObject);
   private
     { Private declarations }
+    procedure DialogLogin(AView: TFrame; AUserName, APassword: string);
   protected
     // 初始事件
     procedure DoCreate(); override;
@@ -86,9 +87,9 @@ uses
 
 type
   /// <summary>
-  /// 单选列表适配器
+  /// 自定义单选列表适配器
   /// </summary>
-  TStringsListAdapter = class(UI.ListView.TStringsListAdapter)
+  TCustomStringsListAdapter = class(UI.ListView.TStringsListAdapter)
   protected
     function GetView(const Index: Integer; ConvertView: TViewBase; Parent: TViewGroup): TViewBase; override;
   end;
@@ -153,6 +154,7 @@ var
   View: TFrameDialogCustomView;
 begin
   View := TFrameDialogCustomView.Create(Self);
+  View.OnLogin := DialogLogin;
   TDialogBuilder.Create(Self)
     .SetTitle('登录')
     .SetView(View)
@@ -277,7 +279,7 @@ begin
     )
     .SetOnInitListAdapterA(
       procedure (Dialog: IDialog; Builder: TDialogBuilder; var Adapter: IListAdapter) begin
-        Adapter := TStringsListAdapter.Create(Builder.ItemArray);
+        Adapter := TCustomStringsListAdapter.Create(Builder.ItemArray);
         TDialog(Dialog).RootView.ListView.ShowScrollBars := False;
       end
     )
@@ -314,6 +316,7 @@ var
   View: TFrameDialogCustomView;
 begin
   View := TFrameDialogCustomView.Create(Self);
+  View.OnLogin := DialogLogin;
   TDialogBuilder.Create(Self)
     .SetStyleManager(IosStyleManager)
     .SetView(View)
@@ -462,6 +465,11 @@ begin
     .Show;
 end;
 
+procedure TFrmaeDialog.DialogLogin(AView: TFrame; AUserName, APassword: string);
+begin
+  Hint('Login clicked. Name: %s, Password: %s', [AUserName, APassword]);
+end;
+
 procedure TFrmaeDialog.DoCreate;
 begin
   inherited;
@@ -529,26 +537,14 @@ begin
       .Show;
 end;
 
-{ TStringsListAdapter }
+{ TCustomStringsListAdapter }
 
-function TStringsListAdapter.GetView(const Index: Integer;
+function TCustomStringsListAdapter.GetView(const Index: Integer;
   ConvertView: TViewBase; Parent: TViewGroup): TViewBase;
-var
-  ViewItem: TListTextItem;
 begin
-  if (ConvertView = nil) or (not (ConvertView is TListTextItem)) then begin
-    ViewItem := TListTextItem.Create(Parent);
-    ViewItem.Parent := Parent;
-    ViewItem.Width := Parent.Width;
-    ViewItem.MinHeight := ItemDefaultHeight;
-    ViewItem.TextSettings.Font.Size := FFontSize;
-    ViewItem.TextSettings.WordWrap := FWordWrap;
-    ViewItem.Gravity := TLayoutGravity.Center;
-    ViewItem.Padding.Rect := RectF(8, 8, 8, 8);
-    ViewItem.CanFocus := False;
-  end else
-    ViewItem := ConvertView as TListTextItem;
-  Result := inherited GetView(Index, ViewItem, Parent);
+  Result := inherited GetView(Index, ConvertView, Parent);
+  if (ConvertView = nil) or (not (ConvertView is TListTextItem)) then
+    TListTextItem(Result).Gravity := TLayoutGravity.Center;
 end;
 
 end.

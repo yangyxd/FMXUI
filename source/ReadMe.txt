@@ -16,6 +16,9 @@
  * 修正部分情况下TGridsLayout和TTextView的大小错误问题
  * 修正TListViewEx使用TFrame在win下鼠标移出点击状态不会消失的问题（感谢报告：ying32）
  * 修正TSizeForm没有适配Sacle的问题（感谢报告：ying32）
+ * 改变TSizeForm Windows下窗口消息拦截方式。（感谢Pull代码：ying32）
+ * 改变TSizeForm Windows下可使用VCL样式的消息拦截过程。（感谢Pull代码：ying32）
+ * 增加对话框例子自定义对话框回调，以及自定义对话框细节完善
  - -----------------------------------
  - 2019.10.23
  * EditView兼容10.3

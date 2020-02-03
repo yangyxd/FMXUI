@@ -17,6 +17,7 @@ object FrameDialogCustomView: TFrameDialogCustomView
     TabOrder = 0
     Orientation = Vertical
     object EditView1: TEditView
+      Tag = -1
       Touch.InteractiveGestures = [LongTap, DoubleTap]
       Background.Border.Color.Default = xBFC0C0C0
       Background.Border.Color.Pressed = claNull
@@ -39,6 +40,50 @@ object FrameDialogCustomView: TFrameDialogCustomView
       TabOrder = 1
       TextHint = #36755#20837#29992#25143#21517
       TextSettings.Gravity = CenterVertical
+      DisableFocusEffect = True
+      OnChange = EditView1Change
+      object TextView1: TTextView
+        Align = Right
+        Clickable = True
+        WidthSize = WrapContent
+        Margins.Right = 5.000000000000000000
+        HitTest = True
+        Size.Width = 18.000000000000000000
+        Size.Height = 37.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 383.000000000000000000
+        Position.Y = 2.000000000000000000
+        TabOrder = 0
+        OnClick = TextView1Click
+        Drawable.SizeWidth = 18
+        Drawable.SizeHeight = 18
+        Drawable.Padding = 8
+        Drawable.Position = Center
+        Drawable.ItemDefault.Kind = AccessoryBitmap
+        Drawable.ItemDefault.Accessory.Accessory = Down
+        Drawable.ItemDefault.Accessory.Color = claSilver
+      end
+      object TextView2: TTextView
+        Align = Right
+        Clickable = True
+        WidthSize = WrapContent
+        Margins.Right = 8.000000000000000000
+        HitTest = True
+        Size.Width = 18.000000000000000000
+        Size.Height = 37.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 357.000000000000000000
+        Position.Y = 2.000000000000000000
+        TabOrder = 1
+        OnClick = TextView2Click
+        Drawable.SizeWidth = 18
+        Drawable.SizeHeight = 18
+        Drawable.Padding = 8
+        Drawable.Position = Center
+        Drawable.ItemDefault.Kind = AccessoryBitmap
+        Drawable.ItemDefault.Accessory.Accessory = Cross
+        Drawable.ItemDefault.Accessory.Color = claSilver
+      end
     end
     object EditView2: TEditView
       Touch.InteractiveGestures = [LongTap, DoubleTap]
@@ -64,13 +109,10 @@ object FrameDialogCustomView: TFrameDialogCustomView
       TabOrder = 0
       TextHint = #36755#20837#23494#30721
       TextSettings.Gravity = CenterVertical
+      DisableFocusEffect = True
     end
     object ButtonView1: TButtonView
       WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
       Margins.Top = 12.000000000000000000
       Margins.Bottom = 4.000000000000000000
       Size.Width = 412.000000000000000000
