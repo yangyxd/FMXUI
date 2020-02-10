@@ -26,31 +26,29 @@ type
   TResizeMode = (Normal, LTop, RTop, LBottom, RBottom, Top, Bottom, Left, Right);
 
   TSizeForm = class(TForm)
+  {$IFDEF MSWINDOWS}
   private
-    { Private declarations }
-    FShadowForm: TCustomForm;
-    FCaptureDragForm: Boolean;
-    FMouseDraging: Boolean;
-    FShowShadow: Boolean;
-    {$IFDEF MSWINDOWS}
     FHwnd: HWND;
-    FResizable: Boolean;
-    {$ENDIF}
-    procedure SetShowShadow(const Value: Boolean);
-    function GetMonitorIndex: Integer;
-{$IFDEF MSWINDOWS}
-  private
     FWndHandle: HWND;
     FObjectInstance: Pointer;
     FDefWindowProc: Pointer;
-    FMinSize: TSize;
     procedure MainWndProc(var Message: TMessage);
     procedure HookWndProc;
     procedure UnHookWndProc;
     procedure WMGetMinMaxInfo(var AMsg: TWMGetMinMaxInfo); message WM_GETMINMAXINFO;
   protected
     procedure WndProc(var Message: TMessage); virtual;
-{$ENDIF}
+  {$ENDIF}
+  private
+    { Private declarations }
+    FShadowForm: TCustomForm;
+    FCaptureDragForm: Boolean;
+    FMouseDraging: Boolean;
+    FShowShadow: Boolean;
+    FResizable: Boolean;
+    FMinSize: TSize;
+    procedure SetShowShadow(const Value: Boolean);
+    function GetMonitorIndex: Integer;
   protected
     FSizeWH: Single;   // 可调节区域大小
     FMousePos, FDownPos, FResizeSize, FDownSize: TPointF;
@@ -595,7 +593,6 @@ end;
 constructor TShadowForm.Create(AOwner: TComponent);
 begin
   FShadowSize := 12;
-  FHwnd := 0;
   inherited;
   SetDesigning(False, False);
   Self.BorderStyle := TFmxFormBorderStyle.None;
