@@ -2152,6 +2152,7 @@ procedure TListViewContent.DoRealign;
           // 如果是 TView ， 设置按下时的背景颜色
           if ItemView <> View then
             ItemView.HitTest := False;
+          View.Background.ItemDefault.Assign(ListView.Background.ItemDefault);
           View.Background.ItemPressed.Assign(ListView.Background.ItemPressed);
           View.HitTest := True;
           if ListView.FAllowItemChildClick then
