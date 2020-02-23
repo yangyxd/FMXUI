@@ -37,12 +37,14 @@ type
     ImageList1: TImageList;
     ListView: TListViewEx;
     btnBack: TTextView;
-    procedure TextView1Click(Sender: TObject);
+    LinearLayout2: TLinearLayout;
+    tvSubTitle: TTextView;
     procedure ListViewPullRefresh(Sender: TObject);
     procedure ListViewPullLoad(Sender: TObject);
     procedure btnBackClick(Sender: TObject);
     procedure ListViewItemClick(Sender: TObject; ItemIndex: Integer;
       const ItemView: TControl);
+    procedure ListViewScrollChange(Sender: TObject);
   private
     { Private declarations }
     FAdapter: TCustomListDataAdapter;
@@ -162,8 +164,11 @@ begin
   );
 end;
 
-procedure TCustomListview.TextView1Click(Sender: TObject);
+procedure TCustomListview.ListViewScrollChange(Sender: TObject);
 begin
+  tvSubTitle.Text := Format(' %d / %d ', [
+    Trunc(ListView.ViewportPosition.Y / ListView.Height) + 1,
+    Trunc(ListView.ContentBounds.Height / ListView.Height)]);
 end;
 
 { TCustomListDataAdapter }

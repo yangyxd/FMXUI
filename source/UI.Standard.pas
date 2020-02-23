@@ -1530,7 +1530,7 @@ var
   ASize: TSizeF;
   V, IconS, VW, VH: Single;
 begin
-  if FInFitSize or (Scene = nil) or (not Assigned(FText)) then
+  if FInFitSize or (not Assigned(FText)) then
     Exit;
   FInFitSize := True;
   try
@@ -1550,12 +1550,9 @@ begin
 
     // 计算文本区域大小
     if Assigned(FHtmlText) and FText.WordWrap then begin
-      if Scene.GetSceneScale >= 0 then
-        FHtmlText.CalcTextSize(Canvas, TextSettings, RectF(0, 0, V, $FFFFFF), ASize)
-      else
-        Exit;
+      FHtmlText.CalcTextSize(Canvas, TextSettings, RectF(0, 0, V, $FFFFFF), ASize)
     end else
-      if not FText.CalcTextObjectSize(Text, V, Scene.GetSceneScale, nil, ASize) then Exit;
+      if not FText.CalcTextObjectSize(Text, V, GetSceneScale, nil, ASize) then Exit;
 
     // 自动宽度
     if WidthSize = TViewSize.WrapContent then begin
@@ -1697,8 +1694,8 @@ end;
 
 function TTextView.GetNeedSize: TSizeF;
 begin
-  if not (csDestroying in ComponentState) and Assigned(Scene) then begin
-    if not TextSettings.CalcTextObjectSize(Text, $FFFF, Scene.GetSceneScale, nil, Result) then
+  if not (csDestroying in ComponentState) then begin
+    if not TextSettings.CalcTextObjectSize(Text, $FFFF, GetSceneScale, nil, Result) then
       Result := TSizeF.Create(0, 0)
   end else begin
     Result := TSizeF.Create(0, 0);
@@ -3577,7 +3574,7 @@ procedure TBadgeView.DoAdjustSize;
 var
   P: TSizeF;
 begin
-  if (Scene = nil) or (not Assigned(FText)) then
+  if not Assigned(FText) then
     Exit;
   FAdjustSizeing := True;
   try
@@ -3586,7 +3583,7 @@ begin
     case FStyle of
       TBadgeStyle.NumberText, TBadgeStyle.NewText, TBadgeStyle.HotText:
         begin
-          FText.CalcTextObjectSize(FText.Text, 0, Scene.GetSceneScale, nil, P);
+          FText.CalcTextObjectSize(FText.Text, 0, GetSceneScale, nil, P);
           P.Width := P.Width + Padding.Left + Padding.Right;
           P.Height := P.Height + Padding.Top + Padding.Bottom;
           if Assigned(FBackground) then begin

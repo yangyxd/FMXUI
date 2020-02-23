@@ -118,6 +118,8 @@ type
     function SetFocusObject(V: TControl): Boolean;
     // 进入下一个焦点控件
     procedure FocusToNext();
+    // 获取缩放尺寸
+    function GetSceneScale: Single;
   end;
 
   /// <summary>
@@ -1363,7 +1365,6 @@ type
     procedure Click; override;
     procedure DoClickEvent; virtual;
 
-
     // 限制组件最大和最小大小
     procedure DoAdjustViewBounds(var ANewWidth, ANewHeight: Single); virtual;
     // 布局变化了
@@ -1390,7 +1391,6 @@ type
     FScrollbar: TViewScroll;
     FDisableMouseWheel: Boolean;
     procedure SetScrollbar(const Value: TViewScroll); virtual;
-    function GetSceneScale: Single;
     function GetAniCalculations: TScrollCalculations; virtual;
     procedure StartScrolling;
     procedure StopScrolling;
@@ -4098,15 +4098,6 @@ end;
 function TView.GetPosition: TPosition;
 begin
   Result := Position;
-end;
-
-function TView.GetSceneScale: Single;
-begin
-  Result := 0;
-  if Scene <> nil then
-    Result := Scene.GetSceneScale;
-  if Result <= 0 then
-    Result := 1;
 end;
 
 function TView.GetScrollSmallChangeFraction: Single;
@@ -8630,6 +8621,15 @@ begin
     if J >= 0 then
       ParentControl.Controls[J].SetFocus;
   end;
+end;
+
+function TControlHelper.GetSceneScale: Single;
+begin
+  Result := 0;
+  if Scene <> nil then
+    Result := Scene.GetSceneScale;
+  if Result <= 0 then
+    Result := 1;
 end;
 
 function TControlHelper.SetFocusObject(V: TControl): Boolean;

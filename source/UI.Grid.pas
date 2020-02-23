@@ -1256,7 +1256,7 @@ type
     property DividerHeight;
 
     property ShowScrollBars;
-    property ScrollBars default TViewScroll.Vertical;
+    property ScrollBars default TViewScroll.Both;
     property ScrollSmallChangeFraction;
     property ScrollStretchGlowColor;
     property ScrollbarWidth;
@@ -2515,7 +2515,7 @@ end;
 
 procedure TGridBase.DoScrollVisibleChange;
 begin
-  if FCanScrollV and FCanScrollH then begin
+  if FCanScrollV and Assigned(FScrollV) and FCanScrollH and Assigned(FScrollH) then begin
     FScrollV.Margins.Bottom := 0;
     if FShowScrollBars then
       FScrollH.Margins.Right := FScrollV.Width
@@ -2580,7 +2580,10 @@ function TGridBase.GetDividerHeight: Single;
 begin
   if FLocalDividerHeight = -1 then
     FLocalDividerHeight := InnerCalcDividerHeight;
-  Result := FLocalDividerHeight;
+  if FLocalDividerHeight = -1 then
+    Result := 1
+  else
+    Result := FLocalDividerHeight;
 end;
 
 function TGridBase.GetFixedColsumn(const ACol: Integer): TGridColumnItem;
@@ -2595,8 +2598,9 @@ function TGridBase.GetFixedIndicatorWidth: Single;
 var
   LCount: Integer;
   Item: TGridColumnItem;
+  LScale: Single;
 begin
-  if FFixedIndicatorWidthChange and Assigned(Scene) then begin
+  if FFixedIndicatorWidthChange then begin
     FFixedIndicatorWidthChange := False;
 
     if gvIndicator in FOptions then
@@ -2605,16 +2609,17 @@ begin
       FLastFixedIndicatorWidth := 0;
 
     Item := FixedColsumn[-1];
+    LScale := GetSceneScale;
 
     if gvRowIndex in FOptions then begin
       LCount := RowCount;
       if LCount < 1 then LCount := CDefaultEmptyRows;
       FLastFixedIndicatorWidth := FLastFixedIndicatorWidth +
-        FFixedText.CalcTextWidth(IntToStr(LCount), Scene.GetSceneScale) + Item.Padding.Left + Item.Padding.Right;
+        FFixedText.CalcTextWidth(IntToStr(LCount), LScale) + Item.Padding.Left + Item.Padding.Right;
 
       if Item.Title <> '' then begin
         FLastFixedIndicatorWidth := Max(FLastFixedIndicatorWidth,
-          FFixedText.CalcTextWidth(Item.Title, Scene.GetSceneScale) + Item.Padding.Left + Item.Padding.Right)
+          FFixedText.CalcTextWidth(Item.Title, LScale) + Item.Padding.Left + Item.Padding.Right)
       end;
     end else
       FLastFixedIndicatorWidth := FLastFixedIndicatorWidth + Item.Padding.Left + Item.Padding.Right;
@@ -2622,7 +2627,7 @@ begin
     if gvFixedFooter in FOptions then begin
       if FFixedSetting.FFooterText <> '' then
         FLastFixedIndicatorWidth := Max(FLastFixedIndicatorWidth,
-          FFixedText.CalcTextWidth(FFixedSetting.FFooterText, Scene.GetSceneScale) + Item.Padding.Left + Item.Padding.Right);
+          FFixedText.CalcTextWidth(FFixedSetting.FFooterText, LScale) + Item.Padding.Left + Item.Padding.Right);
     end;
 
     FLastFixedIndicatorWidth := Max(8, FLastFixedIndicatorWidth);
@@ -2744,8 +2749,6 @@ var
   I, LCount: Integer;
   W, H, DividerH: Double;
 begin
-  if not Assigned(Scene) then
-    Exit;
   // 调整列表项高度数组大小
   LCount := RowCount;
   if LCount < 1 then LCount := CDefaultEmptyRows;
@@ -2781,7 +2784,6 @@ begin
       else
         H := H + DividerH + FItemsPoints[i];
     end;
-
   end else begin
     // 不存在自动高度列时，直接算出总高度
     H := (ItemDefaultH + DividerH) * LCount;
@@ -4590,10 +4592,12 @@ procedure TGridViewContent.DoRealign;
     LSize: TSizeF;
     Item: TGridColumnItem;
     LText: string;
+    LScale: Single;
   begin
     // 获取行高
     Result := FDefaultItemHeight;
 
+    LScale := GetSceneScale;
     // 计算自动行高列的行高，取出最大值
     for I := 0 to LS.MaxCols - 1 do begin
       Item := FColumnsList[I];
@@ -4602,7 +4606,7 @@ procedure TGridViewContent.DoRealign;
         if (LText <> '') and
           GridView.FText.CalcTextObjectSize(LText,
             Item.Width - Item.Padding.Left - Item.Padding.Right,
-            Scene.GetSceneScale, nil, LSize)
+            LScale, nil, LSize)
         then begin
           H := LSize.Height + Item.Padding.Top + Item.Padding.Bottom;
           if H > Result then
@@ -4905,7 +4909,7 @@ begin
   if (csLoading in ComponentState) or (csDestroying in ComponentState) then
     Exit;
   // 正在调整中不处理
-  if FDisableAlign or (Scene = nil) or (not Assigned(Canvas)) then
+  if FDisableAlign or (not Assigned(Canvas)) then
     Exit;
   if not Assigned(GridView) then
     Exit;
@@ -5365,7 +5369,7 @@ var
   Item: TGridColumnItem;
   LText: string;
 begin
-  if Assigned(GridView) and Assigned(GridView.Scene) then begin
+  if Assigned(GridView) then begin
     Item := GridView.Columns.ItemCols[ACol];
     case Item.DataType of
       TGridDataType.PlanText:
@@ -5380,7 +5384,7 @@ begin
               LText := Cells[ACol, I];
             end;
           end;
-          Result := GridView.FFixedText.CalcTextWidth(LText, GridView.Scene.GetSceneScale) +
+          Result := GridView.FFixedText.CalcTextWidth(LText, GridView.GetSceneScale) +
             Item.Padding.Left + Item.Padding.Right;
           if Item.DataFilter then
             Result := Result + TGridBase.CDefaultFilterIconWH + 2;
@@ -5390,7 +5394,7 @@ begin
         begin
           LText := Item.DisplayText;
           Result := Item.Padding.Left + Item.Padding.Right +
-            Max(20, GridView.FFixedText.CalcTextWidth(LText, GridView.Scene.GetSceneScale));
+            Max(20, GridView.FFixedText.CalcTextWidth(LText, GridView.GetSceneScale));
         end
     else
       Result := TGridBase.CDefaultMinColWidth;
@@ -6940,15 +6944,13 @@ var
   LTitle: string;
 begin
   Result := Field.DisplayWidth;
-  if Assigned(Scene) then begin
-    LTitle := Field.DisplayLabel;
-    if LTitle = '' then
-      LTitle := Field.FieldName;
-    if LTitle <> '' then
-      Result := Max(Result, FFixedText.CalcTextWidth(LTitle, Scene.GetSceneScale));
-    if IsBlob(Field.DataType) then
-      Result := Max(Result, 45);
-  end;
+  LTitle := Field.DisplayLabel;
+  if LTitle = '' then
+    LTitle := Field.FieldName;
+  if LTitle <> '' then
+    Result := Max(Result, FFixedText.CalcTextWidth(LTitle, GetSceneScale));
+  if IsBlob(Field.DataType) then
+    Result := Max(Result, 45);
 end;
 
 function TDBGridView.GetMinRowCount: Integer;
@@ -7123,7 +7125,6 @@ end;
 
 procedure TDBGridView.RecordChanged(Field: TField);
 begin
-  if not Assigned(Scene) then Exit;
   FContentViews.DoEditCancel;
   Invalidate;
 end;

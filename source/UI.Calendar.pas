@@ -1580,7 +1580,7 @@ procedure TCalendarViewBase.DoRecalcSize(var AWidth, AHeight: Single);
 var
   W, H, V: Single;
 begin
-  if FInFitSize or (Scene = nil) or (not Assigned(FTextSettings)) or (not AutoSize) then
+  if FInFitSize or (not Assigned(FTextSettings)) or (not AutoSize) then
     Exit;
   FInFitSize := True;
   H := Padding.Top + Padding.Bottom;

@@ -20,6 +20,7 @@
  * 改变TSizeForm Windows下可使用VCL样式的消息拦截过程。（感谢Pull代码：ying32）
  * 增加对话框例子自定义对话框回调，以及自定义对话框细节完善
  * 修正TListViewEx子View.Background.ItemDefault.Kind = TViewBrushKind.None是子View的HotOver颜色不会刷新的问题（感谢报告：ying32）
+ * 修正TListViewEx，TStringGridView小问题（感谢报告：惠子，Udcover，[东莞]围墙）
  - -----------------------------------
  - 2019.10.23
  * EditView兼容10.3

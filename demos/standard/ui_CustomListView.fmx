@@ -27,7 +27,7 @@ object CustomListview: TCustomListview
       Size.Width = 50.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 3
+      TabOrder = 2
       OnClick = btnBackClick
       TextSettings.Color.Default = claWhite
       TextSettings.Color.Focused = claNull
@@ -40,29 +40,67 @@ object CustomListview: TCustomListview
       Drawable.ItemDefault.Kind = AccessoryBitmap
       Drawable.ItemDefault.Accessory.Accessory = Back
     end
-    object tvTitle: TTextView
-      Background.Border.Color.Default = xBFC0C0C0
-      Background.Border.Color.Pressed = claSilver
-      Background.Border.Color.Focused = claNull
-      Background.Border.Color.Selected = claNull
-      Background.Border.Color.Checked = claNull
-      Background.Border.Color.Enabled = claNull
-      Clickable = True
+    object LinearLayout2: TLinearLayout
+      Gravity = None
       Weight = 1.000000000000000000
-      HitTest = True
+      Padding.Top = 5.000000000000000000
+      Padding.Bottom = 5.000000000000000000
       Size.Width = 220.000000000000000000
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       Position.X = 50.000000000000000000
-      TabOrder = 1
-      Text = #33258#23450#20041#21015#34920#39033
-      TextSettings.Color.Default = claWhite
-      TextSettings.Color.Focused = claNull
-      TextSettings.Color.Selected = claNull
-      TextSettings.Color.Enabled = claNull
-      TextSettings.Font.Size = 18.000000000000000000
-      TextSettings.PrefixStyle = HidePrefix
-      TextSettings.Gravity = Center
+      TabOrder = 4
+      Orientation = Vertical
+      object tvTitle: TTextView
+        Background.Border.Color.Default = xBFC0C0C0
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Selected = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Clickable = True
+        WidthSize = FillParent
+        Weight = 2.000000000000000000
+        HitTest = True
+        Size.Width = 220.000000000000000000
+        Size.Height = 26.666666030883790000
+        Size.PlatformDefault = False
+        Position.Y = 5.000000000000000000
+        TabOrder = 1
+        Text = #33258#23450#20041#21015#34920#39033
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 18.000000000000000000
+        TextSettings.PrefixStyle = HidePrefix
+        TextSettings.Gravity = Center
+      end
+      object tvSubTitle: TTextView
+        Background.Border.Color.Default = xBFC0C0C0
+        Background.Border.Color.Pressed = claSilver
+        Background.Border.Color.Focused = claNull
+        Background.Border.Color.Selected = claNull
+        Background.Border.Color.Checked = claNull
+        Background.Border.Color.Enabled = claNull
+        Clickable = True
+        WidthSize = FillParent
+        Weight = 1.000000000000000000
+        HitTest = True
+        Size.Width = 220.000000000000000000
+        Size.Height = 13.333333969116210000
+        Size.PlatformDefault = False
+        Position.Y = 31.666666030883790000
+        TabOrder = 0
+        Text = #28378#21160#26597#30475#39029#25968
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Font.Size = 13.000000000000000000
+        TextSettings.PrefixStyle = HidePrefix
+        TextSettings.Gravity = Center
+      end
     end
     object TextView2: TTextView
       Background.Border.Color.Default = xBFC0C0C0
@@ -79,7 +117,7 @@ object CustomListview: TCustomListview
       Size.Height = 50.000000000000000000
       Size.PlatformDefault = False
       Position.X = 270.000000000000000000
-      TabOrder = 4
+      TabOrder = 3
       TextSettings.PrefixStyle = HidePrefix
       Drawable.SizeWidth = 20
       Drawable.SizeHeight = 20
@@ -101,6 +139,7 @@ object CustomListview: TCustomListview
     ColumnCount = 0
     Divider = xAFE3E4E5
     ScrollSmallChangeFraction = 100.000000000000000000
+    OnScrollChange = ListViewScrollChange
     OnItemClick = ListViewItemClick
     DragScroll = True
     EnablePullRefresh = True

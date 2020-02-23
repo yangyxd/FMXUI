@@ -1067,7 +1067,10 @@ function TListViewEx.GetDividerHeight: Single;
 begin
   if FLocalDividerHeight = -1 then
     FLocalDividerHeight := InnerCalcDividerHeight;
-  Result := FLocalDividerHeight;
+  if FLocalDividerHeight = -1 then
+    Result := 1
+  else
+    Result := FLocalDividerHeight;
 end;
 
 function TListViewEx.GetRealDrawState: TViewState;
@@ -1192,7 +1195,6 @@ begin
   DividerH := GetDividerHeight;
 
   if Length(FItemsPoints) > 0 then begin
-
     ItemDefaultH := FAdapter.ItemDefaultHeight;
 
     // 计算出高度
@@ -2386,8 +2388,6 @@ procedure TListViewContent.DoRealign;
           S := I;
           FFirstRowIndex := I;
           FViewTop := V;
-          if I = 0 then
-            Last := Last + Height - V;
         end;
       end;
 
