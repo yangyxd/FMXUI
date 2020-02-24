@@ -8763,22 +8763,23 @@ var
     P, PE, P1: PChar;
     LW: Single;
     LTmp: string;
+    LScale: Single;
   begin
     if MW < CharW then
       Exit;
 
     LW := S.Width;
+    LScale := GetScreenScale;
 
     if X + CharW >= MW then begin
       Y := Y + S.Height;
       X := LX;
     end;
 
-
     if Item.Link >= 0 then begin
       // 超链接不换行
       if X > LX then begin
-        TextSet.TextSize(LText, S, Canvas.Scale);
+        TextSet.TextSize(LText, S, LScale);
         if X + S.Width > MW then begin
           X := LX;
           Y := Y + S.Height;
@@ -8790,7 +8791,7 @@ var
         DrawText(LText, Item, LColor, X, Y, S);
         TextSet.WordWrap := False;
       end else begin
-        TextSet.TextSize(LText, S, Canvas.Scale, MW - X, True);
+        TextSet.TextSize(LText, S, LScale, MW - X, True);
         X := X + S.Width;
         S.Width := Max(LW, X);
       end;
@@ -8798,7 +8799,6 @@ var
         Y := Y + S.Height;
         X := LX;
       end;
-
     end else begin
       // 自动换行
       P := PChar(LText);
@@ -8809,12 +8809,12 @@ var
 
         SetString(LTmp, P, Min(PE - P, J));
         if J > 1 then begin
-          TextSet.TextSize(LTmp, S, Canvas.Scale);
+          TextSet.TextSize(LTmp, S, LScale);
           if X + S.Width > MW then begin
             P1 := P + J;
             while P1 > P do begin
               SetString(LTmp, P, P1 - P);
-              TextSet.TextSize(LTmp, S, Canvas.Scale);
+              TextSet.TextSize(LTmp, S, LScale);
               if X + S.Width < MW then
                 Break;
               Dec(P1);
@@ -8892,6 +8892,7 @@ var
   LWordWarp, LVCenter: Boolean;
   LFontChange: TNotifyEvent;
   LText: string;
+  LScale: Single;
 begin
   CharW := 0;
   CharH := 0;
@@ -8900,6 +8901,7 @@ begin
   LWordWarp := TextSet.WordWrap;
   LVCenter := LWordWarp and
     (TextSet.Gravity in [TLayoutGravity.CenterVertical, TLayoutGravity.CenterVRight, TLayoutGravity.Center]);
+  LScale := GetScreenScale;
 
   LFontChange := TextSet.Font.OnChanged;
   TextSet.Font.OnChanged := nil;
@@ -8908,7 +8910,7 @@ begin
   FFont.Assign(TextSet.Font);
 
   if LWordWarp then begin
-    TextSet.TextSize('yh中', S, Canvas.Scale);
+    TextSet.TextSize('yh中', S, LScale);
     CharW := S.Width / 4;
     CharH := S.Height;
   end;
@@ -8916,7 +8918,7 @@ begin
   if LVCenter or (ASize <> nil) then begin
     ClacWordWarpTextSize(S);
   end else begin
-    TextSet.CalcTextObjectSize(FText, $FFFFFF, Canvas.Scale, nil, S);
+    TextSet.CalcTextObjectSize(FText, $FFFFFF, LScale, nil, S);
   end;
 
   if ASize <> nil then begin
