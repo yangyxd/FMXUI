@@ -3909,7 +3909,6 @@ begin
 
   // 默认绘制
   if B then begin
-
     // 读取单元格自定义绘制选项
     if LExistAdapter then begin
       IsCellSet := FAdapter.GetCellSettings(ACol, ARow, CellSet);
@@ -4099,7 +4098,6 @@ procedure TGridViewContent.DoDrawHeaderRows(Canvas: TCanvas; var R: TRectF);
     end;
 
     if LS.RowIndex <> -2 then begin
-
       if LS.ExistAdapter then
         FAdapter.SetCursor(LS.RowIndex);
 
@@ -4118,10 +4116,7 @@ procedure TGridViewContent.DoDrawHeaderRows(Canvas: TCanvas; var R: TRectF);
           Break;
         X := LW;
       end;
-
-
     end else begin
-
       // footer
       X := LS.FirstColOffset;
       for I := LS.FirstColIndex to LS.MaxCols - 1 do begin
@@ -5993,7 +5988,7 @@ begin
   Key := TGridBase.GetKey(ACol, ARow);
 
   if FData.TryGetValue(Key, TObject(Result)) then begin
-    if Result = nil then
+    if (Result = nil) or not (Result is FColumnClass) then
       FData.Remove(Key)
     else
       Exit;
@@ -6780,7 +6775,6 @@ begin
   if LCount = 0 then
     Exit;
 
-
   if FContentViews.FColumnsList.Count <> LCount then
     FContentViews.InitColumnList;
 
@@ -6789,11 +6783,11 @@ begin
     Item.FooterText := '';
   end;
 
-  if (not Assigned(FDataLink)) or (not FDataLink.Active) or (not Assigned(FDataLink.DataSet)) then
+  if (not Assigned(FDataLink)) or (not FDataLink.Active) then
     Exit;
 
   LDataSet := FDataLink.DataSet;
-  if LDataSet.IsEmpty then
+  if (not Assigned(LDataSet)) or LDataSet.IsEmpty then
     Exit;
 
   // 取出需要统计的列，并分析出数据类型
@@ -6835,7 +6829,6 @@ begin
     LDataSet.First;
 
     if FFooterStyle in [DataTotal, DataAverage] then begin
-
       while not LDataSet.Eof do begin
         for I := 0 to High(List) do begin
           case ListType[I] of
@@ -6869,7 +6862,6 @@ begin
       end;
 
     end else begin
-
       B := False;
 
       while not LDataSet.Eof do begin
@@ -6913,9 +6905,7 @@ begin
               List[I].FooterText := FormatFloat('#.######', ListValue[I]);
         end;
       end;
-
     end;
-
   finally
     LDataSet.EnableControls;
   end;
@@ -7197,6 +7187,8 @@ type
 
 procedure TDBGridAdapter.BeginDrawCells(const AFirstRow, ALastRow: Integer);
 begin
+  if Assigned(GridView) and Assigned(TDBGridView(GridView).FDataLink) and Assigned(TDBGridView(GridView).FDataLink.DataSet) then
+    TDBGridView(GridView).FDataLink.DataSet.DisableControls;
   FDrawCelling := True;
 end;
 
@@ -7228,8 +7220,12 @@ end;
 
 procedure TDBGridAdapter.EndDrawCells;
 begin
-  if TDBGridView(GridView).FDataLink.Active then
-    SetCursor(GridView.SelectionAnchor);
+  if Assigned(GridView) and Assigned(TDBGridView(GridView).FDataLink) then begin
+    if Assigned(TDBGridView(GridView).FDataLink.DataSet) then
+      TDBGridView(GridView).FDataLink.DataSet.EnableControls;
+    if TDBGridView(GridView).FDataLink.Active then
+      SetCursor(GridView.SelectionAnchor);
+  end;
   FDrawCelling := False;
 end;
 
@@ -7309,7 +7305,8 @@ begin
     if not FIsOutDataRow then begin
       FDrawCelling := True;
       with TDBGridView(GridView).FDataLink do
-        DataSet.MoveBy(ARow - DataSet.RecNo + 1);
+        if ARow - DataSet.RecNo + 1 <> 0 then
+          DataSet.MoveBy(ARow - DataSet.RecNo + 1);
       FDrawCelling := False;
     end;
   end else
