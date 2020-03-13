@@ -3403,7 +3403,8 @@ end;
 
 function TStringsListCheckAdapter.DisableCache: Boolean;
 begin
-  Result := True;
+  // TCheckBox error was fixed in 10.3(Rio)
+  Result := {$IF CompilerVersion >= 33.0}False{$ELSE}True{$ENDIF};
 end;
 
 procedure TStringsListCheckAdapter.DoCheckChange(Sender: TObject);

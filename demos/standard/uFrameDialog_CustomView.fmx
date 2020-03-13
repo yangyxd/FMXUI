@@ -43,7 +43,7 @@ object FrameDialogCustomView: TFrameDialogCustomView
       DisableFocusEffect = True
       OnChange = EditView1Change
       object TextView1: TTextView
-        Align = Right
+        Align = MostRight
         Clickable = True
         WidthSize = WrapContent
         Margins.Right = 5.000000000000000000
@@ -68,6 +68,7 @@ object FrameDialogCustomView: TFrameDialogCustomView
         Clickable = True
         WidthSize = WrapContent
         Margins.Right = 8.000000000000000000
+        Visible = False
         HitTest = True
         Size.Width = 18.000000000000000000
         Size.Height = 37.000000000000000000

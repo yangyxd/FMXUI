@@ -84,8 +84,8 @@ object Form1: TForm1
         Position.X = 999.000000000000000000
         TabOrder = 4
         OnClick = btnMinClick
-        OnMouseEnter = btnCloseMouseEnter
-        OnMouseLeave = btnMinMouseLeave
+        OnMouseEnter = btnMouseEnter
+        OnMouseLeave = btnMouseLeave
         Hint = #26368#23567#21270
         ShowHint = True
         Drawable.SizeWidth = 12
@@ -109,8 +109,8 @@ object Form1: TForm1
         Position.X = 1031.000000000000000000
         TabOrder = 3
         OnClick = btnMaxClick
-        OnMouseEnter = btnCloseMouseEnter
-        OnMouseLeave = btnMinMouseLeave
+        OnMouseEnter = btnMouseEnter
+        OnMouseLeave = btnMouseLeave
         Hint = #26368#22823#21270
         ShowHint = True
         Drawable.SizeWidth = 12
@@ -141,7 +141,7 @@ object Form1: TForm1
         Position.X = 1023.000000000000000000
         TabOrder = 2
         OnClick = btnRestoreClick
-        OnMouseEnter = btnCloseMouseEnter
+        OnMouseEnter = btnMouseEnter
         Hint = #36824#21407
         ShowHint = True
         Drawable.SizeWidth = 12
@@ -186,8 +186,8 @@ object Form1: TForm1
         Position.X = 1063.000000000000000000
         TabOrder = 1
         OnClick = btnCloseClick
-        OnMouseEnter = btnCloseMouseEnter
-        OnMouseLeave = btnMinMouseLeave
+        OnMouseEnter = btnMouseEnter
+        OnMouseLeave = btnMouseLeave
         Hint = #20851#38381
         ShowHint = True
         Drawable.SizeWidth = 13
