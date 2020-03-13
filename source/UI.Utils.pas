@@ -90,11 +90,18 @@ function GetVersionName(): string;
 function OpenURL(const URL: string): Boolean;
 
 // Android: 自动升级 - 获取下载的apk文件保存目录
+// 由于 Android 7.0 之后系统变化，需要授权，但授权内部地址不合适
+// 而且emb默认的Secure File Sharing，是授权外部存储的，不支持本函数获取的目录
+// 推荐不使用本函数，自行决定保存目录，如：TPath.GetTempPath
 function GetInstallDir(): string;
 // Android: 自动升级 - 安装apk （由于 Android 7.0 之后系统变化，所以需要 authorities）
-//  - ApkFileName 安装包文件名称 (不包含路径)
-//  - authorities 在AndroidManifest.xml中application段中自定义provider中android:authorities值
-function InstallApk(const ApkFileName, authorities: string): Boolean;
+// 如果点击了不再提示，并拒绝的话，无法弹出，需要调整APP的未知权限处
+// fix: android.os.FileUriExposedException: exposed beyond app through Intent.getData()
+// Project -> Options -> Application -> Entitlement List -> Secure File Sharing -> Check it
+//  - ApkFileName 安装包文件名称
+//  - ApkFileDir  安装包目录 (为空则自动使用GetInstallDir路径)
+//  - Authorities 在AndroidManifest.xml中application段中自定义provider中android:authorities值（留空则使用“包名+.fileprovider”）
+function InstallApk(const ApkFileName: string; const ApkFileDir: string = ''; const Authorities: string = ''): Boolean;
 
 // 调用移动平台的分享功能
 procedure Share(const AControl: TControl; const Title, Msg: string);
@@ -678,43 +685,59 @@ function GetInstallDir(): string;
 begin
   {$IFDEF ANDROID}
   // 说明：将 file_paths.xml 添加到 res/xml 中
+  // 该目录等价于 TPath.GetDocumentsPath
   Result := JStringToString(TAndroidHelper.Activity.getFilesDir.getPath()) + '/';
   {$ELSE}
   Result := '';
   {$ENDIF}
 end;
 
-function InstallApk(const ApkFileName, authorities: string): Boolean;
+function InstallApk(const ApkFileName, ApkFileDir, Authorities: string): Boolean;
 
   {$IFDEF ANDROID}
-  procedure Exec();
+  function Exec(): Boolean;
   var
     Intent: JIntent;
     f: JFile;
     uri: Jnet_Uri;
+    LPath: string;
+    LAuth: string;
   begin
-    f := TJFile.JavaClass.init(StringToJString(GetInstallDir() + ApkFileName));
+    if (ApkFileName = '') or (Trim(ApkFileName) = '') then
+      Exit(False);
+    if ApkFileDir <> '' then
+      LPath := IncludeTrailingPathDelimiter(ApkFileDir) + ApkFileName
+    else
+      LPath := GetInstallDir() + ApkFileName;
+    f := TJFile.JavaClass.init(StringToJString(LPath));
     Intent := TJIntent.Create;
-    Intent.setAction(TJIntent.JavaClass.ACTION_VIEW);
+    Intent.addFlags(TJIntent.JavaClass.FLAG_ACTIVITY_NEW_TASK);
+    if TJBuild_VERSION.JavaClass.SDK_INT >= 26 then
+      Intent.setAction(TJIntent.JavaClass.ACTION_INSTALL_PACKAGE)
+    else
+      Intent.setAction(TJIntent.JavaClass.ACTION_VIEW);
     if TJBuild_VERSION.JavaClass.SDK_INT >= 24 then begin
+      if Authorities <> '' then
+        LAuth := Authorities
+      else
+        LAuth := JStringToString({$IF CompilerVersion > 27}TAndroidHelper.Context
+          {$ELSE}SharedActivityContext{$ENDIF}.getPackageName) + '.fileprovider';
       // provider authorities
       uri := TJFileProvider.JavaClass.getUriForFile(
         {$IF CompilerVersion > 27}TAndroidHelper.Context{$ELSE}SharedActivityContext{$ENDIF},
-        StringToJString(authorities), f);
-      intent.addFlags(TJIntent.JavaClass.FLAG_GRANT_READ_URI_PERMISSION);
-      intent.setDataAndType(uri, StringToJString('application/vnd.android.package-archive'));
-    end else begin
-      Intent.setDataAndType(TJnet_Uri.JavaClass.fromFile(f),
-        StringToJString('application/vnd.android.package-archive'));
-    end;
+        StringToJString(LAuth), f);
+      Intent.addFlags(TJIntent.JavaClass.FLAG_GRANT_READ_URI_PERMISSION);
+    end else
+      uri := TJnet_Uri.JavaClass.fromFile(f);
+    Intent.setDataAndType(uri, StringToJString('application/vnd.android.package-archive'));
     TAndroidHelper.Activity.startActivity(Intent);
+    Result := True;
   end;
   {$ENDIF}
 
 begin
   {$IFDEF ANDROID}
-  Exec();
-  Result := True;
+  Result := Exec();
   {$ELSE}
   Result := False;
   {$ENDIF}

@@ -22,6 +22,7 @@
  * 修正TListViewEx子View.Background.ItemDefault.Kind = TViewBrushKind.None是子View的HotOver颜色不会刷新的问题（感谢报告：ying32）
  * 修正TListViewEx，TStringGridView小问题（感谢报告：惠子，Udcover，[东莞]围墙）
  * 优化Grid，添加EnableControls/DisableControls（感谢提供参考代码：惠子）
+ * 优化InstallApk，兼容安卓8以上（感谢：CodeCoolie）
  - -----------------------------------
  - 2019.10.23
  * EditView兼容10.3
