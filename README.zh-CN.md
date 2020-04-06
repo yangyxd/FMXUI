@@ -10,7 +10,7 @@ FMXUI
   - **兼容** 基于FireMonkey框架, 支持全平台
   - **友好** 整合FMX设计特点和安卓设计优点
   - **强大** 支持大量常见UI用法
-  - **易用** - 简单易用，快速上手
+  - **易用** 简单易用，快速上手
   - **免费** 遵守MID开源许可协议，可任意使用
 
 ## 依赖
@@ -62,13 +62,13 @@ FMXUI
   FMXUI 跨平台组件库说明  
   http://www.cnblogs.com/yangyxd/articles/5166253.html  
     
-  FMXUI UI.Dialog 对话框示例
+  FMXUI UI.Dialog 对话框示例  
   http://www.cnblogs.com/yangyxd/articles/5877638.html  
     
-  FMXUI ListView 用法简介
+  FMXUI ListView 用法简介  
   http://www.cnblogs.com/yangyxd/articles/6225893.html  
     
-  FMXUI 沉侵式状态栏
+  FMXUI 沉侵式状态栏  
   http://www.cnblogs.com/yangyxd/p/6275249.html  
   
 ## 联系我们

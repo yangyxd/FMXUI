@@ -7,7 +7,7 @@ FMXUI
   - **Compatible** Base on FireMonkey framework, you can build for all platform
   - **Friendly** Introduce some Java-Style usage
   - **Powerful** Supports various common usage
-  - **Easy** - Extremely easy to learn and use, friendly construction
+  - **Easy** Extremely easy to learn and use, friendly construction
   - **Free** Under MIT license, you can use it anywhere whatever you want
 
 ## Requirement
