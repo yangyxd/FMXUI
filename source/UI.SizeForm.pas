@@ -49,6 +49,7 @@ type
     FMinSize: TSize;
     procedure SetShowShadow(const Value: Boolean);
     function GetMonitorIndex: Integer;
+    function GetIsDestroy: Boolean;
   protected
     FSizeWH: Single;   // 可调节区域大小
     FMousePos, FDownPos, FResizeSize, FDownSize: TPointF;
@@ -94,6 +95,11 @@ type
 
     property ShadowForm: TCustomForm read FShadowForm;
     property MonitorIndex: Integer read GetMonitorIndex;
+
+    /// <summary>
+    /// 是否已经释放
+    /// </summary>
+    property IsDestroy: Boolean read GetIsDestroy;
   published
     property CaptureDragForm: Boolean read FCaptureDragForm write FCaptureDragForm;
     property SizeWH: Single read FSizeWH write FSizeWH;
@@ -250,6 +256,11 @@ begin
   FHwnd := FmxHandleToHWND(Handle);
   {$ENDIF}
   InitShadowForm;
+end;
+
+function TSizeForm.GetIsDestroy: Boolean;
+begin
+  Result := (not Assigned(Self)) or (csDestroying in ComponentState);
 end;
 
 function TSizeForm.GetMonitorIndex: Integer;

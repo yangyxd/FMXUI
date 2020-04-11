@@ -2,7 +2,6 @@ unit UI.Toast.AndroidLike;
 
 interface
 
-{$IFNDEF ANDROID}
 uses
   UI.Base,
   UI.Utils,
@@ -24,9 +23,7 @@ uses
   FMX.TextLayout,
   FMX.Effects,
   FMX.Layouts;
-{$ENDIF}
 
-{$IFNDEF ANDROID}
 type
   TToast = class(TComponent)
   private
@@ -50,11 +47,9 @@ type
     property Text: TTextView read FText;
     property Queue: TQueue<string> read FQueue;
   end;
-{$ENDIF}
 
 implementation
 
-{$IFNDEF ANDROID}
 uses FMX.Forms;
 
 const
@@ -177,7 +172,5 @@ begin
   FQueue.Enqueue(AMsg);
   FTimer.Enabled := True;
 end;
-
-{$ENDIF}
 
 end.

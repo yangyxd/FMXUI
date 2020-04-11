@@ -794,6 +794,7 @@ type
     constructor Create(AOwner: TComponent); override;
   protected
     procedure AfterDialogKey(var Key: Word; Shift: TShiftState); override;
+    procedure KeyDown(var Key: Word; var KeyChar: Char; Shift: TShiftState); override;
     procedure SetScrollbar(const Value: TViewScroll); override;
     property ScrollBars;
   published
@@ -1959,6 +1960,16 @@ end;
 function TButtonView.GetDefaultSize: TSizeF;
 begin
   Result := TSizeF.Create(80, 22);
+end;
+
+procedure TButtonView.KeyDown(var Key: Word; var KeyChar: Char; Shift: TShiftState);
+begin
+  inherited;
+  if ((Key = vkReturn) or (KeyChar = ' ')) and (Shift = []) then begin
+    Click;
+    Key := 0;
+    KeyChar := #0;
+  end;
 end;
 
 procedure TButtonView.SetScrollbar(const Value: TViewScroll);

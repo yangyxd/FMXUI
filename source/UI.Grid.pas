@@ -5118,6 +5118,7 @@ procedure TGridViewContent.KeyDown(var Key: Word; var KeyChar: WideChar;
   Shift: TShiftState);
 begin
   DoKeyDown(Self, Key, KeyChar, Shift);
+  inherited;
 end;
 
 procedure TGridViewContent.KeyUp(var Key: Word; var KeyChar: WideChar;
