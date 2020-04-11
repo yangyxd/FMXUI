@@ -149,9 +149,13 @@ type
   TDialogStyleManager = class(TComponent)
   private
     FDialogMaskColor: TAlphaColor;
+    FDialogMaskMargins: TBounds;
+
+    FBackgroundColor: TAlphaColor;
+    FBackgroundPadding: TBounds;
+
     FTitleBackGroundColor: TAlphaColor;
     FTitleTextColor: TAlphaColor;
-    FBackgroundColor: TAlphaColor;
     FBodyBackgroundColor: TAlphaColor;
     FProcessBackgroundColor: TAlphaColor;
     FProcessTextColor: TAlphaColor;
@@ -191,8 +195,13 @@ type
   published
     // 遮罩层颜色
     property DialogMaskColor: TAlphaColor read FDialogMaskColor write FDialogMaskColor default COLOR_DialogMaskColor;
+    // 遮罩层外边距
+    property DialogMaskMargins: TBounds read FDialogMaskMargins write FDialogMaskMargins;
+
     // 消息框背景颜色
     property BackgroundColor: TAlphaColor read FBackgroundColor write FBackgroundColor default COLOR_BackgroundColor;
+    // 消息框背景内边距
+    property BackgroundPadding: TBounds read FBackgroundPadding write FBackgroundPadding;
     // 标题栏背景色
     property TitleBackGroundColor: TAlphaColor read FTitleBackGroundColor write FTitleBackGroundColor default COLOR_TitleBackGroundColor;
     // 标题栏文本颜色
@@ -353,6 +362,7 @@ type
 
     procedure InitView(StyleMgr: TDialogStyleManager);
     procedure InitProcessView(StyleMgr: TDialogStyleManager);
+    procedure InitMask(StyleMgr: TDialogStyleManager);
     procedure InitMessage(StyleMgr: TDialogStyleManager);
     procedure InitList(StyleMgr: TDialogStyleManager);
     procedure InitButton(StyleMgr: TDialogStyleManager);
@@ -418,8 +428,6 @@ type
     function GetBuilder: TDialogBuilder; virtual;
     function GetMessage: string; virtual;
     procedure SetMessage(const Value: string); virtual;
-
-    procedure SetBackColor(const Value: TAlphaColor);
 
     function GetFirstParent(): TFmxObject;
   protected
@@ -1933,12 +1941,6 @@ begin
     FViewRoot.Repaint;
 end;
 
-procedure TDialog.SetBackColor(const Value: TAlphaColor);
-begin
-  if FViewRoot.Background.ItemDefault.Color <> Value then
-    FViewRoot.Background.ItemDefault.Color := Value;
-end;
-
 procedure TDialog.SetCancelable(const Value: Boolean);
 begin
   FCancelable := Value;
@@ -2130,7 +2132,7 @@ begin
   Dialog.FMask := Mask;
   Dialog.Cancelable := Cancelable;
   if Mask then
-    Dialog.SetBackColor(GetDefaultStyleMgr.FDialogMaskColor);
+    Dialog.FViewRoot.InitMask(GetDefaultStyleMgr);
   //Dialog.FViewRoot.FDisableAlign := True;
   Dialog.InitOK;
   Dialog.AnimatePlay(Dialog.FAnimate, True, nil);
@@ -2371,22 +2373,9 @@ end;
 
 procedure TCustomAlertDialog.InitDefaultPopView;
 
-  procedure SetButton(var B: TButtonView; FText: string;
-    FSize: Single; FColor: Int64; FStyle: TFontStyles);
-  begin
-    B.Text := FText;
-    B.OnClick := DoButtonClick;
-    if FSize > 0 then
-      B.TextSettings.Font.Size := FSize;
-    if FColor > -1 then
-      B.TextSettings.Color.Default := FColor;
-    if FStyle <> [] then
-      B.TextSettings.Font.Style := FStyle;
-  end;
-
 var
   StyleManager: TDialogStyleManager;
-  BtnCount: Integer;
+  ButtonLayoutHeight: Single;
   FButtomRadius: TView;
   BodyMH: Single;
 begin
@@ -2449,62 +2438,25 @@ begin
   end;
 
   // 初始化按钮
-  BtnCount := 0;
   FViewRoot.InitButton(StyleManager);
-  if Builder.PositiveButtonText = '' then
-    FViewRoot.FButtonPositive.Visible := False
-  else begin
-    SetButton(FViewRoot.FButtonPositive, Builder.PositiveButtonText,
-      Builder.PositiveButtonSize, Builder.PositiveButtonColor, Builder.PositiveButtonStyle);
-    Inc(BtnCount);
-    FViewRoot.FButtonPositive.Background.Corners := [TCorner.BottomLeft];
-    FButtomRadius := FViewRoot.FButtonPositive;
-  end;
-  if Builder.NegativeButtonText = '' then
-    FViewRoot.FButtonNegative.Visible := False
-  else begin
-    SetButton(FViewRoot.FButtonNegative, Builder.NegativeButtonText,
-      Builder.NegativeButtonSize, Builder.NegativeButtonColor, Builder.NegativeButtonStyle);
-    Inc(BtnCount);
-    if BtnCount = 1 then
-      FViewRoot.FButtonNegative.Background.Corners := [TCorner.BottomLeft];
-    FButtomRadius := FViewRoot.FButtonNegative;
-  end;
-  if Builder.NeutralButtonText = '' then begin
-    FViewRoot.FButtonNeutral.Visible := False;
-    if Assigned(FButtomRadius) then begin
-      if BtnCount = 1 then
-        FButtomRadius.Background.Corners := [TCorner.BottomLeft, TCorner.BottomRight]
-      else
-        FButtomRadius.Background.Corners := [TCorner.BottomRight];
-    end;
-  end else begin
-    SetButton(FViewRoot.FButtonNeutral, Builder.NeutralButtonText,
-      Builder.NeutralButtonSize, Builder.NeutralButtonColor, Builder.NeutralButtonStyle);
-    Inc(BtnCount);
-    if BtnCount = 1 then
-      FViewRoot.FButtonNeutral.Background.Corners := [TCorner.BottomLeft, TCorner.BottomRight]
-    else
-      FViewRoot.FButtonNeutral.Background.Corners := [TCorner.BottomRight];
-  end;
-  if (BtnCount = 0) and (FViewRoot.FButtonLayout <> nil) then begin
-    FViewRoot.FButtonLayout.Visible := False;
-  end;
-  if FViewRoot.FButtonCancel <> nil then begin
-    if Builder.CancelButtonText = '' then
-      FViewRoot.FButtonCancel.Visible := False
-    else begin
-      FViewRoot.FButtonCancel.Background.Corners := [TCorner.TopLeft, TCorner.TopRight, TCorner.BottomLeft, TCorner.BottomRight];
-      SetButton(FViewRoot.FButtonCancel, Builder.CancelButtonText,
-        Builder.CancelButtonSize, Builder.CancelButtonColor, Builder.CancelButtonStyle);
-      FViewRoot.FLayBubble.Margins.Bottom := FViewRoot.FButtonCancel.MinHeight + 30;
-    end;
-  end;
+  if Assigned(FViewRoot.FButtonLayout) then begin
+    if Assigned(FViewRoot.FButtonPositive) then
+      FViewRoot.FButtonPositive.OnClick := DoButtonClick;
+    if Assigned(FViewRoot.FButtonNegative) then
+      FViewRoot.FButtonNegative.OnClick := DoButtonClick;
+    if Assigned(FViewRoot.FButtonNeutral) then
+      FViewRoot.FButtonNeutral.OnClick := DoButtonClick;
+    ButtonLayoutHeight := FViewRoot.FButtonLayout.Height
+  end
+  else
+    ButtonLayoutHeight := 0;
+  if Assigned(FViewRoot.FButtonCancel) then
+    FViewRoot.FButtonCancel.OnClick := DoButtonClick;
 
-  if (Builder.Title = '') or (BtnCount = 0) then begin
+  if (Builder.Title = '') or (ButtonLayoutHeight = 0) then begin
     FViewRoot.FMsgBody.Background.XRadius := StyleManager.FBackgroundRadius;
     FViewRoot.FMsgBody.Background.YRadius := StyleManager.FBackgroundRadius;
-    if BtnCount = 0 then begin
+    if ButtonLayoutHeight = 0 then begin
       if Builder.Title = '' then
         FViewRoot.FMsgBody.Background.Corners := [TCorner.TopLeft, TCorner.TopRight, TCorner.BottomLeft, TCorner.BottomRight]
       else
@@ -2516,8 +2468,8 @@ begin
   // 设置 Body 最大高度
   if Assigned(FViewRoot.FMsgBody) then begin
     BodyMH := FViewRoot.FLayBubble.MaxHeight;
-    if BtnCount > 0 then
-      BodyMH := BodyMH - FViewRoot.FButtonLayout.Height;
+    if ButtonLayoutHeight > 0 then
+      BodyMH := BodyMH - ButtonLayoutHeight;
     if Assigned(FViewRoot.FTitleView) and (FViewRoot.FTitleView.Visible) then
       BodyMH := BodyMH - FViewRoot.FTitleView.Height;
     FViewRoot.FMsgBody.MaxHeight := BodyMH;
@@ -2528,7 +2480,7 @@ begin
       else
         FViewRoot.FListView.MaxHeight := BodyMH;
 
-      if BtnCount = 0 then
+      if ButtonLayoutHeight = 0 then
         FViewRoot.FListView.Margins.Bottom := StyleManager.FBackgroundRadius;
     end;
   end;
@@ -2536,7 +2488,7 @@ begin
   if Assigned(FViewRoot.FTitleSpace) then begin
     if FViewRoot.FTitleView.Visible = False then
       FViewRoot.FTitleSpace.Visible := False
-    else if (BtnCount = 0) and
+    else if (ButtonLayoutHeight = 0) and
       (FViewRoot.FMsgBody.Visible = False) and
       ((not Assigned(FViewRoot.FListView)) or (FViewRoot.FListView.Visible = False)) then
       FViewRoot.FTitleSpace.Visible := False;
@@ -2550,13 +2502,13 @@ begin
   end;
 
   if Builder.FMaskVisible then
-    SetBackColor(StyleManager.FDialogMaskColor);
+    FViewRoot.InitMask(StyleManager);
 end;
 
 procedure TCustomAlertDialog.InitDownPopupView;
 var
   Sytle: TDialogStyleManager;
-  BtnCount: Integer;
+  ButtonLayoutHeight: Single;
   BodyMH: Single;
 begin
   Inc(DialogRef);
@@ -2640,39 +2592,27 @@ begin
   end;
 
   // 初始化按钮
-  BtnCount := 0;
   FViewRoot.FLayBubble.Background.Corners := [];
   FViewRoot.InitButton(Sytle);
-  if Builder.PositiveButtonText = '' then
-    FViewRoot.FButtonPositive.Visible := False
-  else begin
-    FViewRoot.FButtonPositive.Text := Builder.PositiveButtonText;
-    FViewRoot.FButtonPositive.OnClick := DoButtonClick;
-    Inc(BtnCount);
-  end;
-  if Builder.NegativeButtonText = '' then
-    FViewRoot.FButtonNegative.Visible := False
-  else begin
-    FViewRoot.FButtonNegative.Text := Builder.NegativeButtonText;
-    FViewRoot.FButtonNegative.OnClick := DoButtonClick;
-    Inc(BtnCount);
-  end;
-  if Builder.NeutralButtonText = '' then begin
-    FViewRoot.FButtonNeutral.Visible := False;
-  end else begin
-    FViewRoot.FButtonNeutral.Text := Builder.NeutralButtonText;
-    FViewRoot.FButtonNeutral.OnClick := DoButtonClick;
-    Inc(BtnCount);
-  end;
-  if (BtnCount = 0) and (FViewRoot.FButtonLayout <> nil) then begin
-    FViewRoot.FButtonLayout.Visible := False;
-  end;
+  if Assigned(FViewRoot.FButtonLayout) then begin
+    if Assigned(FViewRoot.FButtonPositive) then
+      FViewRoot.FButtonPositive.OnClick := DoButtonClick;
+    if Assigned(FViewRoot.FButtonNegative) then
+      FViewRoot.FButtonNegative.OnClick := DoButtonClick;
+    if Assigned(FViewRoot.FButtonNeutral) then
+      FViewRoot.FButtonNeutral.OnClick := DoButtonClick;
+    ButtonLayoutHeight := FViewRoot.FButtonLayout.Height
+  end
+  else
+    ButtonLayoutHeight := 0;
+  if Assigned(FViewRoot.FButtonCancel) then
+    FViewRoot.FButtonCancel.OnClick := DoButtonClick;
 
   // 设置 Body 最大高度
   if Assigned(FViewRoot.FMsgBody) then begin
     BodyMH := FViewRoot.FLayBubble.MaxHeight;
-    if BtnCount > 0 then
-      BodyMH := BodyMH - FViewRoot.FButtonLayout.Height;
+    if ButtonLayoutHeight > 0 then
+      BodyMH := BodyMH - ButtonLayoutHeight;
     if Assigned(FViewRoot.FTitleView) and (FViewRoot.FTitleView.Visible) then
       BodyMH := BodyMH - FViewRoot.FTitleView.Height;
     FViewRoot.FMsgBody.MaxHeight := BodyMH;
@@ -2688,14 +2628,14 @@ begin
   if Assigned(FViewRoot.FTitleSpace) then begin
     if FViewRoot.FTitleView.Visible = False then
       FViewRoot.FTitleSpace.Visible := False
-    else if (BtnCount = 0) and
+    else if (ButtonLayoutHeight = 0) and
       (FViewRoot.FMsgBody.Visible = False) and
       ((not Assigned(FViewRoot.FListView)) or (FViewRoot.FListView.Visible = False)) then
       FViewRoot.FTitleSpace.Visible := False;
   end;
 
   if Builder.FMaskVisible then
-    SetBackColor(Sytle.FDialogMaskColor);
+    FViewRoot.InitMask(Sytle);
 
   if FBuilder.View <> nil then
     // 附加 View 的对话框
@@ -2722,7 +2662,8 @@ begin
   with Builder.View do begin
     Name := '';
     Parent := FViewRoot.FMsgBody;
-    Index := FViewRoot.FButtonLayout.Index - 1;
+    if Assigned(FViewRoot.FButtonLayout) then
+      Index := FViewRoot.FButtonLayout.Index - 1;
     Align := TAlignLayout.Client;
   end;
   FViewRoot.FMsgBody.Height := Builder.View.Height;
@@ -2856,20 +2797,25 @@ type
 
 procedure TDialogView.AfterDialogKey(var Key: Word; Shift: TShiftState);
 begin
+  if not Assigned(FDialog) then
+    Exit;
+
+  // TMyControl(xxx).KeyDown
+  // 入云龙反馈在一些情况下会有问题，
+  // 所以判断Key < $80时才传递事件
+  // KngStr: 更改 KeyDown 为 AfterDialogKey，暂时关闭 Key < $80
+
   // 如果按下了返回键，且允许取消对话框，则关闭对话框
-  if Assigned(Dialog) and (Dialog.Cancelable) and (Key in [vkEscape, vkHardwareBack]) then begin
-    Dialog.Cancel;
+  if (FDialog.Cancelable) and (Key in [vkEscape, vkHardwareBack]) then begin
+    FDialog.Cancel;
     Key := 0;
-  end else if Assigned(FDialog) then begin
-    // 入云龙反馈在一些情况下会有问题，
-    // 所以判断Key < 80时才传递事件
-    if Assigned(FDialog.Builder) and Assigned(FDialog.Builder.View) and (Key < $80) then
-      TMyControl(FDialog.Builder.View).KeyDown(Key, Char(Key), Shift)
-    else if (ControlsCount = 1) and (not Assigned(FAnilndictor)) and (Key < $80) then
-      TMyControl(Controls[0]).KeyDown(Key, Char(Key), Shift)
-    else
-      Key := 0;
-  end;
+  end
+  else if Assigned(FDialog.Builder) and Assigned(FDialog.Builder.View) {and (Key < $80)} then
+    TMyControl(FDialog.Builder.View).AfterDialogKey(Key, Shift)
+  else if (ControlsCount = 1) and (not Assigned(FAnilndictor)) {and (Key < $80)} then
+    TMyControl(Controls[0]).AfterDialogKey(Key, Shift)
+  else
+    Key := 0;
 end;
 
 constructor TDialogView.Create(AOwner: TComponent);
@@ -2911,6 +2857,21 @@ begin
 end;
 
 procedure TDialogView.InitButton(StyleMgr: TDialogStyleManager);
+var
+  FView1, FView2: TView;
+
+  procedure SetButton(var B: TButtonView; FText: string;
+    FSize: Single; FColor: Int64; FStyle: TFontStyles);
+  begin
+    B.Text := FText;
+    //B.OnClick := DoButtonClick;
+    if FSize > 0 then
+      B.TextSettings.Font.Size := FSize;
+    if FColor > -1 then
+      B.TextSettings.Color.Default := FColor;
+    if FStyle <> [] then
+      B.TextSettings.Font.Style := FStyle;
+  end;
 
   procedure SetButtonColor(Button: TButtonView; State: TViewState);
   var
@@ -2952,25 +2913,61 @@ procedure TDialogView.InitButton(StyleMgr: TDialogStyleManager);
     SetButtonColor(Result, TViewState.Enabled);
 
     TDrawableBorder(Result.Background).Border.Assign(StyleMgr.FButtonBorder);
+
+    if not Assigned(FView1) then
+      FView1 := Result;
+    FView2 := Result;
   end;
 
 begin
-  // 按钮布局层
-  FButtonLayout := TLinearLayout.Create(Owner);
-  {$IFDEF MSWINDOWS}
-  FButtonLayout.Name := 'ButtonLayout' + IntToStr(DialogRef);
-  {$ENDIF}
-  FButtonLayout.Parent := FLayBubble;
-  FButtonLayout.WidthSize := TViewSize.FillParent;
-  FButtonLayout.Orientation := TOrientation.Horizontal;
-  FButtonLayout.HeightSize := TViewSize.WrapContent;
-  // 按钮
-  FButtonPositive := CreateButton(FButtonLayout);
-  FButtonPositive.Default := True;
-  FButtonNegative := CreateButton(FButtonLayout);
-  FButtonNeutral := CreateButton(FButtonLayout);
+  if (not Assigned(FDialog)) or (not Assigned(FDialog.Builder)) then
+    Exit;
 
-  if Assigned(FLayBubbleBottom) then begin
+  if (FDialog.Builder.PositiveButtonText <> '')
+    or (FDialog.Builder.PositiveButtonText <> '')
+    or (FDialog.Builder.PositiveButtonText <> '') then begin
+    // 按钮布局层
+    FButtonLayout := TLinearLayout.Create(Owner);
+    {$IFDEF MSWINDOWS}
+    FButtonLayout.Name := 'ButtonLayout' + IntToStr(DialogRef);
+    {$ENDIF}
+    FButtonLayout.Parent := FLayBubble;
+    FButtonLayout.WidthSize := TViewSize.FillParent;
+    FButtonLayout.Orientation := TOrientation.Horizontal;
+    FButtonLayout.HeightSize := TViewSize.WrapContent;
+
+    // 按钮
+    FView1 := nil;
+    FView2 := nil;
+    if FDialog.Builder.PositiveButtonText <> '' then begin
+      FButtonPositive := CreateButton(FButtonLayout);
+      FButtonPositive.Default := True;
+      SetButton(FButtonPositive, FDialog.Builder.PositiveButtonText,
+        FDialog.Builder.PositiveButtonSize, FDialog.Builder.PositiveButtonColor, FDialog.Builder.PositiveButtonStyle);
+    end;
+    if FDialog.Builder.NegativeButtonText <> '' then begin
+      FButtonNegative := CreateButton(FButtonLayout);
+      SetButton(FButtonNegative, FDialog.Builder.NegativeButtonText,
+        FDialog.Builder.NegativeButtonSize, FDialog.Builder.NegativeButtonColor, FDialog.Builder.NegativeButtonStyle);
+    end;
+    if FDialog.Builder.NeutralButtonText <> '' then begin
+      FButtonNeutral := CreateButton(FButtonLayout);
+      SetButton(FButtonNeutral, FDialog.Builder.NeutralButtonText,
+        FDialog.Builder.NeutralButtonSize, FDialog.Builder.NeutralButtonColor, FDialog.Builder.NeutralButtonStyle);
+    end;
+
+    // 按钮圆角
+    if FLayBubble.Background.Corners <> [] then begin
+      if FView1 = FView2 then
+        FView1.Background.Corners := [TCorner.BottomLeft, TCorner.BottomRight]
+      else begin
+        FView1.Background.Corners := [TCorner.BottomLeft];
+        FView2.Background.Corners := [TCorner.BottomRight];
+      end;
+    end;
+  end;
+
+  if Assigned(FLayBubbleBottom) and (FDialog.Builder.CancelButtonText <> '') then begin
     // 按钮布局层
     FCancelButtonLayout := TLinearLayout.Create(Owner);
     {$IFDEF MSWINDOWS}
@@ -2982,6 +2979,10 @@ begin
     FCancelButtonLayout.HeightSize := TViewSize.WrapContent;
     // 按钮
     FButtonCancel := CreateButton(FCancelButtonLayout);
+    FButtonCancel.Background.Corners := [TCorner.TopLeft, TCorner.TopRight, TCorner.BottomLeft, TCorner.BottomRight];
+    SetButton(FButtonCancel, FDialog.Builder.CancelButtonText,
+      FDialog.Builder.CancelButtonSize, FDialog.Builder.CancelButtonColor, FDialog.Builder.CancelButtonStyle);
+    FLayBubble.Margins.Bottom := FButtonCancel.MinHeight + 30;
   end;
 end;
 
@@ -3001,6 +3002,14 @@ begin
   FListView.Background.ItemPressed.Color := StyleMgr.ListItemPressedColor;
   FListView.Divider := StyleMgr.ListItemDividerColor;
   FListView.DragScroll := True;
+end;
+
+procedure TDialogView.InitMask(StyleMgr: TDialogStyleManager);
+begin
+  if Background.ItemDefault.Color <> StyleMgr.FDialogMaskColor then
+    Background.ItemDefault.Color := StyleMgr.FDialogMaskColor;
+  if not Margins.Equals(StyleMgr.FDialogMaskMargins) then
+    Margins.Assign(StyleMgr.FDialogMaskMargins);
 end;
 
 procedure TDialogView.InitMessage(StyleMgr: TDialogStyleManager);
@@ -3051,6 +3060,9 @@ begin
   FLayBubble.Parent := Self;
   FLayBubble.Margin := '16';
   FLayBubble.Paddings := '16';
+  {$IFDEF ANDROID}
+  FLayBubble.Margins.Top := FLayBubble.Margins.Top + TView.GetStatusHeight;
+  {$ENDIF}
   FLayBubble.ClipChildren := True;
   FLayBubble.Background.ItemDefault.Color := StyleMgr.ProcessBackgroundColor;
   FLayBubble.Background.ItemDefault.Kind := TViewBrushKind.Solid;
@@ -3104,6 +3116,9 @@ procedure TDialogView.InitView(StyleMgr: TDialogStyleManager);
     // 消息框主体
     Result.Parent := Self;
     Result.Margin := '16';
+    {$IFDEF ANDROID}
+    Result.Margins.Top := Result.Margins.Top + TView.GetStatusHeight;
+    {$ENDIF}
     Result.ClipChildren := True;
     if FDialog.Builder.FUseRootBackColor then
       Result.Background.ItemDefault.Color := FDialog.Builder.FRootBackColor
@@ -3160,6 +3175,7 @@ procedure TDialogView.InitView(StyleMgr: TDialogStyleManager);
 begin
   CanFocus := False;
   FLayBubble := InitLayBubble('LayBubble', FDialog.Builder.FPosition);
+  FLayBubble.Padding.Assign(StyleMgr.FBackgroundPadding);
   if (FDialog.Builder.FPosition = TDialogViewPosition.Bottom) and (FDialog.Builder.CancelButtonText <> '') then
     FLayBubbleBottom := InitLayBubble('LayBubbleBottom', TDialogViewPosition.Bottom);
   // 标题栏
@@ -3253,7 +3269,12 @@ end;
 constructor TDialogStyleManager.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
+
   FDialogMaskColor := COLOR_DialogMaskColor;
+  FDialogMaskMargins := TBounds.Create(TRectF.Empty);
+
+  FBackgroundPadding := TBounds.Create(TRectF.Empty);
+
   FTitleBackGroundColor := COLOR_TitleBackGroundColor;
   FTitleTextColor := COLOR_TitleTextColor;
   FProcessBackgroundColor := COLOR_ProcessBackgroundColor;
@@ -3312,6 +3333,8 @@ begin
   FreeAndNil(FButtonColor);
   FreeAndNil(FButtonBorder);
   FreeAndNil(FButtonTextColor);
+  FreeAndNil(FBackgroundPadding);
+  FreeAndNil(FDialogMaskMargins);
   inherited;
 end;
 
@@ -3411,7 +3434,8 @@ begin
     FViewRoot.FMsgMessage.WidthSize := TViewSize.FillParent;
   end;
 
-  SetBackColor(Style.FDialogMaskColor);
+  FViewRoot.InitMask(Style);
+
   InitOK();
 end;
 
