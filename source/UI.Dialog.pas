@@ -2372,7 +2372,6 @@ begin
 end;
 
 procedure TCustomAlertDialog.InitDefaultPopView;
-
 var
   StyleManager: TDialogStyleManager;
   ButtonLayoutHeight: Single;
@@ -2809,12 +2808,15 @@ begin
   if (FDialog.Cancelable) and (Key in [vkEscape, vkHardwareBack]) then begin
     FDialog.Cancel;
     Key := 0;
-  end
-  else if Assigned(FDialog.Builder) and Assigned(FDialog.Builder.View) {and (Key < $80)} then
-    TMyControl(FDialog.Builder.View).AfterDialogKey(Key, Shift)
-  else if (ControlsCount = 1) and (not Assigned(FAnilndictor)) {and (Key < $80)} then
-    TMyControl(Controls[0]).AfterDialogKey(Key, Shift)
-  else
+    Exit;
+  end;
+
+  if Assigned(FDialog.Builder) and Assigned(FDialog.Builder.View) {and (Key < $80)} then
+    TMyControl(FDialog.Builder.View).AfterDialogKey(Key, Shift);
+  if (Key <> 0) and (ControlsCount = 1) and (not Assigned(FAnilndictor)) {and (Key < $80)} then
+    TMyControl(Controls[0]).AfterDialogKey(Key, Shift);
+
+  if Key <> 0 then
     Key := 0;
 end;
 
@@ -2858,7 +2860,7 @@ end;
 
 procedure TDialogView.InitButton(StyleMgr: TDialogStyleManager);
 var
-  FView1, FView2: TView;
+  FView1, FView2: TButtonView;
 
   procedure SetButton(var B: TButtonView; FText: string;
     FSize: Single; FColor: Int64; FStyle: TFontStyles);
@@ -2924,8 +2926,8 @@ begin
     Exit;
 
   if (FDialog.Builder.PositiveButtonText <> '')
-    or (FDialog.Builder.PositiveButtonText <> '')
-    or (FDialog.Builder.PositiveButtonText <> '') then begin
+    or (FDialog.Builder.NegativeButtonText <> '')
+    or (FDialog.Builder.NeutralButtonText <> '') then begin
     // 按钮布局层
     FButtonLayout := TLinearLayout.Create(Owner);
     {$IFDEF MSWINDOWS}
@@ -2941,7 +2943,6 @@ begin
     FView2 := nil;
     if FDialog.Builder.PositiveButtonText <> '' then begin
       FButtonPositive := CreateButton(FButtonLayout);
-      FButtonPositive.Default := True;
       SetButton(FButtonPositive, FDialog.Builder.PositiveButtonText,
         FDialog.Builder.PositiveButtonSize, FDialog.Builder.PositiveButtonColor, FDialog.Builder.PositiveButtonStyle);
     end;
@@ -2955,6 +2956,10 @@ begin
       SetButton(FButtonNeutral, FDialog.Builder.NeutralButtonText,
         FDialog.Builder.NeutralButtonSize, FDialog.Builder.NeutralButtonColor, FDialog.Builder.NeutralButtonStyle);
     end;
+
+    // 默认焦点
+    FView1.Default := True;
+    FView1.SetFocus;
 
     // 按钮圆角
     if FLayBubble.Background.Corners <> [] then begin
@@ -3051,7 +3056,11 @@ end;
 
 procedure TDialogView.InitProcessView(StyleMgr: TDialogStyleManager);
 begin
+  // 如果对话框不获取焦点，那么焦点会在之前点击的控件上，所以这里要重置下焦点
   CanFocus := False;
+  if Root <> nil then
+    Root.SetFocused(nil);
+
   FLayBubble := TLinearLayout.Create(Owner);
   {$IFDEF MSWINDOWS}
   FLayBubble.Name := 'LayBubble' + IntToStr(DialogRef);
@@ -3116,9 +3125,6 @@ procedure TDialogView.InitView(StyleMgr: TDialogStyleManager);
     // 消息框主体
     Result.Parent := Self;
     Result.Margin := '16';
-    {$IFDEF ANDROID}
-    Result.Margins.Top := Result.Margins.Top + TView.GetStatusHeight;
-    {$ENDIF}
     Result.ClipChildren := True;
     if FDialog.Builder.FUseRootBackColor then
       Result.Background.ItemDefault.Color := FDialog.Builder.FRootBackColor
@@ -3173,9 +3179,16 @@ procedure TDialogView.InitView(StyleMgr: TDialogStyleManager);
   end;
 
 begin
+  // 如果对话框不获取焦点，那么焦点会在之前点击的控件上，所以这里要重置下焦点
   CanFocus := False;
+  if Root <> nil then
+    Root.SetFocused(nil);
+
   FLayBubble := InitLayBubble('LayBubble', FDialog.Builder.FPosition);
   FLayBubble.Padding.Assign(StyleMgr.FBackgroundPadding);
+  {$IFDEF ANDROID}
+  FLayBubble.Margins.Top := Result.Margins.Top + TView.GetStatusHeight;
+  {$ENDIF}
   if (FDialog.Builder.FPosition = TDialogViewPosition.Bottom) and (FDialog.Builder.CancelButtonText <> '') then
     FLayBubbleBottom := InitLayBubble('LayBubbleBottom', TDialogViewPosition.Bottom);
   // 标题栏

@@ -8,6 +8,7 @@
  - ????.??.??
  * [Changed] TButtonView accept vkReturn and vkSpace
  * [Changed] TDialogView create button when it's used. Changed AfterDialogKey of TDialogView
+ * [Changed] TToastManager allow multiple instances.
  * [Tweak]   Add more properties for TDialogStyleManager
  - -----------------------------------
  - 2020.03.13

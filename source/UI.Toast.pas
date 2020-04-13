@@ -70,7 +70,8 @@ begin
   {$IFNDEF ANDROID}
   if not (csDesigning in ComponentState) then begin
     FToast := TToast.Create(AOwner);
-    LToast := FToast;
+    if LToast = nil then
+      LToast := FToast;
   end;
   {$ENDIF}
 end;
@@ -85,7 +86,12 @@ end;
 
 procedure TToastManager.Toast(const Msg: string);
 begin
-  UI.Toast.Toast(Msg);
+  {$IFNDEF ANDROID}
+  if Msg <> '' then
+    FToast.ShowToast(Msg);
+  {$ELSE}
+  UI.Toast.Android.Toast(Msg, ShortToast);
+  {$ENDIF}
 end;
 
 initialization
