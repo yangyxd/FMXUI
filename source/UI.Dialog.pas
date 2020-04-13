@@ -3187,7 +3187,7 @@ begin
   FLayBubble := InitLayBubble('LayBubble', FDialog.Builder.FPosition);
   FLayBubble.Padding.Assign(StyleMgr.FBackgroundPadding);
   {$IFDEF ANDROID}
-  FLayBubble.Margins.Top := Result.Margins.Top + TView.GetStatusHeight;
+  FLayBubble.Margins.Top := FLayBubble.Margins.Top + TView.GetStatusHeight;
   {$ENDIF}
   if (FDialog.Builder.FPosition = TDialogViewPosition.Bottom) and (FDialog.Builder.CancelButtonText <> '') then
     FLayBubbleBottom := InitLayBubble('LayBubbleBottom', TDialogViewPosition.Bottom);
