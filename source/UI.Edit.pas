@@ -1769,16 +1769,11 @@ begin
       Result := Result + Trunc((Tmp - ContentRect.Left) / PwdW);
       if Result < 0 then
         Result := 0
-      else
-        if Result > CombinedText.Length then
-          Result := CombinedText.Length;
-    end else begin
-      {$IFDEF MSWINDOWS}
+      else if Result > CombinedText.Length then
+        Result := CombinedText.Length;
+    end
+    else
       Result := FTextLayout.PositionAtPoint(TPointF.Create(Value + FInvisibleTextWidth, FTextLayout.TextRect.Top + FTextLayout.TextHeight / 2));
-      {$ELSE}
-      Result := FTextLayout.PositionAtPoint(TPointF.Create(Value + FInvisibleTextWidth, ContentRect.Top + FTextLayout.TextHeight / 2 + Padding.Top));
-      {$ENDIF}
-    end;
   end;
 end;
 

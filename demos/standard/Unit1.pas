@@ -35,6 +35,9 @@ implementation
 {$R *.fmx}
 
 uses
+  {$IF DEFINED(ANDROID) AND (RTLVersion >= 33)}
+  Androidapi.JNI.JavaTypes,
+  {$ENDIF}
   UI.Async,
   UI.Frame,
   uFrame1,
