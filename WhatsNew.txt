@@ -6,11 +6,13 @@
 [Update History]
  - -----------------------------------
  - ????.??.??
+ * [Added]   Shadow of TDialogView
  * [Changed] TButtonView accept vkReturn and vkSpace
  * [Changed] TDialogView create button when it's used. Changed AfterDialogKey of TDialogView
  * [Changed] TToastManager allow multiple instances.
- * [Tweak]   Add more properties for TDialogStyleManager
+ * [Tweak]   Add more properties and Assign for TDialogStyleManager
  * [Fixed]   Caret of TEditView not move in some cases (Thanks for report: 欢乐飞刀)
+ * [Fixed]   MaxWidth of TDialogStyleManager didn't work
  - -----------------------------------
  - 2020.03.13
  * Add Callback demo for Dialog

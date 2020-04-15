@@ -521,8 +521,9 @@ begin
       )
       .SetWidth(160)
       //.SetMaxHeight(320)
-      .SetDownPopup(TView(Sender), 3, 0, TLayoutGravity.RightBottom)
+      .SetDownPopup(TView(Sender), 8, 0, TLayoutGravity.RightBottom)
       .SetListItemDefaultHeight(30)
+      .SetShadowVisible(True)
       .Show;
 end;
 

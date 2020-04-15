@@ -49,7 +49,7 @@ uses
   System.TypInfo, System.SysUtils, System.Character, System.RTLConsts,
   FMX.Graphics, System.Generics.Collections, FMX.TextLayout, FMX.Ani,
   System.Classes, System.Types, System.UITypes, System.Math.Vectors, System.Rtti,
-  FMX.Types, FMX.Controls, FMX.Forms, FMX.StdCtrls, FMX.Utils,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.StdCtrls, FMX.Utils, FMX.Effects,
   FMX.ListView, FMX.ListView.Appearances, FMX.ListView.Types;
 
 const
@@ -69,6 +69,7 @@ const
   COLOR_BodyBackgroundColor = $ffffffff;
   COLOR_BackgroundColor = $ffffffff;
   COLOR_DialogMaskColor = $9f000000;
+  COLOR_DialogMaskShadowColor = $7f000000;
   COLOR_MessageTextBackground = $00f00000;
   COLOR_MessageTextColor = $ff101010;
   COLOR_TitleBackGroundColor = $00000000;
@@ -150,6 +151,7 @@ type
   private
     FDialogMaskColor: TAlphaColor;
     FDialogMaskMargins: TBounds;
+    FDialogMaskShadowColor: TAlphaColor;
 
     FBackgroundColor: TAlphaColor;
     FBackgroundPadding: TBounds;
@@ -189,6 +191,8 @@ type
     function IsStoredTitleSpaceHeight: Boolean;
     function GetMessageTextMargins: TBounds;
     procedure SetMessageTextMargins(const Value: TBounds);
+  protected
+    procedure AssignTo(Dest: TPersistent); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -197,6 +201,8 @@ type
     property DialogMaskColor: TAlphaColor read FDialogMaskColor write FDialogMaskColor default COLOR_DialogMaskColor;
     // 遮罩层外边距
     property DialogMaskMargins: TBounds read FDialogMaskMargins write FDialogMaskMargins;
+    // 遮罩层阴影颜色
+    property DialogMaskShadowColor: TAlphaColor read FDialogMaskShadowColor write FDialogMaskShadowColor default COLOR_DialogMaskShadowColor;
 
     // 消息框背景颜色
     property BackgroundColor: TAlphaColor read FBackgroundColor write FBackgroundColor default COLOR_BackgroundColor;
@@ -351,6 +357,7 @@ type
     FListView: TListViewEx;
     FAnilndictor: TAniIndicator;
     FIsDownPopup: Boolean;
+    FShadowEffect: TShadowEffect;
   protected
     procedure AfterDialogKey(var Key: Word; Shift: TShiftState); override;
     procedure Resize; override;
@@ -361,6 +368,7 @@ type
     destructor Destroy; override;
 
     procedure InitView(StyleMgr: TDialogStyleManager);
+    procedure InitShadow(StyleMgr: TDialogStyleManager);
     procedure InitProcessView(StyleMgr: TDialogStyleManager);
     procedure InitMask(StyleMgr: TDialogStyleManager);
     procedure InitMessage(StyleMgr: TDialogStyleManager);
@@ -464,7 +472,8 @@ type
       const ViewClass: TControlClass;
       XOffset: Single = 0; YOffset: Single = 0;
       Position: TDialogViewPosition = TDialogViewPosition.Bottom;
-      Cancelable: Boolean = True; Ani: TFrameAniType = TFrameAniType.None; Mask: Boolean = True): TDialog; overload;
+      Cancelable: Boolean = True; Ani: TFrameAniType = TFrameAniType.None;
+      Mask: Boolean = True; Shadow: Boolean = False): TDialog; overload;
     /// <summary>
     /// 显示对话框
     /// <param name="Target">定位控件</param>
@@ -478,7 +487,8 @@ type
       const View: TControl; AViewAutoFree: Boolean = True;
       XOffset: Single = 0; YOffset: Single = 0;
       Position: TDialogViewPosition = TDialogViewPosition.Bottom;
-      Cancelable: Boolean = True; Ani: TFrameAniType = TFrameAniType.None; Mask: Boolean = True): TDialog; overload;
+      Cancelable: Boolean = True; Ani: TFrameAniType = TFrameAniType.None;
+      Mask: Boolean = True; Shadow: Boolean = False): TDialog; overload;
 
     /// <summary>
     /// 在一个目标控件身上查找与其绑定在一起的对象框
@@ -680,6 +690,7 @@ type
 
     FOnInitListAdapterA: TOnDialogInitListAdapterA;
     FOnInitA: TOnDialogInitA;
+    FShadowVisible: Boolean;
 
     function GetCheckedCount: Integer;
   public
@@ -725,6 +736,10 @@ type
     /// 设置图标
     /// </summary>
     function SetIcon(AIcon: TDrawableBase): TDialogBuilder; overload;
+    /// <summary>
+    /// 设置图标
+    /// </summary>
+    function SetIcon(AIcon: TBitmap): TDialogBuilder; overload;
 
     /// <summary>
     /// 设置将对话框作为下拉弹出菜单时的标靶和偏移 （Target非空时，对话框以下拉弹出菜单样式显示）
@@ -835,9 +850,14 @@ type
     function SetOnInitListAdapterA(AListener: TOnDialogInitListAdapterA): TDialogBuilder;
 
     /// <summary>
-    /// 设置 Mask 层是否可视
+    /// 设置 Mask 是否可视
     /// </summary>
     function SetMaskVisible(V: Boolean): TDialogBuilder;
+
+    /// <summary>
+    /// 设置 Shadow 是否可视
+    /// </summary>
+    function SetShadowVisible(V: Boolean): TDialogBuilder;
 
     /// <summary>
     /// 设置 对话框 Root 层背景颜色
@@ -883,6 +903,7 @@ type
     property IsMultiChoice: Boolean read FIsMultiChoice;
     property ItemSingleLine: Boolean read FItemSingleLine;
     property MaskVisible: Boolean read FMaskVisible write FMaskVisible;
+    property ShadowVisible: Boolean read FShadowVisible write FShadowVisible;
     property RootBackColor: TAlphaColor read FRootBackColor write FRootBackColor;
     property ClickButtonDismiss: Boolean read FClickButtonDismiss write FClickButtonDismiss;
     property CheckedItem: Integer read FCheckedItem;
@@ -1140,6 +1161,12 @@ begin
   FIsSingleChoice := True;
 end;
 
+function TDialogBuilder.SetShadowVisible(V: Boolean): TDialogBuilder;
+begin
+  Result := Self;
+  FShadowVisible := V;
+end;
+
 function TDialogBuilder.SetSingleChoiceItems(const AItems: TArray<string>;
   ACheckedItem: Integer; AListener: TOnDialogClickListenerA): TDialogBuilder;
 begin
@@ -1174,6 +1201,12 @@ begin
 end;
 
 function TDialogBuilder.SetIcon(AIcon: TBrushBitmap): TDialogBuilder;
+begin
+  Result := Self;
+  FIcon := AIcon;
+end;
+
+function TDialogBuilder.SetIcon(AIcon: TBitmap): TDialogBuilder;
 begin
   Result := Self;
   FIcon := AIcon;
@@ -1982,17 +2015,19 @@ end;
 
 class function TDialog.ShowView(const AOwner: TComponent; const Target: TControl;
   const ViewClass: TControlClass; XOffset: Single; YOffset: Single;
-  Position: TDialogViewPosition; Cancelable: Boolean; Ani: TFrameAniType; Mask: Boolean): TDialog;
+  Position: TDialogViewPosition; Cancelable: Boolean; Ani: TFrameAniType;
+  Mask: Boolean; Shadow: Boolean): TDialog;
 var
   AView: TControl;
 begin
   AView := ViewClass.Create(AOwner);
-  Result := ShowView(AOwner, Target, AView, True, XOffset, YOffset, Position, Cancelable, Ani, Mask);
+  Result := ShowView(AOwner, Target, AView, True, XOffset, YOffset, Position, Cancelable, Ani, Mask, Shadow);
 end;
 
 class function TDialog.ShowView(const AOwner: TComponent; const Target, View: TControl;
   AViewAutoFree: Boolean; XOffset: Single; YOffset: Single;
-  Position: TDialogViewPosition; Cancelable: Boolean; Ani: TFrameAniType; Mask: Boolean): TDialog;
+  Position: TDialogViewPosition; Cancelable: Boolean; Ani: TFrameAniType;
+  Mask: Boolean; Shadow: Boolean): TDialog;
 var
   Dialog: TDialog;
   X, Y, PW, PH: Single;
@@ -2133,6 +2168,8 @@ begin
   Dialog.Cancelable := Cancelable;
   if Mask then
     Dialog.FViewRoot.InitMask(GetDefaultStyleMgr);
+  if Shadow then
+    Dialog.FViewRoot.InitShadow(GetDefaultStyleMgr);
   //Dialog.FViewRoot.FDisableAlign := True;
   Dialog.InitOK;
   Dialog.AnimatePlay(Dialog.FAnimate, True, nil);
@@ -2373,16 +2410,14 @@ end;
 
 procedure TCustomAlertDialog.InitDefaultPopView;
 var
-  StyleManager: TDialogStyleManager;
+  StyleMgr: TDialogStyleManager;
   ButtonLayoutHeight: Single;
-  FButtomRadius: TView;
   BodyMH: Single;
 begin
-  StyleManager := FBuilder.FStyleManager;
-  if StyleManager = nil then
-    StyleManager := GetDefaultStyleMgr;
+  StyleMgr := FBuilder.FStyleManager;
+  if StyleMgr = nil then
+    StyleMgr := GetDefaultStyleMgr;
   // 初始化基础
-  FButtomRadius := nil;
   FViewRoot := TDialogView.Create(Owner);
   FViewRoot.Dialog := Self;
   FViewRoot.BeginUpdate;
@@ -2396,22 +2431,21 @@ begin
   FViewRoot.Align := TAlignLayout.Contents; // TAlignLayout.Client;
   FViewRoot.Index := FViewRoot.Parent.ChildrenCount - 1;
   FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
-  FViewRoot.InitView(StyleManager);
+  FViewRoot.InitView(StyleMgr);
 
   if Builder.FWidth > 0 then begin
     FViewRoot.FLayBubble.WidthSize := TViewSize.CustomSize;
     FViewRoot.FLayBubble.Size.Width := Builder.FWidth;
     FViewRoot.FLayBubble.MaxWidth := Builder.FWidth;
     FViewRoot.FLayBubble.AdjustViewBounds := True;
-  end else
-    FViewRoot.FLayBubble.WidthSize := TViewSize.FillParent;
+  end;
 
   if FBuilder.FMaxHeight > 0 then
     FViewRoot.FLayBubble.MaxHeight := FBuilder.FMaxHeight;
 
   // 初始化消息区
   if (Builder.FIcon <> nil) or (Builder.FMessage <> '') then begin
-    FViewRoot.InitMessage(StyleManager);
+    FViewRoot.InitMessage(StyleMgr);
     if Builder.MessageIsHtml then
       FViewRoot.FMsgMessage.HtmlText := Builder.FMessage
     else
@@ -2424,20 +2458,23 @@ begin
       else if Builder.FIcon is TBrushBitmap then begin
         FViewRoot.FMsgMessage.Drawable.ItemDefault.Bitmap.Assign(TBrushBitmap(Builder.FIcon));
         FViewRoot.FMsgMessage.Drawable.ItemDefault.Kind := TBrushKind.Bitmap;
+      end
+      else if Builder.FIcon is TBitmap then begin
+        FViewRoot.FMsgMessage.Drawable.ItemDefault.Bitmap.Bitmap.Assign(TBitmap(Builder.FIcon));
+        FViewRoot.FMsgMessage.Drawable.ItemDefault.Kind := TBrushKind.Bitmap;
       end;
     end;
-    FButtomRadius := FViewRoot.FMsgMessage;
   end else
     FViewRoot.FMsgBody.Visible := False;
 
   // 初始化列表
   if (Length(Builder.FItemArray) > 0) or
     ((Assigned(Builder.FItems)) and (Builder.FItems.Count > 0)) then begin
-    FViewRoot.InitList(StyleManager);
+    FViewRoot.InitList(StyleMgr);
   end;
 
   // 初始化按钮
-  FViewRoot.InitButton(StyleManager);
+  FViewRoot.InitButton(StyleMgr);
   if Assigned(FViewRoot.FButtonLayout) then begin
     if Assigned(FViewRoot.FButtonPositive) then
       FViewRoot.FButtonPositive.OnClick := DoButtonClick;
@@ -2453,8 +2490,8 @@ begin
     FViewRoot.FButtonCancel.OnClick := DoButtonClick;
 
   if (Builder.Title = '') or (ButtonLayoutHeight = 0) then begin
-    FViewRoot.FMsgBody.Background.XRadius := StyleManager.FBackgroundRadius;
-    FViewRoot.FMsgBody.Background.YRadius := StyleManager.FBackgroundRadius;
+    FViewRoot.FMsgBody.Background.XRadius := StyleMgr.FBackgroundRadius;
+    FViewRoot.FMsgBody.Background.YRadius := StyleMgr.FBackgroundRadius;
     if ButtonLayoutHeight = 0 then begin
       if Builder.Title = '' then
         FViewRoot.FMsgBody.Background.Corners := [TCorner.TopLeft, TCorner.TopRight, TCorner.BottomLeft, TCorner.BottomRight]
@@ -2480,7 +2517,7 @@ begin
         FViewRoot.FListView.MaxHeight := BodyMH;
 
       if ButtonLayoutHeight = 0 then
-        FViewRoot.FListView.Margins.Bottom := StyleManager.FBackgroundRadius;
+        FViewRoot.FListView.Margins.Bottom := StyleMgr.FBackgroundRadius;
     end;
   end;
 
@@ -2496,24 +2533,28 @@ begin
   if (Builder.Title = '') then begin
     if FBuilder.Message = '' then begin
       if Assigned(FViewRoot.FListView) then
-        FViewRoot.FListView.Margins.Top := StyleManager.FBackgroundRadius;
+        FViewRoot.FListView.Margins.Top := StyleMgr.FBackgroundRadius;
     end;
   end;
 
+  // 初始化遮罩背景
   if Builder.FMaskVisible then
-    FViewRoot.InitMask(StyleManager);
+    FViewRoot.InitMask(StyleMgr);
+  // 初始化阴影
+  if Builder.FShadowVisible then
+    FViewRoot.InitShadow(StyleMgr);
 end;
 
 procedure TCustomAlertDialog.InitDownPopupView;
 var
-  Sytle: TDialogStyleManager;
+  StyleMgr: TDialogStyleManager;
   ButtonLayoutHeight: Single;
   BodyMH: Single;
 begin
   Inc(DialogRef);
-  Sytle := FBuilder.FStyleManager;
-  if Sytle = nil then
-    Sytle := GetDefaultStyleMgr;
+  StyleMgr := FBuilder.FStyleManager;
+  if StyleMgr = nil then
+    StyleMgr := GetDefaultStyleMgr;
 
   // 初始化基础
   FViewRoot := TDialogView.Create(Owner);
@@ -2530,7 +2571,7 @@ begin
   FViewRoot.Align := TAlignLayout.Contents; //TAlignLayout.Client;
   FViewRoot.Index := FViewRoot.Parent.ChildrenCount - 1;
   FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
-  FViewRoot.InitView(Sytle);
+  FViewRoot.InitView(StyleMgr);
 
 //  FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
 //  FViewRoot.Background.ItemDefault.Color := $7f33cc33;
@@ -2550,13 +2591,12 @@ begin
     FViewRoot.FLayBubble.Size.Width := FBuilder.FTarget.Width;
     FViewRoot.FLayBubble.MaxWidth := FBuilder.FTarget.Width;
     FViewRoot.FLayBubble.AdjustViewBounds := True;
-  end else
-    FViewRoot.FLayBubble.WidthSize := TViewSize.FillParent;
+  end;
 
   FViewRoot.FLayBubble.Paddings := '1';
   with TDrawableBorder(FViewRoot.FLayBubble.Background).Border do begin
     Style := TViewBorderStyle.RectBorder;
-    Color.Default := Sytle.ListItemPressedColor;
+    Color.Default := StyleMgr.ListItemPressedColor;
   end;
 
   if FBuilder.FMaxHeight > 0 then
@@ -2566,7 +2606,7 @@ begin
 
   // 初始化消息区
   if (Builder.FIcon <> nil) or (Builder.FMessage <> '') then begin
-    FViewRoot.InitMessage(Sytle);
+    FViewRoot.InitMessage(StyleMgr);
     if Builder.FMessageIsHtml then
       FViewRoot.FMsgMessage.HtmlText := Builder.FMessage
     else
@@ -2579,6 +2619,10 @@ begin
       else if Builder.FIcon is TBrushBitmap then begin
         FViewRoot.FMsgMessage.Drawable.ItemDefault.Bitmap.Assign(TBrushBitmap(Builder.FIcon));
         FViewRoot.FMsgMessage.Drawable.ItemDefault.Kind := TBrushKind.Bitmap;
+      end
+      else if Builder.FIcon is TBitmap then begin
+        FViewRoot.FMsgMessage.Drawable.ItemDefault.Bitmap.Bitmap.Assign(TBitmap(Builder.FIcon));
+        FViewRoot.FMsgMessage.Drawable.ItemDefault.Kind := TBrushKind.Bitmap;
       end;
     end;
   end else
@@ -2587,12 +2631,12 @@ begin
   // 初始化列表
   if (Length(Builder.FItemArray) > 0) or
     ((Assigned(Builder.FItems)) and (Builder.FItems.Count > 0)) then begin
-    FViewRoot.InitList(Sytle);
+    FViewRoot.InitList(StyleMgr);
   end;
 
   // 初始化按钮
   FViewRoot.FLayBubble.Background.Corners := [];
-  FViewRoot.InitButton(Sytle);
+  FViewRoot.InitButton(StyleMgr);
   if Assigned(FViewRoot.FButtonLayout) then begin
     if Assigned(FViewRoot.FButtonPositive) then
       FViewRoot.FButtonPositive.OnClick := DoButtonClick;
@@ -2633,8 +2677,12 @@ begin
       FViewRoot.FTitleSpace.Visible := False;
   end;
 
+  // 初始化遮罩背景
   if Builder.FMaskVisible then
-    FViewRoot.InitMask(Sytle);
+    FViewRoot.InitMask(StyleMgr);
+  // 初始化阴影
+  if Builder.FShadowVisible then
+    FViewRoot.InitShadow(StyleMgr);
 
   if FBuilder.View <> nil then
     // 附加 View 的对话框
@@ -2827,6 +2875,7 @@ end;
 
 destructor TDialogView.Destroy;
 begin
+  FShadowEffect := nil;
   FLayBubble := nil;
   FTitleView := nil;
   FMsgBody := nil;
@@ -3045,6 +3094,8 @@ begin
 end;
 
 procedure TDialogView.InitOK;
+var
+  AniView: TControl;
 begin
   EndUpdate;
   if Assigned(FAnilndictor) then
@@ -3052,6 +3103,21 @@ begin
   if Assigned(FLayBubble) then
     FLayBubble.RecalcSize;
   HandleSizeChanged;
+
+  if Assigned(FShadowEffect) then begin
+    AniView := TDialog(Dialog).GetAniView;
+    if Assigned(AniView) then
+      TFrameAnimator.DelayExecute(AniView,
+        procedure (Sender: TObject)
+        begin
+          if (not Assigned(Self)) or (Dialog = nil) or TDialog(Dialog).FIsDismiss then
+            Exit;
+
+          if Assigned(FShadowEffect) then
+            FShadowEffect.Enabled := True;
+        end,
+      0.05);
+  end;
 end;
 
 procedure TDialogView.InitProcessView(StyleMgr: TDialogStyleManager);
@@ -3114,6 +3180,18 @@ begin
   FMsgMessage.AutoSize := True;
 end;
 
+procedure TDialogView.InitShadow(StyleMgr: TDialogStyleManager);
+begin
+  FShadowEffect := TShadowEffect.Create(Self);
+  FShadowEffect.Parent := Self;
+  FShadowEffect.Enabled := False;
+  FShadowEffect.Direction := 90;
+  FShadowEffect.Opacity := 1;
+  FShadowEffect.Softness := 0.75;
+  FShadowEffect.Distance := 0;
+  FShadowEffect.ShadowColor := StyleMgr.DialogMaskShadowColor;
+end;
+
 procedure TDialogView.InitView(StyleMgr: TDialogStyleManager);
 
   function InitLayBubble(FName: string; FPosition: TDialogViewPosition): TLinearLayout;
@@ -3173,8 +3251,11 @@ procedure TDialogView.InitView(StyleMgr: TDialogStyleManager);
     Result.Orientation := TOrientation.Vertical;
     Result.CanFocus := False;
     Result.AdjustViewBounds := True;
-    if StyleMgr.MaxWidth > 0 then
+    if StyleMgr.MaxWidth > 0 then begin
+      Result.WidthSize := TViewSize.CustomSize;
+      Result.Size.Width := StyleMgr.MaxWidth;
       Result.MaxWidth := StyleMgr.MaxWidth;
+    end;
     Result.MaxHeight := Height - Result.Margins.Top - Result.Margins.Bottom;
   end;
 
@@ -3279,12 +3360,60 @@ end;
 
 { TDialogStyleManager }
 
+procedure TDialogStyleManager.AssignTo(Dest: TPersistent);
+var
+  LStyleMgr: TDialogStyleManager;
+begin
+  if not Assigned(Dest) or not (Dest is TDialogStyleManager) then begin
+    inherited;
+    Exit;
+  end;
+
+  LStyleMgr := TDialogStyleManager(Dest);
+
+  LStyleMgr.FDialogMaskColor := FDialogMaskColor;
+  LStyleMgr.FDialogMaskMargins.Assign(FDialogMaskMargins);
+  LStyleMgr.FDialogMaskShadowColor := FDialogMaskShadowColor;
+
+  LStyleMgr.FBackgroundColor := FBackgroundColor;
+  LStyleMgr.FBackgroundPadding.Assign(FBackgroundPadding);
+
+  LStyleMgr.FTitleBackGroundColor := FTitleBackGroundColor;
+  LStyleMgr.FTitleTextColor := FTitleTextColor;
+  LStyleMgr.FBodyBackgroundColor := FBodyBackgroundColor;
+  LStyleMgr.FProcessBackgroundColor := FProcessBackgroundColor;
+  LStyleMgr.FProcessTextColor := FProcessTextColor;
+  LStyleMgr.FMessageTextColor := FMessageTextColor;
+  LStyleMgr.FMessageTextBackground := FMessageTextBackground;
+  LStyleMgr.FButtonColor.Assign(FButtonColor);
+  LStyleMgr.FButtonTextColor.Assign(FButtonTextColor);
+  LStyleMgr.FButtonBorder.Assign(FButtonBorder);
+  LStyleMgr.FMessageTextSize := FMessageTextSize;
+  LStyleMgr.FTitleHeight := FTitleHeight;
+  LStyleMgr.FTitleTextSize := FTitleTextSize;
+  LStyleMgr.FButtonTextSize := FButtonTextSize;
+  LStyleMgr.FIconSize := FIconSize;
+  LStyleMgr.FBackgroundRadius := FBackgroundRadius;
+  LStyleMgr.FTitleGravity := FTitleGravity;
+  LStyleMgr.FTitleSpaceHeight := FTitleSpaceHeight;
+  LStyleMgr.FTitleSpaceColor := FTitleSpaceColor;
+  LStyleMgr.FMaxWidth := FMaxWidth;
+  LStyleMgr.FMessageTextMargins.Assign(FMessageTextMargins);
+  LStyleMgr.FMessageTextGravity := FMessageTextGravity;
+  LStyleMgr.FTitleTextBold := FTitleTextBold;
+
+  LStyleMgr.FListItemPressedColor := FListItemPressedColor;
+  LStyleMgr.FListItemDividerColor := FListItemDividerColor;
+  LStyleMgr.FButtonHeight := FButtonHeight;
+end;
+
 constructor TDialogStyleManager.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
   FDialogMaskColor := COLOR_DialogMaskColor;
   FDialogMaskMargins := TBounds.Create(TRectF.Empty);
+  FDialogMaskShadowColor := COLOR_DialogMaskShadowColor;
 
   FBackgroundPadding := TBounds.Create(TRectF.Empty);
 
@@ -3413,12 +3542,12 @@ end;
 
 procedure TProgressDialog.InitView(const AMsg: string; IsHtmlText: Boolean);
 var
-  Style: TDialogStyleManager;
+  StyleMgr: TDialogStyleManager;
 begin
   Inc(DialogRef);
-  Style := FStyleManager;
-  if Style = nil then
-    Style := GetDefaultStyleMgr;
+  StyleMgr := FStyleManager;
+  if StyleMgr = nil then
+    StyleMgr := GetDefaultStyleMgr;
 
   // 初始化基础
   FViewRoot := TDialogView.Create(Owner);
@@ -3433,7 +3562,7 @@ begin
   FViewRoot.Clickable := True;
   FViewRoot.Align := TAlignLayout.Contents; //TAlignLayout.Client;
   FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
-  FViewRoot.InitProcessView(Style);
+  FViewRoot.InitProcessView(StyleMgr);
   if AMsg = '' then
     FViewRoot.FMsgMessage.Visible := False
   else begin
@@ -3447,7 +3576,8 @@ begin
     FViewRoot.FMsgMessage.WidthSize := TViewSize.FillParent;
   end;
 
-  FViewRoot.InitMask(Style);
+  // 初始化遮罩背景
+  FViewRoot.InitMask(StyleMgr);
 
   InitOK();
 end;

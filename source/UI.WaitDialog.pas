@@ -41,7 +41,7 @@ procedure UpdateWaitDialog(const AMsg: string);
 /// 非必须，初始化等待对话框
 /// </summary>
 /// <remarks>
-/// 必须在 ShowWaitDialog 之前调用，而且会关闭已显示的等待对话框
+/// 必须在 ShowWaitDialog 之前调用
 /// </remarks>
 procedure InitWaitDialog(const AParent: TFmxObject);
 
@@ -107,8 +107,11 @@ procedure InitWaitDialog(const AParent: TFmxObject);
 begin
   if not Assigned(AParent) then
     Exit;
-  HideWaitDialog;
-  FWaitDialog := TProgressDialog.Create(AParent);
+
+  if IsWaitDismiss then
+    FWaitDialog := TProgressDialog.Create(AParent)
+  else
+    FWaitDialog.RootView.Parent := AParent;
 end;
 
 initialization
