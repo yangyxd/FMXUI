@@ -1503,18 +1503,18 @@ end;
 
 procedure TFrameView.SyncHint(const Msg: Double);
 begin
-  Hint(FloatToStr(Msg));
+  SyncHint(FloatToStr(Msg));
 end;
 
 procedure TFrameView.SyncHint(const Msg: Int64);
 begin
-  Hint(IntToStr(Msg));
+  SyncHint(IntToStr(Msg));
 end;
 
 procedure TFrameView.SyncHint(const AFormat: string;
   const Args: array of const);
 begin
-  Hint(Format(AFormat, Args));
+  SyncHint(Format(AFormat, Args));
 end;
 
 procedure TFrameView.UpdateWaitDialog(const AMsg: string);
