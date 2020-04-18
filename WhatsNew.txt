@@ -7,6 +7,8 @@
  - -----------------------------------
  - ????.??.??
  * [Added]   Shadow of TDialogView
+ * [Added]   TFrameView.SyncHint which should be used in thread
+ * [Changed] TFrameView.Hint support custom TToastManager
  * [Changed] TButtonView accept vkReturn and vkSpace
  * [Changed] TDialogView create button when it's used. Changed AfterDialogKey of TDialogView
  * [Changed] TToastManager allow multiple instances.

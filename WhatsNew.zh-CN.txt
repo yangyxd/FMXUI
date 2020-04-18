@@ -7,6 +7,8 @@
  - -----------------------------------
  - ????.??.??
  * [新增] TDialogView增加阴影开关
+ * [新增] TFrameView增加SyncHint，以方便在线程中调用
+ * [更改] TFrameView.Hint支持自定义TToastManager
  * [更改] TButtonView响应回车键和空格键
  * [更改] TDialogView Button改为按需创建，按键响应方式变更
  * [更改] TToastManager允许创建多个实例，尤其在非安卓平台，可以让Toast内容显示在你想要的位置

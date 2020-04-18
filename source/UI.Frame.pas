@@ -176,6 +176,7 @@ type
     FOnReStart: TNotifyEvent;
     FOnFree: TNotifyEvent;
     FWaitDialog: TProgressDialog;
+    [weak] FToastManager: TToastManager;
     FShowing: Boolean;    // 正在显示中
     FHideing: Boolean;    // 正在隐藏中
     FAnimateing: Boolean; // 动画执行中
@@ -236,6 +237,8 @@ type
 
     function GetData: TValue; override;
     procedure SetData(const Value: TValue); override;
+
+    function GetToastManager: TToastManager; virtual;
 
     /// <summary>
     /// 检测是否允许释放
@@ -352,6 +355,14 @@ type
     procedure Hint(const Msg: Double); overload;
     procedure Hint(const Msg: Int64); overload;
     procedure Hint(const AFormat: string; const Args: array of const); overload;
+
+    /// <summary>
+    /// 同步显示一个提示消息，可在线程使用
+    /// </summary>
+    procedure SyncHint(const Msg: string); overload;
+    procedure SyncHint(const Msg: Double); overload;
+    procedure SyncHint(const Msg: Int64); overload;
+    procedure SyncHint(const AFormat: string; const Args: array of const); overload;
 
     /// <summary>
     /// 延时执行任务
@@ -972,6 +983,7 @@ end;
 
 procedure TFrameView.DoShow;
 begin
+  FToastManager := GetToastManager;
   if (FDefaultStatusColor <> 0) then
     StatusColor := FDefaultStatusColor;
   if Assigned(FOnShow) then
@@ -1123,6 +1135,22 @@ begin
     Result := FParams.Items[CS_Title].ToString;
 end;
 
+function TFrameView.GetToastManager: TToastManager;
+var
+  LForm: TCustomForm;
+  I: Integer;
+begin
+  Result := nil;
+  LForm := GetParentForm;
+  if not Assigned(LForm) then
+    Exit;
+  for I := 0 to LForm.ComponentCount - 1 do
+    if LForm.Components[I] is TToastManager then begin
+      Result := TToastManager(LForm.Components[I]);
+      Exit;
+    end;
+end;
+
 procedure TFrameView.Hide;
 begin
   if FHideing then
@@ -1157,19 +1185,27 @@ begin
   end;
 end;
 
+procedure TFrameView.Hint(const Msg: string);
+begin
+  if Assigned(FToastManager) then
+    FToastManager.Toast(Msg)
+  else
+    Toast(Msg);
+end;
+
 procedure TFrameView.Hint(const AFormat: string; const Args: array of const);
 begin
-  Toast(Format(AFormat, Args));
+  Hint(Format(AFormat, Args));
 end;
 
 procedure TFrameView.Hint(const Msg: Double);
 begin
-  Toast(FloatToStr(Msg));
+  Hint(FloatToStr(Msg));
 end;
 
 procedure TFrameView.Hint(const Msg: Int64);
 begin
-  Toast(IntToStr(Msg));
+  Hint(IntToStr(Msg));
 end;
 
 procedure TFrameView.InternalHide;
@@ -1228,11 +1264,6 @@ function TFrameView.FinishIsFreeApp: Boolean;
 begin
   Result := Assigned(Parent) and (not Assigned(Parent.Parent)) and
     (Parent is TForm) and CheckChildern();
-end;
-
-procedure TFrameView.Hint(const Msg: string);
-begin
-  Toast(Msg);
 end;
 
 procedure TFrameView.SetBackColor(const Value: TAlphaColor);
@@ -1463,6 +1494,27 @@ begin
   finally
     LReader.Free;
   end;
+end;
+
+procedure TFrameView.SyncHint(const Msg: string);
+begin
+  TThread.Synchronize(TThread.CurrentThread, procedure begin Hint(Msg); end);
+end;
+
+procedure TFrameView.SyncHint(const Msg: Double);
+begin
+  Hint(FloatToStr(Msg));
+end;
+
+procedure TFrameView.SyncHint(const Msg: Int64);
+begin
+  Hint(IntToStr(Msg));
+end;
+
+procedure TFrameView.SyncHint(const AFormat: string;
+  const Args: array of const);
+begin
+  Hint(Format(AFormat, Args));
 end;
 
 procedure TFrameView.UpdateWaitDialog(const AMsg: string);
