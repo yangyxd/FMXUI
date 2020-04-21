@@ -357,14 +357,6 @@ type
     procedure Hint(const AFormat: string; const Args: array of const); overload;
 
     /// <summary>
-    /// 同步显示一个提示消息，可在线程使用
-    /// </summary>
-    procedure SyncHint(const Msg: string); overload;
-    procedure SyncHint(const Msg: Double); overload;
-    procedure SyncHint(const Msg: Int64); overload;
-    procedure SyncHint(const AFormat: string; const Args: array of const); overload;
-
-    /// <summary>
     /// 延时执行任务
     /// </summary>
     procedure DelayExecute(ADelay: Single; AExecute: TNotifyEventA);
@@ -1187,10 +1179,19 @@ end;
 
 procedure TFrameView.Hint(const Msg: string);
 begin
-  if Assigned(FToastManager) then
-    FToastManager.Toast(Msg)
+  if TThread.CurrentThread.ThreadID = MainThreadID then begin
+    if Assigned(FToastManager) then
+      FToastManager.Toast(Msg)
+    else
+      Toast(Msg);
+  end
   else
-    Toast(Msg);
+    TThread.Synchronize(TThread.CurrentThread, procedure begin
+      if Assigned(FToastManager) then
+        FToastManager.Toast(Msg)
+      else
+        Toast(Msg);
+    end);
 end;
 
 procedure TFrameView.Hint(const AFormat: string; const Args: array of const);
@@ -1494,27 +1495,6 @@ begin
   finally
     LReader.Free;
   end;
-end;
-
-procedure TFrameView.SyncHint(const Msg: string);
-begin
-  TThread.Synchronize(TThread.CurrentThread, procedure begin Hint(Msg); end);
-end;
-
-procedure TFrameView.SyncHint(const Msg: Double);
-begin
-  SyncHint(FloatToStr(Msg));
-end;
-
-procedure TFrameView.SyncHint(const Msg: Int64);
-begin
-  SyncHint(IntToStr(Msg));
-end;
-
-procedure TFrameView.SyncHint(const AFormat: string;
-  const Args: array of const);
-begin
-  SyncHint(Format(AFormat, Args));
 end;
 
 procedure TFrameView.UpdateWaitDialog(const AMsg: string);
