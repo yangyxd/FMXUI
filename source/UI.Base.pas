@@ -5148,6 +5148,11 @@ begin
     Exit;
   //LogD(Self.ClassName + '.DoRealign.');
 
+  // 更新宽高
+  W := Width;
+  H := Height;
+  DoRecalcSize(W, H);
+
   FDisableAlign := True;
 
   // 得到父级组件的最大高宽
@@ -5156,8 +5161,8 @@ begin
 
   // 得到子组件的开始坐标
   CurPos := TPointD.Create(Padding.Left, Padding.Top);
-  W := Width - CurPos.X - Padding.Right;
-  H := Height - CurPos.Y - Padding.Bottom;
+  W := W - CurPos.X - Padding.Right;
+  H := H - CurPos.Y - Padding.Bottom;
   CtrlCount := ControlsCount;
 
   // 如果长宽 > 0 和子控件 > 0 时才处理布局
@@ -5790,28 +5795,32 @@ begin
   List := TList<TControl>.Create;
   try
     DoGetList(List);
-    // Align
-    DoAlign(List, TAlignLayout.MostTop);
-    DoAlign(List, TAlignLayout.MostBottom);
-    DoAlign(List, TAlignLayout.MostLeft);
-    DoAlign(List, TAlignLayout.MostRight);
-    DoAlign(List, TAlignLayout.Top);
-    DoAlign(List, TAlignLayout.Bottom);
-    DoAlign(List, TAlignLayout.Left);
-    DoAlign(List, TAlignLayout.Right);
-    DoAlign(List, TAlignLayout.FitLeft);
-    DoAlign(List, TAlignLayout.FitRight);
-    DoAlign(List, TAlignLayout.Client);
-    DoAlign(List, TAlignLayout.Horizontal);
-    DoAlign(List, TAlignLayout.Vertical);
-    DoAlign(List, TAlignLayout.Contents);
-    DoAlign(List, TAlignLayout.Center);
-    DoAlign(List, TAlignLayout.HorzCenter);
-    DoAlign(List, TAlignLayout.VertCenter);
-    DoAlign(List, TAlignLayout.Scale);
-    DoAlign(List, TAlignLayout.Fit);
-    // Anchors
-    DoAlign(List, TAlignLayout.None);
+
+    if List.Count > 0 then begin
+      // Align
+      DoAlign(List, TAlignLayout.MostTop);
+      DoAlign(List, TAlignLayout.MostBottom);
+      DoAlign(List, TAlignLayout.MostLeft);
+      DoAlign(List, TAlignLayout.MostRight);
+      DoAlign(List, TAlignLayout.Top);
+      DoAlign(List, TAlignLayout.Bottom);
+      DoAlign(List, TAlignLayout.Left);
+      DoAlign(List, TAlignLayout.Right);
+      DoAlign(List, TAlignLayout.FitLeft);
+      DoAlign(List, TAlignLayout.FitRight);
+      DoAlign(List, TAlignLayout.Client);
+      DoAlign(List, TAlignLayout.Horizontal);
+      DoAlign(List, TAlignLayout.Vertical);
+      DoAlign(List, TAlignLayout.Contents);
+      DoAlign(List, TAlignLayout.Center);
+      DoAlign(List, TAlignLayout.HorzCenter);
+      DoAlign(List, TAlignLayout.VertCenter);
+      DoAlign(List, TAlignLayout.Scale);
+      DoAlign(List, TAlignLayout.Fit);
+      // Anchors
+      DoAlign(List, TAlignLayout.None);
+    end;
+
     FLastWidth := W;
     FLastHeight := H;
   finally
@@ -5852,8 +5861,8 @@ begin
 
         List.Clear;
         if GetXY(List, View, VL, VT, VW, VH) < 0 then Exit;
-        VL := VL + View.Margins.Left;
-        VT := VT + View.Margins.Top;
+        //VL := VL + View.Margins.Left;
+        //VT := VT + View.Margins.Top;
         VW := VW - View.Margins.Left - View.Margins.Right;
         VH := VH - View.Margins.Top - View.Margins.Bottom;
         //LView.SetAdjustViewBounds(False);
@@ -6005,13 +6014,12 @@ begin
     Y := View.Position.Y;
   StackList.Add(Control);
   try
-
     DecH := False;
     DecW := False;
     DecHD2 := False;
 
-    AutoW := View.WidthSize = TViewSize.FillParent;
-    AutoH := View.HeightSize = TViewSize.FillParent;
+    AutoW := (View.WidthSize = TViewSize.FillParent) or (Layout.FAlignParentLeft and Layout.FAlignParentRight);
+    AutoH := (View.HeightSize = TViewSize.FillParent) or (Layout.FAlignParentTop and Layout.FAlignParentBottom);
 
     if (Layout.FCenterInParent) or (Layout.FCenterVertical and Layout.FCenterHorizontal) then begin
       if AutoW then W := PW;
@@ -6165,7 +6173,6 @@ begin
       Y := Y - H / 2;
     if DecW then
       X := X - W;
-
   finally
     if StackList.Count > 0 then
       StackList.Delete(StackList.Count - 1);

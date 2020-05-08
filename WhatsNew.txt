@@ -14,6 +14,7 @@
  * [Tweak]   Add more properties and Assign for TDialogStyleManager
  * [Fixed]   Caret of TEditView not move in some cases (Thanks for report: 欢乐飞刀)
  * [Fixed]   MaxWidth of TDialogStyleManager didn't work
+ * [Fixed]   Children of TRelativeLayout and TLinearLayout position error (Thanks for report: 恢弘和凌风)
  - -----------------------------------
  - 2020.03.13
  * Add Callback demo for Dialog

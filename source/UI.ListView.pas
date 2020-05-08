@@ -2161,7 +2161,7 @@ procedure TListViewContent.DoRealign;
             SetChildClickEvent(View, I);
         end else begin
           // 如果是一个 Frame，让它可以点击
-          // 设置点击事件，设置鼠村按下和松开事件时重绘
+          // 设置点击事件，设置鼠标按下和松开事件时重绘
           ItemView.HitTest := True;
           ItemView.AutoCapture := True;
           ItemView.OnPainting := DoPaintFrame;
