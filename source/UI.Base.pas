@@ -5151,7 +5151,8 @@ begin
   // ¸üÐÂ¿í¸ß
   W := Width;
   H := Height;
-  DoRecalcSize(W, H);
+  if (WidthSize = TViewSize.WrapContent) or (HeightSize = TViewSize.WrapContent) then
+    DoRecalcSize(W, H);
 
   FDisableAlign := True;
 
@@ -5435,7 +5436,6 @@ begin
 
       if (WidthSize = TViewSize.WrapContent) and (Width <> VW) then
         SetBounds(Left, Top, VW, VH);
-
     end else begin
       VW := Width;
       VH := CurPos.Y + Padding.Bottom;
@@ -5861,8 +5861,8 @@ begin
 
         List.Clear;
         if GetXY(List, View, VL, VT, VW, VH) < 0 then Exit;
-        //VL := VL + View.Margins.Left;
-        //VT := VT + View.Margins.Top;
+        VL := VL + View.Margins.Left;
+        VT := VT + View.Margins.Top;
         VW := VW - View.Margins.Left - View.Margins.Right;
         VH := VH - View.Margins.Top - View.Margins.Bottom;
         //LView.SetAdjustViewBounds(False);
@@ -6009,9 +6009,9 @@ begin
     PW := 0; PH := 0;
   end;
   if (not Layout.AlignParentLeft) and Assigned(View.Position) then
-    X := View.Position.X;
+    X := View.Position.X - Control.Margins.Left;
   if (not Layout.AlignParentTop) and Assigned(View.Position) then
-    Y := View.Position.Y;
+    Y := View.Position.Y - Control.Margins.Top;
   StackList.Add(Control);
   try
     DecH := False;

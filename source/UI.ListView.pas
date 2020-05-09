@@ -1021,7 +1021,6 @@ begin
       EndUpdate;
       FDisableAlign := False;
     end;
-
   finally
     FDisablePaint := LDisablePaint;
     FContentViews.Invalidate;
