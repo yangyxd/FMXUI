@@ -245,7 +245,7 @@ type
     /// </summary>
     function DoCanFree(): Boolean; virtual;
     // 检查是否需要释放，如果需要，就释放掉
-    function CheckFree(): Boolean;
+    function CheckFree(): Boolean; virtual;
     // 检查所属窗体是否还存在 Frame
     function CheckChildern(): Boolean;
     // 内部 Show 实现
