@@ -15,6 +15,7 @@
  * [修正] TEditView某些情况下无法移动光标（感谢报告：欢乐飞刀）
  * [修正] TDialogStyleManager MaxWidth效果不正确的Bug
  * [修正] TRelativeLayout 和 TLinearLayout 子控件布局错误（感谢报告：恢弘和凌风）
+ * [修正] TListViewEx Win平台点击错乱问题（感谢报告：keven）
  - -----------------------------------
  - 2020.03.13
  * 修正EditView无法设定selstart（感谢报告：Udcover）

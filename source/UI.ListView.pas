@@ -1139,16 +1139,16 @@ function TListViewEx.ObjectAtPoint(AScreenPoint: TPointF): IControl;
 begin
   Result := inherited;
   {$IFNDEF NEXTGEN}
-  if DragScroll then begin // 如果允许拖动
-    if FMouseDown then
-      Exit;
+  if DragScroll and not FMouseDown then begin // 如果允许拖动
     P := ScreenToLocal(AScreenPoint);
     if Assigned(Result) and (P.X < Width - 10) then begin
       FPointTarget := Result;
       Result := Self;
     end else
       FPointTarget := nil;
-  end;
+  end
+  else
+    FPointTarget := nil; // 不满足的时候必须清空，否则会导致点击错位
   {$ENDIF}
 //  if Result <> nil then
 //    LogD('ObjectAtPoint: ' + (Result as TObject).ClassName)
@@ -1312,7 +1312,6 @@ begin
       0.05);
     end else
       FMouseDown := True;
-
   end else
     inherited;
   {$ENDIF}
@@ -2990,7 +2989,7 @@ end;
 
 function TListViewContent.ObjectAtPoint(AScreenPoint: TPointF): IControl;
 begin
-  if Assigned(ListView.FAniCalculations) and (ListView.FAniCalculations.Shown) then
+  if {$IFNDEF NEXTGEN}ListView.FMouseDown and{$ENDIF} Assigned(ListView.FAniCalculations) and (ListView.FAniCalculations.Shown) then
     Result := nil   // 手势滚动中，不允许点击子项
   else
     Result := inherited ObjectAtPoint(AScreenPoint);

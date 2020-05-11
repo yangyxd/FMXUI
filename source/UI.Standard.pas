@@ -2052,6 +2052,7 @@ begin
 //  else
 //    FScrollTrackPressed := False;
   FScrollStart := True;
+  FAniCalculations.Shown := False;
   FAniCalculations.Averaging := Touch;
   FAniCalculations.MouseDown(X, Y);
 end;
