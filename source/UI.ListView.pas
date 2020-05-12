@@ -396,6 +396,8 @@ type
     /// </summary>
     procedure RemoveFooterView();
 
+    procedure ScrollToIndex(const Index: Integer);
+
     property Count: Integer read GetCount;
     property Empty: Boolean read IsEmpty;
     property Adapter: IListAdapter read FAdapter write SetAdapter;
@@ -1478,6 +1480,37 @@ begin
   end;
 
   FResizeing := False;
+end;
+
+procedure TListViewEx.ScrollToIndex(const Index: Integer);
+var
+  I, J: Integer;
+  Y, DividerH, ItemDefaultH: Double;
+begin
+  if not Assigned(FAdapter) then
+    Exit;
+  if Index < 0 then begin
+    Self.ScrollTo(0, 0);
+    Exit;
+  end;
+  J := Index;
+  if Index > FAdapter.Count - 1 then
+    J := FAdapter.Count;
+  Y := 0;
+  if Assigned(FContentViews.FHeaderView) then
+    Y := Y + FContentViews.FHeaderView.Height;
+
+  DividerH := GetDividerHeight;
+  ItemDefaultH := FAdapter.ItemDefaultHeight;
+
+  for I := 0 to J - 1 do begin
+    if FItemsPoints[i].H = 0 then
+      Y := Y + DividerH + ItemDefaultH
+    else
+      Y := Y + FItemsPoints[I].H + DividerH;
+  end;
+  if VScrollBar <> nil then
+    VScrollBar.ValueD := Y;
 end;
 
 procedure TListViewEx.SetAdapter(const Value: IListAdapter);
