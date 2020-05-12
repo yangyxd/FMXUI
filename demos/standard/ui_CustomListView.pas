@@ -44,6 +44,7 @@ type
     procedure btnBackClick(Sender: TObject);
     procedure ListViewItemClick(Sender: TObject; ItemIndex: Integer;
       const ItemView: TControl);
+    procedure tvTitleClick(Sender: TObject);
     procedure ListViewScrollChange(Sender: TObject);
   private
     { Private declarations }
@@ -114,7 +115,7 @@ begin
   ListView.AddFooterView(LV);
 
   ListView.Adapter := FAdapter;
-  AddItems(20);
+  AddItems(1000);
 end;
 
 procedure TCustomListview.DoFree;
@@ -171,6 +172,19 @@ begin
     Trunc(ListView.ContentBounds.Height / ListView.Height)]);
 end;
 
+procedure TCustomListview.tvTitleClick(Sender: TObject);
+var
+  Idx:integer;
+begin
+  //
+  System.Randomize;
+  Idx :=  System.Random(1000);
+
+  self.tvTitle.Text := Idx.ToString+'ÐÐ';
+  ListView.ScrollToIndex(Idx);
+
+end;
+
 { TCustomListDataAdapter }
 
 constructor TCustomListDataAdapter.Create(const AList: TList<TDataItem>);
@@ -207,6 +221,7 @@ begin
 
   Item := FList.Items[Index];
   ViewItem.BeginUpdate;
+
   ViewItem.TextView1.Text := Item.Name;
   ViewItem.TextView2.Text := Item.Phone;
   ViewItem.View1.Background.ItemDefault.Color := Item.Color;
@@ -234,6 +249,18 @@ begin
   ViewItem.BadgeView3.Enabled := Index mod 2 = 1;
   ViewItem.BadgeView3.Visible := Index mod 2 = 1;
   ViewItem.EndUpdate;
+
+  if Index mod 2 = 1 then
+  begin
+    ViewItem.RelativeLayout1.Height := self.ItemDefaultHeight * 1.5;
+    ViewItem.Height  := self.ItemDefaultHeight * 1.5;
+    ViewItem.Repaint;
+  end else begin
+    ViewItem.RelativeLayout1.Height := self.ItemDefaultHeight;
+    ViewItem.Height  := self.ItemDefaultHeight;
+    ViewItem.Repaint;
+  end;
+
   Result := TViewBase(ViewItem);
 end;
 

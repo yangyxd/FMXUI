@@ -67,6 +67,7 @@ object CustomListview: TCustomListview
         Size.PlatformDefault = False
         Position.Y = 5.000000000000000000
         TabOrder = 1
+        OnClick = tvTitleClick
         Text = #33258#23450#20041#21015#34920#39033
         TextSettings.Color.Default = claWhite
         TextSettings.Color.Focused = claNull
