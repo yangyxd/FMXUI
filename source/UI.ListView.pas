@@ -1485,7 +1485,7 @@ end;
 procedure TListViewEx.ScrollToIndex(const Index: Integer);
 var
   I, J: Integer;
-  Y, DividerH, ItemDefaultH: Double;
+  Y, DividerH, ItemDefaultH, H: Double;
 begin
   if not Assigned(FAdapter) then
     Exit;
@@ -1493,6 +1493,8 @@ begin
     Self.ScrollTo(0, 0);
     Exit;
   end;
+  if VScrollBar = nil then
+    Exit;
   J := Index;
   if Index > FAdapter.Count - 1 then
     J := FAdapter.Count;
@@ -1509,8 +1511,15 @@ begin
     else
       Y := Y + FItemsPoints[I].H + DividerH;
   end;
-  if VScrollBar <> nil then
-    VScrollBar.ValueD := Y;
+
+  FContentViews.FFirstRowIndex := -1;
+  FContentViews.FLastRowIndex := -1;
+  FContentViews.FViewTop := 0;
+  FContentViews.FViewBottom := 0;
+  FContentViews.FViewItemBottom := 0;
+  FContentViews.FLastScrollValue := 0;
+
+  VScrollBar.ValueD := Y + 1;
 end;
 
 procedure TListViewEx.SetAdapter(const Value: IListAdapter);
