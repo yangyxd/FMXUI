@@ -148,12 +148,43 @@ object CustomListview: TCustomListview
     OnPullRefresh = ListViewPullRefresh
     OnPullLoad = ListViewPullLoad
   end
+  object tvScroll: TTextView
+    Anchors = [akTop, akRight]
+    Background.XRadius = 10.000000000000000000
+    Background.YRadius = 10.000000000000000000
+    Background.Corners = [TopLeft, BottomLeft]
+    Background.ItemDefault.Color = claWhite
+    Background.ItemDefault.Kind = Solid
+    Background.Border.Color.Default = xFFFEAD6B
+    Background.Border.Color.Focused = claNull
+    Background.Border.Color.Selected = claNull
+    Background.Border.Color.Enabled = claNull
+    Background.Border.Style = RectBorder
+    Clickable = True
+    HeightSize = WrapContent
+    Padding.Left = 10.000000000000000000
+    Padding.Top = 10.000000000000000000
+    Padding.Right = 10.000000000000000000
+    Padding.Bottom = 10.000000000000000000
+    HitTest = True
+    Size.Width = 97.000000000000000000
+    Size.Height = 36.000000000000000000
+    Size.PlatformDefault = False
+    Position.X = 224.000000000000000000
+    Position.Y = 150.000000000000000000
+    TabOrder = 3
+    OnClick = tvScrollClick
+    Text = #28857#20987#27979#35797#23450#20301
+    TextSettings.Color.Default = xFFFEAD6B
+    TextSettings.Color.Focused = claNull
+    TextSettings.Color.Selected = claNull
+    TextSettings.Color.Enabled = claNull
+  end
   object ImageList1: TImageList
     Source = <
       item
         MultiResBitmap.Height = 37
         MultiResBitmap.Width = 37
-        MultiResBitmap.LoadSize = 2
         MultiResBitmap = <
           item
             Width = 37
@@ -181,7 +212,6 @@ object CustomListview: TCustomListview
       item
         MultiResBitmap.Height = 37
         MultiResBitmap.Width = 37
-        MultiResBitmap.LoadSize = 2
         MultiResBitmap = <
           item
             Width = 37
@@ -217,7 +247,6 @@ object CustomListview: TCustomListview
       item
         MultiResBitmap.Height = 37
         MultiResBitmap.Width = 37
-        MultiResBitmap.LoadSize = 2
         MultiResBitmap = <
           item
             Width = 37

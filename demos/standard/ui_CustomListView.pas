@@ -39,6 +39,7 @@ type
     btnBack: TTextView;
     LinearLayout2: TLinearLayout;
     tvSubTitle: TTextView;
+    tvScroll: TTextView;
     procedure ListViewPullRefresh(Sender: TObject);
     procedure ListViewPullLoad(Sender: TObject);
     procedure btnBackClick(Sender: TObject);
@@ -46,6 +47,7 @@ type
       const ItemView: TControl);
     procedure tvTitleClick(Sender: TObject);
     procedure ListViewScrollChange(Sender: TObject);
+    procedure tvScrollClick(Sender: TObject);
   private
     { Private declarations }
     FAdapter: TCustomListDataAdapter;
@@ -172,16 +174,18 @@ begin
     Trunc(ListView.ContentBounds.Height / ListView.Height)]);
 end;
 
-procedure TCustomListview.tvTitleClick(Sender: TObject);
+procedure TCustomListview.tvScrollClick(Sender: TObject);
 var
   Idx:integer;
 begin
-  //
   System.Randomize;
-  Idx :=  System.Random(1000);
-
-  self.tvTitle.Text := Idx.ToString+'ÐÐ';
+  Idx := System.Random(FList.Count);
+  tvScroll.Text := Format('%d ÐÐ', [Idx]);
   ListView.ScrollToIndex(Idx);
+end;
+
+procedure TCustomListview.tvTitleClick(Sender: TObject);
+begin
 
 end;
 
