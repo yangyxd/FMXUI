@@ -4249,14 +4249,14 @@ begin
   else begin
     if TViewState.Enabled in FViewState then
       Result := TViewState.Enabled
-    else if TViewState.Pressed in FViewState then
-      Result := TViewState.Pressed
-    else if TViewState.Focused in FViewState then
-      Result := TViewState.Focused
     else if TViewState.Selected in FViewState then
       Result := TViewState.Selected
     else if TViewState.Checked in FViewState then
       Result := TViewState.Checked
+    else if TViewState.Pressed in FViewState then
+      Result := TViewState.Pressed
+    else if TViewState.Focused in FViewState then
+      Result := TViewState.Focused
     else if TViewState.Activated in FViewState then
       Result := TViewState.Activated
     else if TViewState.Hovered in FViewState then

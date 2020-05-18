@@ -16,6 +16,7 @@
  * [Fixed]   MaxWidth of TDialogStyleManager didn't work
  * [Fixed]   Children of TRelativeLayout and TLinearLayout position error (Thanks for report: 恢弘和凌风)
  * [Fixed]   Wrong mouse event of TListViewEx (Thanks for report: keven)
+ * [Fixed]   Draw checked state error (Thanks for report: 凌风)
  - -----------------------------------
  - 2020.03.13
  * Add Callback demo for Dialog
