@@ -424,7 +424,7 @@ begin
   AddEnumElementAliases(TypeInfo(TDrawableKind),
     ['None', 'Circle', 'Ellipse']);
   AddEnumElementAliases(TypeInfo(TViewBorderStyle),
-    ['None', 'RectBorder', 'RectBitmap', 'CircleBorder', 'EllipseBorder', 'LineEdit', 'LineTop', 'LineBottom', 'LineLeft', 'LineRight']);
+    ['None', 'RectBorder', 'RectBitmap', 'CircleBorder', 'EllipseBorder', 'LineEdit', 'LineTop', 'LineBottom', 'LineLeft', 'LineRight', 'Lines']);
   AddEnumElementAliases(TypeInfo(TViewBrushKind),
     ['None', 'Solid', 'Gradient', 'Bitmap', 'Resource', 'Patch9Bitmap', 'AccessoryBitmap', 'SVGImage']);
   AddEnumElementAliases(TypeInfo(TViewScroll),

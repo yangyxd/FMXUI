@@ -469,7 +469,12 @@ type
     LineTop {¶¥²¿±ß¿ò},
     LineBottom {µ×²¿±ß¿ò},
     LineLeft {×ó±ß±ß¿ò},
-    LineRight {ÓÒ±ß±ß¿ò} );
+    LineRight {ÓÒ±ß±ß¿ò},
+    Lines {¶à±ß¿ò}
+  );
+
+  TViewLine = (Left, Top, Right, Bottom);
+  TViewLines = set of TViewLine;
 
   TViewBorder = class(TPersistent)
   private
@@ -478,6 +483,7 @@ type
     FColor: TViewColor;
     FStyle: TViewBorderStyle;
     FDefaultStyle: TViewBorderStyle;
+    FLines: TViewLines;
     procedure SetColor(const Value: TViewColor);
     procedure SetStyle(const Value: TViewBorderStyle);
     procedure SetWidth(const Value: Single);
@@ -499,6 +505,8 @@ type
     function IsGradientStored: Boolean;
     procedure SetBitmap(const Value: TBrushBitmap);
     procedure SetKind(const Value: TBrushKind);
+    function IsLinesStored: Boolean;
+    procedure SetLines(const Value: TViewLines);
   protected
     procedure DoChanged();
     procedure DoGradientChanged(Sender: TObject);
@@ -521,6 +529,7 @@ type
     property Gradient: TGradient read GetGradient write SetGradient stored IsGradientStored;
     property Bitmap: TBrushBitmap read GetBitmap write SetBitmap stored IsBitmapStored;
     property Kind: TBrushKind read GetKind write SetKind default TBrushKind.Solid;
+    property Lines: TViewLines read FLines write SetLines stored IsLinesStored default [TViewLine.Left, TViewLine.Top, TViewLine.Right, TViewLine.Bottom];
   end;
 
   TDrawableBorder = class(TDrawable)
@@ -6867,6 +6876,25 @@ begin
           Canvas.FillRect(RectF(R.Right - FBorder.Width, R.Top, R.Right, R.Bottom),
             XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
         end;
+      TViewBorderStyle.Lines:
+        begin
+          if TViewLine.Top in FBorder.FLines then begin
+            Canvas.FillRect(AlignToPixel(Canvas, RectF(R.Left, R.Top, R.Right, R.Top + FBorder.Width)),
+              XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
+          end;
+          if TViewLine.Bottom in FBorder.FLines then begin
+            Canvas.FillRect(RectF(R.Left, R.Bottom - FBorder.Width, R.Right, R.Bottom),
+              XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
+          end;
+          if TViewLine.Left in FBorder.FLines then begin
+            Canvas.FillRect(RectF(R.Left, R.Top, R.Left + FBorder.Width, R.Bottom),
+              XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
+          end;
+          if TViewLine.Right in FBorder.FLines then begin
+            Canvas.FillRect(RectF(R.Right - FBorder.Width, R.Top, R.Right, R.Bottom),
+              XRadius, YRadius, FCorners, AOpacity, FBorder.Brush, FCornerType);
+          end;
+        end;
     end;
   end;
 end;
@@ -6927,6 +6955,7 @@ begin
   FColor := TViewColor.Create(TAlphaColorRec.Null);
   FStyle := ADefaultStyle;
   FDefaultStyle := ADefaultStyle;
+  FLines := [TViewLine.Left, TViewLine.Top, TViewLine.Right, TViewLine.Bottom];
 end;
 
 destructor TViewBorder.Destroy;
@@ -6993,6 +7022,11 @@ begin
   Result := (FBrush.Kind = TBrushKind.Gradient);
 end;
 
+function TViewBorder.IsLinesStored: Boolean;
+begin
+  Result := (FStyle = TViewBorderStyle.Lines);
+end;
+
 procedure TViewBorder.SetBitmap(const Value: TBrushBitmap);
 begin
   if FBrush.Bitmap <> Value then begin
@@ -7040,6 +7074,14 @@ procedure TViewBorder.SetKind(const Value: TBrushKind);
 begin
   if FBrush.Kind <> Value then begin
     FBrush.Kind := Value;
+    DoChanged;
+  end;
+end;
+
+procedure TViewBorder.SetLines(const Value: TViewLines);
+begin
+  if FLines <> Value then begin
+    FLines := Value;
     DoChanged;
   end;
 end;
