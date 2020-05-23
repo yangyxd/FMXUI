@@ -50,6 +50,7 @@ type
     destructor Destroy; override;
     procedure LoadFormFile(const AFileName: string);
     procedure LoadFormStream(const AStream: TStream); virtual;
+    procedure Parse(const S: string);
     property SvgStyle: TXmlNode read FSvg;
     property Data: TXMLDocument read FData;
     property Empty: Boolean read IsEmpty;
@@ -97,6 +98,7 @@ type
     destructor Destroy; override;
     procedure LoadFormFile(const AFileName: string);
     procedure LoadFormStream(const AStream: TStream);
+    procedure Parse(const S: string);
     procedure Assign(Source: TPersistent); override;
     procedure Clear;
     procedure ReSize();
@@ -200,6 +202,23 @@ begin
   FViewBox := TPoint.Zero;
   try
     FData.LoadFromStream(AStream);
+    DecodeSVG();
+  except
+  end;
+end;
+
+procedure TSVGDecode.Parse(const S: string);
+begin
+  if S = '' then
+    Exit;
+  if not Assigned(FData) then
+    FData := TXMLDocument.Create()
+  else
+    FData.Clear;
+  FSvg := nil;
+  FViewBox := TPoint.Zero;
+  try
+    FData.Text := S;
     DecodeSVG();
   except
   end;
@@ -950,6 +969,21 @@ procedure TSVGImage.LoadFormStream(const AStream: TStream);
 begin
   CreateDecode();
   FData.LoadFormStream(AStream);
+  if Empty then begin
+    FreeAndNil(FBitmap);
+    Exit;
+  end;
+  if not Assigned(FBitmap) then
+    InitBitmap;
+  FBitmap.SetSize(FData.Size.Width, FData.Size.Height);
+  DrawSVG;
+  DoChange();
+end;
+
+procedure TSVGImage.Parse(const S: string);
+begin
+  CreateDecode();
+  FData.Parse(S);
   if Empty then begin
     FreeAndNil(FBitmap);
     Exit;

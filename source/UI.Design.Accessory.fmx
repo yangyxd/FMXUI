@@ -73,13 +73,12 @@ object AccessoryDesigner: TAccessoryDesigner
   end
   object VertScrollView1: TVertScrollView
     Align = Client
-    Background.ItemDefault.Color = claWhite
-    Background.ItemDefault.Kind = Solid
     Gravity = None
     Size.Width = 705.000000000000000000
     Size.Height = 460.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 6
+    OnPainting = VertScrollView1Painting
     object BodyView: TGridsLayout
       Align = Top
       WidthSize = FillParent

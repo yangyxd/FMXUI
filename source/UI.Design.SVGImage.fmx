@@ -154,39 +154,87 @@ object FrmDesignSVGImage: TFrmDesignSVGImage
       OnClick = Button5Click
     end
   end
-  object Panel1: TPanel
-    Align = Client
-    Size.Width = 702.000000000000000000
-    Size.Height = 517.000000000000000000
-    Size.PlatformDefault = False
-    TabOrder = 4
-    object ScrollBox1: TScrollBox
-      Align = Client
-      Margins.Left = 2.000000000000000000
-      Margins.Top = 2.000000000000000000
-      Margins.Right = 2.000000000000000000
-      Margins.Bottom = 2.000000000000000000
-      Size.Width = 698.000000000000000000
-      Size.Height = 513.000000000000000000
-      Size.PlatformDefault = False
-      StyleLookup = 'scrollboxstyle'
-      TabOrder = 1
-      OnPainting = ScrollBox1Painting
-      Viewport.Width = 698.000000000000000000
-      Viewport.Height = 513.000000000000000000
-      object View1: TView
-        Gravity = None
-        Position.X = 4.000000000000000000
-        Position.Y = 4.000000000000000000
-        TabOrder = 0
-        OnResize = View1Resize
-      end
-    end
-  end
   object OpenDialog1: TOpenDialog
     Filter = 'SVG Image(*.svg)|*.svg|All Files(*.*)|*.*'
     Options = [ofHideReadOnly, ofPathMustExist, ofFileMustExist, ofEnableSizing]
     Left = 440
     Top = 232
+  end
+  object tbc1: TTabControl
+    Align = Client
+    Size.Width = 702.000000000000000000
+    Size.Height = 517.000000000000000000
+    Size.PlatformDefault = False
+    TabIndex = 0
+    TabOrder = 6
+    TabPosition = PlatformDefault
+    OnChange = tbc1Change
+    Sizes = (
+      702s
+      491s
+      702s
+      491s)
+    object TabItem1: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = True
+      Size.Width = 43.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'SVG'
+      ExplicitSize.cx = 43.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object ScrollBox1: TScrollBox
+        Align = Client
+        Margins.Left = 2.000000000000000000
+        Margins.Top = 2.000000000000000000
+        Margins.Right = 2.000000000000000000
+        Margins.Bottom = 2.000000000000000000
+        Size.Width = 698.000000000000000000
+        Size.Height = 487.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = 'scrollboxstyle'
+        TabOrder = 0
+        OnPainting = ScrollBox1Painting
+        Viewport.Width = 698.000000000000000000
+        Viewport.Height = 487.000000000000000000
+        object View1: TView
+          Gravity = None
+          Position.X = 4.000000000000000000
+          Position.Y = 4.000000000000000000
+          TabOrder = 0
+          OnResize = View1Resize
+        end
+      end
+    end
+    object TabItem2: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = False
+      Size.Width = 43.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'Text'
+      ExplicitSize.cx = 43.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object Memo1: TMemo
+        Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+        DataDetectorTypes = []
+        TextSettings.WordWrap = True
+        Align = Client
+        Size.Width = 702.000000000000000000
+        Size.Height = 491.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Viewport.Width = 698.000000000000000000
+        Viewport.Height = 487.000000000000000000
+      end
+    end
   end
 end

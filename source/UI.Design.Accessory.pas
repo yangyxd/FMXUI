@@ -26,14 +26,18 @@ type
     procedure FormShow(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure ComboColorBox1Change(Sender: TObject);
+    procedure VertScrollView1Painting(Sender: TObject; Canvas: TCanvas;
+      const ARect: TRectF);
   private
     { Private declarations }
     FAccessory: TViewAccessory;
     FChangeing: Boolean;
+    FCheckboardBitmap: TBitmap;
 
     procedure SetAccessory(const Value: TViewAccessory);
     procedure DoClickItem(Sender: TObject);
     procedure DoDbClickItem(Sender: TObject);
+    procedure PrepareCheckboardBitmap;
   public
     { Public declarations }
     property Accessory: TViewAccessory read FAccessory write SetAccessory;
@@ -100,6 +104,7 @@ end;
 procedure TAccessoryDesigner.FormDestroy(Sender: TObject);
 begin
   FreeAndNil(FAccessory);
+  FreeAndNil(FCheckboardBitmap);
 end;
 
 procedure TAccessoryDesigner.FormShow(Sender: TObject);
@@ -140,12 +145,49 @@ begin
   end;
 end;
 
+procedure TAccessoryDesigner.PrepareCheckboardBitmap;
+var
+  i, j: Integer;
+  M: TBitmapData;
+begin
+  if not Assigned(FCheckboardBitmap) then
+  begin
+    FCheckboardBitmap := TBitmap.Create(32, 32);
+    if FCheckboardBitmap.Map(TMapAccess.Write, M) then
+    try
+      for j := 0 to FCheckboardBitmap.Height - 1 do
+      begin
+        for i := 0 to FCheckboardBitmap.Width - 1 do
+        begin
+          if odd(i div 8) and not odd(j div 8) then
+            M.SetPixel(i, j, $FFE0E0E0)
+          else if not odd(i div 8) and odd(j div 8) then
+            M.SetPixel(i, j, $FFE0E0E0)
+          else
+            M.SetPixel(i, j, $FFFFFFFF)
+        end;
+      end;
+    finally
+      FCheckboardBitmap.Unmap(M);
+    end;
+  end;
+end;
+
 procedure TAccessoryDesigner.SetAccessory(const Value: TViewAccessory);
 begin
   if Value = nil then
     Exit;
   FAccessory.Assign(Value);
   FAccessory.Style := TViewAccessoryStyle.Accessory;
+end;
+
+procedure TAccessoryDesigner.VertScrollView1Painting(Sender: TObject;
+  Canvas: TCanvas; const ARect: TRectF);
+begin
+  PrepareCheckboardBitmap;
+  Canvas.Fill.Kind := TBrushKind.Bitmap;
+  Canvas.Fill.Bitmap.Bitmap := FCheckboardBitmap;
+  Canvas.FillRect(ARect, 0, 0, [], 1);
 end;
 
 end.

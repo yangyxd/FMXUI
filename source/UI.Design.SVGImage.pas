@@ -7,7 +7,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, UI.Base,
   FMX.Layouts, FMX.StdCtrls, FMX.Edit, FMX.Controls.Presentation, FMX.ListBox,
-  FMX.Colors;
+  FMX.Colors, FMX.ScrollBox, FMX.Memo, FMX.TabControl;
 
 type
   TFrmDesignSVGImage = class(TForm)
@@ -17,7 +17,6 @@ type
     labelScale: TLabel;
     edtHeight: TEdit;
     Button1: TButton;
-    Panel1: TPanel;
     ScrollBox1: TScrollBox;
     Label1: TLabel;
     edtWidth: TEdit;
@@ -27,6 +26,10 @@ type
     Button4: TButton;
     ComboColorBox1: TComboColorBox;
     Button5: TButton;
+    tbc1: TTabControl;
+    TabItem1: TTabItem;
+    TabItem2: TTabItem;
+    Memo1: TMemo;
     procedure Button3Click(Sender: TObject);
     procedure View1Resize(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -41,6 +44,7 @@ type
       const ARect: TRectF);
     procedure ComboColorBox1Change(Sender: TObject);
     procedure Button5Click(Sender: TObject);
+    procedure tbc1Change(Sender: TObject);
   private
     { Private declarations }
     FChangeing: Boolean;
@@ -77,10 +81,10 @@ end;
 procedure TFrmDesignSVGImage.Button3Click(Sender: TObject);
 begin
   if OpenDialog1.Execute() then begin
-      if Bmp = nil then
-        Bmp := TSVGImage.Create;
-      Bmp.LoadFormFile(OpenDialog1.FileName);
-      ViewImage;
+    if Bmp = nil then
+      Bmp := TSVGImage.Create;
+    Bmp.LoadFormFile(OpenDialog1.FileName);
+    ViewImage;
   end;
 end;
 
@@ -88,6 +92,7 @@ procedure TFrmDesignSVGImage.Button4Click(Sender: TObject);
 begin
   FreeAndNil(Bmp);
   ViewImage();
+  ComboColorBox1.Color := 0;
 end;
 
 procedure TFrmDesignSVGImage.Button5Click(Sender: TObject);
@@ -201,6 +206,20 @@ begin
   Canvas.FillRect(ARect, 0, 0, [], 1);
 end;
 
+procedure TFrmDesignSVGImage.tbc1Change(Sender: TObject);
+begin
+  if tbc1.ActiveTab.Index = 0 then begin
+    if Memo1.Lines.Text <> '' then begin
+      if Bmp = nil then
+        Bmp := TSVGImage.Create;
+      Bmp.Parse(Memo1.Lines.Text);
+    end
+    else
+      FreeAndNil(Bmp);
+    ViewImage;
+  end;
+end;
+
 procedure TFrmDesignSVGImage.View1Resize(Sender: TObject);
 begin
   if FChangeing then
@@ -217,10 +236,12 @@ begin
     View1.Width := Bmp.Width;
     View1.Height := Bmp.Height;
     View1.Background.SetBitmap(TViewState.None, Bmp.Bitmap);
+    Memo1.Lines.Text := Bmp.Data.Data.Text;
   end else begin
     View1.Width := 50;
     View1.Height := 50;
     View1.Background.SetBitmap(TViewState.None, TBitmap(nil));
+    Memo1.Lines.Clear;
   end;
   View1.Invalidate;
 end;
