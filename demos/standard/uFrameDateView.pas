@@ -18,9 +18,11 @@ type
     CheckBox2: TCheckBox;
     CalendarLanguage_CN1: TCalendarLanguage_CN;
     GestureManager1: TGestureManager;
+    txtHint: TTextView;
     procedure btnBackClick(Sender: TObject);
     procedure CheckBox1Change(Sender: TObject);
     procedure CheckBox2Change(Sender: TObject);
+    procedure CalendarView1ClickView(Sender: TObject; const ID: Integer);
   private
     { Private declarations }
   public
@@ -34,6 +36,21 @@ implementation
 procedure TFrameDateView.btnBackClick(Sender: TObject);
 begin
   Finish;
+end;
+
+procedure TFrameDateView.CalendarView1ClickView(Sender: TObject;
+  const ID: Integer);
+begin
+  case ID of
+    InvaludeDate: txtHint.Text := 'InvaludeDate';
+    BID_Up: txtHint.Text := 'Up clicked';
+    BID_Next: txtHint.Text := 'Next clicked';
+    BID_Today: txtHint.Text := 'Today clicked';
+    BID_Navigation: txtHint.Text := 'Navigation clicked';
+    BID_Clear: txtHint.Text := 'Clear clicked';
+  else
+    txtHint.Text := FormatDateTime('yyyy-mm-dd', ID);
+  end;
 end;
 
 procedure TFrameDateView.CheckBox1Change(Sender: TObject);

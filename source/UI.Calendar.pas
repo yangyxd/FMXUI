@@ -1666,18 +1666,16 @@ end;
 
 function TCalendarViewBase.GetLunarData(const LDate: Integer; const AState: TCalendarDrawState): TCalendarDateItem;
 begin
-  if Assigned(FOnGetLunarData) then begin
+  if LDate - AState.DrawS < Length(AState.LunarDataList) then
+    Result := AState.LunarDataList[LDate - AState.DrawS]
+  else begin
     Result.Text := '';
     Result.IsTerm := False;
     Result.IsHoliday := False;
     Result.IsLunarHoliday := False;
-    FOnGetLunarData(Self, (LDate), Result)
-  end else begin
-    if LDate - AState.DrawS < Length(AState.LunarDataList) then
-      Result := AState.LunarDataList[LDate - AState.DrawS]
-    else
-      Result.Text := '';
   end;
+  if Assigned(FOnGetLunarData) then
+    FOnGetLunarData(Self, (LDate), Result);
 end;
 
 function TCalendarViewBase.GetMonthBegin: TDate;

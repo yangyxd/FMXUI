@@ -69,11 +69,11 @@ object FrameDateView: TFrameDateView
     Background.ItemDefault.Color = claGhostwhite
     Background.ItemDefault.Kind = Solid
     Gravity = None
-    Margins.Top = 50.000000000000000000
+    Margins.Top = 40.000000000000000000
     Size.Width = 344.000000000000000000
     Size.Height = 360.000000000000000000
     Size.PlatformDefault = False
-    Position.Y = 100.000000000000000000
+    Position.Y = 90.000000000000000000
     TabOrder = 1
     AutoSize = True
     Options = [coShowNavigation, coShowWeek, coCalendarWeeks, coTodayHighlight, coShowTodayButton, coShowClearButton, coShowTerm, coShowRowLines, coShowWeekLine]
@@ -85,20 +85,30 @@ object FrameDateView: TFrameDateView
     TextSettingsOfTitle.Font.Size = 15.000000000000000000
     TextSettingsOfWeeks.Color = claCadetblue
     TextSettingsOfWeeks.Font.Size = 13.000000000000000000
+    OnClickView = CalendarView1ClickView
   end
   object CheckBox1: TCheckBox
     Position.X = 16.000000000000000000
-    Position.Y = 64.000000000000000000
+    Position.Y = 60.000000000000000000
     TabOrder = 3
     Text = #20013#25991
     OnChange = CheckBox1Change
   end
   object CheckBox2: TCheckBox
     Position.X = 136.000000000000000000
-    Position.Y = 64.000000000000000000
+    Position.Y = 60.000000000000000000
     TabOrder = 2
     Text = #20892#21382
     OnChange = CheckBox2Change
+  end
+  object txtHint: TTextView
+    Align = Bottom
+    Size.Width = 344.000000000000000000
+    Size.Height = 17.000000000000000000
+    Size.PlatformDefault = False
+    Position.Y = 563.000000000000000000
+    TabOrder = 6
+    Text = 'txtHint'
   end
   object CalendarLanguage_CN1: TCalendarLanguage_CN
     Left = 208

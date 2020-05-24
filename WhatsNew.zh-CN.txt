@@ -13,6 +13,7 @@
  * [更改] TToastManager允许创建多个实例，尤其在非安卓平台，可以让Toast内容显示在你想要的位置
  * [优化] TDialogStyleManager增加更多属性，支持Assign
  * [优化] SVG编辑器增加text模式 (感谢报告：keven)
+ * [优化] TCalendarView.OnOwnerLunarData中初始化默认参数值 (感谢报告：keven)
  * [优化] TViewBorderStyle增加Lines，可选多边框 (感谢报告：凌风)
  * [修正] TEditView某些情况下无法移动光标（感谢报告：欢乐飞刀）
  * [修正] TDialogStyleManager MaxWidth效果不正确的Bug
