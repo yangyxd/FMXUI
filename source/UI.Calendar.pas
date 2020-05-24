@@ -551,7 +551,6 @@ type
     /// </summary>
     property Language: ICalendarLanguage read GetLanguage write SetLanguage;
 
-
     /// <summary>
     /// 禁止选择的日期于星期几
     /// </summary>
@@ -560,7 +559,6 @@ type
     /// 高亮显示的日期于星期几
     /// </summary>
     property DaysOfWeekHighlighted: TCalendarWeeks read FDaysOfWeekHighlighted write SetDaysOfWeekHighlighted default [];
-
 
     /// <summary>
     /// 行间距

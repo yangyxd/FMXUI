@@ -229,9 +229,10 @@ begin
   edtHeight.Text := IntToStr(Round(View1.Height));
   FChangeing := False;
 end;
+
 procedure TFrmDesignSVGImage.ViewImage;
 begin
-  if not (Bmp = nil) and not (Bmp.Empty) then
+  if Assigned(Bmp) and not Bmp.Empty then
   begin
     View1.Width := Bmp.Width;
     View1.Height := Bmp.Height;
