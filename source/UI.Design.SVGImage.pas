@@ -229,10 +229,10 @@ begin
   edtHeight.Text := IntToStr(Round(View1.Height));
   FChangeing := False;
 end;
-
 procedure TFrmDesignSVGImage.ViewImage;
 begin
-  if Assigned(Bmp) then begin
+  if not (Bmp = nil) and not (Bmp.Empty) then
+  begin
     View1.Width := Bmp.Width;
     View1.Height := Bmp.Height;
     View1.Background.SetBitmap(TViewState.None, Bmp.Bitmap);
