@@ -278,10 +278,6 @@ type
 
     FMaxListItemBottom: Double;
 
-    {$IFNDEF NEXTGEN}
-    FDownPos, FMovePos: TPointF;
-    {$ENDIF}
-
     FOnDrawViewBackgroud: TOnDrawViewBackgroud;
     FOnItemMeasureHeight: TOnItemMeasureHeight;
     FOnItemClick: TOnItemClick;
@@ -346,6 +342,7 @@ type
     function GetDividerHeight: Single;
   protected
     {$IFNDEF NEXTGEN}
+    FDownPos, FMovePos: TPointF;
     [Weak] FPointTarget: IControl;
     FMouseEnter, FMouseDown: Boolean;
     {$ENDIF}
@@ -995,14 +992,10 @@ begin
       Exit;
     end;
 
-    {$IFDEF MSWINDOWS}
-    if Assigned(FScrollV) and (FScrollV.Visible) then
-      W := Width - Padding.Right - Padding.Left{$IFDEF MSWINDOWS} - FScrollV.Width{$ENDIF}
+    if Assigned(FScrollV) and (FScrollV.Visible) and not IsScrollBarAutoShowing then
+      W := Width - Padding.Right - Padding.Left - FScrollV.Width
     else
       W := Width - Padding.Right - Padding.Left;
-    {$ELSE}
-    W := Width - Padding.Right - Padding.Left;
-    {$ENDIF}
 
     FContentViews.SetBounds(Padding.Left, Padding.Top, W,
       Height - Padding.Bottom - Padding.Top);
@@ -1226,7 +1219,6 @@ begin
           H := H + DividerH + FItemsPoints[i].H;
       end;
     end;
-
   end;
 
   FContentBounds.Right := FContentViews.Width;

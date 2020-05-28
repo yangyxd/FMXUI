@@ -2033,12 +2033,10 @@ begin
   R.Top := Padding.Top;
   R.Right := R.Right - Padding.Right;
   R.Bottom := R.Bottom - Padding.Bottom;
-  {$IFNDEF NEXTGEN}
-  if Assigned(FScrollH) and (FScrollH.Visible) then
+  if Assigned(FScrollH) and (FScrollH.Visible) and not IsScrollBarAutoShowing then
     R.Bottom := R.Bottom - FScrollH.Height;
-  if Assigned(FScrollV) and (FScrollV.Visible) then
+  if Assigned(FScrollV) and (FScrollV.Visible) and not IsScrollBarAutoShowing then
     R.Right := R.Right - FScrollV.Width;
-  {$ENDIF}
 
   if Assigned(FColumns) then begin
     W := FColumns.Width;
@@ -2052,17 +2050,13 @@ begin
   LV := R.Left + XOffset;
 
   MH := Height - Padding.Bottom;
-  {$IFNDEF NEXTGEN}
-  if Assigned(FScrollH) and (FScrollH.Visible) then
+  if Assigned(FScrollH) and (FScrollH.Visible) and not IsScrollBarAutoShowing then
     MH := MH - FScrollH.Height;
-  {$ENDIF}
   if gvFixedFooter in FOptions then
     MH := MH - FFixedRowHeight - DH * 2;
   MW := Width - Padding.Right;
-  {$IFNDEF NEXTGEN}
-  if Assigned(FScrollV) and (FScrollV.Visible) then
+  if Assigned(FScrollV) and (FScrollV.Visible) and not IsScrollBarAutoShowing then
     MW := MW - FScrollV.Width;
-  {$ENDIF}
 
   SetLength(ItemList, FFixedCols + 1);
   for I := 0 to FFixedCols do
@@ -2497,16 +2491,11 @@ begin
 
     if FColumns.FLastViewWidth <> Width then begin
       FColumns.FLastViewWidth := Width;
-      {$IFNDEF NEXTGEN}
-      if Assigned(FScrollV) and (FScrollV.Visible) then begin
-        FColumns.InitColumnWidth(FContentViews.Width - FScrollV.Width);
-      end else
+      if Assigned(FScrollV) and (FScrollV.Visible) and not IsScrollBarAutoShowing then
+        FColumns.InitColumnWidth(FContentViews.Width - FScrollV.Width)
+      else
         FColumns.InitColumnWidth(FContentViews.Width);
-      {$ELSE}
-      FColumns.InitColumnWidth(FContentViews.Width);
-      {$ENDIF}
     end;
-
   finally
     FDisablePaint := LDisablePaint;
     FContentViews.DoRealign;
@@ -2792,13 +2781,13 @@ begin
   if gvFixedFooter in FOptions then
     H := H + ItemDefaultH + DividerH;
 
-  if Assigned(FScrollV) and (FShowScrollBars) then
-    FContentBounds.Right := W + FFixedColsWidth {$IFNDEF NEXTGEN} + FScrollV.Width {$ENDIF} + FFixedRightPadding
+  if Assigned(FScrollV) and (FShowScrollBars) and not IsScrollBarAutoShowing then
+    FContentBounds.Right := W + FFixedColsWidth + FFixedRightPadding + FScrollV.Width
   else
     FContentBounds.Right := W + FFixedColsWidth + FFixedRightPadding;
 
-  if Assigned(FScrollH) and FShowScrollBars then
-    FContentBounds.Bottom := H + FFixedRowHeight {$IFNDEF NEXTGEN} + FScrollH.Height {$ENDIF} + CDefaultFixedRowHeight * 2
+  if Assigned(FScrollH) and FShowScrollBars and not IsScrollBarAutoShowing then
+    FContentBounds.Bottom := H + FFixedRowHeight + CDefaultFixedRowHeight * 2 + FScrollH.Height
   else
     FContentBounds.Bottom := H + FFixedRowHeight + CDefaultFixedRowHeight * 2;
 end;
@@ -2863,10 +2852,8 @@ begin
       PH := Height;
       if gvFixedFooter in FOptions then
         PH := PH - DH - FFixedRowHeight;
-      {$IFDEF MSWINDOWS}
-      if Assigned(FScrollH) and (FScrollH.Visible) then
+      if Assigned(FScrollH) and (FScrollH.Visible) and not IsScrollBarAutoShowing then
         PH := PH - FScrollH.Height;
-      {$ENDIF}
       if Y > PH then
         Exit;
 
@@ -4187,10 +4174,8 @@ begin
   // 如果存在页脚时
   if gvFixedFooter in GridView.FOptions then begin
     LS.Height := LS.Height - GridView.FFixedRowHeight - LS.DividerH * 2;
-    {$IFNDEF NEXTGEN}
-    if Assigned(GridView.FScrollH) and (GridView.FScrollH.Visible) then
+    if Assigned(GridView.FScrollH) and (GridView.FScrollH.Visible) and not GridView.IsScrollBarAutoShowing then
       LS.Height := LS.Height - GridView.FScrollH.Height;
-    {$ENDIF}
   end;
   FViewHeight := LS.Height;
 
@@ -5189,9 +5174,8 @@ begin
 
     DoDrawHeaderRows(Canvas, R);
 
-    {$IFNDEF NEXTGEN}
     if Assigned(GridView.FScrollV) and (GridView.FScrollV.Visible) and
-      (Assigned(GridView.FScrollH)) and (GridView.FScrollH.Visible)
+      (Assigned(GridView.FScrollH)) and (GridView.FScrollH.Visible) and not GridView.IsScrollBarAutoShowing
     then begin
       R := RectF(R.Right - GridView.FScrollV.Width,
         R.Top - GridView.FScrollH.Height,
@@ -5200,7 +5184,6 @@ begin
     end else
       R.Clear;
     FRBRect := R;
-    {$ENDIF}
   end;
 end;
 
@@ -5280,11 +5263,10 @@ begin
   end;
 
   if ACell.Col >= 0 then begin
-    W := Width;
-    {$IFNDEF NEXTGEN}
-    if Assigned(GridView.FScrollV) and (GridView.FScrollV.Visible) then
-      W := W - GridView.FScrollV.Width;
-    {$ENDIF}
+    if Assigned(GridView.FScrollV) and (GridView.FScrollV.Visible) and not GridView.IsScrollBarAutoShowing then
+      W := Width - GridView.FScrollV.Width
+    else
+      W := Width;
 
     V := 0 - GridView.HScrollBarValue;
     for I := 0 to GridView.ColCount - 1 do begin

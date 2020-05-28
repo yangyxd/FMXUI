@@ -386,6 +386,8 @@ type
 
     function IsCanTouch: Boolean; virtual;
     function GetScrollOffset: TPointF; virtual;
+
+    function IsScrollBarAutoShowing: Boolean; virtual;
   protected
     procedure Resize; override;
     procedure DoRealign; override;
@@ -552,8 +554,6 @@ type
   protected
     {$IFNDEF NEXTGEN}
     FDownPos, FMovePos: TPointF;
-    {$ENDIF}
-    {$IFNDEF NEXTGEN}
     [Weak] FPointTarget: IControl;
     FMouseEnter, FMouseDown: Boolean;
     {$ENDIF}
@@ -1483,9 +1483,8 @@ begin
           if Assigned(FScrollH) and (FCanScrollH) then begin
             SR := GetRectF(FContentBounds^);
             SR.Top := R.Top;
-            // windows平台显示滚动条，其它平台会自动隐藏
-            if FShowScrollBars then
-              SR.Bottom := R.Bottom{$IFDEF MSWINDOWS} - FScrollH.Height{$ENDIF}
+            if FShowScrollBars and not IsScrollBarAutoShowing then
+              SR.Bottom := R.Bottom - FScrollH.Height
             else
               SR.Bottom := R.Bottom;
             OffsetRect(SR, -(ScrollValueH * (SR.Width - R.Width)), 0);
@@ -1497,8 +1496,8 @@ begin
           if Assigned(FScrollV) and (FCanScrollV) then begin
             SR := GetRectF(FContentBounds^);
             SR.Left := R.Left;
-            if FShowScrollBars then
-              SR.Right := R.Right{$IFDEF MSWINDOWS} - FScrollV.Width{$ENDIF}
+            if FShowScrollBars and not IsScrollBarAutoShowing then
+              SR.Right := R.Right - FScrollV.Width
             else
               SR.Right := R.Right;
             OffsetRect(SR, 0, -(ScrollValueV * (SR.Height - R.Height)));
@@ -1538,10 +1537,9 @@ begin
       IconS := GetDrawableWidth;
       if (IconS > 0) and (FDrawable.Position in [TDrawablePosition.Left, TDrawablePosition.Right]) then
         V := V - IconS - FDrawable.Padding;
-      {$IFDEF MSWINDOWS}
-      if (FScrollbar = TViewScroll.Vertical) and (FScrollV <> nil) and (FScrollV.Visible) then
+      if (FScrollbar = TViewScroll.Vertical) and (FScrollV <> nil) and (FScrollV.Visible)
+        and not IsScrollBarAutoShowing then
         V := V - FScrollV.Width;
-      {$ENDIF}
     end else
       V := 0;
 
@@ -2642,6 +2640,11 @@ end;
 function TScrollView.IsRunningOnDesktop: Boolean;
 begin
   Result := TOSVersion.Platform in [pfWindows, pfMacOS, pfLinux];
+end;
+
+function TScrollView.IsScrollBarAutoShowing: Boolean;
+begin
+  Result :=  Assigned(FAniCalculations) and FAniCalculations.AutoShowing;
 end;
 
 function TScrollView.IsStoredScrollbarWidth: Boolean;
@@ -5701,19 +5704,15 @@ begin
   if not Assigned(FContent) then
     Exit;
 
-  {$IFDEF MSWINDOWS}
-  if Assigned(FScrollH) and (FScrollH.Visible) then
+  if Assigned(FScrollH) and (FScrollH.Visible) and not IsScrollBarAutoShowing then
     H := Height - Padding.Bottom - Padding.Top - FScrollH.Height
   else
-  {$ENDIF}
-  H := Height - Padding.Bottom - Padding.Top;
+    H := Height - Padding.Bottom - Padding.Top;
 
-  {$IFDEF MSWINDOWS}
-  if Assigned(FScrollV) and (FScrollV.Visible) then
+  if Assigned(FScrollV) and (FScrollV.Visible) and not IsScrollBarAutoShowing then
     W := Width - Padding.Right - Padding.Left - FScrollV.Width
   else
-  {$ENDIF}
-  W := Width - Padding.Right - Padding.Left;
+    W := Width - Padding.Right - Padding.Left;
 
   case ScrollBars of
     TViewScroll.Horizontal:
