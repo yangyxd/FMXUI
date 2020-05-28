@@ -998,7 +998,7 @@ type
 
     FSelectionAnchor: Integer;  // 当前选中行
 
-    {$IFNDEF NEXTGEN}
+    {$IF not Defined(ANDROID) and not Defined(IOS)}
     [Weak] FPointTarget: IControl;
     FMouseEnter: Boolean;
     {$ELSE}
@@ -1009,7 +1009,7 @@ type
 
     function PointInItem(const P: TPointF; var R: TRectF): Integer;
 
-    {$IFDEF NEXTGEN}
+    {$IF Defined(ANDROID) or Defined(IOS)}
     procedure AniMouseMove(const Touch: Boolean; const X, Y: Single); override;
     {$ENDIF}
 
@@ -1664,7 +1664,7 @@ begin
   Result := True;
 end;
 
-{$IFDEF NEXTGEN}
+{$IF Defined(ANDROID) or Defined(IOS)}
 procedure TGridBase.AniMouseMove(const Touch: Boolean; const X, Y: Single);
 begin
   if (FAdjuestItem = nil) and (FHotItem = nil) then
@@ -1826,14 +1826,10 @@ end;
 
 function TGridBase.CreateScroll: TScrollBar;
 begin
-  {$IFNDEF NEXTGEN}
-  if DragScroll then
+  if CanDragScroll then
     Result := TSmallScrollBar.Create(Self)
   else
     Result := TScrollBar.Create(Self);
-  {$ELSE}
-  Result := TSmallScrollBar.Create(Self);
-  {$ENDIF}
   Result.Cursor := crArrow;
 end;
 
@@ -2848,7 +2844,6 @@ begin
 
     DH := GetDividerHeight;
     if (Y > FColumns.Height) then begin
-
       PH := Height;
       if gvFixedFooter in FOptions then
         PH := PH - DH - FFixedRowHeight;
@@ -2878,9 +2873,7 @@ begin
         end else
           H := LH;
       end;
-
     end else begin
-
       H := Padding.Left;
       for J := K to FFixedCols - 1 do begin
         LH := H + FixedColsumn[J].FWidth;
@@ -2891,12 +2884,9 @@ begin
         end else
           H := LH + DH;
       end;
-
     end;
-
   end else if (Y > FColumns.Height) then begin
-
-    {$IFNDEF NEXTGEN}
+    {$IF not Defined(ANDROID) and not Defined(IOS)}
     if DragScroll and Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
       FMovePos := FDownPos;
       AniMouseDown(True, X, Y);
@@ -2917,7 +2907,6 @@ begin
           end;
         end,
       0.05);
-
     end;
     {$ELSE}
     FCanMouseChild := False;
@@ -2936,7 +2925,7 @@ begin
     0.05);
     {$ENDIF}
 
-  {$IFDEF NEXTGEN}
+  {$IF Defined(ANDROID) or Defined(IOS)}
   end else begin
     if (Assigned(FAdjuestItem) or Assigned(FHotItem)) then
       FAniCalculations.Down := False;
@@ -2954,7 +2943,7 @@ begin
   FMovePos.Y := Y;
   if not (csDesigning in ComponentState) then begin
 
-    {$IFNDEF NEXTGEN}
+    {$IF not Defined(ANDROID) and not Defined(IOS)}
     if DragScroll and (FAdjuestItem = nil) and (FHotItem = nil) then begin
       if ssLeft in Shift then begin
         FMovePos.X := X;
@@ -3028,7 +3017,7 @@ procedure TGridBase.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
 var
   I: Integer;
   R: TRectF;
-  {$IFNDEF NEXTGEN}
+  {$IF not Defined(ANDROID) and not Defined(IOS)}
   P: TPointF;
   {$ENDIF}
 begin
@@ -3048,7 +3037,7 @@ begin
     end;
   end;
 
-  {$IFDEF NEXTGEN}
+  {$IF Defined(ANDROID) or Defined(IOS)}
   if (Assigned(FAdjuestItem) or Assigned(FHotItem)) then
     FAniCalculations.Down := False;
   AniMouseUp(True, X, Y);
@@ -3056,7 +3045,6 @@ begin
   {$ELSE}
   //
   if DragScroll and Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then begin
-
     if (Button = TMouseButton.mbLeft) then begin
       FMovePos := TPointF.Zero;
       AniMouseUp(True, X, Y);
@@ -3135,7 +3123,7 @@ begin
 end;
 
 function TGridBase.ObjectAtPoint(AScreenPoint: TPointF): IControl;
-{$IFNDEF NEXTGEN}
+{$IF not Defined(ANDROID) and not Defined(IOS)}
 
   function ScrollWidth(Obj: TScrollBar): Single;
   begin
@@ -3163,7 +3151,7 @@ var
 {$ENDIF}
 begin
   Result := inherited;
-  {$IFNDEF NEXTGEN}
+  {$IF not Defined(ANDROID) and not Defined(IOS)}
   if DragScroll then begin // 如果允许拖动
     P := ScreenToLocal(AScreenPoint);
     if (P.X > FContentViews.Left) and (P.X < Width - ScrollWidth(VScrollBar)) and
@@ -3231,13 +3219,8 @@ begin
     FCanScrollV := False;
     FCanScrollH := False;
   end else begin
-    {$IFDEF NEXTGEN}
-    FCanScrollV := True;
-    FCanScrollH := True;
-    {$ELSE}
-    FCanScrollH := DragScroll or (FContentBounds.Width > ViewRect.Width);
-    FCanScrollV := DragScroll or (FContentBounds.Height > ViewRect.Height);
-    {$ENDIF}
+    FCanScrollH := CanDragScroll or (FContentBounds.Width > ViewRect.Width);
+    FCanScrollV := CanDragScroll or (FContentBounds.Height > ViewRect.Height);
   end;
   if Assigned(FScrollV) or Assigned(FScrollH) then begin
     InvalidateContentSize;
@@ -3539,7 +3522,7 @@ begin
 
   if AScrollBar = TViewScroll.Vertical then begin
     V := R.Height + FContentViews.Top;
-    {$IFDEF NEXTGEN}
+    {$IF Defined(ANDROID) or Defined(IOS)}
     FCanScrollV := True; // 移动平台始终能滚动
     {$ELSE}
     FCanScrollV := FContentBounds.Height > V;
@@ -3555,7 +3538,7 @@ begin
     end;
   end else if AScrollBar = TViewScroll.Horizontal then begin
     V := R.Width + FContentViews.Left;
-    {$IFDEF NEXTGEN}
+    {$IF Defined(ANDROID) or Defined(IOS)}
     FCanScrollH := True; // 移动平台始终能滚动
     {$ELSE}
     FCanScrollH := (FContentBounds.Width > V) and
@@ -5145,7 +5128,7 @@ procedure TGridViewContent.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
   Y: Single);
 begin
   inherited;
-  {$IFDEF NEXTGEN}
+  {$IF Defined(ANDROID) or Defined(IOS)}
   if Assigned(GridView) then
     GridView.FCanMouseChild := False;
   {$ENDIF}

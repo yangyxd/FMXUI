@@ -2016,12 +2016,12 @@ begin
 end;
 
 procedure TCustomEditView.HideInputMethod;
-{$IFDEF NEXTGEN}
+{$IF Defined(ANDROID) or Defined(IOS)}
 var
   AService: IFMXVirtualKeyboardService;
 {$ENDIF}
 begin
-{$IFDEF NEXTGEN}
+{$IF Defined(ANDROID) or Defined(IOS)}
   try
     if TPlatformServices.Current.SupportsPlatformService(IFMXVirtualKeyboardService, AService) then
     begin

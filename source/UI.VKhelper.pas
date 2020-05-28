@@ -229,9 +229,9 @@ end;
 
 // 根据MainActivity的可视区域和绘图区域大小来确定是否显示了虚拟键盘
 function IsVirtalKeyboardVisible: Boolean;
-{$IFDEF NEXTGEN}var R: TRect; {$ENDIF}
+{$IF Defined(ANDROID) or Defined(IOS)}var R: TRect; {$ENDIF}
 begin
-  {$IFDEF NEXTGEN}
+  {$IF Defined(ANDROID) or Defined(IOS)}
   Result := GetVirtalKeyboardBounds(R);
   {$ELSE}
   Result := False;

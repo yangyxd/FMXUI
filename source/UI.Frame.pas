@@ -1301,7 +1301,7 @@ class procedure TFrameView.SetDefaultStatusColor(const Value: TAlphaColor);
 begin
   if FDefaultStatusColor <> Value then begin
     FDefaultStatusColor := Value;
-    {$IFDEF NEXTGEN}
+    {$IF Defined(ANDROID) or Defined(IOS)}
     // 在移动平台时，设置状态条颜色时，如果背景颜色为透明，且状态条高度>0时，
     // 将背景颜色设为白色
     if (Value and $FF000000 > 0) and (FDefaultBackColor = 0){$IFDEF ANDROID} and (TView.GetStatusHeight > 0){$ENDIF} then

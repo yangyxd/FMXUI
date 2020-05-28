@@ -7557,11 +7557,7 @@ begin
       Result.Canvas.EndScene;
     end;
   finally
-    {$IFDEF NEXTGEN}
     FreeAndNil(AIds);
-    {$ELSE}
-    AIds.Free;
-    {$ENDIF}
   end;
 end;
 

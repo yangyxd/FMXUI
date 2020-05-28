@@ -573,8 +573,8 @@ const
 
   function GetIndex(): Integer;
   begin
-    Result := M * 2 {$IFNDEF NEXTGEN} +1{$ENDIF};
-    if D < ARR[M-1] then
+    Result := M * 2 + 1;
+    if D < ARR[M - 1] then
       Dec(Result, 2);
   end;
 
