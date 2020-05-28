@@ -1,0 +1,173 @@
+object Form1: TForm1
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 480
+  ClientWidth = 320
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  DesignerMasterStyle = 0
+  object RelativeLayout1: TRelativeLayout
+    Align = Client
+    Gravity = None
+    Size.Width = 320.000000000000000000
+    Size.Height = 480.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    object TextView1: TTextView
+      Layout.ToLeftOf = TextView2
+      Layout.AlignBaseline = TextView2
+      Layout.WidthSize = WrapContent
+      WidthSize = WrapContent
+      Size.Width = 78.000000000000000000
+      Size.Height = 28.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 37.000000000000000000
+      Position.Y = 386.500000000000000000
+      TabOrder = 0
+      Text = 'AlignBaseLine'
+    end
+    object View1: TView
+      Background.ItemDefault.Color = claLightyellow
+      Background.ItemDefault.Kind = Solid
+      Layout.CenterInParent = True
+      Gravity = None
+      Position.X = 135.000000000000000000
+      Position.Y = 215.000000000000000000
+      TabOrder = 1
+    end
+    object View2: TView
+      Background.ItemDefault.Color = claLightcyan
+      Background.ItemDefault.Kind = Solid
+      Layout.AlignParentLeft = True
+      Layout.AlignParentRight = True
+      Gravity = None
+      Size.Width = 320.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Position.Y = 68.000000000000000000
+      TabOrder = 2
+    end
+    object View3: TView
+      Anchors = [akTop, akRight]
+      Background.ItemDefault.Color = claLightblue
+      Background.ItemDefault.Kind = Solid
+      Layout.AlignParentTop = True
+      Layout.AlignParentBottom = True
+      Gravity = None
+      Size.Width = 50.000000000000000000
+      Size.Height = 480.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 243.000000000000000000
+      TabOrder = 3
+    end
+    object View4: TView
+      Background.ItemDefault.Color = claLightgreen
+      Background.ItemDefault.Kind = Solid
+      Layout.Below = View1
+      Layout.AlignLeft = View1
+      Gravity = None
+      Position.X = 135.000000000000000000
+      Position.Y = 265.000000000000000000
+      TabOrder = 7
+    end
+    object View5: TView
+      Background.ItemDefault.Color = claLightgreen
+      Background.ItemDefault.Kind = Solid
+      Layout.Above = View1
+      Layout.AlignLeft = View1
+      Gravity = None
+      Position.X = 135.000000000000000000
+      Position.Y = 165.000000000000000000
+      TabOrder = 6
+    end
+    object View6: TView
+      Background.ItemDefault.Color = claLightgreen
+      Background.ItemDefault.Kind = Solid
+      Layout.ToLeftOf = View1
+      Layout.AlignTop = View1
+      Gravity = None
+      Position.X = 85.000000000000000000
+      Position.Y = 215.000000000000000000
+      TabOrder = 5
+    end
+    object View7: TView
+      Background.ItemDefault.Color = claLightgreen
+      Background.ItemDefault.Kind = Solid
+      Layout.ToRightOf = View1
+      Layout.AlignTop = View1
+      Gravity = None
+      Position.X = 185.000000000000000000
+      Position.Y = 215.000000000000000000
+      TabOrder = 4
+    end
+    object View8: TView
+      Background.ItemDefault.Color = claLightgray
+      Background.ItemDefault.Kind = Solid
+      Layout.AlignParentLeft = True
+      Layout.AlignParentTop = True
+      Gravity = None
+      TabOrder = 11
+    end
+    object View9: TView
+      Background.ItemDefault.Color = claLightgray
+      Background.ItemDefault.Kind = Solid
+      Layout.AlignParentLeft = True
+      Layout.AlignParentBottom = True
+      Gravity = None
+      Position.Y = 430.000000000000000000
+      TabOrder = 10
+    end
+    object View10: TView
+      Background.ItemDefault.Color = claLightgray
+      Background.ItemDefault.Kind = Solid
+      Layout.AlignParentTop = True
+      Layout.AlignParentRight = True
+      Gravity = None
+      Position.X = 270.000000000000000000
+      TabOrder = 9
+    end
+    object View11: TView
+      Background.ItemDefault.Color = claLightgray
+      Background.ItemDefault.Kind = Solid
+      Layout.AlignParentRight = True
+      Layout.AlignParentBottom = True
+      Gravity = None
+      Position.X = 270.000000000000000000
+      Position.Y = 430.000000000000000000
+      TabOrder = 8
+    end
+    object TextView2: TTextView
+      Layout.WidthSize = WrapContent
+      Layout.HeightSize = WrapContent
+      WidthSize = WrapContent
+      HeightSize = WrapContent
+      Size.Width = 58.000000000000000000
+      Size.Height = 16.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 115.000000000000000000
+      Position.Y = 392.500000000000000000
+      TabOrder = 12
+      Text = 'TextView2'
+    end
+    object View12: TView
+      Background.ItemDefault.Color = claLightgoldenrodyellow
+      Background.ItemDefault.Kind = Solid
+      Layout.CenterHorizontal = True
+      Gravity = None
+      Position.X = 135.000000000000000000
+      Position.Y = 334.000000000000000000
+      TabOrder = 14
+    end
+    object View13: TView
+      Background.ItemDefault.Color = claLightgoldenrodyellow
+      Background.ItemDefault.Kind = Solid
+      Layout.CenterVertical = True
+      Gravity = None
+      Position.X = 12.000000000000000000
+      Position.Y = 215.000000000000000000
+      TabOrder = 13
+    end
+  end
+end
