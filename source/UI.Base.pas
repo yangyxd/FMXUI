@@ -6940,6 +6940,7 @@ begin
     FBrush.OnChanged := nil;
     FBrush.Assign(TViewBorder(Source).FBrush);
     FBrush.OnChanged := DoGradientChanged;
+    FLines := TViewBorder(Source).FLines;
     FOnChanged := SaveChange;
     FColor.OnChanged := SaveChange;
     if Assigned(FOnChanged) then
