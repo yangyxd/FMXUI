@@ -2899,7 +2899,10 @@ end;
 
 function TDialogView.GetTabStopController: ITabStopController;
 begin
-  Result := Self;
+  if Parent <> nil then
+    Result := Self
+  else
+    Result := nil;
 end;
 
 procedure TDialogView.Hide;
