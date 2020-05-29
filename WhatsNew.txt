@@ -8,6 +8,7 @@
  - ????.??.??
  * [Added]   Compatible with 10.4
  * [Added]   New layout demo
+ * [Added]   TImageView allow TViewSize.WrapContent, both sides equal autosize, single side will strech with keeping aspect ratio
  * [Fixed]   TDialogView can't free in some situation, due to TabStopController
  - -----------------------------------
  - 2020.05.28
@@ -41,9 +42,9 @@
  * Fix TSizeForm not work well with scale(Thanks for report:ying32)
  * Fix TListViewEx子View.Background.ItemDefault.Kind = TViewBrushKind.None HotOver of Child View do not refresh(Thanks for report:ying32)
  * Tweak TCameraViewer(Thanks for report:凌风)
- * Tweak TListViewEx，TStringGridView(Thanks for report:惠子，Udcover，[东莞]围墙)
- * Tweak Grid，add EnableControls/DisableControls(Thanks for code：惠子)
- * Tweak InstallApk，compatible with Android 8 or higher(Thanks for code：CodeCoolie)
+ * Tweak TListViewEx, TStringGridView(Thanks for report:惠子, Udcover, [东莞]围墙)
+ * Tweak Grid, add EnableControls/DisableControls(Thanks for code：惠子)
+ * Tweak InstallApk, compatible with Android 8 or higher(Thanks for code：CodeCoolie)
  - -----------------------------------
  - 2019.10.23
  * add pull action to THorzScrollView

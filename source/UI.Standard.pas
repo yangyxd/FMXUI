@@ -226,6 +226,8 @@ type
     procedure CreateImage; virtual;
     procedure DoImageChange(Sender: TObject); virtual;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
+    procedure DoRecalcSize(var AWidth: Single; var AHeight: Single); override;
+    procedure DoLayoutChanged(Sender: TObject); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1589,7 +1591,6 @@ begin
       FContentBounds^ := RectD(Padding.Left, Padding.Top, VW - Padding.Right, VH - Padding.Bottom);
       RealignContent;
     end;
-
   finally
     FInFitSize := False;
   end;
@@ -3501,7 +3502,50 @@ end;
 
 procedure TImageView.DoImageChange(Sender: TObject);
 begin
+  RecalcSize;
   Repaint;
+end;
+
+procedure TImageView.DoLayoutChanged(Sender: TObject);
+begin
+  inherited;
+  RecalcSize;
+end;
+
+procedure TImageView.DoRecalcSize(var AWidth, AHeight: Single);
+var
+  Img: TBrush;
+  Bmp: TBitmap;
+begin
+  if not Assigned(FImage) then
+    Exit;
+
+  if IsChecked then
+    Img := FImage.GetStateItem(TViewState.Checked)
+  else
+    Img := nil;
+  if FImage.BrushIsEmpty(Img) then
+    Img := FImage.GetStateItem(FDrawState);
+
+  if (not Assigned(Img)) or (Img.Kind <> TBrushKind.Bitmap) then
+    Exit;
+  if not Assigned(Img.Bitmap) then
+    Exit;
+
+  Bmp := Img.Bitmap.Bitmap;
+  if (not Assigned(Bmp)) or Bmp.IsEmpty then
+    Exit;
+
+  if (WidthSize = TViewSize.WrapContent) and (HeightSize = TViewSize.WrapContent) then begin
+    AWidth := Bmp.Width + FImage.Padding.Left + FImage.Padding.Right;
+    AHeight := Bmp.Height + FImage.Padding.Top + FImage.Padding.Bottom;
+  end
+  else if WidthSize = TViewSize.WrapContent then begin
+    AWidth := AHeight * Bmp.Width / Bmp.Height + FImage.Padding.Left + FImage.Padding.Right;
+  end
+  else if HeightSize = TViewSize.WrapContent then begin
+    AHeight := AWidth * Bmp.Height / Bmp.Width + FImage.Padding.Top + FImage.Padding.Bottom;
+  end;
 end;
 
 function TImageView.GetImage: TDrawable;

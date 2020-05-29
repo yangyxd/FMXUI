@@ -8,6 +8,7 @@
  - ????.??.??
  * [新增] 兼容10.4
  * [新增] 特殊布局的例子Layout
+ * [新增] TImageView允许设定TViewSize.WrapContent，双边设定为自动大小，单边为按宽高比缩放
  * [修正] 修正因TabStopController导致的部分情况下TDialogView无法释放
  - -----------------------------------
  - 2020.05.28
