@@ -4522,7 +4522,16 @@ begin
   {$IFDEF POSIX}
   FDownUpOffset := Y - FDownUpOffset;
   {$ENDIF}
-  inherited;
+
+  // inherited;
+  if AbsoluteEnabled and Pressed and not DoubleClick and PointInObjectLocal(X, Y) then begin
+    Click;
+    if (not Assigned(Self)) or (csDestroying in ComponentState) then
+      Exit;
+
+    Pressed := False;
+    StartTriggerAnimation(Self, 'Pressed');
+  end;
 end;
 
 procedure TView.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
