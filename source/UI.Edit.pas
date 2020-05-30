@@ -215,7 +215,9 @@ type
     FEditPopupMenu: TPopupMenu;
     FSelectionMode: TSelectionMode;
     FOnModelChange: TNotifyEvent;
-    function GetCaretPosition: Integer;
+    function GetCaretPosition: Integer; overload;
+    function GetCaretPosition(const Value: Single): Integer; overload;
+    function GetOriginCaretPosition: Integer;
     procedure SetCaretPosition(const Value: Integer);
     procedure SetSelectionMode(const Value: TSelectionMode);
     procedure UpdateSpelling;
@@ -292,7 +294,7 @@ type
     procedure SetText(const Value: string); override;
     function ParentFrame: TFrame;
     { Messages From Model}
-    procedure MMSelLenghtChanged(var AMessage: TDispatchMessageWithValue<Integer>); message MM_EDIT_SELLENGTH_CHANGED;
+    procedure MMSelLengthChanged(var AMessage: TDispatchMessageWithValue<Integer>); message MM_EDIT_SELLENGTH_CHANGED;
     procedure MMSelStartChanged(var AMessage: TDispatchMessageWithValue<Integer>); message MM_EDIT_SELSTART_CHANGED;
     procedure MMCheckSpellingChanged(var AMessage: TDispatchMessageWithValue<Boolean>); message MM_EDIT_CHECKSPELLING_CHANGED;
     procedure MMPasswordChanged(var AMessage: TDispatchMessage); message MM_EDIT_ISPASSWORD_CHANGED;
@@ -311,7 +313,14 @@ type
     /// <summary>Notification about changing of <c>FilterChar</c> property value</summary>
     procedure MMFilterCharChanged(var Message: TDispatchMessage); message MM_EDIT_FILTERCHAR_CHANGED;
     {$ENDIF}
+    {$IF CompilerVersion >= 34}
+    procedure MMGetCaretPositionByPoint(var Message: TDispatchMessageWithValue<TCustomEditModel.TGetCaretPositionInfo>); message MM_EDIT_GET_CARET_POSITION_BY_POINT;
+    {$ENDIF}
     { Messages from PresentationProxy }
+    {$IF CompilerVersion >= 34}
+    /// <summary>Notification about lost focus. It's sent directly before the loss of focus.</summary>
+    procedure PMDoBeforeExit(var AMessage: TDispatchMessage); message PM_DO_BEFORE_EXIT;
+    {$ENDIF}
     procedure PMInit(var Message: TDispatchMessage); message PM_INIT;
     procedure PMGetTextContentRect(var Message: TDispatchMessageWithValue<TRectF>); message PM_EDIT_GET_TEXT_CONTENT_RECT;
     { Base Mouse, Touches and Keyboard Events }
@@ -366,8 +375,6 @@ type
     procedure UpdateCaretPosition;
     function GetSelText: string;
     function GetSelRect: TRectF;
-    function GetOriginCaretPosition: Integer;
-    function GetCoordinatePosition(const Value: Single): Integer;
     function CheckGravity(const SrcX, EditRectWidth, WholeTextWidth: Single): Single;
 
     { Content alignment }
@@ -533,11 +540,11 @@ const
   LOUPE_OFFSET = 10;
   IMEWindowGap = 2; // 2 is small space between conrol and IME window
 
-  CutStyleName = '¼ôÇÐ'; //Do not localize
-  CopyStyleName = '¸´ÖÆ'; //Do not localize
-  PasteStyleName = 'Õ³Ìù'; //Do not localize
-  DeleteStyleName = 'É¾³ý'; //Do not localize
-  SelectAllStyleName = 'Ñ¡ÔñÈ«²¿'; //Do not localize
+  CutStyleName = 'cut'; //Do not localize
+  CopyStyleName = 'copy'; //Do not localize
+  PasteStyleName = 'paste'; //Do not localize
+  DeleteStyleName = 'delete'; //Do not localize
+  SelectAllStyleName = 'selectall'; //Do not localize
 
   CaretColorStyleResouceName = 'caretcolor';
   LeftSelectionPointStyleResourceName = 'leftselectionpoint';
@@ -1307,6 +1314,7 @@ end;
 
 procedure TCustomEditView.DoExit;
 begin
+  {$IF CompilerVersion < 34}
   if FScene <> nil then begin
     Model.Change;
     if Observers.IsObserving(TObserverMapping.EditLinkID) then
@@ -1320,6 +1328,7 @@ begin
     Self.FocusToNext;
     {$ENDIF}
   end else
+  {$ENDIF}
     inherited DoExit;
 end;
 
@@ -1380,7 +1389,7 @@ begin
   OldSelStart := Model.SelStart;
   OldSelLength := Model.SelLength;
   OldSelEnd := Model.SelStart + Model.SelLength;
-  NewSelStart := GetCoordinatePosition(X);
+  NewSelStart := GetCaretPosition(X);
   NewSelLength := OldSelLength + OldSelStart - NewSelStart;
 
   Model.DisableNotify;
@@ -1585,7 +1594,7 @@ begin
   OldSelLength := Model.SelLength;
   OldSelEnd := Model.SelStart + Model.SelLength;
   MinSelEnd := Model.SelStart + 1;
-  NewSelEnd := GetCoordinatePosition(X);
+  NewSelEnd := GetCaretPosition(X);
   NewSelLength := OldSelLength + NewSelEnd - OldSelEnd;
 
   Model.DisableNotify;
@@ -1651,6 +1660,9 @@ var
   LText: string;
 {$ENDIF}
 begin
+  // Windows TextService controls CaretPosition and Text itself.
+  // We have to update Text and CaretPosition only, if Edit initiate it.
+  {$IFNDEF MSWINDOWS}
   Model.DisableNotify;
   try
     {$IFDEF ANDROID}
@@ -1666,6 +1678,7 @@ begin
   end;
   FTextService.Text := Model.Text; // FTextService.CombinedText;
   FTextService.CaretPosition := Point(GetOriginCaretPosition + FTextService.CombinedText.Length - FTextService.Text.Length, 0);
+  {$ENDIF}
   RepaintEdit;
 end;
 
@@ -1748,7 +1761,7 @@ begin
   Result := Model.CheckSpelling;
 end;
 
-function TCustomEditView.GetCoordinatePosition(const Value: Single): Integer;
+function TCustomEditView.GetCaretPosition(const Value: Single): Integer;
 var
   Tmp, WholeTextWidth, EditRectWidth, PwdW: Single;
   CombinedText: string;
@@ -2046,6 +2059,9 @@ begin
   FTextLayout.Text := CombinedText;
   SetCaretPosition(GetOriginCaretPosition);
   Model.SetTextWithoutValidation(CombinedText);
+  // Windows TextService controls CaretPosition and Text itself.
+  // We have to update Text and CaretPosition only, if Edit initiate it.
+  {$IFNDEF MSWINDOWS}
   if Model.SelLength > 0 then
   begin
     Model.DisableNotify;
@@ -2056,6 +2072,7 @@ begin
     end;
     UpdateSelectionPointPositions;
   end;
+  {$ENDIF}
   LinkObserversValueModified(Self.Observers);
   DoChangeTracking;
   DoTyping;
@@ -2454,6 +2471,14 @@ procedure TCustomEditView.MMEditButtonsChanged(var Message: TDispatchMessage);
 begin
 end;
 
+{$IF CompilerVersion >= 34}
+procedure TCustomEditView.MMGetCaretPositionByPoint(
+  var Message: TDispatchMessageWithValue<TCustomEditModel.TGetCaretPositionInfo>);
+begin
+  Message.Value.CaretPosition := GetCaretPosition(Message.Value.HitPoint.X);
+end;
+{$ENDIF}
+
 {$IF CompilerVersion >= 32}
 procedure TCustomEditView.MMFilterCharChanged(var Message: TDispatchMessage);
 begin
@@ -2490,7 +2515,7 @@ begin
   Repaint;
 end;
 
-procedure TCustomEditView.MMSelLenghtChanged(
+procedure TCustomEditView.MMSelLengthChanged(
   var AMessage: TDispatchMessageWithValue<Integer>);
 begin
   UpdateSelectionPointPositions;
@@ -2554,7 +2579,7 @@ begin
   try
     if (Button = TMouseButton.mbLeft) and Model.InputSupport then
     begin
-      NewPosition := GetCoordinatePosition(X);
+      NewPosition := GetCaretPosition(X);
       if ssShift in Shift then
         Model.SelLength := NewPosition - Model.SelStart
       else
@@ -2582,7 +2607,7 @@ procedure TCustomEditView.MouseMove(Shift: TShiftState; X, Y: Single);
 
   function DefineNewCarretPosition(const AX: Single): Integer;
   begin
-    Result := GetCoordinatePosition(AX);
+    Result := GetCaretPosition(AX);
     if AX > ContentRect.Right then
       Inc(Result);
   end;
@@ -2687,6 +2712,24 @@ end;
 procedure TCustomEditView.PlayClickEffect;
 begin
 end;
+
+{$IF CompilerVersion >= 34}
+procedure TCustomEditView.PMDoBeforeExit(var AMessage: TDispatchMessage);
+begin
+  if FScene <> nil then
+  begin
+    Model.Change;
+    if Observers.IsObserving(TObserverMapping.EditLinkID) then
+      TLinkObservers.EditLinkUpdate(Observers);
+    if Observers.IsObserving(TObserverMapping.ControlValueID) then
+      TLinkObservers.ControlValueUpdate(Observers);
+    inherited;
+    UpdateSelectionPointPositions;
+  end
+  else
+    inherited;
+end;
+{$ENDIF}
 
 procedure TCustomEditView.PMGetTextContentRect(
   var Message: TDispatchMessageWithValue<TRectF>);
