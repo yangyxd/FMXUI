@@ -3537,14 +3537,14 @@ begin
     Exit;
 
   if (WidthSize = TViewSize.WrapContent) and (HeightSize = TViewSize.WrapContent) then begin
-    AWidth := Bmp.Width + FImage.Padding.Left + FImage.Padding.Right;
-    AHeight := Bmp.Height + FImage.Padding.Top + FImage.Padding.Bottom;
+    AWidth := Bmp.Width + FImage.Padding.Left + FImage.Padding.Right + Padding.Left + Padding.Right;
+    AHeight := Bmp.Height + FImage.Padding.Top + FImage.Padding.Bottom + Padding.Top + Padding.Bottom;
   end
   else if WidthSize = TViewSize.WrapContent then begin
-    AWidth := AHeight * Bmp.Width / Bmp.Height + FImage.Padding.Left + FImage.Padding.Right;
+    AWidth := AHeight * Bmp.Width / Bmp.Height + FImage.Padding.Left + FImage.Padding.Right + Padding.Left + Padding.Right;
   end
   else if HeightSize = TViewSize.WrapContent then begin
-    AHeight := AWidth * Bmp.Height / Bmp.Width + FImage.Padding.Top + FImage.Padding.Bottom;
+    AHeight := AWidth * Bmp.Height / Bmp.Width + FImage.Padding.Top + FImage.Padding.Bottom + Padding.Top + Padding.Bottom;
   end;
 end;
 
