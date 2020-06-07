@@ -8942,7 +8942,7 @@ var
   I: Integer;
   Item: THtmlTextItem;
   X, Y, LX: Single;
-  S: TSizeF;
+  S, LTotalSize: TSizeF;
   LColor: TAlphaColor;
   LWordWarp, LVCenter: Boolean;
   LFontChange: TNotifyEvent;
@@ -8964,22 +8964,22 @@ begin
     FFont := TFont.Create;
   FFont.Assign(TextSet.Font);
 
+  TextSet.TextSize('yh中', S, LScale);
   if LWordWarp then begin
-    TextSet.TextSize('yh中', S, LScale);
     CharW := S.Width / 4;
     CharH := S.Height;
   end;
 
   if LVCenter or (ASize <> nil) then begin
-    ClacWordWarpTextSize(S);
+    ClacWordWarpTextSize(LTotalSize);
   end else begin
-    TextSet.CalcTextObjectSize(FText, $FFFFFF, LScale, nil, S);
+    TextSet.CalcTextObjectSize(FText, $FFFFFF, LScale, nil, LTotalSize);
   end;
 
   if ASize <> nil then begin
     // 测算高度
-    ASize.Width := S.Width;
-    ASize.Height := S.Height;
+    ASize.Width := LTotalSize.Width;
+    ASize.Height := LTotalSize.Height;
 
     TextSet.WordWrap := LWordWarp;
     TextSet.Font.Assign(FFont);
@@ -8988,7 +8988,7 @@ begin
     Exit;
   end;
 
-  UpdateXY(X, Y, S);
+  UpdateXY(X, Y, LTotalSize);
   if LWordWarp then begin
     if X < R.Left then X := R.Left;
     if Y < R.Top then Y := R.Top;
@@ -9032,7 +9032,6 @@ begin
         DrawText(LText, Item, LColor, X, Y, S);
       end;
     end;
-
   finally
     TextSet.WordWrap := LWordWarp;
     TextSet.Font.Assign(FFont);
@@ -9382,7 +9381,6 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
           Break;
         end else
           LS := '';
-
       end else if NeedBreak then begin
         Break;
       end else if (P = P1) and (AFlag = '') then
@@ -9418,10 +9416,16 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
           NeedBreak := True;
           Continue;
         end else begin
+          // 嵌套前内容
+          if (P <> P2 + 1) then begin        
+            AddItem(P2, P - P2 - 1, LS);
+            AddItem(PLineBreak, 1, LS);
+          end;
+
           SetString(LE, P, P1 - P);
           LE := LowerCase(Trim(LE));
 
-          if LE = 'br' then begin // 换行
+          if (LE = 'br') or (LE = 'br/') then begin // 换行
             AddItem(PLineBreak, 1, LS);
             LS := '';
             P := P1 + 1;
@@ -9443,7 +9447,7 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
 
       P := P1 + 1;
 
-      if LS = 'br' then begin // 换行
+      if (LS = 'br') or (LS = 'br/') then begin // 换行
         AddItem(PLineBreak, 1, LS);
         SkipSpace(P);
         LS := '';

@@ -10,6 +10,7 @@
  * [Added]   New layout demo
  * [Added]   TImageView allow TViewSize.WrapContent, both sides equal autosize, single side will strech with keeping aspect ratio
  * [Fixed]   TDialogView can't free in some situation, due to TabStopController
+ * [Fixed]   Draw HtmlText error (Thanks for report: keven)
  - -----------------------------------
  - 2020.05.28
  * [Added]   Shadow of TDialogView
