@@ -9,7 +9,7 @@ uses
   System.ImageList, FMX.ImgList, FMX.Menus, UI.ListView;
 
 type
-  TFrmaeDialog = class(TFrame)
+  TFrameDialog = class(TFrame)
     LinearLayout1: TLinearLayout;
     tvTitle: TTextView;
     VertScrollBox1: TVertScrollBox;
@@ -97,21 +97,21 @@ type
 var
   IosStyleManager: TDialogStyleManager;
 
-{ TFrmaeDialog }
+{ TFrameDialog }
 
-procedure TFrmaeDialog.btnBackClick(Sender: TObject);
+procedure TFrameDialog.btnBackClick(Sender: TObject);
 begin
   Finish();
 end;
 
-procedure TFrmaeDialog.ButtonView10Click(Sender: TObject);
+procedure TFrameDialog.ButtonView10Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetTitle('我是标题文本')
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView11Click(Sender: TObject);
+procedure TFrameDialog.ButtonView11Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetTitle('我是标题文本')
@@ -148,7 +148,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView12Click(Sender: TObject);
+procedure TFrameDialog.ButtonView12Click(Sender: TObject);
 var
   View: TFrameDialogCustomView;
 begin
@@ -160,7 +160,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView13Click(Sender: TObject);
+procedure TFrameDialog.ButtonView13Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
       .SetSingleChoiceItems(['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'], 0,
@@ -176,12 +176,12 @@ begin
       .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView14Click(Sender: TObject);
+procedure TFrameDialog.ButtonView14Click(Sender: TObject);
 begin
   TDialog.ShowView(Self, TView(Sender), TMainPopupMenu, 0, 0, TDialogViewPosition.Bottom);
 end;
 
-procedure TFrmaeDialog.ButtonView15Click(Sender: TObject);
+procedure TFrameDialog.ButtonView15Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetPosition(TDialogViewPosition.Top)
@@ -189,7 +189,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView16Click(Sender: TObject);
+procedure TFrameDialog.ButtonView16Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetPosition(TDialogViewPosition.Bottom)
@@ -212,7 +212,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView17Click(Sender: TObject);
+procedure TFrameDialog.ButtonView17Click(Sender: TObject);
 var
   View: TFrameDialogCustomViewVertical;
 begin
@@ -225,7 +225,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView18Click(Sender: TObject);
+procedure TFrameDialog.ButtonView18Click(Sender: TObject);
 var
   View: TFrameDialogCustomViewVertical;
 begin
@@ -238,7 +238,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView19Click(Sender: TObject);
+procedure TFrameDialog.ButtonView19Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetStyleManager(IosStyleManager)
@@ -257,14 +257,14 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView1Click(Sender: TObject);
+procedure TFrameDialog.ButtonView1Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetMessage('我是一个消息框。')
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView20Click(Sender: TObject);
+procedure TFrameDialog.ButtonView20Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetStyleManager(IosStyleManager)
@@ -290,7 +290,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView21Click(Sender: TObject);
+procedure TFrameDialog.ButtonView21Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetStyleManager(IosStyleManager)
@@ -310,7 +310,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView22Click(Sender: TObject);
+procedure TFrameDialog.ButtonView22Click(Sender: TObject);
 var
   View: TFrameDialogCustomView;
 begin
@@ -328,7 +328,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView2Click(Sender: TObject);
+procedure TFrameDialog.ButtonView2Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetMessage('我是一个消息框。这里显示消息内容')
@@ -350,7 +350,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView3Click(Sender: TObject);
+procedure TFrameDialog.ButtonView3Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetTitle('我是标题文本')
@@ -368,7 +368,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView4Click(Sender: TObject);
+procedure TFrameDialog.ButtonView4Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetTitle('我是标题文本')
@@ -380,7 +380,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView5Click(Sender: TObject);
+procedure TFrameDialog.ButtonView5Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetTitle('我是标题文本')
@@ -394,7 +394,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView6Click(Sender: TObject);
+procedure TFrameDialog.ButtonView6Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetTitle('我是标题文本')
@@ -408,7 +408,7 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.ButtonView7Click(Sender: TObject);
+procedure TFrameDialog.ButtonView7Click(Sender: TObject);
 begin
   ShowWaitDialog('正在执行任务...', False);
   TAsync.Create()
@@ -424,7 +424,7 @@ begin
   ).Start;
 end;
 
-procedure TFrmaeDialog.ButtonView8Click(Sender: TObject);
+procedure TFrameDialog.ButtonView8Click(Sender: TObject);
 begin
   ShowWaitDialog('正在执行任务...',
     procedure (Dialog: IDialog) begin
@@ -446,7 +446,7 @@ begin
   ).Start;
 end;
 
-procedure TFrmaeDialog.ButtonView9Click(Sender: TObject);
+procedure TFrameDialog.ButtonView9Click(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
     .SetTitle('多列列表')
@@ -464,12 +464,12 @@ begin
     .Show;
 end;
 
-procedure TFrmaeDialog.DialogLogin(AView: TFrame; AUserName, APassword: string);
+procedure TFrameDialog.DialogLogin(AView: TFrame; AUserName, APassword: string);
 begin
   Hint('Login clicked. Name: %s, Password: %s', [AUserName, APassword]);
 end;
 
-procedure TFrmaeDialog.DoCreate;
+procedure TFrameDialog.DoCreate;
 begin
   inherited;
 
@@ -491,20 +491,20 @@ begin
   IosStyleManager.ButtonHeight := 50;
 end;
 
-procedure TFrmaeDialog.DoFree;
+procedure TFrameDialog.DoFree;
 begin
   FreeAndNil(IosStyleManager);
 
   inherited;
 end;
 
-procedure TFrmaeDialog.DoShow;
+procedure TFrameDialog.DoShow;
 begin
   inherited;
   tvTitle.Text := Title;
 end;
 
-procedure TFrmaeDialog.tvMoreClick(Sender: TObject);
+procedure TFrameDialog.tvMoreClick(Sender: TObject);
 begin
   TDialogBuilder.Create(Self)
       .SetItems(['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'],

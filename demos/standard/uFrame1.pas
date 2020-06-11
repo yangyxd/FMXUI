@@ -159,7 +159,7 @@ end;
 
 procedure TFrame1.ButtonView3Click(Sender: TObject);
 begin
-  StartFrame(TFrmaeDialog, TButtonView(Sender).Text, TFrameAniType.FadeInOut)
+  StartFrame(TFrameDialog, TButtonView(Sender).Text, TFrameAniType.FadeInOut)
 end;
 
 procedure TFrame1.ButtonView4Click(Sender: TObject);

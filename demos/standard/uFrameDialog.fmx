@@ -1,4 +1,4 @@
-object FrmaeDialog: TFrmaeDialog
+object FrameDialog: TFrameDialog
   Size.Width = 320.000000000000000000
   Size.Height = 633.000000000000000000
   Size.PlatformDefault = False
