@@ -1,0 +1,83 @@
+object FrameRelativeFMX: TFrameRelativeFMX
+  Size.Width = 320.000000000000000000
+  Size.Height = 480.000000000000000000
+  Size.PlatformDefault = False
+  object RelativeLayout1: TRelativeLayout
+    Align = Client
+    Gravity = None
+    Size.Width = 320.000000000000000000
+    Size.Height = 480.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    object rctCenter: TRectangle
+      Align = Center
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object rctLeft: TRectangle
+      Align = Left
+      Position.Y = 50.000000000000000000
+      Size.Width = 50.000000000000000000
+      Size.Height = 380.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object rctRight: TRectangle
+      Align = Right
+      Position.X = 270.000000000000000000
+      Position.Y = 50.000000000000000000
+      Size.Width = 50.000000000000000000
+      Size.Height = 380.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object rctTop: TRectangle
+      Align = Top
+      Size.Width = 320.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object rctBottom: TRectangle
+      Align = Bottom
+      Position.Y = 430.000000000000000000
+      Size.Width = 320.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object rctAkLeft: TRectangle
+      Anchors = [akLeft]
+      Fill.Color = claLightblue
+      Position.X = 82.000000000000000000
+      Position.Y = 215.000000000000000000
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object rctAkRight: TRectangle
+      Anchors = [akRight]
+      Fill.Color = claLightblue
+      Position.X = 188.000000000000000000
+      Position.Y = 215.000000000000000000
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object rctAkTop: TRectangle
+      Anchors = [akTop]
+      Fill.Color = claLightblue
+      Position.X = 134.000000000000000000
+      Position.Y = 161.000000000000000000
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object rctAkBottom: TRectangle
+      Anchors = [akBottom]
+      Fill.Color = claLightblue
+      Position.X = 134.000000000000000000
+      Position.Y = 268.000000000000000000
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+    end
+  end
+end

@@ -5795,9 +5795,6 @@ var
         end;
       end;
 
-      if (Control.Align = TALignLayout.None) or (csLoading in Control.ComponentState) then
-        Continue;
-
       List.Add(Control);
     end;
   end;
@@ -9468,7 +9465,6 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
 
         SkipSpace(P);
       end;
-
     end;
   end;
 

@@ -3,7 +3,9 @@ program Layout;
 uses
   System.StartUpCopy,
   FMX.Forms,
-  Unit1 in 'Unit1.pas' {Form1};
+  Unit1 in 'Unit1.pas' {Form1},
+  FrameRelativeLayoutFMXUIViews in 'FrameRelativeLayoutFMXUIViews.pas' {FrameRelativeFMXUI: TFrame},
+  FrameRelativeLayoutFMXControls in 'FrameRelativeLayoutFMXControls.pas' {FrameRelativeFMX: TFrame};
 
 {$R *.res}
 

@@ -5,28 +5,19 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, UI.Standard,
-  UI.Base;
+  UI.Base, UI.Frame;
 
 type
   TForm1 = class(TForm)
-    RelativeLayout1: TRelativeLayout;
+    LinearLayout3: TLinearLayout;
     TextView1: TTextView;
-    View1: TView;
-    View2: TView;
-    View3: TView;
-    View4: TView;
-    View5: TView;
-    View6: TView;
-    View7: TView;
-    View8: TView;
-    View9: TView;
-    View10: TView;
-    View11: TView;
     TextView2: TTextView;
-    View12: TView;
-    View13: TView;
+    procedure TextView1Click(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
+    FViews: array of TFrameView;
+    LastPage: Integer;
   public
     { Public declarations }
   end;
@@ -37,5 +28,50 @@ var
 implementation
 
 {$R *.fmx}
+
+uses
+  FrameRelativeLayoutFMXUIViews, FrameRelativeLayoutFMXControls;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  SetLength(FViews, 2);
+  FViews[0] := TFrameRelativeFMXUI.ShowFrame(Self);
+  LastPage := 0;
+end;
+
+procedure TForm1.TextView1Click(Sender: TObject);
+var
+  Index: Integer;
+  Cls: TFrameViewClass;
+begin
+  TTextView(Sender).Checked := True;
+
+  Index := TTextView(Sender).Tag;
+  if Index = LastPage then
+    Exit;
+
+  case Index of
+    0: Cls := TFrameRelativeFMXUI;
+    1: Cls := TFrameRelativeFMX;
+  else
+    Exit;
+  end;
+
+  if LastPage < TTextView(Sender).Tag then begin
+    FViews[LastPage].Hide(TFrameAniType.MoveInOut, False);
+    if Assigned(FViews[Index]) then
+      FViews[Index].Show(TFrameAniType.MoveInOut, nil, False)
+    else
+      FViews[Index] := Cls.ShowFrame(Self, '', TFrameAniType.MoveInOut, False);
+  end else begin
+    FViews[LastPage].Hide(TFrameAniType.MoveInOut, True);
+    if Assigned(FViews[Index]) then
+      FViews[Index].Show(TFrameAniType.MoveInOut, nil, True)
+    else
+      FViews[Index] := Cls.ShowFrame(Self, '', TFrameAniType.MoveInOut, True);
+  end;
+
+  LastPage := Index;
+end;
 
 end.
