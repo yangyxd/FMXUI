@@ -14,7 +14,7 @@ uses
   UI.Base, UI.Toast, UI.Dialog, UI.Ani,
   System.NetEncoding,
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  System.Generics.Collections, System.Rtti, System.SyncObjs,
+  System.Generics.Collections, System.Rtti, System.SyncObjs, System.Messaging,
   {$IFDEF ANDROID}
   FMX.Platform.Android,
   FMX.VirtualKeyboard.Android,
@@ -190,6 +190,7 @@ type
     FNeedHide: Boolean;   // 需要隐藏
     FNeedFinish: Boolean; // 需要关闭
     FNeedDoCreate: Boolean; // 需要执行DoCreate;
+    FResumed: Boolean;
     procedure SetParams(const Value: TFrameParams);
     function GetTitle: string;
     procedure SetTitle(const Value: string);
@@ -212,6 +213,10 @@ type
     procedure RefreshStatusBar;
     function GetStatusLight: Boolean;
     function GetStatusTransparent: Boolean;
+    function GetActiveFrame: TFrameView;
+  protected
+    class var FActiveFrames: TDictionary<TCommonCustomForm, TFrameView>;
+    class procedure DoActivateMessage(const Sender: TObject; const M: TMessage);
   protected
     [Weak] FLastView: TFrameView;
     [Weak] FNextView: TFrameView;
@@ -246,6 +251,15 @@ type
     /// </summary>
     procedure DoFree(); virtual;
 
+    /// <summary>
+    /// Frame 在前端时触发
+    /// </summary>
+    procedure DoResume; virtual;
+    /// <summary>
+    /// Frame 离开前端时触发
+    /// </summary>
+    procedure DoPause; virtual;
+
     function GetData: TValue; override;
     procedure SetData(const Value: TValue); override;
 
@@ -278,6 +292,11 @@ type
     procedure AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean; AEvent: TNotifyEventA);
 
     procedure OnFinishOrClose(Sender: TObject);
+  public
+    class constructor Create;
+    class destructor Destroy;
+    class function GetFormActiveFrame(AForm: TCommonCustomForm; var AFrame: TFrameView): Boolean;
+    class procedure SetFormActiveFrame(AForm: TCommonCustomForm; AFrame: TFrameView);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -404,6 +423,15 @@ type
     procedure Finish(Ani: TFrameAniType); overload; virtual;
 
     /// <summary>
+    /// 开始/重新开始当前Frame
+    /// </summary>
+    procedure Resume; virtual;
+    /// <summary>
+    /// 暂停当前Frame
+    /// </summary>
+    procedure Pause; virtual;
+
+    /// <summary>
     /// 启动时的参数
     /// </summary>
     property Params: TFrameParams read GetParams write SetParams;
@@ -431,6 +459,11 @@ type
     /// 当前 Frame 所绑定的 Form 对象
     /// </summary>
     property ParentForm: TCustomForm read GetParentForm;
+
+    /// <summary>
+    /// 当前 Frame 所绑定的 Form 对象对应的活动Frame
+    /// </summary>
+    property ActiveFrame: TFrameView read GetActiveFrame;
 
     /// <summary>
     /// 等待对话框是否被取消了
@@ -895,6 +928,18 @@ begin
   FNeedDoCreate := True;
 end;
 
+class constructor TFrameView.Create;
+begin
+  FActiveFrames := TDictionary<TCommonCustomForm, TFrameView>.Create;
+
+  TMessageManager.DefaultManager.SubscribeToMessage(TFormActivateMessage, TFrameView.DoActivateMessage);
+  TMessageManager.DefaultManager.SubscribeToMessage(TFormDeactivateMessage, TFrameView.DoActivateMessage);
+
+{$IF Defined(ANDROID) or Defined(IOS)}
+  TMessageManager.DefaultManager.SubscribeToMessage(TApplicationEventMessage, TFrameView.DoActivateMessage);
+{$ENDIF}
+end;
+
 class function TFrameView.CreateFrame(Parent: TFmxObject;
   const Title: string): TFrameView;
 begin
@@ -938,6 +983,15 @@ begin
     Canvas.Fill.Color := FBackColor;
     Canvas.FillRect(R, 0, 0, AllCorners, AbsoluteOpacity);
   end;
+end;
+
+procedure TFrameView.Pause;
+begin
+  if not FResumed then
+    Exit;
+  FResumed := False;
+
+  DoPause;
 end;
 
 procedure TFrameView.RefreshStatusBar;
@@ -1031,11 +1085,44 @@ begin
   {$ENDIF}
 end;
 
+procedure TFrameView.Resume;
+var
+  [Weak] LFrame: TFrameView;
+begin
+  if FResumed then
+    Exit;
+  FResumed := True;
+
+  LFrame := ActiveFrame;
+  // Back from nextview
+  if (FLastView <> LFrame) and Assigned(LFrame) and (LFrame <> Self) and (LFrame.FLastView <> Self) then
+    FLastView := LFrame;
+
+  if LFrame <> Self then begin
+    if Assigned(LFrame) and (not LFrame.IsDestroy) then
+      LFrame.Pause;
+    TFrameView.SetFormActiveFrame(ParentForm, Self);
+  end;
+  DoResume;
+end;
+
 procedure TFrameView.DelayExecute(ADelay: Single; AExecute: TNotifyEventA);
 begin
   if not Assigned(AExecute) then
     Exit;
   TFrameAnimator.DelayExecute(Self, AExecute, ADelay);
+end;
+
+class destructor TFrameView.Destroy;
+begin
+{$IF Defined(ANDROID) or Defined(IOS)}
+  TMessageManager.DefaultManager.Unsubscribe(TApplicationEventMessage, TFrameView.DoActivateMessage);
+{$ENDIF}
+
+  TMessageManager.DefaultManager.Unsubscribe(TFormActivateMessage, TFrameView.DoActivateMessage);
+  TMessageManager.DefaultManager.Unsubscribe(TFormDeactivateMessage, TFrameView.DoActivateMessage);
+
+  FreeAndNil(FActiveFrames);
 end;
 
 destructor TFrameView.Destroy;
@@ -1056,6 +1143,36 @@ begin
   inherited;
 end;
 
+class procedure TFrameView.DoActivateMessage(const Sender: TObject;
+  const M: TMessage);
+
+  procedure DealForm(AForm: TCommonCustomForm; AActivate: Boolean);
+  var
+    LFrame: TFrameView;
+  begin
+    if not TFrameView.GetFormActiveFrame(AForm, LFrame) then
+      Exit;
+
+    if AActivate then
+      LFrame.Resume
+    else
+      LFrame.Pause;
+  end;
+
+begin
+  if M is TFormActivateMessage then
+    DealForm(TFormActivateMessage(M).Value, True)
+  else if M is TFormDeactivateMessage then
+    DealForm(TFormActivateMessage(M).Value, False)
+  else if M is TApplicationEventMessage then
+    case TApplicationEventMessage(M).Value.Event of
+      TApplicationEvent.WillBecomeForeground:
+        DealForm(Screen.ActiveForm, True);
+      TApplicationEvent.EnteredBackground:
+        DealForm(Screen.ActiveForm, False);
+    end;
+end;
+
 function TFrameView.DoCanFinish: Boolean;
 begin
   Result := True;
@@ -1071,11 +1188,23 @@ begin
 end;
 
 procedure TFrameView.DoFinish;
+var
+  [Weak] LFrame: TFrameView;
 begin
+  LFrame := ActiveFrame;
+  // Self not Active
+  if Assigned(LFrame) and (LFrame <> Self) and (LFrame.FLastView = Self) then
+    LFrame.FLastView := FLastView;
+  Pause;
+
   if Assigned(FOnFinish) then begin
     FOnFinish(Self);
     FOnFinish := nil;
   end;
+
+  if LFrame = Self then
+    if Assigned(FLastView) and not FLastView.IsDestroy then
+      FLastView.Resume;
 end;
 
 procedure TFrameView.DoFree;
@@ -1086,23 +1215,34 @@ end;
 
 procedure TFrameView.DoHide;
 begin
+  Pause;
   if Assigned(FOnHide) then
     FOnHide(Self);
 end;
 
+procedure TFrameView.DoPause;
+begin
+
+end;
+
 procedure TFrameView.DoReStart;
 begin
-  RefreshStatusBar;
   if Assigned(FOnReStart) then
     FOnReStart(Self);
+  Resume;
+end;
+
+procedure TFrameView.DoResume;
+begin
+  RefreshStatusBar;
 end;
 
 procedure TFrameView.DoShow;
 begin
   FToastManager := GetToastManager;
-  RefreshStatusBar;
   if Assigned(FOnShow) then
     FOnShow(Self);
+  Resume;
 end;
 
 procedure TFrameView.Finish(Ani: TFrameAniType);
@@ -1132,6 +1272,16 @@ begin
     Finish(FDefaultAni)
   else
     Finish(TFrameAniType.DefaultAni);
+end;
+
+class function TFrameView.GetFormActiveFrame(AForm: TCommonCustomForm; var AFrame: TFrameView): Boolean;
+begin
+  Result := Assigned(AForm) and FActiveFrames.TryGetValue(AForm, AFrame) and Assigned(AFrame);
+end;
+
+function TFrameView.GetActiveFrame: TFrameView;
+begin
+  TFrameView.GetFormActiveFrame(ParentForm, Result);
 end;
 
 function TFrameView.GetData: TValue;
@@ -1379,7 +1529,7 @@ begin
   if FBackColor <> Value then begin
     FBackColor := Value;
     FUseDefaultBackColor := False;
-    //Repaint;
+    Repaint;
   end;
 end;
 
@@ -1427,6 +1577,13 @@ class procedure TFrameView.SetDefaultStatusTransparent(const Value: Boolean);
 begin
   if FDefaultStatusTransparent <> Value then
     FDefaultStatusTransparent := Value;
+end;
+
+class procedure TFrameView.SetFormActiveFrame(AForm: TCommonCustomForm; AFrame: TFrameView);
+begin
+  if not Assigned(AForm) then
+    Exit;
+  FActiveFrames.AddOrSetValue(AForm, AFrame);
 end;
 
 procedure TFrameView.SetParams(const Value: TFrameParams);
@@ -2290,7 +2447,6 @@ begin
   except
   end;
 end;
-
 
 initialization
   FPublicState := TFrameState.Create(nil, True);

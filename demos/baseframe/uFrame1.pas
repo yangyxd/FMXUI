@@ -43,6 +43,8 @@ type
     procedure DoCreate(); override;
     procedure DoFree(); override;
     procedure DoShow(); override;
+    procedure DoResume; override;
+    procedure DoPause; override;
   public
     { Public declarations }
   end;
@@ -90,6 +92,20 @@ begin
   ListViewEx1.Adapter := nil;
   FAdapter := nil;
   FreeAndNil(FList);
+end;
+
+procedure TFrame1.DoPause;
+begin
+  Hint('TFrame1.DoPause');
+
+  inherited;
+end;
+
+procedure TFrame1.DoResume;
+begin
+  inherited;
+
+  Hint('TFrame1.DoResume');
 end;
 
 procedure TFrame1.DoShow;
