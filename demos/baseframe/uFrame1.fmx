@@ -4,7 +4,6 @@ object Frame1: TFrame1
   Size.PlatformDefault = False
   object LinearLayout1: TLinearLayout
     Align = Top
-    Background.ItemDefault.Color = claPurple
     Background.ItemDefault.Kind = Solid
     Gravity = None
     Size.Width = 371.000000000000000000
@@ -28,7 +27,7 @@ object Frame1: TFrame1
       Size.PlatformDefault = False
       TabOrder = 1
       Text = 'FMXUI Base Frame Demo'
-      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Default = claBlack
       TextSettings.Color.Focused = claNull
       TextSettings.Color.Selected = claNull
       TextSettings.Color.Enabled = claNull

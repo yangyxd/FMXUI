@@ -169,7 +169,13 @@ type
     FParams: TFrameParams;
     FPrivateState: TFrameState;
     FBackColor: TAlphaColor;
+    FStatusColor: TAlphaColor;
+    FStatusLight: Boolean;
+    FStatusTransparent: Boolean;
     FUseDefaultBackColor: Boolean;
+    FUseDefaultStatusColor: Boolean;
+    FUseDefaultStatusLight: Boolean;
+    FUseDefaultStatusTransparent: Boolean;
     FOnShow: TNotifyEvent;
     FOnHide: TNotifyEvent;
     FOnFinish: TNotifyEvent;
@@ -196,11 +202,16 @@ type
     function GetIsWaitDismiss: Boolean;
     function GetStatusColor: TAlphaColor;
     procedure SetStatusColor(const Value: TAlphaColor);
+    procedure SetStatusLight(const Value: Boolean);
+    procedure SetStatusTransparent(const Value: Boolean);
     function GetParentForm: TCustomForm;
     procedure SetBackColor(const Value: TAlphaColor);
     function GetIsDestroy: Boolean;
 
     function FinishIsFreeApp: Boolean;
+    procedure RefreshStatusBar;
+    function GetStatusLight: Boolean;
+    function GetStatusTransparent: Boolean;
   protected
     [Weak] FLastView: TFrameView;
     [Weak] FNextView: TFrameView;
@@ -285,6 +296,14 @@ type
     /// 设置 Frame 默认状态条颜色
     /// </summary>
     class procedure SetDefaultStatusColor(const Value: TAlphaColor);
+    /// <summary>
+    /// 设置 Frame 默认状态条透明
+    /// </summary>
+    class procedure SetDefaultStatusTransparent(const Value: Boolean);
+    /// <summary>
+    /// 设置 Frame 默认状态条黑色图标
+    /// </summary>
+    class procedure SetDefaultStatusLight(const Value: Boolean);
 
     /// <summary>
     /// 流转化为 string
@@ -436,6 +455,14 @@ type
     /// APP 顶部状态条颜色
     /// </summary>
     property StatusColor: TAlphaColor read GetStatusColor write SetStatusColor;
+    /// <summary>
+    /// APP 顶部状态条透明
+    /// </summary>
+    property StatusTransparent: Boolean read GetStatusTransparent write SetStatusTransparent;
+    /// <summary>
+    /// APP 顶部状态条黑色图标
+    /// </summary>
+    property StatusLight: Boolean read GetStatusLight write SetStatusLight;
 
     property OnShow: TNotifyEvent read FOnShow write FOnShow;
     property OnHide: TNotifyEvent read FOnHide write FOnHide;
@@ -483,6 +510,8 @@ var
 
   FDefaultBackColor: TAlphaColor = 0;
   FDefaultStatusColor: TAlphaColor = 0;
+  FDefaultStatusTransparent: Boolean = False;
+  FDefaultStatusLight: Boolean = True;
 
 {$IFDEF ANDROID}
 
@@ -860,6 +889,9 @@ begin
   FDefaultAni := TFrameAniType(-1);
   FBackColor := FDefaultBackColor;
   FUseDefaultBackColor := True;
+  FUseDefaultStatusColor := True;
+  FUseDefaultStatusLight := True;
+  FUseDefaultStatusTransparent := True;
   FNeedDoCreate := True;
 end;
 
@@ -906,6 +938,97 @@ begin
     Canvas.Fill.Color := FBackColor;
     Canvas.FillRect(R, 0, 0, AllCorners, AbsoluteOpacity);
   end;
+end;
+
+procedure TFrameView.RefreshStatusBar;
+
+  {$IFDEF IOS}
+  procedure ExecuteIOS(const AColor: TAlphaColor);
+  var
+    F: TCustomForm;
+  begin
+    F := ParentForm;
+    if not Assigned(F) then
+      Exit;
+    F.Fill.Color := AColor;
+  end;
+  {$ENDIF}
+
+  {$IFDEF ANDROID}
+  procedure ExecuteAndroid(const AColor: TAlphaColor; const ATransparent: Boolean; const ALight: Boolean);
+  var
+    F: TCustomForm;
+    {$IF CompilerVersion > 30}
+    wnd: JWindow;
+    {$ENDIF}
+  begin
+    if TView.GetStatusHeight > 0 then begin
+      F := ParentForm;
+      if not Assigned(F) then
+        Exit;
+      F.Fill.Color := AColor;
+
+      {$IF CompilerVersion > 30} // Delphi 10.1 之后的版本
+      //if TJBuild_VERSION.JavaClass.SDK_INT < 21 then
+      //  Exit;
+      wnd := TAndroidHelper.Activity.getWindow;
+      if (not Assigned(wnd)) then Exit;
+      CallInUiThread(
+        procedure
+        var
+          LVisibility: Integer;
+        begin
+          if TJBuild_VERSION.JavaClass.SDK_INT >= 21 then begin
+            LVisibility := wnd.getDecorView.getSystemUiVisibility;
+
+            // 亮色状态栏
+            if (TJBuild_VERSION.JavaClass.SDK_INT >= 23) then
+              if ALight then
+                LVisibility := LVisibility or TJView.JavaClass.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+              else
+                LVisibility := LVisibility and not TJView.JavaClass.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+
+            // 是否为系统 view 预留空间
+            wnd.getDecorView().setFitsSystemWindows(True);
+            // 需要设置这个 flag 才能调用 setStatusBarColor 来设置状态栏颜色
+            wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            if ATransparent then begin // 透明
+              // 取消设置透明状态栏,使 ContentView 内容不再覆盖状态栏
+              wnd.clearFlags($04000000); // FLAG_TRANSLUCENT_STATUS
+              // 设置颜色
+              wnd.setStatusBarColor(TJcolor.JavaClass.TRANSPARENT);
+              with TJView.JavaClass do
+                wnd.getDecorView().setSystemUiVisibility(LVisibility or
+                  SYSTEM_UI_FLAG_LAYOUT_STABLE or SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+            end
+            else begin // 半透明
+              wnd.addFlags($04000000); // FLAG_TRANSLUCENT_STATUS
+              // 设置颜色
+              wnd.setStatusBarColor(AColor);
+              with TJView.JavaClass do
+                wnd.getDecorView().setSystemUiVisibility(LVisibility and
+                  not SYSTEM_UI_FLAG_LAYOUT_STABLE and not SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+            end;
+          end
+          else begin
+            // 是否为系统 view 预留空间
+            wnd.getDecorView().setFitsSystemWindows(True);
+            wnd.addFlags($04000000); // FLAG_TRANSLUCENT_STATUS
+          end;
+        end
+      );
+      {$ENDIF}
+    end;
+  end;
+  {$ENDIF}
+
+begin
+  {$IFDEF IOS}
+  ExecuteIOS(StatusColor);
+  {$ENDIF}
+  {$IFDEF ANDROID}
+  ExecuteAndroid(StatusColor, StatusTransparent, StatusLight);
+  {$ENDIF}
 end;
 
 procedure TFrameView.DelayExecute(ADelay: Single; AExecute: TNotifyEventA);
@@ -969,6 +1092,7 @@ end;
 
 procedure TFrameView.DoReStart;
 begin
+  RefreshStatusBar;
   if Assigned(FOnReStart) then
     FOnReStart(Self);
 end;
@@ -976,8 +1100,7 @@ end;
 procedure TFrameView.DoShow;
 begin
   FToastManager := GetToastManager;
-  if (FDefaultStatusColor <> 0) then
-    StatusColor := FDefaultStatusColor;
+  RefreshStatusBar;
   if Assigned(FOnShow) then
     FOnShow(Self);
 end;
@@ -1080,43 +1203,27 @@ begin
 end;
 
 function TFrameView.GetStatusColor: TAlphaColor;
-
-  {$IFDEF IOS}
-  function ExecuteIOS(): TAlphaColor;
-  var
-    F: TCustomForm;
-  begin
-    F := ParentForm;
-    if not Assigned(F) then
-      Result := 0
-    else
-      Result := F.Fill.Color;
-  end;
-  {$ENDIF}
-
-  {$IFDEF ANDROID}
-  function ExecuteAndroid(): TAlphaColor;
-  var
-    F: TCustomForm;
-  begin
-    F := ParentForm;
-    if not Assigned(F) then
-      Result := 0
-    else
-      Result := F.Fill.Color;
-  end;
-  {$ENDIF}
-
 begin
-  {$IFDEF IOS}
-  Result := ExecuteIOS();
-  Exit;
-  {$ENDIF}
-  {$IFDEF ANDROID}
-  Result := ExecuteAndroid();
-  Exit;
-  {$ENDIF}
-  Result := 0;
+  if FUseDefaultStatusColor then
+    Result := FDefaultStatusColor
+  else
+    Result := FStatusColor;
+end;
+
+function TFrameView.GetStatusLight: Boolean;
+begin
+  if FUseDefaultStatusLight then
+    Result := FDefaultStatusLight
+  else
+    Result := FStatusLight;
+end;
+
+function TFrameView.GetStatusTransparent: Boolean;
+begin
+  if FUseDefaultStatusTransparent then
+    Result := FDefaultStatusTransparent
+  else
+    Result := FStatusTransparent;
 end;
 
 function TFrameView.GetTitle: string;
@@ -1310,6 +1417,18 @@ begin
   end;
 end;
 
+class procedure TFrameView.SetDefaultStatusLight(const Value: Boolean);
+begin
+  if FDefaultStatusLight <> Value then
+    FDefaultStatusLight := Value;
+end;
+
+class procedure TFrameView.SetDefaultStatusTransparent(const Value: Boolean);
+begin
+  if FDefaultStatusTransparent <> Value then
+    FDefaultStatusTransparent := Value;
+end;
+
 procedure TFrameView.SetParams(const Value: TFrameParams);
 begin
   if Assigned(FParams) then
@@ -1329,62 +1448,30 @@ begin
 end;
 
 procedure TFrameView.SetStatusColor(const Value: TAlphaColor);
-  {$IFDEF IOS}
-  procedure ExecuteIOS();
-  var
-    F: TCustomForm;
-  begin
-    F := ParentForm;
-    if not Assigned(F) then
-      Exit;
-    F.Fill.Color := Value;
-  end;
-  {$ENDIF}
-
-  {$IFDEF ANDROID}
-  procedure ExecuteAndroid();
-  var
-    F: TCustomForm;
-    {$IF CompilerVersion > 30}
-    wnd: JWindow;
-    {$ENDIF}
-  begin
-    if TView.GetStatusHeight > 0 then begin
-      F := ParentForm;
-      if not Assigned(F) then
-        Exit;
-      F.Fill.Color := Value;
-    end else begin
-      {$IF CompilerVersion > 30} // Delphi 10.1 之后的版本
-      if TJBuild_VERSION.JavaClass.SDK_INT < 21 then
-        Exit;
-      wnd := TAndroidHelper.Activity.getWindow;
-      if (not Assigned(wnd)) then Exit;
-      CallInUiThread(
-        procedure
-        begin
-          wnd.getDecorView().setFitsSystemWindows(True);
-          // 取消设置透明状态栏,使 ContentView 内容不再覆盖状态栏
-          wnd.clearFlags($04000000); // FLAG_TRANSLUCENT_STATUS
-          wnd.getDecorView().setSystemUiVisibility($00000400 or $00000100);
-          // 需要设置这个 flag 才能调用 setStatusBarColor 来设置状态栏颜色
-          wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS); // FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
-          // 设置颜色
-          wnd.setStatusBarColor(Value);
-        end
-      );
-      {$ENDIf}
-    end;
-  end;
-  {$ENDIF}
-
 begin
-  {$IFDEF IOS}
-  ExecuteIOS();
-  {$ENDIF}
-  {$IFDEF ANDROID}
-  ExecuteAndroid();
-  {$ENDIF}
+  if FStatusColor <> Value then begin
+    FUseDefaultStatusColor := False;
+    FStatusColor := Value;
+    RefreshStatusBar;
+  end;
+end;
+
+procedure TFrameView.SetStatusLight(const Value: Boolean);
+begin
+  if FStatusLight <> Value then begin
+    FUseDefaultStatusLight := False;
+    FStatusLight := Value;
+    RefreshStatusBar;
+  end;
+end;
+
+procedure TFrameView.SetStatusTransparent(const Value: Boolean);
+begin
+  if FStatusTransparent <> Value then begin
+    FUseDefaultStatusTransparent := False;
+    FStatusTransparent := Value;
+    RefreshStatusBar;
+  end;
 end;
 
 procedure TFrameView.SetTitle(const Value: string);

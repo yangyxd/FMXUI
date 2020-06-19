@@ -7,6 +7,7 @@
  - -----------------------------------
  - ????.??.??
  * [Added]   Compatible with 10.4
+ * [Added]   Transparent statusbar in Android
  * [Added]   New layout demo
  * [Added]   TImageView allow TViewSize.WrapContent, both sides equal autosize, single side will strech with keeping aspect ratio
  * [Fixed]   TDialogView can't free in some situation, due to TabStopController

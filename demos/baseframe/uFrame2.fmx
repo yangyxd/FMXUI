@@ -4,8 +4,6 @@ object Frame2: TFrame2
   Size.PlatformDefault = False
   object LinearLayout1: TLinearLayout
     Align = Top
-    Background.ItemDefault.Color = claPurple
-    Background.ItemDefault.Kind = Solid
     Gravity = None
     Size.Width = 371.000000000000000000
     Size.Height = 50.000000000000000000
@@ -133,10 +131,6 @@ object Frame2: TFrame2
     end
     object ButtonView1: TButtonView
       WidthSize = FillParent
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
       Margins.Top = 12.000000000000000000
       Margins.Bottom = 4.000000000000000000
       Size.Width = 355.000000000000000000
