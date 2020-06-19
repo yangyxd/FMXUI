@@ -11,6 +11,7 @@
  * [新增] TFrameView 增加 Resume & Pause 过程
  * [新增] 特殊布局的例子Layout
  * [新增] TImageView允许设定TViewSize.WrapContent，双边设定为自动大小，单边为按宽高比缩放
+ * [更改] TDialogView无论是否Cancelable，全部拦截返回键，避免TFrameView在TDialogView释放，而TDialogView没有释放的情况
  * [修正] 因TabStopController导致的部分情况下TDialogView无法释放
  * [修正] HtmlText绘制错误（感谢报告：keven）
  - -----------------------------------

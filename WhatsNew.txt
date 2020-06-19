@@ -11,6 +11,7 @@
  * [Added]   Resume & Pause to TFrameView
  * [Added]   New layout demo
  * [Added]   TImageView allow TViewSize.WrapContent, both sides equal autosize, single side will strech with keeping aspect ratio
+ * [Changed] TDialogView block vkEscape and vkHardwareBack, even if Cancelable is false
  * [Fixed]   TDialogView can't free in some situation, due to TabStopController
  * [Fixed]   Draw HtmlText error (Thanks for report: keven)
  - -----------------------------------

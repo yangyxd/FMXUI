@@ -2853,8 +2853,9 @@ begin
   // KngStr: 更改 KeyDown 为 AfterDialogKey，暂时关闭 Key < $80
 
   // 如果按下了返回键，且允许取消对话框，则关闭对话框
-  if (FDialog.Cancelable) and (Key in [vkEscape, vkHardwareBack]) then begin
-    FDialog.Cancel;
+  if Key in [vkEscape, vkHardwareBack] then begin
+    if FDialog.Cancelable then
+      FDialog.Cancel;
     Key := 0;
     Exit;
   end;
