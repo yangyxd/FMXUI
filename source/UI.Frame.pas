@@ -256,6 +256,10 @@ type
     procedure DoFree(); virtual;
 
     /// <summary>
+    /// 检测是否允许暂停
+    /// </summary>
+    function DoCanPause: Boolean; virtual;
+    /// <summary>
     /// Frame 在前端时触发
     /// </summary>
     procedure DoResume; virtual;
@@ -433,7 +437,7 @@ type
     /// <summary>
     /// 暂停当前Frame
     /// </summary>
-    procedure Pause; virtual;
+    procedure Pause(AFinish: Boolean = False); virtual;
 
     /// <summary>
     /// 启动时的参数
@@ -989,13 +993,30 @@ begin
   end;
 end;
 
-procedure TFrameView.Pause;
+procedure TFrameView.Pause(AFinish: Boolean);
+var
+  [Weak] LFrame: TFrameView;
 begin
+  if not DoCanPause then
+    Exit;
   if not FResumed then
     Exit;
   FResumed := False;
 
+  if AFinish then begin
+    LFrame := ActiveFrame;
+    // Self not Active
+    if Assigned(LFrame) and (LFrame <> Self) and (LFrame.FLastView = Self) then
+      LFrame.FLastView := FLastView;
+  end;
+
   DoPause;
+
+  if AFinish then begin
+    if LFrame = Self then
+      if Assigned(FLastView) and not FLastView.IsDestroy then
+        FLastView.Resume;
+  end;
 end;
 
 procedure TFrameView.RefreshStatusBar;
@@ -1093,6 +1114,8 @@ procedure TFrameView.Resume;
 var
   [Weak] LFrame: TFrameView;
 begin
+  if not DoCanPause then
+    Exit;
   if FResumed then
     Exit;
   FResumed := True;
@@ -1192,28 +1215,35 @@ begin
   Result := not Assigned(Parent.Parent) and CheckChildern();
 end;
 
+function TFrameView.DoCanPause: Boolean;
+var
+  [Weak] V: TFmxObject;
+begin
+  Result := False;
+  if not Assigned(Self) then
+    Exit;
+  if Owner is TFrameView then
+    Exit;
+  V := Parent;
+  while Assigned(V) do begin
+    if V is TFrameView then
+      Exit;
+    V := V.Parent;
+  end;
+  Result := True;
+end;
+
 procedure TFrameView.DoCreate;
 begin
 end;
 
 procedure TFrameView.DoFinish;
-var
-  [Weak] LFrame: TFrameView;
 begin
-  LFrame := ActiveFrame;
-  // Self not Active
-  if Assigned(LFrame) and (LFrame <> Self) and (LFrame.FLastView = Self) then
-    LFrame.FLastView := FLastView;
-  Pause;
-
   if Assigned(FOnFinish) then begin
     FOnFinish(Self);
     FOnFinish := nil;
   end;
-
-  if LFrame = Self then
-    if Assigned(FLastView) and not FLastView.IsDestroy then
-      FLastView.Resume;
+  Pause;
 end;
 
 procedure TFrameView.DoFree;
@@ -1224,9 +1254,9 @@ end;
 
 procedure TFrameView.DoHide;
 begin
-  Pause;
   if Assigned(FOnHide) then
     FOnHide(Self);
+  Pause;
 end;
 
 procedure TFrameView.DoPause;
