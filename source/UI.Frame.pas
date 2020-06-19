@@ -239,6 +239,10 @@ type
     /// </summary>
     function DoCanFinish(): Boolean; virtual;
     /// <summary>
+    /// 检测当前Frame是否允许被键盘关闭
+    /// </summary>
+    function DoCanKeyFinish(): Boolean; virtual;
+    /// <summary>
     /// Frame 需要关闭时，在关闭之前触发
     /// </summary>
     procedure DoFinish(); virtual;
@@ -588,7 +592,7 @@ end;
 procedure TFrameView.AfterDialogKey(var Key: Word; Shift: TShiftState);
 begin
   // 如果按下了返回键，且允许取消对话框，则关闭对话框
-  if Assigned(Self) and (Key in [vkEscape, vkHardwareBack]) then begin
+  if DoCanKeyFinish and (Key in [vkEscape, vkHardwareBack]) then begin
     Key := 0;
     Finish;
   end else
@@ -1176,6 +1180,11 @@ end;
 function TFrameView.DoCanFinish: Boolean;
 begin
   Result := True;
+end;
+
+function TFrameView.DoCanKeyFinish: Boolean;
+begin
+  Result := Assigned(Self) and Visible and Enabled;
 end;
 
 function TFrameView.DoCanFree: Boolean;
