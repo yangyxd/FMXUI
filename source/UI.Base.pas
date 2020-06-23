@@ -8895,7 +8895,7 @@ var
     end;
   end;
 
-  procedure ClacWordWarpTextSize(var S: TSizeF);
+  procedure ClacWordWarpTextSize(var S: TSizeF; SS: TSizeF);
   var
     I: Integer;
     LText: string;
@@ -8913,7 +8913,10 @@ var
       if Item.Len = 0 then Continue;
 
       if (Item.Len = 1) and (Item.P^ = #13) then begin
-        Y := Y + S.Height;
+        if I = 0 then
+          Y := Y + SS.Height
+        else
+          Y := Y + S.Height;
         X := 0;
         Continue;
       end;
@@ -8968,7 +8971,7 @@ begin
   end;
 
   if LVCenter or (ASize <> nil) then begin
-    ClacWordWarpTextSize(LTotalSize);
+    ClacWordWarpTextSize(LTotalSize, S);
   end else begin
     TextSet.CalcTextObjectSize(FText, $FFFFFF, LScale, nil, LTotalSize);
   end;
@@ -8978,7 +8981,7 @@ begin
     ASize.Width := LTotalSize.Width;
     ASize.Height := LTotalSize.Height;
 
-    TextSet.WordWrap := LWordWarp;
+    TextSet.FLayout.WordWrap := LWordWarp;
     TextSet.Font.Assign(FFont);
     TextSet.Font.OnChanged := LFontChange;
 
