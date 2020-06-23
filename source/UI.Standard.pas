@@ -1484,7 +1484,7 @@ begin
     case FScrollbar of
       TViewScroll.Horizontal:
         begin
-          if Assigned(FScrollH) and (FCanScrollH) then begin
+          if Assigned(FScrollH) and (FCanScrollH) and (ScrollValueH < 1) then begin
             SR := GetRectF(FContentBounds^);
             SR.Top := R.Top;
             if FShowScrollBars and not IsScrollBarAutoShowing then
@@ -1497,7 +1497,7 @@ begin
         end;
       TViewScroll.Vertical:
         begin
-          if Assigned(FScrollV) and (FCanScrollV) then begin
+          if Assigned(FScrollV) and (FCanScrollV) and (ScrollValueV < 1) then begin
             SR := GetRectF(FContentBounds^);
             SR.Left := R.Left;
             if FShowScrollBars and not IsScrollBarAutoShowing then

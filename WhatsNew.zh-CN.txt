@@ -14,6 +14,7 @@
  * [更改] TDialogView无论是否Cancelable，全部拦截返回键，避免TFrameView在TDialogView释放，而TDialogView没有释放的情况
  * [修正] 因TabStopController导致的部分情况下TDialogView无法释放
  * [修正] HtmlText绘制错误（感谢报告：keven）
+ * [修正] TTextView内容过少且显示滚动条时绘制错误（感谢报告：意帆）
  - -----------------------------------
  - 2020.05.28
  * [新增] TDialogView增加阴影开关

@@ -14,6 +14,7 @@
  * [Changed] TDialogView block vkEscape and vkHardwareBack, even if Cancelable is false
  * [Fixed]   TDialogView can't free in some situation, due to TabStopController
  * [Fixed]   Draw HtmlText error (Thanks for report: keven)
+ * [Fixed]   Draw TTextView error while scrolling (Thanks for report: 意帆)
  - -----------------------------------
  - 2020.05.28
  * [Added]   Shadow of TDialogView
