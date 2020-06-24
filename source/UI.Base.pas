@@ -9217,38 +9217,38 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
   var
     P, PE: PChar;
   begin
-    if LText = 'b' then
+    if SameText(LText, 'b') then
       Include(Item.Style, TFontStyle.fsBold)
-    else if LText = 'i' then
+    else if SameText(LText, 'i') then
       Include(Item.Style, TFontStyle.fsItalic)
-    else if LText = 'u' then
+    else if SameText(LText, 'u') then
       Include(Item.Style, TFontStyle.fsUnderline)
-    else if LText = 's' then
+    else if SameText(LText, 's') then
       Include(Item.Style, TFontStyle.fsStrikeOut)
-    else if (LText = 'em') or (LText = 'strong') then begin
+    else if SameText(LText, 'em') or SameText(LText, 'strong') then begin
       Include(Item.Style, TFontStyle.fsItalic);
       Include(Item.Style, TFontStyle.fsBold);
     end else begin
       P := PChar(LText);
       PE := P + Length(LText);
 
-      if StrLComp(P, 'font', 4) = 0 then begin  // font
+      if StrLIComp(P, 'font', 4) = 0 then begin  // font
         Inc(P, 4);
         ReadProperty(Item, P, PE,
           procedure (var Item: THtmlTextItem; const Key, Value: string)
           begin
-            if Key = 'color' then
+            if SameText(Key, 'color') then
               Item.Color := HtmlColorToColor(Value)
-            else if (Key = PStyle) and (Value <> '') then
+            else if SameText(Key, PStyle) and (Value <> '') then
               ReadStyleProperty(Item, Value);
           end
         );
-      end else if StrLComp(P, 'a ', 2) = 0 then begin  // a 超链接
+      end else if StrLIComp(P, 'a ', 2) = 0 then begin  // a 超链接
         Inc(P, 1);
         ReadProperty(Item, P, PE,
           procedure (var Item: THtmlTextItem; const Key, Value: string)
           begin
-            if Key = 'href' then begin
+            if SameText(Key, 'href') then begin
               if not Assigned(FLinkHrefs) then
                 FLinkHrefs := TStringList.Create;
               Item.LinkURL := FLinkHrefs.IndexOf(Value);
@@ -9258,53 +9258,52 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
               end;
               Item.Link := FLinkRangeCount;
               Inc(FLinkRangeCount);
-            end else if Key = 'color' then
+            end else if SameText(Key, 'color') then
               Item.Color := HtmlColorToColor(Value)
-            else if (Key = PStyle) and (Value <> '') then
+            else if SameText(Key, PStyle) and (Value <> '') then
               ReadStyleProperty(Item, Value);
           end
         );
-      end else if StrLComp(P, 'span ', 5) = 0 then begin  // span
+      end else if StrLIComp(P, 'span ', 5) = 0 then begin  // span
         Inc(P, 4);
         ReadProperty(Item, P, PE,
           procedure (var Item: THtmlTextItem; const Key, Value: string)
           begin
-            if Key = PStyle then
+            if SameText(Key, PStyle) then
               ReadStyleProperty(Item, Value);
           end
         );
-      end else if StrLComp(P, 'div ', 3) = 0 then begin  // div
+      end else if StrLIComp(P, 'div ', 4) = 0 then begin  // div
         Inc(P, 3);
         ReadProperty(Item, P, PE,
           procedure (var Item: THtmlTextItem; const Key, Value: string)
           begin
-            if (Key = PStyle) and (Value <> '') then
+            if SameText(Key, PStyle) and (Value <> '') then
               ReadStyleProperty(Item, Value);
           end
         );
-      end else if StrLComp(P, 'p ', 2) = 0 then begin  // p
+      end else if StrLIComp(P, 'p ', 2) = 0 then begin  // p
         Inc(P, 1);
         ReadProperty(Item, P, PE,
           procedure (var Item: THtmlTextItem; const Key, Value: string)
           begin
-            if (Key = PStyle) and (Value <> '') then
+            if SameText(Key, PStyle) and (Value <> '') then
               ReadStyleProperty(Item, Value);
           end
         );
-      end else if (P^ = 'h') and (PE - P > 1) and (P[1] > '0') and (P[1] < '9') then begin  // h1, h2, h3, ... , h9
+      end else if (StrLIComp(P, 'h', 1) = 0) and (PE - P > 1) and (P[1] > '0') and (P[1] < '9') then begin  // h1, h2, h3, ... , h9
         Inc(P, 2);
         Include(Item.Style, TFontStyle.fsBold);
         if PE - P > 0 then begin
           ReadProperty(Item, P, PE,
             procedure (var Item: THtmlTextItem; const Key, Value: string)
             begin
-              if (Key = PStyle) and (Value <> '') then
+              if SameText(Key, PStyle) and (Value <> '') then
                 ReadStyleProperty(Item, Value);
             end
           );
         end;
       end;
-
     end;
   end;
 
@@ -9335,6 +9334,22 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
       Exit;
     SetItem(Item, LText);
     List.Items[I] := Item;
+  end;
+
+  function IsToken(S: string): Boolean;
+  begin
+    Result := False;
+    if S = '' then
+      Exit;
+    Result := SameText(S, 'p') or SameText(S, 'div') or SameText(S, 'li') or ((Length(S) = 2) and SameText(PChar(S)^, 'h'));
+  end;
+
+  function IsLineBreak(S: string): Boolean;
+  begin
+    Result := False;
+    if S = '' then
+      Exit;
+    Result := SameText(S, 'br') or SameText(S, 'br/') or SameText(S, 'br /');
   end;
 
   procedure ParseText(var P, PE: PChar; const AFlag: string);
@@ -9368,11 +9383,10 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
           if (P2 = nil) or (P2 = P1) then
             Break;
           SetString(LS, P1, P2 - P1);
-          LS := LowerCase(LS);
           P1 := PChar(LS);
-          if (StrLComp(P1, 'div', 3) = 0) or (StrLComp(P1, 'p', 1) = 0) or (StrLComp(P1, 'li', 2) = 0) then begin
+          if (StrLIComp(P1, 'div', 3) = 0) or (StrLIComp(P1, 'p', 1) = 0) or (StrLIComp(P1, 'li', 2) = 0) then begin
             AddItem(PLineBreak, 1, '');
-          end else if P1^ = 'h' then begin
+          end else if StrLIComp(P1, 'h', 1) = 0 then begin
             Inc(P1);
             if (P1^ > '0') and (P1^ < '9') then begin
               AddItem(PLineBreak, 1, '');
@@ -9393,20 +9407,15 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
 
       if LS = '' then begin
         SetString(LS, P, P1 - P);
-        LS := LowerCase(LS);
       end else begin
         SkipSpace(P);
         if P^ = '/' then begin
           Inc(P);
           SetString(LE, P, P1 - P);
-          LE := LowerCase(LE);
           if (LE = LS) or ((Length(LS) > Length(LE)) and (Pos(LE + ' ', LS) > 0)) then begin
             AddItem(P2, P - P2 - 2, LS);
-            if LE <> '' then begin
-              if (LE = 'p') or (LE = 'div') or (LE = 'li') or ((Length(LE) = 2) and (PChar(LE)^ = 'h')) then begin
-                AddItem(PLineBreak, 1, LS);
-              end;
-            end;
+            if IsToken(LE) then
+              AddItem(PLineBreak, 1, LS);
           end;
           P := P1 + 1;
           if P1^ <> '>' then
@@ -9423,9 +9432,9 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
           end;
 
           SetString(LE, P, P1 - P);
-          LE := LowerCase(Trim(LE));
+          LE := Trim(LE);
 
-          if (LE = 'br') or (LE = 'br/') then begin // 换行
+          if IsLineBreak(LE) then begin // 换行
             AddItem(PLineBreak, 1, LS);
             LS := '';
             P := P1 + 1;
@@ -9447,17 +9456,15 @@ procedure TViewHtmlText.ParseHtmlText(const Text: string);
 
       P := P1 + 1;
 
-      if (LS = 'br') or (LS = 'br/') then begin // 换行
+      if IsLineBreak(LS) then begin // 换行
         AddItem(PLineBreak, 1, LS);
         SkipSpace(P);
         LS := '';
         Continue;
       end else begin
-        if LE <> '' then begin
-          if (LE = 'p') or (LE = 'div') or (LE = 'li') or ((Length(LE) = 2) and (PChar(LE)^ = 'h')) then begin
-            AddItem(PLineBreak, 1, LS);
-            NeedBreak := False;
-          end;
+        if IsToken(LE) then begin
+          AddItem(PLineBreak, 1, LS);
+          NeedBreak := False;
         end;
 
         SIndex := List.Count;
