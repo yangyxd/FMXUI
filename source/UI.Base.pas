@@ -8839,9 +8839,9 @@ var
       end;
 
       if Flag = 0 then begin
-        TextSet.WordWrap := True;
+        TextSet.FLayout.WordWrap := True;
         DrawText(LText, Item, LColor, X, Y, S);
-        TextSet.WordWrap := False;
+        TextSet.FLayout.WordWrap := False;
       end else begin
         TextSet.TextSize(LText, S, LScale, MW - X, True);
         X := X + S.Width;
