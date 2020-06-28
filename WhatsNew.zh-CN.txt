@@ -7,7 +7,7 @@
  - -----------------------------------
  - ????.??.??
  * [新增] 兼容10.4
- * [新增] 安卓沉浸式状态栏全透明
+ * [新增] 安卓沉浸式状态栏全透明 (感谢：谭钦的u_Immerse.pas，意帆和Udcover)
  * [新增] TFrameView 增加 Resume & Pause 过程
  * [新增] 特殊布局的例子Layout
  * [新增] TImageView允许设定TViewSize.WrapContent，双边设定为自动大小，单边为按宽高比缩放

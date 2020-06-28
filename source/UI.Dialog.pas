@@ -2056,9 +2056,6 @@ begin
   Dialog.FViewRoot.Index := Dialog.FViewRoot.Parent.ChildrenCount - 1;
   Dialog.FViewRoot.Background.ItemDefault.Kind := TViewBrushKind.Solid;
   Dialog.FViewRoot.CanFocus := False;
-  {$IFDEF ANDROID}
-  Dialog.FViewRoot.Padding.Top := TView.GetStatusHeight;
-  {$ENDIF}
 
   View.Name := '';
   View.Parent := Dialog.FViewRoot;
@@ -2159,6 +2156,15 @@ begin
       end;
   end;
 
+  {$IFDEF ANDROID}
+  if Y = 0 then begin
+    View.Padding.Top := TView.GetStatusHeight;
+    if View is TFrameView then
+      with TFrameViewTmp(View) do
+        if IsUseDefaultBackColor or (BackColor and $FF000000 = 0) then
+          BackColor := StatusColor;
+  end;
+  {$ENDIF}
   View.Position.Point := TPointF.Create(X, Y);
   if View is TFrameView then
     TFrameViewTmp(View).DoShow();

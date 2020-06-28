@@ -99,12 +99,12 @@ begin
         TFrameAniType.RightSlideMenu);
     end;
     2: begin
-      TDialog.ShowView(Self, TView(Sender), TFramePopMenu, 0, 0,
+      TDialog.ShowView(Self, nil, TFramePopMenu, 0, 0,
         TDialogViewPosition.Top, True,
         TFrameAniType.TopMoveInOut).RootView.Controls[0].Align := TAlignLayout.Top;
     end;
     3: begin
-      TDialog.ShowView(Self, TView(Sender), TFramePopMenu, 0, 0,
+      TDialog.ShowView(Self, nil, TFramePopMenu, 0, 0,
         TDialogViewPosition.Bottom, True,
         TFrameAniType.BottomMoveInOut).RootView.Controls[0].Align := TAlignLayout.Bottom;
     end;

@@ -203,16 +203,17 @@ type
     function GetIsWaitDismiss: Boolean;
     function GetStatusColor: TAlphaColor;
     procedure SetStatusColor(const Value: TAlphaColor);
+    function GetStatusLight: Boolean;
     procedure SetStatusLight(const Value: Boolean);
+    function GetStatusTransparent: Boolean;
     procedure SetStatusTransparent(const Value: Boolean);
     function GetParentForm: TCustomForm;
+    function GetBackColor: TAlphaColor;
     procedure SetBackColor(const Value: TAlphaColor);
     function GetIsDestroy: Boolean;
 
     function FinishIsFreeApp: Boolean;
     procedure RefreshStatusBar;
-    function GetStatusLight: Boolean;
-    function GetStatusTransparent: Boolean;
     function GetActiveFrame: TFrameView;
   protected
     class var FActiveFrames: TDictionary<TCommonCustomForm, TFrameView>;
@@ -331,6 +332,12 @@ type
     /// 设置 Frame 默认状态条黑色图标
     /// </summary>
     class procedure SetDefaultStatusLight(const Value: Boolean);
+
+    /// <summary>
+    /// 更新状态栏
+    /// </summary>
+    class procedure UpdateStatusBar(const AForm: TCommonCustomForm; const AColor: TAlphaColor; const ATransparent: Boolean; const ALight: Boolean); overload;
+    class procedure UpdateStatusBar; overload;
 
     /// <summary>
     /// 流转化为 string
@@ -491,7 +498,7 @@ type
     /// <summary>
     /// 背景颜色
     /// </summary>
-    property BackColor: TAlphaColor read FBackColor write SetBackColor;
+    property BackColor: TAlphaColor read GetBackColor write SetBackColor;
     /// <summary>
     /// APP 顶部状态条颜色
     /// </summary>
@@ -534,7 +541,8 @@ uses
   Androidapi.Helpers,
   Androidapi.Jni,
   //Androidapi.JNI.Media,
-  //Androidapi.JNIBridge,
+  Androidapi.JNIBridge,
+  Androidapi.JNI.Embarcadero,
   Androidapi.JNI.JavaTypes,
   Androidapi.JNI.GraphicsContentViewText,
   Androidapi.JNI.Util,
@@ -555,6 +563,22 @@ var
   FDefaultStatusLight: Boolean = True;
 
 {$IFDEF ANDROID}
+{$IF CompilerVersion >= 33}
+type
+  // 感谢 谭钦
+  // 监听创建事件
+  TKSCListener = class(TJavaLocal, JOnKeyboardStateChangedListener)
+  public
+    { JOnKeyboardStateChangedListener }
+    procedure onVirtualKeyboardWillShown; cdecl;
+    procedure onVirtualKeyboardFrameChanged(newFrame: JRect); cdecl;
+    procedure onVirtualKeyboardWillHidden; cdecl;
+  end;
+
+var
+  FKSListener: TKSCListener;
+  FSystemUiVisibility: Integer = 0;
+{$ENDIF}
 
 // 解决有时返回键失效问题
 var
@@ -589,6 +613,31 @@ begin
   if Assigned(FVKState) and (FVKState^ <> 0) then
     FVKState^ := 0;
 end;
+
+function AlphaColorToJColor(const AColor: TAlphaColor): Integer;
+begin
+  Result := TJColor.JavaClass.argb(TAlphaColorRec(AColor).A, TAlphaColorRec(AColor).R,
+    TAlphaColorRec(AColor).G, TAlphaColorRec(AColor).B);
+end;
+
+{$IF CompilerVersion >= 33}
+{ TKSCListener }
+
+procedure TKSCListener.onVirtualKeyboardFrameChanged(newFrame: JRect);
+begin
+
+end;
+
+procedure TKSCListener.onVirtualKeyboardWillHidden;
+begin
+  TFrameView.UpdateStatusBar;
+end;
+
+procedure TKSCListener.onVirtualKeyboardWillShown;
+begin
+  TFrameView.UpdateStatusBar;
+end;
+{$ENDIF}
 {$ENDIF}
 
 { TFrameView }
@@ -928,7 +977,6 @@ begin
     Height := 400;
   end;
   FDefaultAni := TFrameAniType(-1);
-  FBackColor := FDefaultBackColor;
   FUseDefaultBackColor := True;
   FUseDefaultStatusColor := True;
   FUseDefaultStatusLight := True;
@@ -940,12 +988,23 @@ class constructor TFrameView.Create;
 begin
   FActiveFrames := TDictionary<TCommonCustomForm, TFrameView>.Create;
 
+  {$IF CompilerVersion >= 31}
   TMessageManager.DefaultManager.SubscribeToMessage(TFormActivateMessage, TFrameView.DoActivateMessage);
   TMessageManager.DefaultManager.SubscribeToMessage(TFormDeactivateMessage, TFrameView.DoActivateMessage);
+  {$ENDIF}
 
-{$IF Defined(ANDROID) or Defined(IOS)}
+  {$IF Defined(ANDROID) or Defined(IOS)}
   TMessageManager.DefaultManager.SubscribeToMessage(TApplicationEventMessage, TFrameView.DoActivateMessage);
-{$ENDIF}
+  {$ENDIF}
+
+  {$IFDEF ANDROID}
+  {$IF CompilerVersion >= 33}
+  // 感谢 谭钦
+  // 增加一个键盘事件的监听 这是因为fmx.jar中的BUG引发的，原本应该是不需要这个监听的
+  FKSListener := TKSCListener.Create;
+  MainActivity.getVirtualKeyboard.addOnKeyboardStateChangedListener(FKSListener);
+  {$ENDIF}
+  {$ENDIF}
 end;
 
 class function TFrameView.CreateFrame(Parent: TFmxObject;
@@ -985,10 +1044,10 @@ var
   R: TRectF;
 begin
   inherited Paint;
-  if (FBackColor and $FF000000 > 0) then begin
+  if (BackColor and $FF000000 > 0) then begin
     R := LocalRect;
     Canvas.Fill.Kind := TBrushKind.Solid;
-    Canvas.Fill.Color := FBackColor;
+    Canvas.Fill.Color := BackColor;
     Canvas.FillRect(R, 0, 0, AllCorners, AbsoluteOpacity);
   end;
 end;
@@ -1020,79 +1079,77 @@ begin
 end;
 
 procedure TFrameView.RefreshStatusBar;
+begin
+  TFrameView.UpdateStatusBar(ParentForm, StatusColor, StatusTransparent, StatusLight);
+end;
+
+class procedure TFrameView.UpdateStatusBar(const AForm: TCommonCustomForm; const AColor: TAlphaColor;
+  const ATransparent: Boolean; const ALight: Boolean);
 
   {$IFDEF IOS}
-  procedure ExecuteIOS(const AColor: TAlphaColor);
-  var
-    F: TCustomForm;
+  procedure ExecuteIOS;
   begin
-    F := ParentForm;
-    if not Assigned(F) then
+    if not Assigned(AForm) then
       Exit;
-    F.Fill.Color := AColor;
+    if AForm is TCustomForm then
+      TCustomForm(AForm).Fill.Color := AColor;
   end;
   {$ENDIF}
 
   {$IFDEF ANDROID}
-  procedure ExecuteAndroid(const AColor: TAlphaColor; const ATransparent: Boolean; const ALight: Boolean);
+  procedure ExecuteAndroid;
+  {$IF CompilerVersion >= 33}
   var
-    F: TCustomForm;
-    {$IF CompilerVersion > 30}
     wnd: JWindow;
-    {$ENDIF}
+  {$ENDIF}
   begin
     if TView.GetStatusHeight > 0 then begin
-      F := ParentForm;
-      if not Assigned(F) then
+      if not Assigned(AForm) then
         Exit;
-      F.Fill.Color := AColor;
+      if AForm is TCustomForm then
+        TCustomForm(AForm).Fill.Color := AColor;
 
-      {$IF CompilerVersion > 30} // Delphi 10.1 之后的版本
-      //if TJBuild_VERSION.JavaClass.SDK_INT < 21 then
-      //  Exit;
+      {$IF CompilerVersion >= 33} // Delphi 10.3 及之后的版本
       wnd := TAndroidHelper.Activity.getWindow;
       if (not Assigned(wnd)) then Exit;
       CallInUiThread(
         procedure
-        var
-          LVisibility: Integer;
         begin
           if TJBuild_VERSION.JavaClass.SDK_INT >= 21 then begin
-            LVisibility := wnd.getDecorView.getSystemUiVisibility;
-
-            // 亮色状态栏
-            if (TJBuild_VERSION.JavaClass.SDK_INT >= 23) then
-              if ALight then
-                LVisibility := LVisibility or TJView.JavaClass.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-              else
-                LVisibility := LVisibility and not TJView.JavaClass.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            FSystemUiVisibility := wnd.getDecorView.getSystemUiVisibility;
 
             // 是否为系统 view 预留空间
-            wnd.getDecorView().setFitsSystemWindows(True);
+            //wnd.getDecorView().setFitsSystemWindows(True);
             // 需要设置这个 flag 才能调用 setStatusBarColor 来设置状态栏颜色
             wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             if ATransparent then begin // 透明
-              // 取消设置透明状态栏,使 ContentView 内容不再覆盖状态栏
-              wnd.clearFlags($04000000); // FLAG_TRANSLUCENT_STATUS
               // 设置颜色
               wnd.setStatusBarColor(TJcolor.JavaClass.TRANSPARENT);
+              // 取消设置透明状态栏,使 ContentView 内容不再覆盖状态栏
+              wnd.clearFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_TRANSLUCENT_STATUS);
               with TJView.JavaClass do
-                wnd.getDecorView().setSystemUiVisibility(LVisibility or
-                  SYSTEM_UI_FLAG_LAYOUT_STABLE or SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+                FSystemUiVisibility := FSystemUiVisibility or SYSTEM_UI_FLAG_LAYOUT_STABLE or SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+              // 亮色状态栏
+              if (TJBuild_VERSION.JavaClass.SDK_INT >= 23) then
+                if ALight then
+                  FSystemUiVisibility := FSystemUiVisibility or TJView.JavaClass.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                else
+                  FSystemUiVisibility := FSystemUiVisibility and not TJView.JavaClass.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+              wnd.getDecorView().setSystemUiVisibility(FSystemUiVisibility);
             end
             else begin // 半透明
-              wnd.addFlags($04000000); // FLAG_TRANSLUCENT_STATUS
               // 设置颜色
-              wnd.setStatusBarColor(AColor);
+              wnd.setStatusBarColor(AlphaColorToJColor(AColor));
+              wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_TRANSLUCENT_STATUS);
               with TJView.JavaClass do
-                wnd.getDecorView().setSystemUiVisibility(LVisibility and
-                  not SYSTEM_UI_FLAG_LAYOUT_STABLE and not SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+                FSystemUiVisibility := FSystemUiVisibility or SYSTEM_UI_FLAG_LAYOUT_STABLE or SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+              wnd.getDecorView().setSystemUiVisibility(FSystemUiVisibility);
             end;
           end
           else begin
             // 是否为系统 view 预留空间
             wnd.getDecorView().setFitsSystemWindows(True);
-            wnd.addFlags($04000000); // FLAG_TRANSLUCENT_STATUS
+            wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_TRANSLUCENT_STATUS);
           end;
         end
       );
@@ -1103,11 +1160,29 @@ procedure TFrameView.RefreshStatusBar;
 
 begin
   {$IFDEF IOS}
-  ExecuteIOS(StatusColor);
+  ExecuteIOS;
   {$ENDIF}
   {$IFDEF ANDROID}
-  ExecuteAndroid(StatusColor, StatusTransparent, StatusLight);
+  ExecuteAndroid;
   {$ENDIF}
+end;
+
+class procedure TFrameView.UpdateStatusBar;
+begin
+{$IFDEF ANDROID}
+  {$IF CompilerVersion >= 33} // Delphi 10.3 及之后的版本
+  if FSystemUiVisibility = 0 then
+    Exit;
+  CallInUiThread(procedure
+  var
+    wnd: JWindow;
+  begin
+    wnd := TAndroidHelper.Activity.getWindow;
+    if (not Assigned(wnd)) then Exit;
+    wnd.getDecorView().setSystemUiVisibility(FSystemUiVisibility);
+  end);
+  {$ENDIF}
+{$ENDIF}
 end;
 
 procedure TFrameView.Resume;
@@ -1142,12 +1217,21 @@ end;
 
 class destructor TFrameView.Destroy;
 begin
-{$IF Defined(ANDROID) or Defined(IOS)}
-  TMessageManager.DefaultManager.Unsubscribe(TApplicationEventMessage, TFrameView.DoActivateMessage);
-{$ENDIF}
+  {$IFDEF ANDROID}
+  {$IF CompilerVersion >= 33}
+  MainActivity.getVirtualKeyboard.removeOnKeyboardStateChangedListener(FKSListener);
+  FreeAndNil(FKSListener);
+  {$ENDIF}
+  {$ENDIF}
 
+  {$IF Defined(ANDROID) or Defined(IOS)}
+  TMessageManager.DefaultManager.Unsubscribe(TApplicationEventMessage, TFrameView.DoActivateMessage);
+  {$ENDIF}
+
+  {$IF CompilerVersion >= 31}
   TMessageManager.DefaultManager.Unsubscribe(TFormActivateMessage, TFrameView.DoActivateMessage);
   TMessageManager.DefaultManager.Unsubscribe(TFormDeactivateMessage, TFrameView.DoActivateMessage);
+  {$ENDIF}
 
   FreeAndNil(FActiveFrames);
 end;
@@ -1177,6 +1261,8 @@ class procedure TFrameView.DoActivateMessage(const Sender: TObject;
   var
     LFrame: TFrameView;
   begin
+    if not Assigned(AForm) then
+      Exit;
     if not TFrameView.GetFormActiveFrame(AForm, LFrame) then
       Exit;
 
@@ -1187,15 +1273,23 @@ class procedure TFrameView.DoActivateMessage(const Sender: TObject;
   end;
 
 begin
+{$IF CompilerVersion >= 31}
   if M is TFormActivateMessage then
     DealForm(TFormActivateMessage(M).Value, True)
   else if M is TFormDeactivateMessage then
     DealForm(TFormActivateMessage(M).Value, False)
-  else if M is TApplicationEventMessage then
+  else
+{$ENDIF}
+  if M is TApplicationEventMessage then
     case TApplicationEventMessage(M).Value.Event of
-      TApplicationEvent.WillBecomeForeground:
+      TApplicationEvent.BecameActive: begin
+        {$IFDEF ANDROID}
+        // 感谢谭钦的u_Immerse.pas
+        TFrameView.UpdateStatusBar;
+        {$ENDIF}
         DealForm(Screen.ActiveForm, True);
-      TApplicationEvent.EnteredBackground:
+      end;
+      TApplicationEvent.WillBecomeInactive:
         DealForm(Screen.ActiveForm, False);
     end;
 end;
@@ -1389,6 +1483,14 @@ end;
 function TFrameView.GetSharedPreferences: TFrameState;
 begin
   Result := FPublicState;
+end;
+
+function TFrameView.GetBackColor: TAlphaColor;
+begin
+  if FUseDefaultBackColor then
+    Result := FDefaultBackColor
+  else
+    Result := FBackColor;
 end;
 
 function TFrameView.GetStatusColor: TAlphaColor;
@@ -1638,7 +1740,7 @@ begin
   if FNeedDoCreate and Assigned(Parent) then begin
     FNeedDoCreate := False;
     if FUseDefaultBackColor and Assigned(TDialog.GetDialog(Self)) then
-      FBackColor := 0;  // 作为Dialog的子View时，不使用默认背景色
+      BackColor := 0;  // 作为Dialog的子View时，不使用默认背景色
     DoCreate();
   end;
 end;

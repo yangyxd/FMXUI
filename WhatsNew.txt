@@ -7,7 +7,7 @@
  - -----------------------------------
  - ????.??.??
  * [Added]   Compatible with 10.4
- * [Added]   Transparent statusbar in Android
+ * [Added]   Transparent statusbar in Android (Thanks for code: 谭钦 report: 意帆 and Udcover)
  * [Added]   Resume & Pause to TFrameView
  * [Added]   New layout demo
  * [Added]   TImageView allow TViewSize.WrapContent, both sides equal autosize, single side will strech with keeping aspect ratio

@@ -33,8 +33,9 @@ uses
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-  TFrameView.SetDefaultStatusColor(TAlphaColorRec.Whitesmoke);
   TFrameView.SetDefaultStatusLight(True);
+  TFrameView.SetDefaultStatusTransparent(True);
+  TFrameView.SetDefaultStatusColor(TAlphaColorRec.Whitesmoke);
   TFrameView.SetDefaultBackColor(TAlphaColorRec.Whitesmoke);
 end;
 
