@@ -977,10 +977,17 @@ begin
     Height := 400;
   end;
   FDefaultAni := TFrameAniType(-1);
+
+  FBackColor := FDefaultBackColor;
+  FStatusColor := FDefaultStatusColor;
+  FStatusTransparent := FDefaultStatusTransparent;
+  FStatusLight := FDefaultStatusLight;
+
   FUseDefaultBackColor := True;
   FUseDefaultStatusColor := True;
   FUseDefaultStatusLight := True;
   FUseDefaultStatusTransparent := True;
+
   FNeedDoCreate := True;
 end;
 
