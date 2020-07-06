@@ -15,7 +15,7 @@
  * [Fixed]   TDialogView can't free in some situation, due to TabStopController
  * [Fixed]   Draw HtmlText error (Thanks for report: keven)
  * [Fixed]   Draw TTextView error while scrolling (Thanks for report: 意帆)
- * [Fixed]   Minior fixes (Thanks for report: 意帆)
+ * [Fixed]   Minior fixes (Thanks for report: 意帆 and keven)
  - -----------------------------------
  - 2020.05.28
  * [Added]   Shadow of TDialogView

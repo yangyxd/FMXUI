@@ -4969,13 +4969,23 @@ end;
 procedure TView.StartTriggerAnimation(const AInstance: TFmxObject;
   const ATrigger: string);
 begin
-  // inherited; disable all effect
+  DisableDisappear := True;
+  try
+    inherited;
+  finally
+    DisableDisappear := False;
+  end;
 end;
 
 procedure TView.StartTriggerAnimationWait(const AInstance: TFmxObject;
   const ATrigger: string);
 begin
-  // inherited; disable all effect
+  DisableDisappear := True;
+  try
+    inherited;
+  finally
+    DisableDisappear := False;
+  end;
 end;
 
 procedure TView.StartWindowDrag;
