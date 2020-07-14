@@ -213,7 +213,6 @@ type
     function GetIsDestroy: Boolean;
 
     function FinishIsFreeApp: Boolean;
-    procedure RefreshStatusBar;
     function GetActiveFrame: TFrameView;
   protected
     class var FActiveFrames: TDictionary<TCommonCustomForm, TFrameView>;
@@ -338,6 +337,11 @@ type
     /// </summary>
     class procedure UpdateStatusBar(const AForm: TCommonCustomForm; const AColor: TAlphaColor; const ATransparent: Boolean; const ALight: Boolean); overload;
     class procedure UpdateStatusBar; overload;
+
+    /// <summary>
+    /// 刷新当前Frame状态栏
+    /// </summary>
+    procedure RefreshStatusBar;
 
     /// <summary>
     /// 流转化为 string
@@ -1006,6 +1010,8 @@ begin
 
   {$IFDEF ANDROID}
   {$IF CompilerVersion >= 33}
+  TMessageManager.DefaultManager.SubscribeToMessage(TPermissionsRequestResultMessage, TFrameView.DoActivateMessage);
+
   // 感谢 谭钦
   // 增加一个键盘事件的监听 这是因为fmx.jar中的BUG引发的，原本应该是不需要这个监听的
   FKSListener := TKSCListener.Create;
@@ -1226,6 +1232,8 @@ class destructor TFrameView.Destroy;
 begin
   {$IFDEF ANDROID}
   {$IF CompilerVersion >= 33}
+  TMessageManager.DefaultManager.Unsubscribe(TPermissionsRequestResultMessage, TFrameView.DoActivateMessage);
+
   MainActivity.getVirtualKeyboard.removeOnKeyboardStateChangedListener(FKSListener);
   FreeAndNil(FKSListener);
   {$ENDIF}
@@ -1285,6 +1293,11 @@ begin
     DealForm(TFormActivateMessage(M).Value, True)
   else if M is TFormDeactivateMessage then
     DealForm(TFormActivateMessage(M).Value, False)
+  else
+{$ENDIF}
+{$IF Defined(ANDROID) and (CompilerVersion >= 33)}
+  if M is TPermissionsRequestResultMessage then
+    TFrameView.UpdateStatusBar
   else
 {$ENDIF}
   if M is TApplicationEventMessage then
