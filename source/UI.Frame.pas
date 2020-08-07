@@ -333,6 +333,11 @@ type
     class procedure SetDefaultStatusLight(const Value: Boolean);
 
     /// <summary>
+    /// 设置 Frame 状态栏透明新方法，浅色状态栏和全透明必须开启这个
+    /// </summary>
+    class procedure SetStatusTransparentNewMethod(const Value: Boolean);
+
+    /// <summary>
     /// 更新状态栏
     /// </summary>
     class procedure UpdateStatusBar(const AForm: TCommonCustomForm; const AColor: TAlphaColor; const ATransparent: Boolean; const ALight: Boolean); overload;
@@ -565,6 +570,7 @@ var
   FDefaultStatusColor: TAlphaColor = 0;
   FDefaultStatusTransparent: Boolean = False;
   FDefaultStatusLight: Boolean = True;
+  FStatusTransparentNewMethod: Boolean = False;
 
 {$IFDEF ANDROID}
 {$IF CompilerVersion >= 33}
@@ -1129,6 +1135,9 @@ class procedure TFrameView.UpdateStatusBar(const AForm: TCommonCustomForm; const
         TCustomForm(AForm).Fill.Color := AColor;
 
       {$IF CompilerVersion >= 33} // Delphi 10.3 及之后的版本
+      if not FStatusTransparentNewMethod then
+        Exit;
+
       wnd := TAndroidHelper.Activity.getWindow;
       if (not Assigned(wnd)) then Exit;
       CallInUiThread(
@@ -1767,6 +1776,12 @@ class procedure TFrameView.SetDefaultStatusTransparent(const Value: Boolean);
 begin
   if FDefaultStatusTransparent <> Value then
     FDefaultStatusTransparent := Value;
+end;
+
+class procedure TFrameView.SetStatusTransparentNewMethod(const Value: Boolean);
+begin
+  if FStatusTransparentNewMethod <> Value then
+    FStatusTransparentNewMethod := Value;
 end;
 
 class procedure TFrameView.SetFormActiveFrame(AForm: TCommonCustomForm; AFrame: TFrameView);

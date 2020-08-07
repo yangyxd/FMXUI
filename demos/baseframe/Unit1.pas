@@ -33,6 +33,9 @@ uses
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+  // use android transparent statusbar new method
+  TFrameView.SetStatusTransparentNewMethod(True);
+
   TFrameView.SetDefaultStatusLight(True);
   TFrameView.SetDefaultStatusTransparent(True);
   TFrameView.SetDefaultStatusColor(TAlphaColorRec.Whitesmoke);
