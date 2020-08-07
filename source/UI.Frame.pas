@@ -581,7 +581,7 @@ type
 
 var
   FKSListener: TKSCListener;
-  FSystemUiVisibility: Integer = 0;
+  FSystemUiVisibility: Integer = -1;
 {$ENDIF}
 
 // 解决有时返回键失效问题
@@ -629,7 +629,13 @@ end;
 
 procedure TKSCListener.onVirtualKeyboardFrameChanged(newFrame: JRect);
 begin
-
+  // 底部导航栏隐藏显示，也会触发这里，说白了，这里是布局改变都会触发
+  TFrameView.UpdateStatusBar;
+  TThread.CreateAnonymousThread(procedure begin
+    TThread.Queue(nil, procedure begin
+      TFrameView.UpdateStatusBar;
+    end)
+  end).Start;
 end;
 
 procedure TKSCListener.onVirtualKeyboardWillHidden;
@@ -1184,7 +1190,7 @@ class procedure TFrameView.UpdateStatusBar;
 begin
 {$IFDEF ANDROID}
   {$IF CompilerVersion >= 33} // Delphi 10.3 及之后的版本
-  if FSystemUiVisibility = 0 then
+  if FSystemUiVisibility = -1 then
     Exit;
   CallInUiThread(procedure
   var
@@ -1287,6 +1293,18 @@ class procedure TFrameView.DoActivateMessage(const Sender: TObject;
       LFrame.Pause;
   end;
 
+  procedure DealFrame(AForm: TCommonCustomForm);
+  var
+    LFrame: TFrameView;
+  begin
+    if not Assigned(AForm) then
+      Exit;
+    if not TFrameView.GetFormActiveFrame(AForm, LFrame) then
+      Exit;
+
+    LFrame.RefreshStatusBar;
+  end;
+
 begin
 {$IF CompilerVersion >= 31}
   if M is TFormActivateMessage then
@@ -1296,8 +1314,14 @@ begin
   else
 {$ENDIF}
 {$IF Defined(ANDROID) and (CompilerVersion >= 33)}
-  if M is TPermissionsRequestResultMessage then
-    TFrameView.UpdateStatusBar
+  if M is TPermissionsRequestResultMessage then begin
+    DealFrame(Screen.ActiveForm);
+    TThread.CreateAnonymousThread(procedure begin
+      TThread.Queue(nil, procedure begin
+        TFrameView.UpdateStatusBar;
+      end)
+    end).Start;
+  end
   else
 {$ENDIF}
   if M is TApplicationEventMessage then
@@ -1388,6 +1412,11 @@ end;
 procedure TFrameView.DoResume;
 begin
   RefreshStatusBar;
+  TThread.CreateAnonymousThread(procedure begin
+    TThread.Queue(nil, procedure begin
+      TFrameView.UpdateStatusBar;
+    end)
+  end).Start;
 end;
 
 procedure TFrameView.DoShow;
