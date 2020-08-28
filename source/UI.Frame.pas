@@ -880,15 +880,17 @@ begin
     if Assigned(ParentForm) then
       ParentForm.ReleaseCapture;
     {$ENDIF}
-    Parent.RemoveObject(Self);
+    Parent := nil;
+    if Assigned(Owner) then
+      Owner.RemoveComponent(Self);
     {$IFDEF ANDROID}
     if (not Assigned(Screen.FocusControl)) and (Assigned(ParentForm)) then
       ParentForm.SetFocus;
     {$ENDIF}
-    {$IFDEF MSWINDOWS}
-    Self.Free;
-    {$ELSE}
+    {$IFDEF AUTOREFCOUNT}
     Self.DisposeOf;
+    {$ELSE}
+    Self.Free;
     {$ENDIF}
   end;
 end;
@@ -1800,6 +1802,10 @@ end;
 
 procedure TFrameView.SetParent(const Value: TFmxObject);
 begin
+  {$IF CompilerVersion >= 34}
+  if Value = nil then
+    Self.SetRoot(nil); // fix release error in 10.4
+  {$ENDIF}
   inherited;
   if FNeedDoCreate and Assigned(Parent) then begin
     FNeedDoCreate := False;
