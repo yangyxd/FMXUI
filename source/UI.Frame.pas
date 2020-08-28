@@ -860,6 +860,8 @@ begin
 end;
 
 function TFrameView.CheckFree: Boolean;
+var
+  LForm: TCustomForm;
 begin
   Result := False;
   if Assigned(Parent) then begin
@@ -876,21 +878,22 @@ begin
       Result := True;
       Exit;
     end;
+    LForm := ParentForm;
     {$IFDEF MSWINDOWS}
-    if Assigned(ParentForm) then
-      ParentForm.ReleaseCapture;
+    if Assigned(LForm) then
+      LForm.ReleaseCapture;
     {$ENDIF}
+    {$IFDEF AUTOREFCOUNT}
     Parent := nil;
     if Assigned(Owner) then
       Owner.RemoveComponent(Self);
-    {$IFDEF ANDROID}
-    if (not Assigned(Screen.FocusControl)) and (Assigned(ParentForm)) then
-      ParentForm.SetFocus;
-    {$ENDIF}
-    {$IFDEF AUTOREFCOUNT}
     Self.DisposeOf;
     {$ELSE}
     Self.Free;
+    {$ENDIF}
+    {$IFDEF ANDROID}
+    if (not Assigned(Screen.FocusControl)) and (Assigned(LForm)) then
+      LForm.SetFocus;
     {$ENDIF}
   end;
 end;
