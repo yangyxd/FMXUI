@@ -17,6 +17,7 @@
  * [Fixed]   Draw TTextView error while scrolling (Thanks for report: 意帆)
  * [Fixed]   Minior fixes (Thanks for report: 意帆 and keven)
  * [Fixed]   Destroy error when 10.4 TMemo in TFrame (Thanks for report: 恢弘)
+ * [Fixed]   Compile error when targeting at linux (Thanks for code: CCC)
  - -----------------------------------
  - 2020.05.28
  * [Added]   Shadow of TDialogView

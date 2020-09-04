@@ -641,7 +641,7 @@ begin
 end;
 
 function OpenURL(const URL: string): Boolean;
-{$IFDEF ANDROID}
+{$IF Defined(ANDROID)}
 begin
   try
     //Intent.setClassName(
@@ -657,7 +657,7 @@ begin
     Result := False;
   end;
 end;
-{$ELSE} {$IFDEF IOS}
+{$ELSEIF Defined(IOS)}
 var NSU: NSUrl;
 begin
   NSU := StrToNSUrl(URL);
@@ -666,7 +666,7 @@ begin
   else
     Result := False;
 end;
-{$ELSE} {$IFDEF MACOS}
+{$ELSEIF Defined(MACOS)}
 var
   NSU: NSUrl;
   Workspace : NSWorkspace;
@@ -675,11 +675,15 @@ begin
   Workspace := TNSWorkspace.Create;
   exit(Workspace.openURL(NSU));
 end;
+{$ELSEIF Defined(LINUX)}
+begin
+  Result := False;
+end;
 {$ELSE}
 begin
   Result := ShellExecute(0, 'OPEN', PChar(URL), nil, nil, SW_SHOWMAXIMIZED) > 32;
 end;
-{$ENDIF MACOS}{$ENDIF IOS}{$ENDIF ANDROID}
+{$ENDIF}
 
 function GetInstallDir(): string;
 begin

@@ -93,6 +93,9 @@ const
   {$IFDEF ANDROID}
   COLOR_ProcessBackgroundColor = $7f000000;
   {$ENDIF}
+  {$IFDEF LINUX}
+  COLOR_ProcessBackgroundColor = $7f000000;
+  {$ENDIF}
   COLOR_ProcessTextColor = $fff7f7f7;
 
   COLOR_ButtonColor = $ffffffff;
