@@ -1204,7 +1204,7 @@ class procedure TFrameView.UpdateStatusBar;
 begin
 {$IFDEF ANDROID}
   {$IF CompilerVersion >= 33} // Delphi 10.3 及之后的版本
-  if FSystemUiVisibility = -1 then
+  if (not FStatusTransparentNewMethod) or (FSystemUiVisibility = -1) then
     Exit;
   CallInUiThread(procedure
   var
@@ -1230,7 +1230,9 @@ begin
 
   LFrame := ActiveFrame;
   // Back from nextview
-  if (FLastView <> LFrame) and Assigned(LFrame) and (LFrame <> Self) and (LFrame.FLastView <> Self) then
+  if (not Assigned(LFrame)) and Assigned(FLastView) then
+    FLastView := nil
+  else if (FLastView <> LFrame) and Assigned(LFrame) and (LFrame <> Self) and (LFrame.FLastView <> Self) then
     FLastView := LFrame;
 
   if LFrame <> Self then begin
