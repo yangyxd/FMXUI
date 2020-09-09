@@ -540,7 +540,7 @@ begin
     AForm := nil;
   if (not Assigned(AForm)) and Assigned(FLastControlForm) then
     AForm := FLastControlForm;
-  if Assigned(AForm) and (AForm.Padding.Rect <> FLastRect) then
+  if Assigned(AForm) and Assigned(AForm.Padding) and (AForm.Padding.Rect <> FLastRect) then
     AForm.Padding.Rect := FLastRect;
 
   FLastControl := nil;

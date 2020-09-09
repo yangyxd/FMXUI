@@ -586,7 +586,7 @@ type
   end;
 
 var
-  FKSListener: TKSCListener;
+  FKSListener: TKSCListener = nil;
   FSystemUiVisibility: Integer = -1;
 {$ENDIF}
 
@@ -638,15 +638,16 @@ begin
   // 底部导航栏隐藏显示，也会触发这里，说白了，这里是布局改变都会触发
   TFrameView.UpdateStatusBar;
   TThread.CreateAnonymousThread(procedure begin
-    TThread.Queue(nil, procedure begin
-      TFrameView.UpdateStatusBar;
-    end)
+    TFrameView.UpdateStatusBar;
   end).Start;
 end;
 
 procedure TKSCListener.onVirtualKeyboardWillHidden;
 begin
   TFrameView.UpdateStatusBar;
+  TThread.CreateAnonymousThread(procedure begin
+    TFrameView.UpdateStatusBar;
+  end).Start;
 end;
 
 procedure TKSCListener.onVirtualKeyboardWillShown;
@@ -1212,7 +1213,9 @@ begin
   begin
     wnd := TAndroidHelper.Activity.getWindow;
     if (not Assigned(wnd)) then Exit;
+    wnd.getDecorView().requestApplyInsets();
     wnd.getDecorView().setSystemUiVisibility(FSystemUiVisibility);
+    wnd.getDecorView().requestApplyInsets();
   end);
   {$ENDIF}
 {$ENDIF}
@@ -1333,9 +1336,7 @@ begin
   if M is TPermissionsRequestResultMessage then begin
     DealFrame(Screen.ActiveForm);
     TThread.CreateAnonymousThread(procedure begin
-      TThread.Queue(nil, procedure begin
-        TFrameView.UpdateStatusBar;
-      end)
+      TFrameView.UpdateStatusBar;
     end).Start;
   end
   else
@@ -1348,6 +1349,17 @@ begin
         TFrameView.UpdateStatusBar;
         {$ENDIF}
         DealForm(Screen.ActiveForm, True);
+        {$IFDEF ANDROID}
+        // 临时的方案，暂未深究原因
+        TThread.CreateAnonymousThread(procedure begin
+          Sleep(100);
+          TFrameView.UpdateStatusBar;
+          Sleep(100);
+          TFrameView.UpdateStatusBar;
+          Sleep(100);
+          TFrameView.UpdateStatusBar;
+        end).Start;
+        {$ENDIF}
       end;
       TApplicationEvent.WillBecomeInactive:
         DealForm(Screen.ActiveForm, False);
@@ -1429,9 +1441,7 @@ procedure TFrameView.DoResume;
 begin
   RefreshStatusBar;
   TThread.CreateAnonymousThread(procedure begin
-    TThread.Queue(nil, procedure begin
-      TFrameView.UpdateStatusBar;
-    end)
+    TFrameView.UpdateStatusBar;
   end).Start;
 end;
 
