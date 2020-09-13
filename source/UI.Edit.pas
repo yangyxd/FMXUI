@@ -3264,6 +3264,12 @@ begin
     LSize.X := ContentRect.Width;
   if FText.VertAlign <> TTextAlign.Leading then
     LSize.Y := ContentRect.Height;
+  // fixed by ¡Ë∑Á
+  if LSize.X < 0 then
+    LSize.X := 0;
+  if LSize.Y < 0 then
+    LSize.Y := 0;
+  // fix end
   FTextLayout.MaxSize := LSize;
 end;
 

@@ -18,6 +18,7 @@
  * [Fixed]   Minior fixes (Thanks for report: 意帆 and keven)
  * [Fixed]   Destroy error when 10.4 TMemo in TFrame (Thanks for report: 恢弘)
  * [Fixed]   Compile error when targeting at linux (Thanks for code: CCC)
+ * [Fixed]   TEditView position error (Thanks for code: 凌风)
  - -----------------------------------
  - 2020.05.28
  * [Added]   Shadow of TDialogView
