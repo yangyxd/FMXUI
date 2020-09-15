@@ -20,13 +20,16 @@ implementation
 uses
   UI.Debug,
   System.SysUtils, System.Actions,
-  UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.Grid, UI.Calendar,
+  UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.Calendar,
+
+  UI.Grid,
+  UI.Design.GridColumns,
+
   UI.ListView,
   // UI.ListViewEx,
   UI.Toast,
 
   UI.Design.Bounds,
-  UI.Design.GridColumns,
   UI.Design.Accessory,
 
   UI.Utils.SVGImage,
@@ -443,7 +446,9 @@ begin
   AddEnumElementAliases(TypeInfo(TGridDataType),
     ['PlanText', 'CheckBox', 'RadioButton', 'Image', 'ProgressBar', 'CustomDraw']);
   AddEnumElementAliases(TypeInfo(TGridFooterStyle),
-    ['None', 'DataTotal', 'DataAverage', 'DataMin', 'DataMax']);
+    ['None', 'DoSum', 'DoAvg', 'DoMin', 'DoMax', 'DoCount']);
+  AddEnumElementAliases(TypeInfo(TGridRecStatus),
+    ['RecNone', 'RecADD', 'RecMod', 'RecDel']);
   AddEnumElementAliases(TypeInfo(TViewAccessoryStyle),
     ['Accessory', 'Path']);
   AddEnumElementAliases(TypeInfo(TViewAccessoryType),
@@ -476,6 +481,7 @@ begin
   RemoveEnumElementAliases(TypeInfo(TBadgeStyle));
   RemoveEnumElementAliases(TypeInfo(TRingViewStyle));
   RemoveEnumElementAliases(TypeInfo(TGridDataType));
+  RemoveEnumElementAliases(TypeInfo(TGridRecStatus));
   RemoveEnumElementAliases(TypeInfo(TGridFooterStyle));
   RemoveEnumElementAliases(TypeInfo(TViewAccessoryStyle));
   RemoveEnumElementAliases(TypeInfo(TViewAccessoryType));

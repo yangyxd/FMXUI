@@ -20,7 +20,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Anchors = [akTop, akRight]
       Cancel = True
       Margins.Bottom = 9.000000000000000000
-      Position.X = 631.000000000000000000
+      Position.X = 742.000000000000000000
       Position.Y = 6.000000000000000000
       Size.Width = 96.000000000000000000
       Size.Height = 25.000000000000000000
@@ -32,7 +32,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
     object btnOk: TButton
       Anchors = [akTop, akRight]
       Margins.Bottom = 9.000000000000000000
-      Position.X = 747.000000000000000000
+      Position.X = 626.000000000000000000
       Position.Y = 6.000000000000000000
       Size.Width = 104.000000000000000000
       Size.Height = 25.000000000000000000
@@ -54,7 +54,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
     end
     object btnNext: TButton
       Margins.Bottom = 9.000000000000000000
-      Position.X = 106.000000000000000000
+      Position.X = 107.000000000000000000
       Position.Y = 6.000000000000000000
       Size.Width = 86.000000000000000000
       Size.Height = 25.000000000000000000
@@ -65,7 +65,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
     end
     object tvIndex: TLabel
       StyledSettings = [Family, Size, Style]
-      Position.X = 213.000000000000000000
+      Position.X = 197.000000000000000000
       Position.Y = 11.000000000000000000
       Size.Width = 388.000000000000000000
       Size.Height = 21.000000000000000000
@@ -96,16 +96,16 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 758.000000000000000000
       Position.Y = 12.000000000000000000
       Size.Width = 52.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       Text = 'Opacity:'
     end
     object edtOpacity: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 4
+      TabOrder = 5
       MaxLength = 5
       Position.X = 806.000000000000000000
-      Position.Y = 10.000000000000000000
+      Position.Y = 9.000000000000000000
       Hint = #36879#26126#24230#65306'0 ~ 1 '#20043#38388
       Size.Width = 44.000000000000000000
       Size.Height = 22.000000000000000000
@@ -120,13 +120,13 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 237.000000000000000000
       Position.Y = 71.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       Text = 'RowsPan:'
     end
     object edtRowsPan: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 15
+      TabOrder = 16
       Position.X = 292.000000000000000000
       Position.Y = 69.000000000000000000
       Size.Width = 44.000000000000000000
@@ -140,13 +140,13 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 334.000000000000000000
       Position.Y = 44.000000000000000000
       Size.Width = 57.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       Text = 'Bottom:'
     end
     object edtPaddingBottom: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 8
+      TabOrder = 9
       Position.X = 385.000000000000000000
       Position.Y = 42.000000000000000000
       Size.Width = 57.000000000000000000
@@ -192,7 +192,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.Width = 114.000000000000000000
       Size.Height = 24.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 1
+      TabOrder = 2
       OnChange = cbDataTypeClick
       OnClick = cbDataTypeClick
     end
@@ -211,13 +211,13 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 346.000000000000000000
       Position.Y = 71.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       Text = 'ColsPan:'
     end
     object edtColsPan: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 16
+      TabOrder = 17
       Position.X = 399.000000000000000000
       Position.Y = 69.000000000000000000
       Size.Width = 43.000000000000000000
@@ -231,13 +231,13 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 6.000000000000000000
       Position.Y = 44.000000000000000000
       Size.Width = 123.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       Text = 'Padding:   Left:'
     end
     object edtPaddingLeft: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 5
+      TabOrder = 6
       Position.X = 94.000000000000000000
       Position.Y = 42.000000000000000000
       Size.Width = 44.000000000000000000
@@ -251,13 +251,13 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 141.000000000000000000
       Position.Y = 44.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       Text = 'Top:'
     end
     object edtPaddingTop: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 6
+      TabOrder = 7
       Position.X = 172.000000000000000000
       Position.Y = 42.000000000000000000
       Size.Width = 57.000000000000000000
@@ -271,13 +271,13 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 232.000000000000000000
       Position.Y = 44.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       Text = 'Right:'
     end
     object edtPaddingRight: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 7
+      TabOrder = 8
       Position.X = 271.000000000000000000
       Position.Y = 42.000000000000000000
       Size.Width = 57.000000000000000000
@@ -291,15 +291,15 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 760.000000000000000000
       Position.Y = 43.000000000000000000
       Size.Width = 57.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       Text = 'Tag:'
     end
     object edtTag: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 9
+      TabOrder = 10
       Position.X = 793.000000000000000000
-      Position.Y = 41.000000000000000000
+      Position.Y = 42.000000000000000000
       Size.Width = 57.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
@@ -312,7 +312,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.Width = 96.000000000000000000
       Size.Height = 19.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 17
+      TabOrder = 18
       Text = 'Locked'
       OnChange = ckLockedClick
     end
@@ -322,7 +322,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.Width = 96.000000000000000000
       Size.Height = 19.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 18
+      TabOrder = 19
       Text = 'DataFilter'
       OnChange = ckDataFilterClick
     end
@@ -332,7 +332,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.Width = 96.000000000000000000
       Size.Height = 19.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 19
+      TabOrder = 20
       Text = 'ReadOnly'
       OnChange = ckReadOnlyClick
     end
@@ -342,7 +342,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.Width = 96.000000000000000000
       Size.Height = 19.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 20
+      TabOrder = 21
       Text = 'Visible'
       OnChange = ckVisibleClick
     end
@@ -352,7 +352,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.Width = 96.000000000000000000
       Size.Height = 19.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 21
+      TabOrder = 22
       Text = 'Enabled'
       OnChange = ckEnabledClick
     end
@@ -362,28 +362,28 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.Width = 96.000000000000000000
       Size.Height = 25.000000000000000000
       Size.PlatformDefault = False
-      TabOrder = 22
+      TabOrder = 23
       Text = 'WordWrap'
       OnChange = ckWordWrapClick
     end
     object Label11: TLabel
       AutoSize = True
       StyledSettings = [Family, Size, FontColor]
-      Position.X = 366.000000000000000000
+      Position.X = 558.000000000000000000
       Position.Y = 12.000000000000000000
       Size.Width = 57.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'Title:'
     end
     object edtTitle: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 3
+      TabOrder = 4
       ReturnKeyType = Next
       MaxLength = 255
-      Position.X = 403.000000000000000000
-      Position.Y = 10.000000000000000000
+      Position.X = 595.000000000000000000
+      Position.Y = 9.000000000000000000
       Size.Width = 150.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
@@ -393,17 +393,17 @@ object GridColumnsDesigner: TGridColumnsDesigner
     object Label12: TLabel
       AutoSize = True
       StyledSettings = [Family, Size, FontColor]
-      Position.X = 635.000000000000000000
-      Position.Y = 96.000000000000000000
-      Size.Width = 84.000000000000000000
-      Size.Height = 18.000000000000000000
+      Position.X = 606.000000000000000000
+      Position.Y = 97.000000000000000000
+      Size.Width = 127.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
-      Text = 'RowCount:'
+      Text = 'FixedRowCount:'
     end
     object edtRowCount: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 11
+      TabOrder = 12
       KeyboardType = NumberPad
       MaxLength = 5
       Position.X = 700.000000000000000000
@@ -420,14 +420,14 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 748.000000000000000000
       Position.Y = 96.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'ColCount:'
     end
     object edtColCount: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 12
+      TabOrder = 13
       MaxLength = 5
       Position.X = 807.000000000000000000
       Position.Y = 94.000000000000000000
@@ -439,11 +439,11 @@ object GridColumnsDesigner: TGridColumnsDesigner
     end
     object edtFieldName: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 2
+      TabOrder = 3
       ReturnKeyType = Next
       MaxLength = 255
       Position.X = 595.000000000000000000
-      Position.Y = 10.000000000000000000
+      Position.Y = 42.000000000000000000
       Size.Width = 150.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
@@ -454,9 +454,9 @@ object GridColumnsDesigner: TGridColumnsDesigner
       AutoSize = True
       StyledSettings = [Family, Size, FontColor]
       Position.X = 558.000000000000000000
-      Position.Y = 12.000000000000000000
+      Position.Y = 44.000000000000000000
       Size.Width = 57.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'Field:'
@@ -464,10 +464,10 @@ object GridColumnsDesigner: TGridColumnsDesigner
     end
     object edtFixedColCount: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 10
+      TabOrder = 11
       MaxLength = 5
-      Position.X = 583.000000000000000000
-      Position.Y = 93.000000000000000000
+      Position.X = 701.000000000000000000
+      Position.Y = 69.000000000000000000
       Size.Width = 43.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
@@ -477,17 +477,17 @@ object GridColumnsDesigner: TGridColumnsDesigner
     object tvFixedColCount: TLabel
       AutoSize = True
       StyledSettings = [Family, Size, FontColor]
-      Position.X = 493.000000000000000000
-      Position.Y = 97.000000000000000000
+      Position.X = 606.000000000000000000
+      Position.Y = 71.000000000000000000
       Size.Width = 105.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'FixedColCount:'
     end
     object edtWidth: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 13
+      TabOrder = 14
       Position.X = 53.000000000000000000
       Position.Y = 69.000000000000000000
       Size.Width = 56.000000000000000000
@@ -502,7 +502,7 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 8.000000000000000000
       Position.Y = 71.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'Width:'
@@ -513,14 +513,14 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Position.X = 120.000000000000000000
       Position.Y = 71.000000000000000000
       Size.Width = 84.000000000000000000
-      Size.Height = 18.000000000000000000
+      Size.Height = 16.000000000000000000
       Size.PlatformDefault = False
       TextSettings.Font.StyleExt = {00070000000000000004000000}
       Text = 'Weight:'
     end
     object edtWeight: TEdit
       Touch.InteractiveGestures = [LongTap, DoubleTap]
-      TabOrder = 14
+      TabOrder = 15
       Position.X = 172.000000000000000000
       Position.Y = 69.000000000000000000
       Size.Width = 56.000000000000000000
@@ -528,6 +528,81 @@ object GridColumnsDesigner: TGridColumnsDesigner
       Size.PlatformDefault = False
       OnKeyDown = edtRowCountKeyDown
       OnExit = edtWeightExit
+    end
+    object cbFieldType: TComboBox
+      Items.Strings = (
+        'ftUnknown'
+        'ftString'
+        'ftSmallint'
+        'ftInteger'
+        'ftWord'
+        'ftBoolean'
+        'ftFloat'
+        'ftCurrency'
+        'ftBCD'
+        'ftDate'
+        'ftTime'
+        'ftDateTime'
+        'ftBytes'
+        'ftVarBytes'
+        'ftAutoInc'
+        'ftBlob'
+        'ftMemo'
+        'ftGraphic'
+        'ftFmtMemo'
+        'ftParadoxOle'
+        'ftDBaseOle'
+        'ftTypedBinary'
+        'ftCursor'
+        'ftFixedChar'
+        'ftWideString'
+        'ftLargeint'
+        'ftADT'
+        'ftArray'
+        'ftReference'
+        'ftDataSet'
+        'ftOraBlob'
+        'ftOraClob'
+        'ftVariant'
+        'ftInterface'
+        'ftIDispatch'
+        'ftGuid'
+        'ftTimeStamp'
+        'ftFMTBcd'
+        'ftFixedWideChar'
+        'ftWideMemo'
+        'ftOraTimeStamp'
+        'ftOraInterval'
+        'ftLongWord'
+        'ftShortint'
+        'ftByte'
+        'ftExtended'
+        'ftConnection'
+        'ftParams'
+        'ftStream'
+        'ftTimeStampOffset'
+        'ftObject'
+        'ftSingle')
+      ItemIndex = 1
+      Position.X = 426.000000000000000000
+      Position.Y = 9.000000000000000000
+      Size.Width = 114.000000000000000000
+      Size.Height = 24.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      OnChange = cbFieldTypeClick
+      OnClick = cbFieldTypeClick
+    end
+    object Label15: TLabel
+      StyledSettings = [Family, Size, FontColor]
+      Position.X = 364.000000000000000000
+      Position.Y = 12.000000000000000000
+      Size.Width = 101.000000000000000000
+      Size.Height = 18.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      Text = 'FieldType:'
+      TabOrder = 24
     end
   end
   object GridView: TStringGridView
@@ -547,15 +622,28 @@ object GridColumnsDesigner: TGridColumnsDesigner
     Size.Height = 288.500000000000000000
     Size.PlatformDefault = False
     TabOrder = 4
-    ScrollBars = Both
+    DrawableCells.ItemTwoColor.Color = xFFFFFFFC
     ReadOnly = False
     Options = [gvEditing, gvColLines, gvRowLines, gvShowSelection, gvCancelOnExit, gvEscCancelEdit, gvColumnBestWidth, gvColumnResize, gvColumnMove]
     ColumnsSettings.ColumnsData = '{"RowsCount":1}'
+    FixedSettings.Brush.ItemDefault.Kind = Gradient
+    FixedSettings.Brush.ItemDefault.Gradient.Points = <
+      item
+        Color = claBlack
+        Offset = 0.000000000000000000
+      end
+      item
+        Color = xFFD6D6D6
+        Offset = 0.000000000000000000
+      end
+      item
+        Color = claWhite
+        Offset = 1.000000000000000000
+      end>
     FixedSettings.RowHeight = 20.000000000000000000
     FixedSettings.ColWidth = 50.000000000000000000
     FixedSettings.TextSettings.ColorSelect = claNull
     FixedSettings.TextRowIndex = #34892#21495
-    FooterStyle = None
     OnTitleClick = GridViewTitleClick
     OnFixedCellClick = GridViewFixedCellClick
     OnDrawFixedColText = GridViewDrawFixedColText

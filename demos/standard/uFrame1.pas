@@ -32,6 +32,7 @@ type
     ButtonView9: TButtonView;
     ButtonView16: TButtonView;
     ButtonView17: TButtonView;
+    ButtonView18: TButtonView;
     procedure TextView17Click(Sender: TObject);
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
@@ -51,6 +52,7 @@ type
     procedure ButtonView5Click(Sender: TObject);
     procedure ButtonView16Click(Sender: TObject);
     procedure ButtonView17Click(Sender: TObject);
+    procedure ButtonView18Click(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -69,7 +71,7 @@ uses
   uFrameHorzScrollView,
   uFrameVertScrollView,
   uFrameCameraViewer,
-  uFrameGridView,
+  uFrameGridView, uFrameGridSum,
   uFrameImageViewer,
   uFrameListViewGroup,
   uFrameImageView,
@@ -145,6 +147,11 @@ end;
 procedure TFrame1.ButtonView17Click(Sender: TObject);
 begin
   StartFrame(TFrameDateView)
+end;
+
+procedure TFrame1.ButtonView18Click(Sender: TObject);
+begin
+  StartFrame(TFrameGridSum);
 end;
 
 procedure TFrame1.ButtonView1Click(Sender: TObject);

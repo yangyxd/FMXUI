@@ -1,0 +1,298 @@
+object FrameGridSum: TFrameGridSum
+  Size.Width = 497.000000000000000000
+  Size.Height = 616.000000000000000000
+  Size.PlatformDefault = False
+  object LinearLayout1: TLinearLayout
+    Align = Top
+    Background.ItemDefault.Color = claPurple
+    Background.ItemDefault.Kind = Solid
+    Gravity = None
+    Size.Width = 497.000000000000000000
+    Size.Height = 50.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Orientation = Horizontal
+    object btnBack: TTextView
+      Background.ItemPressed.Color = x7F000000
+      Background.ItemPressed.Kind = Solid
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      Clickable = True
+      HeightSize = FillParent
+      HitTest = True
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 3
+      OnClick = btnBackClick
+      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
+      Drawable.Position = Center
+      Drawable.ItemDefault.Kind = AccessoryBitmap
+      Drawable.ItemDefault.Accessory.Accessory = Back
+    end
+    object tvTitle: TTextView
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      Weight = 1.000000000000000000
+      Size.Width = 397.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 50.000000000000000000
+      TabOrder = 1
+      Text = 'GridSum Demo'
+      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
+    end
+    object TextView2: TTextView
+      Background.ItemPressed.Color = x7F000000
+      Background.ItemPressed.Kind = Solid
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Pressed = claSilver
+      Background.Border.Color.Focused = claNull
+      Background.Border.Color.Selected = claNull
+      Background.Border.Color.Checked = claNull
+      Background.Border.Color.Enabled = claNull
+      Clickable = True
+      HeightSize = FillParent
+      HitTest = True
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 447.000000000000000000
+      TabOrder = 2
+      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.PrefixStyle = HidePrefix
+      TextSettings.Gravity = Center
+    end
+  end
+  object LinearLayout2: TLinearLayout
+    Align = Top
+    HeightSize = WrapContent
+    Gravity = None
+    Margins.Top = 2.000000000000000000
+    Size.Width = 497.000000000000000000
+    Size.Height = 32.000000000000000000
+    Size.PlatformDefault = False
+    Position.Y = 52.000000000000000000
+    TabOrder = 18
+    Orientation = Horizontal
+    object ButtonView5: TButtonView
+      Weight = 1.000000000000000000
+      Size.Width = 55.222221374511720000
+      Size.Height = 32.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 14
+      OnClick = ButtonView5Click
+      Text = 'Refresh'
+      TextSettings.Gravity = Center
+    end
+    object ButtonView3: TButtonView
+      Weight = 1.000000000000000000
+      Size.Width = 55.222221374511720000
+      Size.Height = 32.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 55.222221374511720000
+      TabOrder = 18
+      TextSettings.Gravity = Center
+    end
+    object ButtonView4: TButtonView
+      Weight = 1.000000000000000000
+      Size.Width = 55.222221374511720000
+      Size.Height = 32.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 110.444442749023400000
+      TabOrder = 15
+      TextSettings.Gravity = Center
+    end
+    object ButtonView2: TButtonView
+      Weight = 1.000000000000000000
+      Size.Width = 55.222221374511720000
+      Size.Height = 32.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 165.666656494140600000
+      TabOrder = 16
+      TextSettings.Gravity = Center
+    end
+    object ButtonView1: TButtonView
+      Weight = 1.000000000000000000
+      Size.Width = 55.222221374511720000
+      Size.Height = 32.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 220.888885498046900000
+      TabOrder = 17
+      TextSettings.Gravity = Center
+    end
+    object ButtonView6: TButtonView
+      Weight = 1.000000000000000000
+      Size.Width = 55.222221374511720000
+      Size.Height = 32.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 276.111114501953100000
+      TabOrder = 13
+      TextSettings.Gravity = Center
+    end
+    object ButtonView7: TButtonView
+      Weight = 1.000000000000000000
+      Size.Width = 55.222217559814450000
+      Size.Height = 32.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 331.333312988281300000
+      TabOrder = 12
+      TextSettings.Gravity = Center
+    end
+    object ButtonView9: TButtonView
+      Weight = 1.000000000000000000
+      Size.Width = 55.222213745117190000
+      Size.Height = 32.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 386.555541992187500000
+      TabOrder = 11
+      TextSettings.Gravity = Center
+    end
+    object ButtonView8: TButtonView
+      Weight = 1.000000000000000000
+      Size.Width = 55.222229003906250000
+      Size.Height = 32.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 441.777770996093800000
+      TabOrder = 10
+      TextSettings.Gravity = Center
+    end
+  end
+  object View1: TView
+    Align = Client
+    Gravity = None
+    Size.Width = 497.000000000000000000
+    Size.Height = 512.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 32
+    object Splitter1: TSplitter
+      Align = Top
+      Cursor = crVSplit
+      MinSize = 20.000000000000000000
+      Position.Y = 225.000000000000000000
+      Size.Width = 497.000000000000000000
+      Size.Height = 8.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object GridView2: TStringGridView
+      Align = Top
+      Background.ItemPressed.Color = xFFD9D9D9
+      Background.ItemPressed.Kind = Solid
+      Gravity = None
+      Size.Width = 497.000000000000000000
+      Size.Height = 225.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 27
+      DrawableCells.ItemTwoColor.Color = xFFFFFFFC
+      ReadOnly = False
+      Options = [gvEditing, gvRowIndex, gvColLines, gvRowLines, gvTwoColor, gvCancelOnExit, gvEscCancelEdit, gvFixedFooter]
+      ColumnsSettings.ColumnsData = 
+        '{"RowsCount":1,"ColsCount":5,"Item_0_0":{"Width":100,"ColIndex":' +
+        '0,"Gravity":5,"Padding":[2,2,2,2],"FooterValue":5,"FooterText":"' +
+        '5"},"Item_1_0":{"Width":100,"ColIndex":1,"Gravity":5,"Padding":[' +
+        '2,2,2,2],"FooterValue":5,"FooterText":"5"},"Item_2_0":{"Width":1' +
+        '00,"ColIndex":2,"Gravity":5,"Padding":[2,2,2,2],"FooterValue":5,' +
+        '"FooterText":"5"},"Item_3_0":{"Width":100,"ColIndex":3,"Gravity"' +
+        ':5,"Padding":[2,2,2,2],"FooterValue":5,"FooterText":"5"},"Item_4' +
+        '_0":{"Width":100,"ColIndex":4,"Gravity":5,"Padding":[2,2,2,2],"F' +
+        'ooterValue":5,"FooterText":"5"}}'
+      FixedSettings.Brush.ItemDefault.Kind = Gradient
+      FixedSettings.Brush.ItemDefault.Gradient.Points = <
+        item
+          Color = claBlack
+          Offset = 0.000000000000000000
+        end
+        item
+          Color = xFFD6D6D6
+          Offset = 0.000000000000000000
+        end
+        item
+          Color = claWhite
+          Offset = 1.000000000000000000
+        end>
+      FixedSettings.RowHeight = 22.000000000000000000
+      FixedSettings.ColWidth = 50.000000000000000000
+    end
+    object DBGridView2: TDBGridView
+      Align = Client
+      Background.ItemPressed.Color = xFFD9D9D9
+      Background.ItemPressed.Kind = Solid
+      Gravity = None
+      Size.Width = 497.000000000000000000
+      Size.Height = 279.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 26
+      DrawableCells.ItemTwoColor.Color = xFFFFFFFC
+      ReadOnly = False
+      Options = [gvEditing, gvIndicator, gvRowIndex, gvColLines, gvRowLines, gvTwoColor, gvCancelOnExit, gvEscCancelEdit, gvColumnBestWidth, gvColumnResize, gvColumnMove, gvFilterSort, gvFixedFooter]
+      ColumnsSettings.ColumnsData = '{"RowsCount":1}'
+      FixedSettings.Brush.ItemDefault.Kind = Gradient
+      FixedSettings.Brush.ItemDefault.Gradient.Points = <
+        item
+          Color = claBlack
+          Offset = 0.000000000000000000
+        end
+        item
+          Color = xFFD6D6D6
+          Offset = 0.000000000000000000
+        end
+        item
+          Color = claWhite
+          Offset = 1.000000000000000000
+        end>
+      FixedSettings.RowHeight = 22.000000000000000000
+      FixedSettings.ColWidth = 50.000000000000000000
+      DataSource = DataSource1
+      ShowCheck = False
+    end
+  end
+  object TextView3: TTextView
+    Align = Bottom
+    Size.Width = 497.000000000000000000
+    Size.Height = 20.000000000000000000
+    Size.PlatformDefault = False
+    Position.Y = 596.000000000000000000
+    TabOrder = 35
+    Text = 'StringGridView   DBGridView  sum sum avg avg min max count'
+  end
+  object FDMemTable1: TFDMemTable
+    FetchOptions.AssignedValues = [evMode]
+    FetchOptions.Mode = fmAll
+    ResourceOptions.AssignedValues = [rvSilentMode]
+    ResourceOptions.SilentMode = True
+    UpdateOptions.AssignedValues = [uvCheckRequired, uvAutoCommitUpdates]
+    UpdateOptions.CheckRequired = False
+    UpdateOptions.AutoCommitUpdates = True
+    Left = 352
+    Top = 208
+  end
+  object DataSource1: TDataSource
+    DataSet = FDMemTable1
+    Left = 168
+    Top = 168
+  end
+end

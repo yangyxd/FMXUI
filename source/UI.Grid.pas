@@ -18,11 +18,12 @@ uses
   {$IFDEF MSWINDOWS}
   Windows,
   {$ENDIF}
-  Data.DB, Data.DBConsts, System.JSON,
-  FMX.Utils, FMX.ImgList, FMX.MultiResBitmap, FMX.ActnList, System.Rtti, FMX.Consts,
-  FMX.TextLayout, FMX.Objects, System.ImageList, System.RTLConsts,
-  System.TypInfo, FMX.Graphics, System.Generics.Collections, System.Math,
+  System.Rtti, System.TypInfo, System.Generics.Collections, System.Math,
   System.Classes, System.Types, System.UITypes, System.SysUtils, System.Math.Vectors,
+  System.JSON, System.StrUtils, System.ImageList, System.RTLConsts,
+  Data.DB, Data.DBConsts,
+  FMX.Utils, FMX.ImgList, FMX.MultiResBitmap, FMX.ActnList, FMX.Consts,
+  FMX.TextLayout, FMX.Objects, FMX.Graphics,
   FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls, FMX.InertialMovement,
   FMX.Styles.Objects, FMX.Forms;
 
@@ -35,23 +36,34 @@ type
   /// 格子内容类型
   /// </summary>
   TGridDataType = (
-    PlanText {普通文本},
-    CheckBox {复选框},
+    PlanText    {普通文本},
+    CheckBox    {复选框},
     RadioButton {单选按钮},
-    Image, {图像}
-    ProgressBar, {进度条}
-    CustomDraw {自定绘制}
+    Image       {图像},
+    ProgressBar {进度条} ,
+    CustomDraw  {自定绘制}
+  );
+
+  /// <summary>
+  /// 用于标记数据状态 一般用在0列
+  /// </summary>
+  TGridRecStatus = (
+    RecNone, {常规状态}
+    RecAdd,  {新增状态}
+    RecMod,  {修改状态}
+    RecDel   {删除状态}
   );
 
   /// <summary>
   /// 格子页脚样式
   /// </summary>
   TGridFooterStyle = (
-    None, {不处理}
-    DataTotal, {统计总数}
-    DataAverage, {求平均值}
-    DataMin, {最小值}
-    DataMax {最大值}
+    None,   {不处理}
+    DoSum,  {求合计值}
+    DoAvg,  {求平均值}
+    DoMin,  {求最小值}
+    DoMax,  {求最大值}
+    DoCount {求相同值记数}
   );
 
   /// <summary>
@@ -135,6 +147,7 @@ type
     procedure DoChange;
     property Right: Double read GetRight;
     function GetDispLayText: string; virtual;
+    function GetDispLayName: string; virtual;
 
     procedure WriteData(Data: TJSONObject); virtual;
     procedure ReadData(Data: TJSONObject); virtual;
@@ -158,9 +171,20 @@ type
     ColsPan: Integer;           // 列跨度, 大于1时，表示跨过多少列
 
     Tag: NativeInt;             // 附加数据
+    TagFloat: Single;           // 附加数据
+    TagString: string;          // 附加数据
+    RecDataID: string;          // 附加数据 一般用于0列 存储记录ID
+    RecStatus: TGridRecStatus;  //附加数据  一般用于0列 存储记录状态
     Title: string;              // 列标题
+    FieldName: string;          // 字段名称
+    FieldType: TFieldType;      // 字段类型 在TStringGrodView时用于指定列类型
 
-    FilterText: string;         // 过滤内容
+    FooterStyle: TGridFooterStyle; // 页尾数据类型 默认:无   考虑批量设置的问题 所以不刷新数据
+    FooterValue: Extended;         // 页尾数据 默认:0
+    FooterText: string;            // 页尾数据 默认:空
+    FooterFormat: string;          // 页尾格式 默认:#.######
+    FooterCountStr: string;        // 计数值   默认:空
+    FilterText: string;            // 过滤内容
   public
     constructor Create(AOwner: TGridColumns);
     destructor Destroy; override;
@@ -177,6 +201,7 @@ type
 
     property RealWidth: Single read GetRealWidth write SetRealWidth;
     property DisplayText: string read GetDispLayText;
+    property DisplayName: string read GetDispLayName;
 
     /// <summary>
     /// 获取单元格内容，设置此属性后，在绘制单元格时会调用此事件来获取内容
@@ -200,10 +225,7 @@ type
 
   public
     [Weak] Field: TField;
-    FieldName: string;         // 字段名称
-    FieldType: TFieldType;     // 字段类型
 
-    FooterText: string;        // 页尾数据
 
     destructor Destroy; override;
 
@@ -264,10 +286,14 @@ type
     /// 注册列头信息类, 在初始化之后调用
     /// </summary>
     procedure RegisterColumnClass(const AColumnClass: TGridColumnItemClass);
+    property ColumnWidths[const ACol: Integer]: Single read GetColumnWidths;
 
     // 获取指定列的信息, 当存在多行时，自动选择。优先级为从最后一行开始，ColsPan 越小的优先级越大
     property ItemCols[const ACol: Integer]: TGridColumnItem read GetItemCols;
-    property ColumnWidths[const ACol: Integer]: Single read GetColumnWidths;
+    function ColumnByCols(const ACol: Integer): TGridColumnItem;
+    function ColumnByName(const Value: String): TGridColumnItem;
+    function ColumnByTitle(const Value: String): TGridColumnItem;
+
     property Items[const ACol, ARow: Integer]: TGridColumnItem read GetItem write SetItem; default;
 
     property GridView: TGridBase read FGridView;
@@ -813,6 +839,7 @@ type
     CDefaultAnchorHeight = 12;           // 默认列头图标高度
     CDefaultFilterIconWH = 12;           // 默认过滤图标宽度
     CDefaultPadding = 2;                 // 默认Padding大小
+    CDefaultTwoColor = $FFFFFFFC;        // 默认偶数行颜色
 
     CDefaultOptions = [gvEditing, gvRowIndex, gvColLines, gvRowLines, gvTwoColor, gvCancelOnExit, gvEscCancelEdit];
   private
@@ -822,8 +849,6 @@ type
 
     FColumns: TGridColumns;
     FOptions: TGridOptions;
-
-    FFooterStyle: TGridFooterStyle; // 页脚样式
 
     FReadOnly: Boolean;
     FResizeing: Boolean;           // 正在调节大小
@@ -911,11 +936,15 @@ type
     procedure SetRowHeightPro(const Value: Single);
     function GetCellsData(const ACol, ARow: Integer): string;
     procedure SetCellsData(const ACol, ARow: Integer; const Value: string);
+    procedure SetCellsDataInt64(const ACol, ARow: Integer; const Value: Int64);
+    function GetCellsDataInt64(const ACol, ARow: Integer): Int64;
+    function GetCellsDataExtended(const ACol, ARow: Integer): Extended;
+    procedure SetCellsDataExtended(const ACol, ARow: Integer; const Value: Extended);
     procedure SetFixedSetting(const Value: TGridFixedSetting);
     procedure SetColumnsSetting(const Value: TGridColumnsSetting);
     function GetFixedColsumn(const ACol: Integer): TGridColumnItem;
     function GetTextRowIndex: string;
-    procedure SetFooterStyle(const Value: TGridFooterStyle);
+
     procedure SetFixedFlatCols(const Value: Boolean);
   protected
     function GetColCount: Integer;
@@ -1047,6 +1076,8 @@ type
     property Columns: TGridColumns read FColumns;
 
     property Cells[const ACol, ARow: Integer]: string read GetCellsData write SetCellsData;
+    property CellsInt[const ACol, ARow: Integer]: Int64 read GetCellsDataInt64 write SetCellsDataInt64;
+    property CellsExt[const ACol, ARow: Integer]: Extended read GetCellsDataExtended write SetCellsDataExtended;
 
     property FixedColsumn[const ACol: Integer]: TGridColumnItem read GetFixedColsumn;
 
@@ -1060,10 +1091,6 @@ type
     /// </summary>
     property FixedIndicatorWidth: Single read GetFixedIndicatorWidth;
 
-    /// <summary>
-    /// 页脚数据样式
-    /// </summary>
-    property FooterStyle: TGridFooterStyle read FFooterStyle write SetFooterStyle;
 
     /// <summary>
     /// 设置默认行高
@@ -1271,8 +1298,6 @@ type
     property ColumnsSettings;
     property FixedSettings;
 
-    property FooterStyle;
-
     property TextSettings;
 
     property HitTest default True;
@@ -1318,9 +1343,17 @@ type
     function GetFixedCells(const ACol, ARow: Integer): string;
     procedure SetFixedCells(const ACol, ARow: Integer; const Value: string);
   protected
+      /// <summary>
+      /// 处理TGridFooterStyle
+      /// </summary>
+    procedure DoInitFooterData; virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+      /// <summary>
+      /// 刷新数据
+      /// </summary>
+    procedure NotifyDataChanged; override;
 
     property FixedCells[const ACol, ARow: Integer]: string read GetFixedCells write SetFixedCells;
   published
@@ -1398,6 +1431,9 @@ type
     procedure DoFilterDataChange(Item: TGridColumnItem); override;
     procedure DoInitFilterDataList(Item: TGridColumnItem; List: TStrings); override;
 
+      /// <summary>
+      /// 处理TGridFooterStyle
+      /// </summary>
     procedure DoInitFooterData; virtual;
   protected
     function GetNeedSaveColumns: Boolean; override;
@@ -1409,6 +1445,9 @@ type
     procedure BeginUpdate; override;
     procedure EndUpdate; override;
 
+      /// <summary>
+      /// 刷新数据
+      /// </summary>
     procedure NotifyDataChanged; override;
 
     procedure ClearColumns();
@@ -1689,6 +1728,8 @@ begin
 end;
 
 constructor TGridBase.Create(AOwner: TComponent);
+var
+  TempPoint: TGradientPoint;
 begin
   inherited Create(AOwner);
 
@@ -1732,6 +1773,10 @@ begin
   FColumnsSetting.FColumns := FColumns;
   FFixedRightPadding := 0;
   FFixedSetting := TGridFixedSetting.Create(Self);
+  FFixedSetting.Brush.ItemDefault.Kind := TViewBrushKind.Gradient;
+  TempPoint := TGradientPoint.Create(FFixedSetting.Brush.ItemDefault.Gradient.Points);
+  TempPoint.Color := $FFD6D6D6;
+  TempPoint.Offset := 0;
 
   FDivider := CDefaultDividerColor;
   FDividerHeight := -1;
@@ -1744,7 +1789,6 @@ begin
   FSelectionAnchor := 0;
 
   FDisablePaint := True;
-
   try
     CreateCoentsView();
 
@@ -1801,6 +1845,8 @@ begin
     FContentViews.HitTest := True;
   FContentViews.FEditor := CreateEditor;
   FContentViews.Cursor := crArrow;
+  FContentViews.FCellBrush.ItemTwoColor.Color := CDefaultTwoColor;
+
   RealignContent;
 end;
 
@@ -2545,6 +2591,28 @@ begin
       Result := FAdapter.Cells[Item.ColIndex, ARow];
   end else
     Result := '';
+end;
+
+function TGridBase.GetCellsDataInt64(const ACol, ARow: Integer): Int64;
+var
+ lss: string;
+begin
+  lss := GetCellsData(ACol, ARow);
+  if lss.Trim = '' then
+    Result := 0
+  else
+    Result := lss.ToInt64;
+end;
+
+function TGridBase.GetCellsDataExtended(const ACol, ARow: Integer): Extended;
+var
+ lss:string;
+begin
+  lss := GetCellsData(ACol, ARow);
+  if lss.Trim = '' then
+    Result := 0
+  else
+    Result := lss.ToExtended;
 end;
 
 function TGridBase.GetColCount: Integer;
@@ -3307,6 +3375,18 @@ begin
     FAdapter.Cells[ACol, ARow] := Value;
 end;
 
+procedure TGridBase.SetCellsDataInt64(const ACol, ARow: Integer; const Value: Int64);
+begin
+  if Assigned(FAdapter) then
+    FAdapter.Cells[ACol, ARow] := Value.ToString;
+end;
+
+procedure TGridBase.SetCellsDataExtended(const ACol, ARow: Integer; const Value: Extended);
+begin
+  if Assigned(FAdapter) then
+    FAdapter.Cells[ACol, ARow] := Value.ToString;
+end;
+
 procedure TGridBase.SetColumnsSetting(const Value: TGridColumnsSetting);
 begin
   FColumnsSetting.Assign(Value);
@@ -3399,15 +3479,6 @@ procedure TGridBase.SetFixedText(const Value: TGridTextSettings);
 begin
   if FFixedText <> Value then
     FFixedText.Assign(Value);
-end;
-
-procedure TGridBase.SetFooterStyle(const Value: TGridFooterStyle);
-begin
-  if FFooterStyle <> Value then begin
-    FFooterStyle := Value;
-    if gvFixedFooter in FOptions then
-      NotifyDataChanged;
-  end;
 end;
 
 procedure TGridBase.SetItemIndex(const Value: Integer);
@@ -5438,7 +5509,10 @@ end;
 
 function TGridAdapterBase.GetFooterCells(Item: TGridColumnItem): string;
 begin
-  Result := '';
+  if Assigned(Item) then
+    Result := Item.FooterText
+  else
+    Result := '';
 end;
 
 function TGridAdapterBase.GetItemIndex: Integer;
@@ -5548,9 +5622,22 @@ begin
     ColsPan := Src.ColsPan;
 
     Tag := Src.Tag;
+    TagFloat := Src.TagFloat;
+    TagString := Src.TagString;
+    RecDataID := Src.RecDataID;
+    RecStatus := Src.RecStatus;
+
     LTitle := Src.DisplayText;
     if DisplayText <> LTitle then
       Title := LTitle;
+
+    FieldName := Src.FieldName;
+    FieldType := Src.FieldType;
+    FooterStyle := Src.FooterStyle;
+    FooterValue := Src.FooterValue;
+    FooterText := Src.FooterText;
+    FooterFormat := Src.FooterFormat;
+    FooterCountStr := Src.FooterCountStr;
   end else
     inherited;
 end;
@@ -5558,6 +5645,20 @@ end;
 constructor TGridColumnItem.Create(AOwner: TGridColumns);
 begin
   FOwner := AOwner;
+  Title := '';
+  FieldName := '';
+  FieldType := TFieldType.ftString;
+  FooterStyle := TGridFooterStyle.None;
+  FooterValue := 0;
+  FooterText := '';
+  FooterFormat := '#.######';
+  FooterCountStr := '';
+
+  TagFloat := 0;
+  TagString := '';
+  RecDataID := '';
+  RecStatus := TGridRecStatus.RecNone;
+
   ColIndex := -1;
   FWeight := 0;
   FWidth := TGridBase.CDefaultCellWidth;
@@ -5580,6 +5681,18 @@ end;
 destructor TGridColumnItem.Destroy;
 begin
   Title := '';
+  FieldName := '';
+//  FieldType := nil;
+//  FooterStyle := nil;
+  FooterValue := 0;
+  FooterText := '';
+  FooterFormat := '';
+  FooterCountStr := '';
+
+  TagFloat := 0;
+  TagString := '';
+  RecDataID := '';
+
   inherited;
 end;
 
@@ -5594,6 +5707,11 @@ begin
   Result := Title;
   if (Result = '') and (RowIndex = 0) and Assigned(FOwner) and (FOwner.FShowColIndex) then
     Result := IntToStr(Self.ColIndex + 1)
+end;
+
+function TGridColumnItem.GetDispLayName: string;
+begin
+  Result := FieldName;
 end;
 
 function TGridColumnItem.GetRealWidth: Single;
@@ -5639,6 +5757,7 @@ end;
 procedure TGridColumnItem.ReadData(Data: TJSONObject);
 var
   V: Integer;
+  v1: Double;
   JA: TJSONArray;
 begin
   Data.TryGetFloat('Width', FWidth);
@@ -5670,8 +5789,23 @@ begin
   Data.TryGetInt('RowsPan', RowsPan);
   Data.TryGetInt('ColsPan', ColsPan);
   Data.TryGetInt('Tag', Tag);
+  Data.TryGetFloat('TagFloat', TagFloat);
+  Data.TryGetString('TagString', TagString);
+  Data.TryGetString('RecDataID', RecDataID);
 
   Data.TryGetString('Title', Title);
+
+  Data.TryGetString('FieldName', FieldName);
+  Data.TryGetInt('FieldType', V);
+  FieldType := TFieldType(V);
+
+  Data.TryGetInt('FooterStyle', V);
+  FooterStyle:=TGridFooterStyle(V);
+  Data.TryGetFloat('FooterValue', v1);
+  FooterValue := v1;
+  Data.TryGetString('FooterText', FooterText);
+  Data.TryGetString('FooterFormat', FooterFormat);
+  Data.TryGetString('FooterCountStr', FooterCountStr);
 end;
 
 procedure TGridColumnItem.SetIndex(const Value: Integer);
@@ -5782,8 +5916,19 @@ begin
   Data.Add('RowsPan', RowsPan, 0);
   Data.Add('ColsPan', ColsPan, 0);
   Data.Add('Tag', Tag, 0);
+  Data.Add('TagFloat', TagFloat, 0);
+  Data.Add('TagString', TagString, '');
+  Data.Add('RecDataID', RecDataID, '');
 
   Data.Add('Title', Title, '');
+  Data.Add('FieldName', FieldName, '');
+  Data.Add('FieldType',  Ord(TFieldType.ftString),1);
+  Data.Add('FooterStyle',  Ord(TGridFooterStyle.None),0);
+
+  Data.Add('FooterValue', FooterValue, 0);
+  Data.Add('FooterText', FooterText, '');
+  Data.Add('FooterFormat', FooterFormat, '#.######');
+  Data.Add('FooterCountStr', FooterCountStr, '');
 end;
 
 { TGridColumns }
@@ -6030,6 +6175,48 @@ begin
 
   if Result = nil then
     Result := Items[ACol, 0];
+end;
+
+
+function TGridColumns.ColumnByCols(const ACol: Integer): TGridColumnItem;
+begin
+  Result := GetItemCols(Acol);
+end;
+
+function TGridColumns.ColumnByName(const Value: String): TGridColumnItem;
+var
+  I, J: Integer;
+  Item: TGridColumnItem;
+begin
+  Result := nil;
+  for I := 0 to ColsCount - 1 do begin
+    for J := GridView.FixedRows - 1 downto 0 do begin
+      if FData.TryGetValue(TGridBase.GetKey(I, J), TObject(Item)) then begin
+        if Item.FieldName.ToLower = Value.ToLower then begin
+          Result := Item;
+          Break;
+        end;
+      end;
+    end;
+  end;
+end;
+
+function TGridColumns.ColumnByTitle(const Value: String): TGridColumnItem;
+var
+  I, J: Integer;
+  Item: TGridColumnItem;
+begin
+  Result := nil;
+  for I := 0 to ColsCount - 1 do begin
+    for J := GridView.FixedRows - 1 downto 0 do begin
+      if FData.TryGetValue(TGridBase.GetKey(I, J), TObject(Item)) then begin
+        if Item.Title.ToLower = Value.ToLower then begin
+          Result := Item;
+          Break;
+        end;
+      end;
+    end;
+  end;
 end;
 
 function TGridColumns.GetItemOfKey(const Key: Int64): TGridColumnItem;
@@ -6473,6 +6660,183 @@ begin
     FAdapter.FixedCells[ACol, ARow] := Value;
 end;
 
+
+procedure TStringGridView.NotifyDataChanged;
+begin
+  inherited NotifyDataChanged;
+  DoInitFooterData;
+end;
+procedure TStringGridView.DoInitFooterData;
+var
+  I, J, LCount: Integer;
+  // LDataSet: TDataSet;
+  Item: TGridColumnItem;
+  List: TArray<TGridColumnItem>;
+  ListValue: TArray<Extended>;
+  ListType: TArray<Byte>;
+  B: Boolean;
+begin
+  if not(gvFixedFooter in FOptions) then
+    Exit;
+
+  LCount := FColumns.ColsCount;
+  if LCount = 0 then
+    Exit;
+
+  if FContentViews.FColumnsList.Count <> LCount then
+    FContentViews.InitColumnList;
+
+  for I := 0 to ColCount - 1 do
+  begin
+    Item := TGridColumnItem(FContentViews.FColumnsList.Items[I]);
+    Item.FooterText := '';
+    Item.FooterValue := 0;
+    case Item.FieldType of
+      ftFloat, ftCurrency, ftBCD, ftFMTBcd, ftExtended, ftSingle:
+        begin
+          case Item.FooterStyle of
+            DoMin: Item.FooterValue := CellsExt[I, 0];
+            DoMax: Item.FooterValue := CellsExt[I, 0];
+          end;
+        end;
+      ftDate, ftTime, ftDateTime, ftTimeStamp, ftOraTimeStamp, ftAutoInc:
+        begin
+          case Item.FooterStyle of
+            DoMin: Item.FooterValue := Cellsint[I, 0];
+            DoMax: Item.FooterValue := Cellsint[I, 0];
+          end;
+
+        end;
+      ftSmallint, ftInteger, ftLargeint, ftWord, ftLongWord, ftShortint, ftByte:
+        begin
+          case Item.FooterStyle of
+            DoMin: Item.FooterValue := Cellsint[I, 0];
+            DoMax: Item.FooterValue := Cellsint[I, 0];
+          end;
+        end;
+    end;
+  end;
+
+  for J := 0 to RowCount - 1 do
+  begin
+    for I := 0 to ColCount - 1 do
+    begin
+      Item := TGridColumnItem(FContentViews.FColumnsList.Items[I]);
+      if Assigned(Item) then
+      begin
+        case Item.FieldType of
+          ftFloat, ftCurrency, ftBCD, ftFMTBcd, ftExtended, ftSingle:
+            begin
+              case Item.FooterStyle of
+                DoSum: Item.FooterValue := Item.FooterValue + CellsExt[I, J];
+                DoAvg: Item.FooterValue := Item.FooterValue + CellsExt[I, J];
+                DoMin: Item.FooterValue := Min(Item.FooterValue, CellsExt[I, J]);
+                DoMax: Item.FooterValue := Max(Item.FooterValue, CellsExt[I, J]);
+                DoCount:
+                  if Cells[I, J] = Item.FooterCountStr then
+                    Item.FooterValue := Item.FooterValue + 1;
+              end;
+            end;
+          ftDate, ftTime, ftDateTime, ftTimeStamp, ftOraTimeStamp, ftAutoInc:
+            begin
+              case Item.FooterStyle of
+                DoSum:
+                  Item.FooterValue := 0;
+                DoAvg:
+                  Item.FooterValue := 0;
+                DoMin:
+                  Item.FooterValue := Min(Item.FooterValue, Cellsint[I, J]);
+                DoMax:
+                  Item.FooterValue := Max(Item.FooterValue, Cellsint[I, J]);
+                DoCount:
+                  if Cells[I, J] = Item.FooterCountStr then
+                    Item.FooterValue := Item.FooterValue + 1;
+              end;
+
+            end;
+          ftSmallint, ftInteger, ftLargeint, ftWord, ftLongWord,
+            ftShortint, ftByte:
+            begin
+              case Item.FooterStyle of
+                DoSum: Item.FooterValue := Item.FooterValue + Cellsint[I, J];
+                DoAvg: Item.FooterValue := Item.FooterValue + Cellsint[I, J];
+                DoMin: Item.FooterValue := Min(Item.FooterValue, Cellsint[I, J]);
+                DoMax: Item.FooterValue := Max(Item.FooterValue, Cellsint[I, J]);
+                DoCount:
+                  if Cells[I, J] = Item.FooterCountStr then
+                    Item.FooterValue := Item.FooterValue + 1;
+              end;
+            end;
+        else
+          begin
+            case Item.FooterStyle of
+              DoSum: Item.FooterValue := 0;
+              DoAvg: Item.FooterValue := 0;
+              DoMin: Item.FooterValue := 0;
+              DoMax: Item.FooterValue := 0;
+              DoCount:
+                if Cells[I, J] = Item.FooterCountStr then
+                  Item.FooterValue := Item.FooterValue + 1;
+            end;
+          end;
+        end;
+      end;
+    end;
+  end;
+
+  for I := 0 to ColCount - 1 do
+  begin
+    Item := TGridColumnItem(FContentViews.FColumnsList.Items[I]);
+    if Assigned(Item) then
+    begin
+      case Item.FieldType of
+        ftFloat, ftCurrency, ftBCD, ftFMTBcd, ftExtended, ftSingle:
+          begin
+            case Item.FooterStyle of
+              DoSum: Item.FooterText := FormatFloat(Item.FooterFormat, Item.FooterValue);
+              DoAvg: Item.FooterText := FormatFloat(Item.FooterFormat, Item.FooterValue / RowCount);
+              DoMin: Item.FooterText := FormatFloat(Item.FooterFormat, Item.FooterValue);
+              DoMax: Item.FooterText := FormatFloat(Item.FooterFormat, Item.FooterValue);
+              DoCount: Item.FooterText := Trunc(Item.FooterValue).ToString;
+            end;
+          end;
+        ftDate, ftTime, ftDateTime, ftTimeStamp, ftOraTimeStamp, ftAutoInc:
+          begin
+            case Item.FooterStyle of
+              DoSum: Item.FooterText := '';
+              DoAvg: Item.FooterText := '';
+              DoMin: Item.FooterText := Item.FooterValue.ToString;
+              DoMax: Item.FooterText := Item.FooterValue.ToString;
+              DoCount: Item.FooterText := Item.FooterValue.ToString;
+            end;
+
+          end;
+        ftSmallint, ftInteger, ftLargeint, ftWord, ftLongWord,
+          ftShortint, ftByte:
+          begin
+            case Item.FooterStyle of
+              DoSum: Item.FooterText := Item.FooterValue.ToString;
+              DoAvg: Item.FooterText := (Item.FooterValue / RowCount).ToString;
+              DoMin: Item.FooterText := Item.FooterValue.ToString;
+              DoMax: Item.FooterText := Item.FooterValue.ToString;
+              DoCount: Item.FooterText := Item.FooterValue.ToString;
+            end;
+          end;
+      else
+        begin
+          case Item.FooterStyle of
+            DoSum: Item.FooterText := '';
+            DoAvg: Item.FooterText := '';
+            DoMin: Item.FooterText := '';
+            DoMax: Item.FooterText := '';
+            DoCount: Item.FooterText := Item.FooterValue.ToString;
+          end;
+        end;
+      end;
+    end;
+  end;
+end;
+
 procedure TStringGridView.SetRowCount(const Value: Integer);
 begin
   if FAdapter.RowCount <> Value then begin
@@ -6729,12 +7093,8 @@ var
   I, J, LCount: Integer;
   LDataSet: TDataSet;
   Item: TGridDBColumnItem;
-  List: TArray<TGridDBColumnItem>;
-  ListValue: TArray<Extended>;
-  ListType: TArray<Byte>;
-  B: Boolean;
 begin
-  if FFooterStyle = TGridFooterStyle.None then
+  if not (gvFixedFooter in FOptions) then
     Exit;
 
   LCount := FColumns.ColsCount;
@@ -6744,11 +7104,6 @@ begin
   if FContentViews.FColumnsList.Count <> LCount then
     FContentViews.InitColumnList;
 
-  for I := 0 to LCount - 1 do begin
-    Item := TGridDBColumnItem(FContentViews.FColumnsList.Items[I]);
-    Item.FooterText := '';
-  end;
-
   if (not Assigned(FDataLink)) or (not FDataLink.Active) then
     Exit;
 
@@ -6756,125 +7111,148 @@ begin
   if (not Assigned(LDataSet)) or LDataSet.IsEmpty then
     Exit;
 
-  // 取出需要统计的列，并分析出数据类型
-  J := 0;
-  SetLength(List, LCount);
-  SetLength(ListValue, LCount);
-  SetLength(ListType, LCount);
-  for I := 0 to LCount - 1 do begin
-    Item := TGridDBColumnItem(FContentViews.FColumnsList.Items[I]);
-    if Assigned(Item) and Assigned(Item.Field) then begin
-      B := False;
-      case FFooterStyle of
-        DataTotal, DataAverage:
-          B := Item.FieldType in [ftSmallint, ftInteger, ftWord, ftFloat, ftCurrency, ftBCD, ftFMTBcd, // ftAutoInc,
-            ftLongWord, ftShortint, ftByte, TFieldType.ftExtended, TFieldType.ftSingle];
-        DataMin, DataMax:
-          B := Item.FieldType in [ftSmallint, ftInteger, ftWord, ftFloat, ftCurrency, ftBCD, ftFMTBcd, // ftAutoInc,
-            ftDate, ftTime, ftDateTime, ftTimeStamp, ftOraTimeStamp,
-            ftLongWord, ftShortint, ftByte, TFieldType.ftExtended, TFieldType.ftSingle];
-      end;
-      if B then begin
-        List[J] := Item;
-        ListValue[J] := 0;
-        if Item.FieldType in [ftFloat, ftCurrency, TFieldType.ftExtended, TFieldType.ftSingle, ftBCD, ftFMTBcd] then
-          ListType[J] := 1  // 浮点数
-        else if Item.FieldType in [ftDate, ftTime, ftDateTime, ftTimeStamp, ftOraTimeStamp] then
-          ListType[J] := 2  // 时间格式
-        else
-          ListType[J] := 0; // 整数
-        Inc(J);
-      end;
-    end;
-  end;
-  SetLength(List, J);
-
-  // 开始统计
   LDataSet.DisableControls;
   try
     LDataSet.First;
 
-    if FFooterStyle in [DataTotal, DataAverage] then begin
-      while not LDataSet.Eof do begin
-        for I := 0 to High(List) do begin
-          case ListType[I] of
-            0: PInt64(@ListValue[I])^ := PInt64(@ListValue[I])^ + List[I].Field.AsLargeInt;
-            1: ListValue[I] := ListValue[I] + List[I].Field.AsExtended;
+    for I := 0 to ColCount - 1 do begin
+      Item := TGridDBColumnItem(FContentViews.FColumnsList.Items[I]);
+      Item.FooterText := '';
+      Item.FooterValue := 0;
+      if Assigned(Item) and Assigned(Item.Field) then begin
+        case Item.FieldType of
+            ftFloat, ftCurrency, ftBCD, ftFMTBcd ,TFieldType.ftExtended,TFieldType.ftSingle:
+               begin
+                  case Item.FooterStyle of
+                     DoMin  :Item.FooterValue := Item.Field.AsExtended;
+                     DoMax  :Item.FooterValue := Item.Field.AsExtended;
+                  end;
+                end;
+            ftDate, ftTime, ftDateTime, ftTimeStamp, ftOraTimeStamp, ftAutoInc:
+               begin
+                  case Item.FooterStyle of
+                     DoMin  :Item.FooterValue := Item.Field.AsExtended;
+                     DoMax  :Item.FooterValue := Item.Field.AsExtended;
+                  end;
+                end;
+            ftSmallint, ftInteger,ftLargeint, ftWord,ftLongWord, ftShortint, ftByte:
+              begin
+                  case Item.FooterStyle of
+                     DoMin  :Item.FooterValue := Item.Field.AsLargeInt;
+                     DoMax  :Item.FooterValue := Item.Field.AsLargeInt;
+                  end;
+               end;
+
+        end;
+      end;
+    end;
+
+
+
+
+    for J := 0 to RowCount - 1 do begin
+      for I := 0 to ColCount - 1 do begin
+        Item := TGridDBColumnItem(FContentViews.FColumnsList.Items[I]);
+        if Assigned(Item) and Assigned(Item.Field) then begin
+          case Item.FieldType of
+            ftFloat, ftCurrency, ftBCD, ftFMTBcd, TFieldType.ftExtended, TFieldType.ftSingle:
+               begin
+                  case Item.FooterStyle of
+                     DoSum  :Item.FooterValue := Item.FooterValue + Item.Field.AsExtended;
+                     DoAvg  :Item.FooterValue := Item.FooterValue + Item.Field.AsExtended;
+                     DoMin  :Item.FooterValue := Min(Item.FooterValue, Item.Field.AsExtended);
+                     DoMax  :Item.FooterValue := Max(Item.FooterValue, Item.Field.AsExtended);
+                     DoCount:if Item.Field.AsString = Item.FooterCountStr then Item.FooterValue := Item.FooterValue+1;
+                  end;
+                end;
+            ftDate, ftTime, ftDateTime, ftTimeStamp, ftOraTimeStamp, ftAutoInc:
+               begin
+                  case Item.FooterStyle of
+                     DoSum  :Item.FooterValue := 0;
+                     DoAvg  :Item.FooterValue := 0;
+                     DoMin  :Item.FooterValue := Min(Item.FooterValue, Item.Field.AsLargeInt);
+                     DoMax  :Item.FooterValue := Max(Item.FooterValue, Item.Field.AsLargeInt);
+                     DoCount:if Item.Field.AsString = Item.FooterCountStr then Item.FooterValue := Item.FooterValue + 1;
+                  end;
+
+                end;
+            ftSmallint, ftInteger, ftLargeint, ftWord, ftLongWord, ftShortint, ftByte:
+              begin
+                  case Item.FooterStyle of
+                     DoSum  :Item.FooterValue := Item.FooterValue + Item.Field.AsLargeInt ;
+                     DoAvg  :Item.FooterValue := Item.FooterValue + Item.Field.AsLargeInt;
+                     DoMin  :Item.FooterValue := Min(Item.FooterValue, Item.Field.AsLargeInt);
+                     DoMax  :Item.FooterValue := Max(Item.FooterValue, Item.Field.AsLargeInt);
+                     DoCount:if Item.Field.AsString = Item.FooterCountStr then Item.FooterValue := Item.FooterValue + 1;
+                  end;
+               end;
+          else
+               begin
+                  case Item.FooterStyle of
+                     DoSum  :Item.FooterValue := 0;
+                     DoAvg  :Item.FooterValue := 0;
+                     DoMin  :Item.FooterValue := 0;
+                     DoMax  :Item.FooterValue := 0;
+                     DoCount:if Item.Field.AsString = Item.FooterCountStr then Item.FooterValue := Item.FooterValue + 1;
+                  end;
+               end;
           end;
         end;
-        LDataSet.Next;
       end;
-
-      LCount := LDataSet.RecordCount;
-
-      for I := 0 to High(List) do begin
-        List[I].FooterText := '';
-        case ListType[I] of
-          0:
-            if PInt64(@ListValue[I])^ <> 0 then begin
-              if FFooterStyle = DataTotal then
-                List[I].FooterText := IntToStr(PInt64(@ListValue[I])^)
-              else
-                List[I].FooterText := FormatFloat('#.######', PInt64(@ListValue[I])^ / LCount);
-            end;
-          1:
-            if ListValue[I] <> 0 then begin
-              if FFooterStyle = DataTotal then
-                List[I].FooterText := FormatFloat('#.######', ListValue[I])
-              else
-                List[I].FooterText := FormatFloat('#.######', ListValue[I] / LCount);
-            end;
-        end;
-      end;
-
-    end else begin
-      B := False;
-
-      while not LDataSet.Eof do begin
-        for I := 0 to High(List) do begin
-          if B then begin
-            case ListType[I] of
-              0:
-                begin
-                  if FFooterStyle = DataMax then
-                    PInt64(@ListValue[I])^ := Max(PInt64(@ListValue[I])^, List[I].Field.AsLargeInt)
-                  else
-                    PInt64(@ListValue[I])^ := Min(PInt64(@ListValue[I])^, List[I].Field.AsLargeInt)
-                end;
-              1:
-                begin
-                  if FFooterStyle = DataMax then
-                    ListValue[I] := Max(ListValue[I], List[I].Field.AsExtended)
-                  else
-                    ListValue[I] := Min(ListValue[I], List[I].Field.AsExtended)
-                end;
-            end;
-          end else begin
-            case ListType[I] of
-              0: PInt64(@ListValue[I])^ := List[I].Field.AsLargeInt;
-              1: ListValue[I] :=List[I].Field.AsExtended;
-            end;
-            B := True;
-          end;
-        end;
-        LDataSet.Next;
-      end;
-
-      for I := 0 to High(List) do begin
-        List[I].FooterText := '';
-        case ListType[I] of
-          0:
-            if PInt64(@ListValue[I])^ <> 0 then
-              List[I].FooterText := IntToStr(PInt64(@ListValue[I])^);
-          1:
-            if ListValue[I] <> 0 then
-              List[I].FooterText := FormatFloat('#.######', ListValue[I]);
-        end;
-      end;
+      LDataSet.Next;
     end;
   finally
     LDataSet.EnableControls;
   end;
+
+ for I := 0 to ColCount - 1 do begin
+    Item := TGridDBColumnItem(FContentViews.FColumnsList.Items[I]);
+    if Assigned(Item) then begin
+      case Item.FieldType of
+        ftFloat, ftCurrency, ftBCD, ftFMTBcd, ftExtended, ftSingle:
+           begin
+              case Item.FooterStyle of
+                 DoSum  :Item.FooterText := FormatFloat(Item.FooterFormat, Item.FooterValue ) ;
+                 DoAvg  :Item.FooterText := FormatFloat(Item.FooterFormat, Item.FooterValue / RowCount) ;
+                 DoMin  :Item.FooterText :=FormatFloat(Item.FooterFormat, Item.FooterValue ) ;
+                 DoMax  :Item.FooterText :=FormatFloat(Item.FooterFormat, Item.FooterValue ) ;
+                 DoCount:Item.FooterText :=Trunc(Item.FooterValue).ToString ;
+              end;
+            end;
+        ftDate, ftTime, ftDateTime, ftTimeStamp, ftOraTimeStamp, ftAutoInc:
+           begin
+              case Item.FooterStyle of
+                 DoSum  :Item.FooterText := '';
+                 DoAvg  :Item.FooterText := '';
+                 DoMin  :Item.FooterText := FormatFloat(Item.FooterFormat, Item.FooterValue);
+                 DoMax  :Item.FooterText := FormatFloat(Item.FooterFormat, Item.FooterValue);
+                 DoCount:Item.FooterText := Item.FooterValue.ToString ;
+              end;
+
+            end;
+        ftSmallint, ftInteger, ftLargeint, ftWord, ftLongWord, ftShortint, ftByte:
+          begin
+              case Item.FooterStyle of
+                 DoSum  :Item.FooterText := Item.FooterValue.ToString;
+                 DoAvg  :Item.FooterText := (Item.FooterValue / RowCount).ToString;
+                 DoMin  :Item.FooterText := Item.FooterValue.ToString;
+                 DoMax  :Item.FooterText := Item.FooterValue.ToString;
+                 DoCount:Item.FooterText := Item.FooterValue.ToString ;
+              end;
+           end;
+      else
+           begin
+              case Item.FooterStyle of
+                 DoSum  :Item.FooterText := '';
+                 DoAvg  :Item.FooterText := '';
+                 DoMin  :Item.FooterText := '';
+                 DoMax  :Item.FooterText := '';
+                 DoCount:Item.FooterText := Item.FooterValue.ToString;
+              end;
+           end;
+      end;
+    end;
+ end;
 end;
 
 procedure TDBGridView.EditingChanged;
@@ -6991,7 +7369,7 @@ begin
           DataType := TGridDataType.PlanText;
 
           case FieldType of
-            ftSmallint, ftInteger, ftWord, ftFloat, ftCurrency, ftLongWord, ftShortint, ftByte,
+            ftSmallint, ftInteger,ftLargeint, ftWord, ftFloat, ftCurrency, ftLongWord, ftShortint, ftByte,
             TFieldType.ftExtended, TFieldType.ftSingle, ftAutoInc, ftBCD:
               Gravity := TLayoutGravity.CenterVRight;
           end;
@@ -7021,7 +7399,7 @@ begin
 
             if (DataType = TGridDataType.PlanText) and (Gravity = TLayoutGravity.None) then begin
               case FieldType of
-                ftSmallint, ftInteger, ftWord, ftFloat, ftCurrency, ftLongWord, ftShortint, ftByte, // ftAutoInc,
+                ftSmallint, ftInteger,ftLargeint, ftWord, ftFloat, ftCurrency, ftLongWord, ftShortint, ftByte, // ftAutoInc,
                 TFieldType.ftExtended, TFieldType.ftSingle, ftBCD, ftFMTBcd:
                   Gravity := TLayoutGravity.CenterVRight;
               end;
@@ -7066,8 +7444,7 @@ end;
 procedure TDBGridView.NotifyDataChanged;
 begin
   inherited NotifyDataChanged;
-  if gvFixedFooter in FOptions then
-    DoInitFooterData;
+  DoInitFooterData;
 end;
 
 procedure TDBGridView.Post;

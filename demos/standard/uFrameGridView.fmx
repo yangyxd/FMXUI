@@ -27,41 +27,50 @@ object FrameGridView: TFrameGridView
     Size.PlatformDefault = False
     TabOrder = 14
     Divider = x3FE3E4E5
-    ScrollBars = Both
     DrawableCells.ItemTwoColor.Color = x5FFDFEFF
     ReadOnly = False
     Options = [gvEditing, gvRowIndex, gvColLines, gvRowSelect, gvTwoColor, gvCancelOnExit, gvEscCancelEdit, gvColumnBestWidth, gvColumnResize, gvFixedFooter]
     ColumnsSettings.ColumnsData = 
       '{"RowsCount":2,"ColsCount":10,"FixedCols":2,"FixedItem_0":{"ColI' +
-      'ndex":0,"RowIndex":-1,"Gravity":5,"Padding":[3,3,3,3]},"FixedIte' +
-      'm_1":{"ColIndex":1,"RowIndex":-1,"Gravity":5,"Padding":[3,3,3,3]' +
-      ',"Title":"\u56FA\u5B9A\u5217"},"Item_0_0":{"Width":100,"ColIndex' +
-      '":0,"Gravity":5,"Padding":[3,3,3,3]},"Item_1_0":{"Width":100,"Co' +
-      'lIndex":1,"Gravity":9,"Padding":[3,3,3,3],"ColsPan":2,"Title":"\' +
-      'u5408\u5E76\u5217\u5934"},"Item_2_0":{"Width":100,"ColIndex":2,"' +
-      'Gravity":5,"Padding":[3,3,3,3]},"Item_3_0":{"Width":100,"ColInde' +
-      'x":3,"Gravity":5,"Padding":[3,3,3,3]},"Item_4_0":{"Width":100,"C' +
-      'olIndex":4,"Gravity":5,"Padding":[3,3,3,3]},"Item_5_0":{"Width":' +
-      '100,"ColIndex":5,"Gravity":5,"Padding":[3,3,3,3]},"Item_6_0":{"W' +
-      'idth":100,"ColIndex":6,"Gravity":5,"Padding":[3,3,3,3]},"Item_7_' +
-      '0":{"Width":100,"ColIndex":7,"Gravity":5,"Padding":[3,3,3,3]},"I' +
-      'tem_8_0":{"Width":100,"ColIndex":8,"Gravity":5,"Padding":[3,3,3,' +
-      '3]},"Item_9_0":{"Width":100,"ColIndex":9,"Gravity":5,"Padding":[' +
-      '3,3,3,3]},"Item_0_1":{"Width":100,"ColIndex":0,"RowIndex":1,"Gra' +
-      'vity":5,"DataType":1,"Padding":[3,3,3,3]},"Item_1_1":{"Width":10' +
-      '0,"ColIndex":1,"RowIndex":1,"Gravity":5,"DataType":4,"Padding":[' +
-      '3,3,3,3],"Title":"2"},"Item_2_1":{"Width":100,"ColIndex":2,"RowI' +
-      'ndex":1,"Gravity":9,"DataType":2,"Padding":[3,3,3,3],"Title":"3"' +
-      '},"Item_3_1":{"Width":100,"ColIndex":3,"RowIndex":1,"Gravity":5,' +
-      '"Padding":[3,3,3,3]},"Item_4_1":{"Width":100,"ColIndex":4,"RowIn' +
-      'dex":1,"Gravity":5,"Padding":[3,3,3,3]},"Item_5_1":{"Width":100,' +
-      '"ColIndex":5,"RowIndex":1,"Gravity":5,"Padding":[3,3,3,3]},"Item' +
-      '_6_1":{"Width":100,"ColIndex":6,"RowIndex":1,"Gravity":5,"Paddin' +
-      'g":[3,3,3,3]},"Item_7_1":{"Width":100,"ColIndex":7,"RowIndex":1,' +
-      '"Gravity":5,"Padding":[3,3,3,3]},"Item_8_1":{"Width":100,"ColInd' +
-      'ex":8,"RowIndex":1,"Gravity":5,"Padding":[3,3,3,3]},"Item_9_1":{' +
+      'ndex":0,"RowIndex":-1,"Gravity":5,"Padding":[3,3,3,3],"FooterVal' +
+      'ue":1.38769031302382E-307},"FixedItem_1":{"ColIndex":1,"RowIndex' +
+      '":-1,"Gravity":5,"Padding":[3,3,3,3],"Title":"\u56FA\u5B9A\u5217' +
+      '","FooterValue":1.38769031302382E-307},"Item_0_0":{"Width":100,"' +
+      'ColIndex":0,"Gravity":5,"Padding":[3,3,3,3]},"Item_1_0":{"Width"' +
+      ':100,"ColIndex":1,"Gravity":9,"Padding":[3,3,3,3],"ColsPan":2,"T' +
+      'itle":"\u5408\u5E76\u5217\u5934","FooterValue":2.12199579096527E' +
+      '-314},"Item_2_0":{"Width":100,"ColIndex":2,"Gravity":5,"Padding"' +
+      ':[3,3,3,3],"FooterValue":4.24399158193054E-314},"Item_3_0":{"Wid' +
+      'th":100,"ColIndex":3,"Gravity":5,"Padding":[3,3,3,3],"FooterValu' +
+      'e":6.36598737289582E-314},"Item_4_0":{"Width":100,"ColIndex":4,"' +
+      'Gravity":5,"Padding":[3,3,3,3],"FooterValue":8.48798316386109E-3' +
+      '14},"Item_5_0":{"Width":100,"ColIndex":5,"Gravity":5,"Padding":[' +
+      '3,3,3,3],"FooterValue":1.06099789548264E-313},"Item_6_0":{"Width' +
+      '":100,"ColIndex":6,"Gravity":5,"Padding":[3,3,3,3],"FooterValue"' +
+      ':1.27319747457916E-313},"Item_7_0":{"Width":100,"ColIndex":7,"Gr' +
+      'avity":5,"Padding":[3,3,3,3],"FooterValue":1.48539705367569E-313' +
+      '},"Item_8_0":{"Width":100,"ColIndex":8,"Gravity":5,"Padding":[3,' +
+      '3,3,3],"FooterValue":1.69759663277222E-313},"Item_9_0":{"Width":' +
+      '100,"ColIndex":9,"Gravity":5,"Padding":[3,3,3,3],"FooterValue":1' +
+      '.90979621186874E-313},"Item_0_1":{"Width":100,"ColIndex":0,"RowI' +
+      'ndex":1,"Gravity":5,"DataType":1,"Padding":[3,3,3,3]},"Item_1_1"' +
+      ':{"Width":100,"ColIndex":1,"RowIndex":1,"Gravity":5,"DataType":4' +
+      ',"Padding":[3,3,3,3],"Title":"2","FooterText":"0"},"Item_2_1":{"' +
+      'Width":100,"ColIndex":2,"RowIndex":1,"Gravity":9,"DataType":2,"P' +
+      'adding":[3,3,3,3],"Title":"3","FooterText":"0"},"Item_3_1":{"Wid' +
+      'th":100,"ColIndex":3,"RowIndex":1,"Gravity":5,"Padding":[3,3,3,3' +
+      '],"FooterValue":50,"FooterText":"50"},"Item_4_1":{"Width":100,"C' +
+      'olIndex":4,"RowIndex":1,"Gravity":5,"Padding":[3,3,3,3],"FooterV' +
+      'alue":50,"FooterText":"50"},"Item_5_1":{"Width":100,"ColIndex":5' +
+      ',"RowIndex":1,"Gravity":5,"Padding":[3,3,3,3],"FooterValue":50,"' +
+      'FooterText":"50"},"Item_6_1":{"Width":100,"ColIndex":6,"RowIndex' +
+      '":1,"Gravity":5,"Padding":[3,3,3,3],"FooterValue":50,"FooterText' +
+      '":"50"},"Item_7_1":{"Width":100,"ColIndex":7,"RowIndex":1,"Gravi' +
+      'ty":5,"Padding":[3,3,3,3],"FooterValue":50,"FooterText":"50"},"I' +
+      'tem_8_1":{"Width":100,"ColIndex":8,"RowIndex":1,"Gravity":5,"Pad' +
+      'ding":[3,3,3,3],"FooterValue":50,"FooterText":"50"},"Item_9_1":{' +
       '"Width":100,"ColIndex":9,"RowIndex":1,"Gravity":5,"Padding":[3,3' +
-      ',3,3]}}'
+      ',3,3],"FooterValue":50,"FooterText":"50"}}'
     FixedSettings.Brush.ItemDefault.Kind = Gradient
     FixedSettings.Brush.ItemDefault.Gradient.Points = <
       item
@@ -87,7 +96,6 @@ object FrameGridView: TFrameGridView
     FixedSettings.TextRowIndex = #34892#21495
     FixedSettings.FooterBgColor = claLightblue
     FixedSettings.FlatCols = True
-    FooterStyle = None
     DragScroll = True
     DragOneWay = True
     OnTitleClick = GridView1TitleClick
@@ -171,18 +179,20 @@ object FrameGridView: TFrameGridView
     Size.PlatformDefault = False
     Position.Y = 434.000000000000000000
     TabOrder = 15
-    ScrollBars = Both
+    DrawableCells.ItemTwoColor.Color = xFFFFFFFC
     ReadOnly = False
     Options = [gvEditing, gvIndicator, gvRowIndex, gvColLines, gvRowLines, gvRowSelect, gvCancelOnExit, gvEscCancelEdit, gvColumnBestWidth, gvColumnResize, gvColumnMove, gvFixedFooter]
     ColumnsSettings.ColumnsData = 
       '{"RowsCount":1,"ColsCount":3,"Item_0_0":{"Width":202,"ColIndex":' +
       '0,"Gravity":5,"Padding":[3,3,3,3],"Locked":true,"DataFilter":tru' +
-      'e,"Title":"Name","FieldName":"Name"},"Item_1_0":{"Width":102,"We' +
-      'ight":0.800000011920929,"ColIndex":1,"Gravity":5,"Padding":[3,3,' +
-      '3,3],"DataFilter":true,"Visible":false,"Title":"Title","FieldNam' +
-      'e":"Title"},"Item_2_0":{"Width":427,"Weight":1,"ColIndex":2,"Gra' +
-      'vity":8,"Padding":[3,3,3,3],"Title":"Total","FieldName":"Total"}' +
-      '}'
+      'e,"Title":"Name","FieldName":"Name","FooterValue":7.029304858774' +
+      '57E-314,"FieldName":"Name"},"Item_1_0":{"Width":102,"Weight":0.8' +
+      '00000011920929,"ColIndex":1,"Gravity":5,"Padding":[3,3,3,3],"Dat' +
+      'aFilter":true,"Visible":false,"Title":"Title","FieldName":"Title' +
+      '","FooterValue":7.02930485877457E-314,"FieldName":"Title"},"Item' +
+      '_2_0":{"Width":427,"Weight":1,"ColIndex":2,"Gravity":8,"Padding"' +
+      ':[3,3,3,3],"Title":"Total","FieldName":"Total","FooterValue":7.0' +
+      '2930485877457E-314,"FieldName":"Total"}}'
     FixedSettings.Brush.ItemDefault.Kind = Gradient
     FixedSettings.Brush.ItemDefault.Gradient.Points = <
       item
@@ -200,7 +210,6 @@ object FrameGridView: TFrameGridView
     FixedSettings.RowHeight = 22.000000000000000000
     FixedSettings.ColWidth = 50.000000000000000000
     FixedSettings.Footer = #21512#35745
-    FooterStyle = DataTotal
     DragScroll = True
     OnDrawCells = DBGridView1DrawCells
     DataSource = DataSource1
@@ -219,10 +228,6 @@ object FrameGridView: TFrameGridView
     Orientation = Horizontal
     object ButtonView5: TButtonView
       Weight = 1.000000000000000000
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
       Size.Width = 99.400001525878910000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
@@ -233,10 +238,6 @@ object FrameGridView: TFrameGridView
     end
     object ButtonView3: TButtonView
       Weight = 1.000000000000000000
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
       Size.Width = 99.400001525878910000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
@@ -248,10 +249,6 @@ object FrameGridView: TFrameGridView
     end
     object ButtonView4: TButtonView
       Weight = 1.000000000000000000
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
       Size.Width = 99.400001525878910000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
@@ -263,14 +260,10 @@ object FrameGridView: TFrameGridView
     end
     object ButtonView2: TButtonView
       Weight = 1.000000000000000000
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
       Size.Width = 99.399993896484380000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
-      Position.X = 298.200012207031300000
+      Position.X = 298.200012207031200000
       TabOrder = 12
       OnClick = ButtonView2Click
       Text = #21462#28040#36873#20013
@@ -278,10 +271,6 @@ object FrameGridView: TFrameGridView
     end
     object ButtonView1: TButtonView
       Weight = 1.000000000000000000
-      Padding.Left = 4.000000000000000000
-      Padding.Top = 4.000000000000000000
-      Padding.Right = 4.000000000000000000
-      Padding.Bottom = 4.000000000000000000
       Size.Width = 99.399993896484380000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False

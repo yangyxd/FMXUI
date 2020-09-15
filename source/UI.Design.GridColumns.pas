@@ -6,7 +6,7 @@ uses
   UI.Grid,
   System.Math,
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  FMX.Objects,
+  FMX.Objects, Data.DB,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.StdCtrls,
   FMX.Controls.Presentation, FMX.Edit, FMX.Layouts, UI.Base, UI.Standard,
   FMX.ListBox;
@@ -62,6 +62,8 @@ type
     Label13: TLabel;
     Label14: TLabel;
     edtWeight: TEdit;
+    cbFieldType: TComboBox;
+    Label15: TLabel;
     procedure btnOkClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure GridViewFixedCellClick(Sender: TObject; const ACol,
@@ -97,6 +99,8 @@ type
       Item: TGridColumnItem; const R: TRectF; var DefaultDraw: Boolean);
     procedure edtFieldNameExit(Sender: TObject);
     procedure edtWeightExit(Sender: TObject);
+
+    procedure cbFieldTypeClick(Sender: TObject);
   private
     { Private declarations }
     [Weak] SrcGridView: TGridBase;
@@ -230,6 +234,17 @@ begin
   end;
 end;
 
+procedure TGridColumnsDesigner.cbFieldTypeClick(Sender: TObject);
+begin
+  if FIsDBGrid then
+    Exit;
+
+  if Assigned(CurItem) and (not FUpdateing) then begin
+    CurItem.FieldType := TFieldType(cbFieldType.ItemIndex);
+    DoChange();
+  end;
+end;
+
 procedure TGridColumnsDesigner.cbGravityClick(Sender: TObject);
 begin
   if Assigned(CurItem) and (not FUpdateing) then begin
@@ -307,8 +322,8 @@ end;
 
 procedure TGridColumnsDesigner.edtFieldNameExit(Sender: TObject);
 begin
-  if Assigned(CurItem) and (CurItem is TGridDBColumnItem) then begin
-    TGridDBColumnItem(CurItem).FieldName := TEdit(Sender).Text;
+  if Assigned(CurItem) and (CurItem is TGridColumnItem) then begin
+    TGridColumnItem(CurItem).FieldName := TEdit(Sender).Text;
     DoChange();
   end;
 end;
@@ -466,10 +481,17 @@ begin
 
   tvFixedColCount.Enabled := edtFixedColCount.Enabled;
 
-  if not FIsDBGrid then begin
-    tvField.Visible := False;
-    edtFieldName.Visible := False;
+  // if not FIsDBGrid then
+  //begin
+    tvField.Visible := True;
+    edtFieldName.Visible := True;
     edtTitle.Width := edtFieldName.Position.X + edtFieldName.Width - edtTitle.Position.X;
+  //end;
+  if FIsDBGrid then
+  begin
+    cbFieldTYpe.Visible := False;
+    label15.Visible := False;
+   // edtTitle.Width := edtFieldName.Position.X + edtFieldName.Width - edtTitle.Position.X;
   end;
 
   FCol := CInvNo;
@@ -481,7 +503,7 @@ end;
 procedure TGridColumnsDesigner.tvFieldExit(Sender: TObject);
 begin
   if Assigned(CurItem) then begin
-    TGridDBColumnItem(CurItem).FieldName := TEdit(Sender).Text;
+    TGridColumnItem(CurItem).FieldName := TEdit(Sender).Text;
     DoChange();
   end;
 end;
@@ -492,6 +514,7 @@ procedure TGridColumnsDesigner.UpdateState;
   begin
     cbGravity.ItemIndex := -1;
     cbDataType.ItemIndex := -1;
+    cbFieldType.ItemIndex := 1;
 
     edtFieldName.Text := '';
 
@@ -570,6 +593,7 @@ begin
 
       cbGravity.ItemIndex := Ord(CurItem.Gravity);
       cbDataType.ItemIndex := Ord(CurItem.DataType);
+      cbFieldType.ItemIndex := Ord(CurItem.FieldType);
       edtTitle.Text := CurItem.Title;
 
       edtFieldName.Enabled := False;
@@ -583,17 +607,19 @@ begin
       edtWeight.Text := FloatToStr(Round(CurItem.Weight * 10000) / 10000);
 
       edtTag.Text := IntToStr(CurItem.Tag);
-
     end else begin
-
       cbGravity.ItemIndex := Ord(CurItem.Gravity);
       cbDataType.ItemIndex := Ord(CurItem.DataType);
+      cbFieldType.ItemIndex := Ord(CurItem.FieldType);
       edtTitle.Text := CurItem.Title;
 
-      edtFieldName.Enabled := CurItem is TGridDBColumnItem;
-      if edtFieldName.Enabled then
-        edtFieldName.Text := TGridDBColumnItem(CurItem).AbsoluteFieldName
-      else
+      edtFieldName.Enabled := CurItem is TGridColumnItem;
+      if edtFieldName.Enabled then begin
+        if Assigned(CurItem) then
+          edtFieldName.Text := TGridDBColumnItem(CurItem).AbsoluteFieldName
+        else
+          edtFieldName.Text := CurItem.FieldName;
+      end else
         edtFieldName.Text := '';
 
       edtOpacity.Text := FloatToStr(Round(CurItem.Opacity * 10000) / 10000);
@@ -607,7 +633,6 @@ begin
       edtTag.Text := IntToStr(CurItem.Tag);
       edtRowsPan.Text := IntToStr(CurItem.RowsPan);
       edtColsPan.Text := IntToStr(CurItem.ColsPan);
-
 
       ckLocked.IsChecked := CurItem.Locked;
       ckEnabled.IsChecked := CurItem.Enabled;

@@ -1,0 +1,20 @@
+﻿{"FDBS":{"Version":15,"Manager":{"UpdatesRegistry":true,"TableList":[
+{"class":"Table","Name":"cds_left","SourceName":"Table","TabID":0,"EnforceConstraints":false,"MinimumCapacity":50,"CheckNotNull":false,"ColumnList":[
+{"class":"Column","Name":"id","SourceName":"id","SourceID":1,"DataType":"Int64","Searchable":true,"Base":true,"OInUpdate":true,"OInWhere":true,"OriginColName":"id"},
+{"class":"Column","Name":"amount","SourceName":"amount","SourceID":2,"DataType":"Int64","Searchable":true,"Base":true,"OInUpdate":true,"OInWhere":true,"OriginColName":"amount"},
+{"class":"Column","Name":"price","SourceName":"price","SourceID":3,"DataType":"Int64","Searchable":true,"Base":true,"OInUpdate":true,"OInWhere":true,"OriginColName":"price"},
+{"class":"Column","Name":"discount","SourceName":"discount","SourceID":4,"DataType":"Int64","Searchable":true,"Base":true,"OInUpdate":true,"OInWhere":true,"OriginColName":"discount"},
+{"class":"Column","Name":"curr","SourceName":"curr","SourceID":5,"DataType":"Int64","Searchable":true,"Base":true,"OInUpdate":true,"OInWhere":true,"OriginColName":"curr"},
+{"class":"Column","Name":"taxrate","SourceName":"taxrate","SourceID":6,"DataType":"Int64","Searchable":true,"Base":true,"OInUpdate":true,"OInWhere":true,"OriginColName":"taxrate"},
+{"class":"Column","Name":"price0","SourceName":"price0","SourceID":7,"DataType":"Int64","Searchable":true,"Base":true,"OInUpdate":true,"OInWhere":true,"OriginColName":"price0"},
+{"class":"Column","Name":"curr0","SourceName":"curr0","SourceID":8,"DataType":"Int64","Searchable":true,"Base":true,"OInUpdate":true,"OInWhere":true,"OriginColName":"curr0"},
+{"class":"Column","Name":"taxcurr","SourceName":"taxcurr","SourceID":9,"DataType":"Int64","Searchable":true,"Base":true,"OInUpdate":true,"OInWhere":true,"OriginColName":"taxcurr"},
+{"class":"Column","Name":"period","SourceName":"period","SourceID":10,"DataType":"AnsiString","Size":14,"Searchable":true,"Base":true,"OInUpdate":true,"OInWhere":true,"OriginColName":"period","SourceSize":14},
+{"class":"Column","Name":"wareno","SourceName":"wareno","SourceID":11,"DataType":"AnsiString","Size":102,"Searchable":true,"Base":true,"OInUpdate":true,"OInWhere":true,"OriginColName":"wareno","SourceSize":102}],"ConstraintList":[],"ViewList":[],
+"RowList":[
+{"RowID":0,"Original":{"id":3,"amount":4,"price":3,"discount":4,"curr":3,"taxrate":4,"price0":3,"curr0":4,"taxcurr":10,"period":"2018 8","wareno":"G0100-3509100B"}},
+{"RowID":1,"Original":{"id":8,"amount":8,"price":8,"discount":8,"curr":8,"taxrate":8,"price0":8,"curr0":9,"taxcurr":10,"period":"2018 8","wareno":"G0100-3509100B"}},
+{"RowID":2,"Original":{"id":2,"amount":2,"price":2,"discount":2,"curr":2,"taxrate":2,"price0":2,"curr0":2,"taxcurr":2,"period":"2018 8","wareno":"1530-1003021"}},
+{"RowID":9,"Original":{"id":9,"amount":9,"price":9,"discount":9,"curr":9,"taxrate":9,"price0":9,"curr0":9,"taxcurr":9,"period":"2018 8","wareno":"G6400-1004002C(B)*"}},
+{"RowID":4,"Original":{"id":6,"amount":6,"price":6,"discount":6,"curr":7,"taxrate":7,"price0":8,"curr0":7,"taxcurr":10,"period":"2018 8","wareno":"186-1012240"}}]}],
+"RelationList":[],"UpdatesJournal":{"SavePoint":135,"Changes":[]}}}}

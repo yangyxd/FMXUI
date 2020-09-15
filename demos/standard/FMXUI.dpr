@@ -1,5 +1,7 @@
 program FMXUI;
 
+{$R *.dres}
+
 uses
   System.StartUpCopy,
   FMX.Forms,
@@ -27,6 +29,7 @@ uses
   uFrameListViewGroup in 'uFrameListViewGroup.pas' {FrameListViewGroup: TFrame},
   uFrameImageViewer in 'uFrameImageViewer.pas' {FrameImageViewer: TFrame},
   uFrameGridView in 'uFrameGridView.pas' {FrameGridView: TFrame},
+  uFrameGridSum in 'uFrameGridSum.pas' {FrameGridSum: TFrame},
   uFrameCameraViewer in 'uFrameCameraViewer.pas' {FrameCameraViewer: TFrame},
   uFrameVertScrollView in 'uFrameVertScrollView.pas' {FrameVertScrollView: TFrame},
   uFrameHorzScrollView in 'uFrameHorzScrollView.pas' {FrameHorzScrollView: TFrame},
