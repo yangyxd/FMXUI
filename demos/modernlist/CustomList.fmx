@@ -1,0 +1,20 @@
+object frmCustomList: TfrmCustomList
+  Size.Width = 320.000000000000000000
+  Size.Height = 480.000000000000000000
+  Size.PlatformDefault = False
+  object ListView: TListViewEx
+    Align = Client
+    Gravity = None
+    Size.Width = 320.000000000000000000
+    Size.Height = 480.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Divider = xAFE3E4E5
+    OnScrollChange = ListViewScrollChange
+    OnItemClick = ListViewItemClick
+    EnablePullRefresh = False
+    EnablePullLoad = False
+    OnPullRefresh = ListViewPullRefresh
+    OnPullLoad = ListViewPullLoad
+  end
+end

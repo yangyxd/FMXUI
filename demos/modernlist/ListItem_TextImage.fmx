@@ -1,0 +1,90 @@
+object frmListItem_TextImage: TfrmListItem_TextImage
+  Size.Width = 320.000000000000000000
+  Size.Height = 240.000000000000000000
+  Size.PlatformDefault = False
+  object View1: TView
+    Align = Client
+    Gravity = None
+    Size.Width = 320.000000000000000000
+    Size.Height = 240.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    object LinearLayout1: TLinearLayout
+      Align = Bottom
+      Gravity = None
+      Margins.Left = 5.000000000000000000
+      Margins.Top = 5.000000000000000000
+      Margins.Right = 5.000000000000000000
+      Margins.Bottom = 5.000000000000000000
+      Size.Width = 310.000000000000000000
+      Size.Height = 46.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 5.000000000000000000
+      Position.Y = 189.000000000000000000
+      TabOrder = 0
+      Orientation = Vertical
+      object TextView2: TTextView
+        WidthSize = FillParent
+        HeightSize = WrapContent
+        Padding.Left = 5.000000000000000000
+        Padding.Top = 5.000000000000000000
+        Padding.Right = 5.000000000000000000
+        Padding.Bottom = 5.000000000000000000
+        Size.Width = 310.000000000000000000
+        Size.Height = 30.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Text = 'TextView2'
+        TextSettings.Font.Size = 15.000000000000000000
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
+      end
+      object TextView3: TTextView
+        WidthSize = FillParent
+        Size.Width = 310.000000000000000000
+        Size.Height = 17.000000000000000000
+        Size.PlatformDefault = False
+        Position.Y = 30.000000000000000000
+        TabOrder = 1
+        Text = 'TextView3'
+        TextSettings.Color.Default = claGray
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Enabled = claNull
+      end
+    end
+    object ImageView1: TImageView
+      Touch.InteractiveGestures = [Zoom, Pan]
+      Align = Client
+      Background.ItemDefault.Bitmap.WrapMode = TileOriginal
+      Background.ItemDefault.Kind = Bitmap
+      Background.ItemEnabled.Color = claWhitesmoke
+      Background.ItemEnabled.Kind = Solid
+      WidthSize = FillParent
+      Gravity = None
+      Size.Width = 320.000000000000000000
+      Size.Height = 184.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      Image.ItemDefault.Bitmap.WrapMode = TileOriginal
+      Image.ItemDefault.Kind = Bitmap
+      ScaleType = CenterCrop
+      object TextView1: TTextView
+        Align = Bottom
+        Background.ItemDefault.Color = claLightgray
+        Background.ItemDefault.Kind = Solid
+        Background.Border.Kind = None
+        Size.Width = 320.000000000000000000
+        Size.Height = 17.000000000000000000
+        Size.PlatformDefault = False
+        Position.Y = 167.000000000000000000
+        TabOrder = 0
+        Text = 'TextView1'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Focused = claNull
+        TextSettings.Color.Selected = claNull
+        TextSettings.Color.Enabled = claNull
+        TextSettings.Gravity = Center
+      end
+    end
+  end
+end

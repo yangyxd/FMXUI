@@ -10,6 +10,7 @@
  * [Added]   Transparent statusbar in Android (Thanks for code: 谭钦 report: 意帆, Udcover, 凌风)
  * [Added]   Resume & Pause to TFrameView
  * [Added]   New layout demo
+ * [Added]   New ModernList for ListviewEx
  * [Added]   TImageView allow TViewSize.WrapContent, both sides equal autosize, single side will strech with keeping aspect ratio
  * [Added]   Improve TGridView footer and new demo (Thanks for code: CCC)
  * [Changed] TDialogView block vkEscape and vkHardwareBack, even if Cancelable is false

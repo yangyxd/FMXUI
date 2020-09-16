@@ -1,0 +1,41 @@
+object frmListItem_Image: TfrmListItem_Image
+  Size.Width = 320.000000000000000000
+  Size.Height = 240.000000000000000000
+  Size.PlatformDefault = False
+  object ImageView1: TImageView
+    Touch.InteractiveGestures = [Zoom, Pan]
+    Align = Client
+    Background.ItemDefault.Bitmap.WrapMode = TileOriginal
+    Background.ItemDefault.Kind = Bitmap
+    Background.ItemEnabled.Color = claWhitesmoke
+    Background.ItemEnabled.Kind = Solid
+    WidthSize = FillParent
+    Gravity = None
+    Margins.Top = 5.000000000000000000
+    Margins.Bottom = 5.000000000000000000
+    Size.Width = 320.000000000000000000
+    Size.Height = 230.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Image.ItemDefault.Bitmap.WrapMode = TileOriginal
+    Image.ItemDefault.Kind = Bitmap
+    ScaleType = CenterCrop
+    object TextView1: TTextView
+      Background.ItemDefault.Color = claLightgray
+      Background.ItemDefault.Kind = Solid
+      Background.Border.Kind = None
+      Size.Width = 59.000000000000000000
+      Size.Height = 17.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 2.000000000000000000
+      Position.Y = 4.000000000000000000
+      TabOrder = 0
+      Text = 'TextView1'
+      TextSettings.Color.Default = claWhite
+      TextSettings.Color.Focused = claNull
+      TextSettings.Color.Selected = claNull
+      TextSettings.Color.Enabled = claNull
+      TextSettings.Gravity = Center
+    end
+  end
+end
