@@ -501,6 +501,10 @@ type
     /// 是否使用了默认背景色
     /// </summary>
     property IsUseDefaultBackColor: Boolean read FUseDefaultBackColor;
+    /// <summary>
+    /// 是否在前台
+    /// </summary>
+    property IsResumed: Boolean read FResumed;
   published
     property Title: string read GetTitle write SetTitle;
     property DataString: string read GetDataString write SetDataString;
