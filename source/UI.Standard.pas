@@ -835,6 +835,7 @@ type
 
   TBadgeBackground = class(TPersistent)
   private
+    [Weak] FOwner: TControl;
     FColor: TAlphaColor;
     FXRadius, FYRadius: Single;
     FCorners: TCorners;
@@ -844,15 +845,17 @@ type
     procedure SetCorners(const Value: TCorners);
     procedure SetXRadius(const Value: Single);
     procedure SetYRadius(const Value: Single);
+    function GetXRadius: Single;
+    function GetYRadius: Single;
   protected
   public
-    constructor Create();
+    constructor Create(AOwner: TControl);
     procedure Assign(Source: TPersistent); override;
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
   published
     property Color: TAlphaColor read FColor write SetColor default TAlphaColorRec.Red;
-    property XRadius: Single read FXRadius write SetXRadius;
-    property YRadius: Single read FYRadius write SetYRadius;
+    property XRadius: Single read GetXRadius write SetXRadius;
+    property YRadius: Single read GetYRadius write SetYRadius;
     property Corners: TCorners read FCorners write SetCorners stored IsStoredCorners;
   end;
 
@@ -3596,7 +3599,7 @@ begin
   inherited Create(AOwner);
   FMaxValue := 99;
   FStyle := TBadgeStyle.NumberText;
-  FBackground := TBadgeBackground.Create;
+  FBackground := TBadgeBackground.Create(Self);
   FBackground.FXRadius := 8;
   FBackground.FYRadius := 8;
   FText := TSimpleTextSettings.Create(Self);
@@ -3639,8 +3642,8 @@ begin
           P.Width := P.Width + Padding.Left + Padding.Right;
           P.Height := P.Height + Padding.Top + Padding.Bottom;
           if Assigned(FBackground) then begin
-            if P.Width < FBackground.FXRadius * 2 then P.Width := FBackground.FXRadius * 2;
-            if P.Height < FBackground.FYRadius * 2 then P.Height := FBackground.FYRadius * 2;
+            if P.Width < FBackground.XRadius * 2 then P.Width := FBackground.XRadius * 2;
+            if P.Height < FBackground.YRadius * 2 then P.Height := FBackground.YRadius * 2;
           end;
         end;
       TBadgeStyle.Icon:
@@ -3829,14 +3832,14 @@ begin
     if FStyle = TBadgeStyle.Icon then begin
       if Assigned(FIcon) then begin
         with FBackground do begin
-          Canvas.FillRect(R, FXRadius, FYRadius, FCorners, LOpacity, FIcon);
+          Canvas.FillRect(R, XRadius, YRadius, FCorners, LOpacity, FIcon);
         end;
       end;
     end else begin
       if Assigned(FBackground) then
         with FBackground do begin
           Canvas.Fill.Color := FColor;
-          Canvas.FillRect(R, FXRadius, FYRadius, FCorners, LOpacity);
+          Canvas.FillRect(R, XRadius, YRadius, FCorners, LOpacity);
         end;
       if Assigned(FText) and (FText.TextLength > 0) then
         FText.Draw(Canvas, R, LOpacity, TViewState.None);
@@ -3994,10 +3997,21 @@ begin
     inherited;
 end;
 
-constructor TBadgeBackground.Create;
+constructor TBadgeBackground.Create(AOwner: TControl);
 begin
+  FOwner := AOwner;
   FCorners := AllCorners;
   FColor := TAlphaColorRec.Red;
+end;
+
+function TBadgeBackground.GetXRadius: Single;
+begin
+  Result := GetRadius(FXRadius, FOwner);
+end;
+
+function TBadgeBackground.GetYRadius: Single;
+begin
+  Result := GetRadius(FYRadius, FOwner);
 end;
 
 function TBadgeBackground.IsStoredCorners: Boolean;

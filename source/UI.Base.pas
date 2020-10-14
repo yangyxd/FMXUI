@@ -345,6 +345,8 @@ type
     function IsStoredCorners: Boolean;
     procedure SetCornerType(const Value: TCornerType);
     procedure SetKind(const Value: TDrawableKind);
+    function GetXRadius: Single;
+    function GetYRadius: Single;
   protected
     [Weak] FView: IView;
     FDefault: TBrush;  // 0
@@ -411,8 +413,8 @@ type
 
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
     // 边框圆角
-    property XRadius: Single read FXRadius write SetXRadius;
-    property YRadius: Single read FYRadius write SetYRadius;
+    property XRadius: Single read GetXRadius write SetXRadius;
+    property YRadius: Single read GetYRadius write SetYRadius;
     property Corners: TCorners read FCorners write SetCorners stored IsStoredCorners;
     property CornerType: TCornerType read FCornerType write SetCornerType default TCornerType.Round;
 
@@ -1857,6 +1859,12 @@ function GetScreenScale: single;
 // 获取组件所属的窗口
 function GetParentForm(AObj: TFmxObject): TCustomForm;
 
+// 从最短的边取Radius的值，ARadius取值范围 -1 < ARadius < 1
+function GetRadius(const ARadius: Single; const AWidth, AHeight: Single): Single; overload;
+function GetRadius(const ARadius: Single; const ARect: TRectF): Single; overload;
+function GetRadius(const ARadius: Single; const AView: IView): Single; overload;
+function GetRadius(const ARadius: Single; const AControl: TControl): Single; overload;
+
 function ViewStateToString(const State: TViewStates): string;
 function ComponentStateToString(const State: TComponentState): string;
 
@@ -2261,6 +2269,42 @@ begin
   AScreenScale := Result;
 end;
 
+function GetRadius(const ARadius: Single; const AWidth, AHeight: Single): Single;
+begin
+  if (AWidth > 0) and (AHeight > 0) and (ARadius < 1) and (ARadius > -1) then begin
+    if AWidth > AHeight then
+      Result := AHeight * ARadius
+    else
+      Result := AWidth * ARadius
+  end
+  else
+    Result := ARadius;
+end;
+
+function GetRadius(const ARadius: Single; const ARect: TRectF): Single;
+begin
+  if not ARect.IsEmpty then
+    Result := GetRadius(ARadius, ARect.Width, ARect.Height)
+  else
+    Result := ARadius;
+end;
+
+function GetRadius(const ARadius: Single; const AView: IView): Single;
+begin
+  if Assigned(AView) then
+    Result := GetRadius(ARadius, AView.Width, AView.Height)
+  else
+    Result := ARadius;
+end;
+
+function GetRadius(const ARadius: Single; const AControl: TControl): Single;
+begin
+  if Assigned(AControl) then
+    Result := GetRadius(ARadius, AControl.Width, AControl.Height)
+  else
+    Result := ARadius;
+end;
+
 { TDrawableBase }
 
 procedure TDrawableBase.Assign(Source: TPersistent);
@@ -2397,6 +2441,16 @@ begin
   Result := GetBrush(TViewState(Index), not (csLoading in FView.GetComponentState));
 end;
 
+function TDrawableBase.GetXRadius: Single;
+begin
+  Result := GetRadius(FXRadius, FView);
+end;
+
+function TDrawableBase.GetYRadius: Single;
+begin
+  Result := GetRadius(FYRadius, FView);
+end;
+
 procedure TDrawableBase.InitDrawable;
 begin
 end;
@@ -2506,7 +2560,7 @@ begin
   R := GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight);
   V := GetStateItem(AState);
   if V <> nil then
-    FillRect(Canvas, R, FXRadius, FYRadius, FCorners, FView.Opacity, V, FCornerType);
+    FillRect(Canvas, R, XRadius, YRadius, FCorners, FView.Opacity, V, FCornerType);
   DoDrawed(Canvas, R, AState, FView.Opacity);
 end;
 
@@ -2514,7 +2568,7 @@ procedure TDrawableBase.DrawBrushTo(Canvas: TCanvas; ABrush: TBrush;
   const R: TRectF);
 begin
   if ABrush <> nil then
-    FillRect(Canvas, R, FXRadius, FYRadius, FCorners, FView.GetOpacity, ABrush, FCornerType);
+    FillRect(Canvas, R, XRadius, YRadius, FCorners, FView.GetOpacity, ABrush, FCornerType);
 end;
 
 procedure TDrawableBase.DrawStateTo(Canvas: TCanvas; const R: TRectF;
@@ -2534,7 +2588,7 @@ begin
   V := GetStateItem(AState);
   VR := GetDrawRect(R.Left, R.Top, R.Right, R.Bottom);
   if V <> nil then
-    FillRect(Canvas, VR, FXRadius, FYRadius, FCorners, AOpacity, V, FCornerType);
+    FillRect(Canvas, VR, XRadius, YRadius, FCorners, AOpacity, V, FCornerType);
   DoDrawed(Canvas, VR, AState, AOpacity);
 end;
 
@@ -2559,7 +2613,7 @@ var
   V: Single;
 begin
   if (Ord(ABrush.Kind) = Ord(TViewBrushKind.Patch9Bitmap)) and (ABrush is TViewBrush) then begin
-    FillRect9Patch(Canvas, ARect, XRadius, YRadius, ACorners, AOpacity, TViewBrush(ABrush), ACornerType);
+    FillRect9Patch(Canvas, ARect, GetRadius(XRadius, ARect), GetRadius(YRadius, ARect), ACorners, AOpacity, TViewBrush(ABrush), ACornerType);
   end else begin
     if Ord(ABrush.Kind) = Ord(TViewBrushKind.AccessoryBitmap) then begin
       if Assigned(TViewBrushBase(ABrush).FAccessory) then begin
@@ -2579,7 +2633,7 @@ begin
       case FKind of
         TDrawableKind.None:
           begin
-            Canvas.FillRect(ARect, XRadius, YRadius, ACorners, AOpacity, ABrush, ACornerType);
+            Canvas.FillRect(ARect, GetRadius(XRadius, ARect), GetRadius(YRadius, ARect), ACorners, AOpacity, ABrush, ACornerType);
           end;
         TDrawableKind.Circle:
           begin
@@ -8561,9 +8615,9 @@ procedure TDrawableBrush.Draw(Canvas: TCanvas; const R: TRectF;
 begin
   if (csDestroying in ComponentState) or IsEmpty then Exit;
   if (Ord(FBrush.Kind) = Ord(TViewBrushKind.Patch9Bitmap)) and (FBrush is TViewBrush) then begin
-    TDrawableBase.FillRect9Patch(Canvas, R, XRadius, YRadius, ACorners, AOpacity, TViewBrush(FBrush), ACornerType);
+    TDrawableBase.FillRect9Patch(Canvas, R, GetRadius(XRadius, R), GetRadius(YRadius, R), ACorners, AOpacity, TViewBrush(FBrush), ACornerType);
   end else
-    Canvas.FillRect(R, XRadius, YRadius, ACorners, AOpacity, FBrush, ACornerType);
+    Canvas.FillRect(R, GetRadius(XRadius, R), GetRadius(YRadius, R), ACorners, AOpacity, FBrush, ACornerType);
   if Assigned(FImageLink.Images) and (ImageIndex >= 0) then
     DrawImage(ImageIndex);
 end;

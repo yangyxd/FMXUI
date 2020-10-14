@@ -13,6 +13,7 @@
  * [新增] ListviewEx的例子ModernList
  * [新增] TImageView允许设定TViewSize.WrapContent，双边设定为自动大小，单边为按宽高比缩放
  * [新增] TGridView footer增强和新的demo（感谢代码：CCC）
+ * [新增] Radius值，当设置为-1至1之间的时候，自动设置为最短边的相乘的值
  * [更改] TDialogView无论是否Cancelable，全部拦截返回键，避免TFrameView在TDialogView释放，而TDialogView没有释放的情况
  * [修正] 因TabStopController导致的部分情况下TDialogView无法释放
  * [修正] HtmlText绘制错误（感谢报告：keven）

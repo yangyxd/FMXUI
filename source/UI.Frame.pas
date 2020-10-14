@@ -1409,11 +1409,11 @@ end;
 
 procedure TFrameView.DoFinish;
 begin
+  Pause;
   if Assigned(FOnFinish) then begin
     FOnFinish(Self);
     FOnFinish := nil;
   end;
-  Pause;
 end;
 
 procedure TFrameView.DoFree;
@@ -1424,9 +1424,9 @@ end;
 
 procedure TFrameView.DoHide;
 begin
+  Pause;
   if Assigned(FOnHide) then
     FOnHide(Self);
-  Pause;
 end;
 
 procedure TFrameView.DoPause;
