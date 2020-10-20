@@ -867,6 +867,7 @@ end;
 function TFrameView.CheckFree: Boolean;
 var
   LForm: TCustomForm;
+  LFrame: TFrameView;
 begin
   Result := False;
   if Assigned(Parent) then begin
@@ -888,6 +889,8 @@ begin
     if Assigned(LForm) then
       LForm.ReleaseCapture;
     {$ENDIF}
+    if TFrameView.GetFormActiveFrame(LForm, LFrame) and (LFrame = Self) then
+      TFrameView.SetFormActiveFrame(LForm, nil);
     {$IFDEF AUTOREFCOUNT}
     Parent := nil;
     if Assigned(Owner) then
@@ -1283,7 +1286,13 @@ end;
 destructor TFrameView.Destroy;
 var
   Obj: TObject;
+  LFrame: TFrameView;
 begin
+  if Assigned(ParentForm) and TFrameView.GetFormActiveFrame(ParentForm, LFrame) and (LFrame = Self) then
+    TFrameView.SetFormActiveFrame(ParentForm, nil);
+  if Assigned(Screen.ActiveForm) and TFrameView.GetFormActiveFrame(Screen.ActiveForm, LFrame) and (LFrame = Self) then
+    TFrameView.SetFormActiveFrame(Screen.ActiveForm, nil);
+
   DoFree();
   FWaitDialog := nil;
   Obj := TagObject;
@@ -1308,6 +1317,8 @@ class procedure TFrameView.DoActivateMessage(const Sender: TObject;
     if not Assigned(AForm) then
       Exit;
     if not TFrameView.GetFormActiveFrame(AForm, LFrame) then
+      Exit;
+    if (not Assigned(LFrame)) or LFrame.IsDestroy then
       Exit;
 
     if AActivate then
@@ -1397,6 +1408,10 @@ begin
   V := Parent;
   while Assigned(V) do begin
     if V is TFrameView then
+      Exit;
+    if V is TDialogView then
+      Exit;
+    if V.ClassName = 'TListViewEx' then
       Exit;
     V := V.Parent;
   end;
