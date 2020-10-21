@@ -47,9 +47,13 @@ uses
   FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls, FMX.InertialMovement, FMX.Ani;
 
 const
+  {$IF CompilerVersion >= 33}
+  AllCurrentPlatforms = pidAllPlatforms;
+  {$ELSE}
   AllCurrentPlatforms =
     pidWin32 or pidWin64 or pidOSX32 or
     pidiOSSimulator or pidiOSDevice or pidAndroid;
+  {$ENDIF}
 
 type
   IView = interface;
