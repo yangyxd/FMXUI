@@ -169,8 +169,15 @@ end;
 procedure TToast.ShowToast(const AMsg: string);
 begin
   if AMsg = '' then Exit;
-  FQueue.Enqueue(AMsg);
-  FTimer.Enabled := True;
+  if TThread.CurrentThread.ThreadID = MainThreadID then begin
+    FQueue.Enqueue(AMsg);
+    FTimer.Enabled := True;
+  end
+  else
+    TThread.Queue(TThread.CurrentThread, procedure begin
+      FQueue.Enqueue(AMsg);
+      FTimer.Enabled := True;
+    end);
 end;
 
 end.
