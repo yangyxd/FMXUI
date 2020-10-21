@@ -174,7 +174,7 @@ begin
     FTimer.Enabled := True;
   end
   else
-    TThread.Queue(TThread.CurrentThread, procedure begin
+    TThread.Queue(nil, procedure begin
       FQueue.Enqueue(AMsg);
       FTimer.Enabled := True;
     end);
