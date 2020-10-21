@@ -51,8 +51,22 @@ const
   AllCurrentPlatforms = pidAllPlatforms;
   {$ELSE}
   AllCurrentPlatforms =
-    pidWin32 or pidWin64 or pidOSX32 or
-    pidiOSSimulator or pidiOSDevice or pidAndroid;
+    {$IF CompilerVersion >= 23}
+    pidOSX32 or pidWin64 or
+    {$ENDIF XE2}
+    {$IF CompilerVersion >= 24}
+    pidiOSDevice32 or pidiOSSimulator or
+    {$ENDIF XE3}
+    {$IF CompilerVersion >= 26}
+    pidAndroid or
+    {$ENDIF XE5}
+    {$IF CompilerVersion >= 29}
+    pidiOSDevice64 or
+    {$ENDIF XE8}
+    {$IF CompilerVersion >= 32}
+    pidLinux64 or
+    {$ENDIF 10.2}
+    pidWin32;
   {$ENDIF}
 
 type
