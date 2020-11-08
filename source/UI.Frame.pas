@@ -1663,10 +1663,12 @@ end;
 
 procedure TFrameView.HideWaitDialog;
 begin
-  if not IsWaitDismiss then begin
-    FWaitDialog.Dismiss;
-    FWaitDialog := nil;
-  end;
+  TThread.Synchronize(TThread.CurrentThread, procedure begin
+    if not IsWaitDismiss then begin
+      FWaitDialog.Dismiss;
+      FWaitDialog := nil;
+    end;
+  end);
 end;
 
 procedure TFrameView.Hint(const Msg: string);
