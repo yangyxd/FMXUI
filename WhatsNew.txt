@@ -22,6 +22,7 @@
  * [Fixed]   Destroy error when 10.4 TMemo in TFrame (Thanks for report: 恢弘)
  * [Fixed]   Compile error when targeting at linux (Thanks for code: CCC)
  * [Fixed]   TEditView position error (Thanks for code: 凌风)
+ * [Fixed]   When TDBGridView.MinRowCount > 0, the last blank row will be filled by the last row data (Thanks for report: Jasper)
  - -----------------------------------
  - 2020.05.28
  * [Added]   Shadow of TDialogView

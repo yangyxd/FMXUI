@@ -7512,10 +7512,10 @@ var
 begin
   LRowCount := TDBGridAdapter(FAdapter).RowCount;
   if Assigned(DataSet) and DataSet.Active then
-    TDBGridAdapter(FAdapter).RowCount := DataSet.RecordCount
+    FDataRecordCount := DataSet.RecordCount
   else
-    TDBGridAdapter(FAdapter).RowCount := 0;
-  FDataRecordCount := TDBGridAdapter(FAdapter).RowCount;
+    FDataRecordCount := 0;
+  TDBGridAdapter(FAdapter).RowCount := FDataRecordCount;
   if LRowCount <> TDBGridAdapter(FAdapter).RowCount then begin
     FContentViews.FSelectCell.Clear;
     NotifyDataChanged;
