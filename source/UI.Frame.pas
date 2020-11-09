@@ -1,8 +1,8 @@
 {*******************************************************}
 {                                                       }
-{       FMX UI Frame ¹ÜÀíµ¥Ôª                           }
+{       FMX UI Frame ç®¡ç†å•å…ƒ                           }
 {                                                       }
-{       °æÈ¨ËùÓĞ (C) 2016 YangYxd                       }
+{       ç‰ˆæƒæ‰€æœ‰ (C) 2016 YangYxd                       }
 {                                                       }
 {*******************************************************}
 
@@ -31,7 +31,7 @@ type
   TFrameAnimator = UI.Ani.TFrameAnimator;
 
   /// <summary>
-  /// Frame ²ÎÊı
+  /// Frame å‚æ•°
   /// </summary>
   TFrameParams = class(TDictionary<string, TValue>);
 
@@ -44,7 +44,7 @@ type
   end;
 
   /// <summary>
-  /// Frame ×´Ì¬Êı¾İ
+  /// Frame çŠ¶æ€æ•°æ®
   /// </summary>
   TFrameStateData = class(TDictionary<string, TFrameDataValue>);
 
@@ -92,7 +92,7 @@ type
   end;
 
   /// <summary>
-  /// Frame ×´Ì¬
+  /// Frame çŠ¶æ€
   /// </summary>
   TFrameState = class(TObject)
   private
@@ -141,11 +141,11 @@ type
     procedure PutDateTime(const Key: string; const Value: TDateTime);
 
     /// <summary>
-    /// ±£´æÎÄ¼şÁ÷
+    /// ä¿å­˜æ–‡ä»¶æµ
     /// </summary>
     function SaveFile(const FileName: string; const Data: TStream): Boolean;
     /// <summary>
-    /// ¶ÁÈ¡Ö¸¶¨µÄÎÄ¼şÁ÷
+    /// è¯»å–æŒ‡å®šçš„æ–‡ä»¶æµ
     /// </summary>
     function ReadFile(const FileName: string; var OutData: TStream): Boolean;
 
@@ -160,7 +160,7 @@ type
   end;
 
   /// <summary>
-  /// Frame ÊÓÍ¼, Frame ÇĞ»»´¦Àí
+  /// Frame è§†å›¾, Frame åˆ‡æ¢å¤„ç†
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TFrameView = class(FMX.Forms.TFrame)
@@ -183,13 +183,13 @@ type
     FOnFree: TNotifyEvent;
     FWaitDialog: TProgressDialog;
     [weak] FToastManager: TToastManager;
-    FShowing: Boolean;    // ÕıÔÚÏÔÊ¾ÖĞ
-    FHideing: Boolean;    // ÕıÔÚÒş²ØÖĞ
-    FAnimateing: Boolean; // ¶¯»­Ö´ĞĞÖĞ
-    FNeedFree: Boolean;   // ĞèÒªÊÍ·Å
-    FNeedHide: Boolean;   // ĞèÒªÒş²Ø
-    FNeedFinish: Boolean; // ĞèÒª¹Ø±Õ
-    FNeedDoCreate: Boolean; // ĞèÒªÖ´ĞĞDoCreate;
+    FShowing: Boolean;    // æ­£åœ¨æ˜¾ç¤ºä¸­
+    FHideing: Boolean;    // æ­£åœ¨éšè—ä¸­
+    FAnimateing: Boolean; // åŠ¨ç”»æ‰§è¡Œä¸­
+    FNeedFree: Boolean;   // éœ€è¦é‡Šæ”¾
+    FNeedHide: Boolean;   // éœ€è¦éšè—
+    FNeedFinish: Boolean; // éœ€è¦å…³é—­
+    FNeedDoCreate: Boolean; // éœ€è¦æ‰§è¡ŒDoCreate;
     FResumed: Boolean;
     procedure SetParams(const Value: TFrameParams);
     function GetTitle: string;
@@ -223,48 +223,48 @@ type
     function MakeFrame(FrameClass: TFrameViewClass): TFrameView; overload;
 
     /// <summary>
-    /// Frame ³õÊ¼»¯Ê±´¥·¢
+    /// Frame åˆå§‹åŒ–æ—¶è§¦å‘
     /// </summary>
     procedure DoCreate(); virtual;
     /// <summary>
-    /// Frame ÕıÔÚÏÔÊ¾Ö®Ç°´¥·¢
+    /// Frame æ­£åœ¨æ˜¾ç¤ºä¹‹å‰è§¦å‘
     /// </summary>
     procedure DoShow(); virtual;
     /// <summary>
-    /// Frame Òş²ØÏÔÊ¾Ê±´¥·¢ (¾¡Á¿Ê¹ÓÃ DoFinish )
+    /// Frame éšè—æ˜¾ç¤ºæ—¶è§¦å‘ (å°½é‡ä½¿ç”¨ DoFinish )
     /// </summary>
     procedure DoHide(); virtual;
     /// <summary>
-    /// ¼ì²âµ±Ç°FrameÊÇ·ñÔÊĞí¹Ø±Õ
+    /// æ£€æµ‹å½“å‰Frameæ˜¯å¦å…è®¸å…³é—­
     /// </summary>
     function DoCanFinish(): Boolean; virtual;
     /// <summary>
-    /// ¼ì²âµ±Ç°FrameÊÇ·ñÔÊĞí±»¼üÅÌ¹Ø±Õ
+    /// æ£€æµ‹å½“å‰Frameæ˜¯å¦å…è®¸è¢«é”®ç›˜å…³é—­
     /// </summary>
     function DoCanKeyFinish(): Boolean; virtual;
     /// <summary>
-    /// Frame ĞèÒª¹Ø±ÕÊ±£¬ÔÚ¹Ø±ÕÖ®Ç°´¥·¢
+    /// Frame éœ€è¦å…³é—­æ—¶ï¼Œåœ¨å…³é—­ä¹‹å‰è§¦å‘
     /// </summary>
     procedure DoFinish(); virtual;
     /// <summary>
-    /// Frame ÔÚÖØĞÂÏÔÊ¾Ö®Ç°´¥·¢
+    /// Frame åœ¨é‡æ–°æ˜¾ç¤ºä¹‹å‰è§¦å‘
     /// </summary>
     procedure DoReStart(); virtual;
     /// <summary>
-    /// Frame ÔÚÊÍ·ÅÊ±´¥·¢
+    /// Frame åœ¨é‡Šæ”¾æ—¶è§¦å‘
     /// </summary>
     procedure DoFree(); virtual;
 
     /// <summary>
-    /// ¼ì²âÊÇ·ñÔÊĞíÔİÍ£
+    /// æ£€æµ‹æ˜¯å¦å…è®¸æš‚åœ
     /// </summary>
     function DoCanPause: Boolean; virtual;
     /// <summary>
-    /// Frame ÔÚÇ°¶ËÊ±´¥·¢
+    /// Frame åœ¨å‰ç«¯æ—¶è§¦å‘
     /// </summary>
     procedure DoResume; virtual;
     /// <summary>
-    /// Frame Àë¿ªÇ°¶ËÊ±´¥·¢
+    /// Frame ç¦»å¼€å‰ç«¯æ—¶è§¦å‘
     /// </summary>
     procedure DoPause; virtual;
 
@@ -274,14 +274,14 @@ type
     function GetToastManager: TToastManager; virtual;
 
     /// <summary>
-    /// ¼ì²âÊÇ·ñÔÊĞíÊÍ·Å
+    /// æ£€æµ‹æ˜¯å¦å…è®¸é‡Šæ”¾
     /// </summary>
     function DoCanFree(): Boolean; virtual;
-    // ¼ì²éÊÇ·ñĞèÒªÊÍ·Å£¬Èç¹ûĞèÒª£¬¾ÍÊÍ·Åµô
+    // æ£€æŸ¥æ˜¯å¦éœ€è¦é‡Šæ”¾ï¼Œå¦‚æœéœ€è¦ï¼Œå°±é‡Šæ”¾æ‰
     function CheckFree(): Boolean; virtual;
-    // ¼ì²éËùÊô´°ÌåÊÇ·ñ»¹´æÔÚ Frame
+    // æ£€æŸ¥æ‰€å±çª—ä½“æ˜¯å¦è¿˜å­˜åœ¨ Frame
     function CheckChildern(): Boolean;
-    // ÄÚ²¿ Show ÊµÏÖ
+    // å†…éƒ¨ Show å®ç°
     procedure InternalShow(TriggerOnShow: Boolean; AOnFinish: TNotifyEventA = nil;
       Ani: TFrameAniType = TFrameAniType.DefaultAni; SwitchFlag: Boolean = False);
     procedure InternalHide();
@@ -291,11 +291,11 @@ type
     procedure AfterDialogKey(var Key: Word; Shift: TShiftState); override;
   protected
     /// <summary>
-    /// ²¥·Å¶¯»­
-    /// <param name="Ani">¶¯»­ÀàĞÍ</param>
-    /// <param name="IsIn">ÊÇ·ñÊÇÕıÒªÏÔÊ¾</param>
-    /// <param name="SwitchFlag">¶¯»­ÇĞ»»±êÖ¾</param>
-    /// <param name="AEvent">¶¯»­²¥·ÅÍê³ÉÊÂ¼ş</param>
+    /// æ’­æ”¾åŠ¨ç”»
+    /// <param name="Ani">åŠ¨ç”»ç±»å‹</param>
+    /// <param name="IsIn">æ˜¯å¦æ˜¯æ­£è¦æ˜¾ç¤º</param>
+    /// <param name="SwitchFlag">åŠ¨ç”»åˆ‡æ¢æ ‡å¿—</param>
+    /// <param name="AEvent">åŠ¨ç”»æ’­æ”¾å®Œæˆäº‹ä»¶</param>
     /// </summary>
     procedure AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean; AEvent: TNotifyEventA);
 
@@ -310,108 +310,108 @@ type
     destructor Destroy; override;
 
     /// <summary>
-    /// ÖÕÖ¹APP
+    /// ç»ˆæ­¢APP
     /// </summary>
     class procedure AppTerminate();
 
     /// <summary>
-    /// ÉèÖÃ Frame Ä¬ÈÏ±³¾°ÑÕÉ«
+    /// è®¾ç½® Frame é»˜è®¤èƒŒæ™¯é¢œè‰²
     /// </summary>
     class procedure SetDefaultBackColor(const Value: TAlphaColor);
 
     /// <summary>
-    /// ÉèÖÃ Frame Ä¬ÈÏ×´Ì¬ÌõÑÕÉ«
+    /// è®¾ç½® Frame é»˜è®¤çŠ¶æ€æ¡é¢œè‰²
     /// </summary>
     class procedure SetDefaultStatusColor(const Value: TAlphaColor);
     /// <summary>
-    /// ÉèÖÃ Frame Ä¬ÈÏ×´Ì¬ÌõÍ¸Ã÷
+    /// è®¾ç½® Frame é»˜è®¤çŠ¶æ€æ¡é€æ˜
     /// </summary>
     class procedure SetDefaultStatusTransparent(const Value: Boolean);
     /// <summary>
-    /// ÉèÖÃ Frame Ä¬ÈÏ×´Ì¬ÌõºÚÉ«Í¼±ê
+    /// è®¾ç½® Frame é»˜è®¤çŠ¶æ€æ¡é»‘è‰²å›¾æ ‡
     /// </summary>
     class procedure SetDefaultStatusLight(const Value: Boolean);
 
     /// <summary>
-    /// ÉèÖÃ Frame ×´Ì¬À¸Í¸Ã÷ĞÂ·½·¨£¬Ç³É«×´Ì¬À¸ºÍÈ«Í¸Ã÷±ØĞë¿ªÆôÕâ¸ö
+    /// è®¾ç½® Frame çŠ¶æ€æ é€æ˜æ–°æ–¹æ³•ï¼Œæµ…è‰²çŠ¶æ€æ å’Œå…¨é€æ˜å¿…é¡»å¼€å¯è¿™ä¸ª
     /// </summary>
     class procedure SetStatusTransparentNewMethod(const Value: Boolean);
 
     /// <summary>
-    /// ¸üĞÂ×´Ì¬À¸
+    /// æ›´æ–°çŠ¶æ€æ 
     /// </summary>
     class procedure UpdateStatusBar(const AForm: TCommonCustomForm; const AColor: TAlphaColor; const ATransparent: Boolean; const ALight: Boolean); overload;
     class procedure UpdateStatusBar; overload;
 
     /// <summary>
-    /// Ë¢ĞÂµ±Ç°Frame×´Ì¬À¸
+    /// åˆ·æ–°å½“å‰FrameçŠ¶æ€æ 
     /// </summary>
     procedure RefreshStatusBar;
 
     /// <summary>
-    /// Á÷×ª»¯Îª string
+    /// æµè½¬åŒ–ä¸º string
     /// </summary>
     function StreamToString(SrcStream: TStream; const CharSet: string = ''): string;
 
     /// <summary>
-    /// ÏÔÊ¾µÈ´ı¶Ô»°¿ò
+    /// æ˜¾ç¤ºç­‰å¾…å¯¹è¯æ¡†
     /// </summary>
     procedure ShowWaitDialog(const AMsg: string; ACancelable: Boolean = True); overload;
     procedure ShowWaitDialog(const AMsg: string; OnDismissListener: TOnDialogListener; ACancelable: Boolean = True); overload;
     procedure ShowWaitDialog(const AMsg: string; OnDismissListener: TOnDialogListenerA; ACancelable: Boolean = True); overload;
 
     /// <summary>
-    /// ¸üĞÂµÈ´ı¶Ô»°¿òÏûÏ¢ÄÚÈİ
+    /// æ›´æ–°ç­‰å¾…å¯¹è¯æ¡†æ¶ˆæ¯å†…å®¹
     /// </summary>
     procedure UpdateWaitDialog(const AMsg: string);
 
     /// <summary>
-    /// Òş²ØµÈ´ı¶Ô»°¿ò
+    /// éšè—ç­‰å¾…å¯¹è¯æ¡†
     /// </summary>
     procedure HideWaitDialog();
 
     /// <summary>
-    /// ÏÔÊ¾ Frame
+    /// æ˜¾ç¤º Frame
     /// </summary>
     class function ShowFrame(Parent: TFmxObject; Params: TFrameParams;
       Ani: TFrameAniType = TFrameAniType.None; SwitchFlag: Boolean = False): TFrameView; overload;
     /// <summary>
-    /// ÏÔÊ¾ Frame
+    /// æ˜¾ç¤º Frame
     /// </summary>
     class function ShowFrame(Parent: TFmxObject; const Title: string = ''; Ani: TFrameAniType = TFrameAniType.None;
       SwitchFlag: Boolean = False): TFrameView; overload;
     /// <summary>
-    /// ÏÔÊ¾ Frame
+    /// æ˜¾ç¤º Frame
     /// </summary>
     class function CreateFrame(Parent: TFmxObject; Params: TFrameParams): TFrameView; overload;
     /// <summary>
-    /// ÏÔÊ¾ Frame
+    /// æ˜¾ç¤º Frame
     /// </summary>
     class function CreateFrame(Parent: TFmxObject; const Title: string = ''): TFrameView; overload;
 
     /// <summary>
-    /// ¿ªÊ¼Ò»¸öÊÓÍ¼£¬²¢Òş²Øµ±Ç°ÊÓÍ¼
+    /// å¼€å§‹ä¸€ä¸ªè§†å›¾ï¼Œå¹¶éšè—å½“å‰è§†å›¾
     /// </summary>
     function StartFrame(FrameClass: TFrameViewClass; Ani: TFrameAniType = TFrameAniType.DefaultAni): TFrameView; overload;
     /// <summary>
-    /// ¿ªÊ¼Ò»¸öÊÓÍ¼£¬²¢Òş²Øµ±Ç°ÊÓÍ¼
+    /// å¼€å§‹ä¸€ä¸ªè§†å›¾ï¼Œå¹¶éšè—å½“å‰è§†å›¾
     /// </summary>
     function StartFrame(FrameClass: TFrameViewClass; Params: TFrameParams; Ani: TFrameAniType = TFrameAniType.DefaultAni): TFrameView; overload;
     /// <summary>
-    /// ¿ªÊ¼Ò»¸öÊÓÍ¼£¬²¢Òş²Øµ±Ç°ÊÓÍ¼
+    /// å¼€å§‹ä¸€ä¸ªè§†å›¾ï¼Œå¹¶éšè—å½“å‰è§†å›¾
     /// </summary>
     function StartFrame(FrameClass: TFrameViewClass; const Title: string; Ani: TFrameAniType = TFrameAniType.DefaultAni): TFrameView; overload;
     /// <summary>
-    /// ¿ªÊ¼Ò»¸öÊÓÍ¼£¬²¢Òş²Øµ±Ç°ÊÓÍ¼
+    /// å¼€å§‹ä¸€ä¸ªè§†å›¾ï¼Œå¹¶éšè—å½“å‰è§†å›¾
     /// </summary>
     function StartFrame(FrameClass: TFrameViewClass; const Title: string; const Data: TValue; Ani: TFrameAniType = TFrameAniType.DefaultAni): TFrameView; overload;
     /// <summary>
-    /// ¿ªÊ¼Ò»¸öÊÓÍ¼£¬²¢Òş²Øµ±Ç°ÊÓÍ¼
+    /// å¼€å§‹ä¸€ä¸ªè§†å›¾ï¼Œå¹¶éšè—å½“å‰è§†å›¾
     /// </summary>
     function StartFrame(FrameClass: TFrameViewClass; const Title: string; const DataString: string; Ani: TFrameAniType = TFrameAniType.DefaultAni): TFrameView; overload;
 
     /// <summary>
-    /// ÏÔÊ¾Ò»¸öÌáÊ¾ÏûÏ¢
+    /// æ˜¾ç¤ºä¸€ä¸ªæç¤ºæ¶ˆæ¯
     /// </summary>
     procedure Hint(const Msg: string); overload;
     procedure Hint(const Msg: Double); overload;
@@ -419,109 +419,109 @@ type
     procedure Hint(const AFormat: string; const Args: array of const); overload;
 
     /// <summary>
-    /// ÑÓÊ±Ö´ĞĞÈÎÎñ
+    /// å»¶æ—¶æ‰§è¡Œä»»åŠ¡
     /// </summary>
     procedure DelayExecute(ADelay: Single; AExecute: TNotifyEventA);
 
     /// <summary>
-    /// ÏÔÊ¾ Frame
+    /// æ˜¾ç¤º Frame
     /// </summary>
     procedure Show(); overload; override;
     procedure Show(Ani: TFrameAniType; AOnFinish: TNotifyEventA;
       SwitchFlag: Boolean = False;
       TriggerOnShow: Boolean = True); reintroduce; overload;
     /// <summary>
-    /// ¹Ø±Õ Frame
+    /// å…³é—­ Frame
     /// </summary>
     procedure Close(); overload;
     procedure Close(Ani: TFrameAniType); overload; virtual;
     /// <summary>
-    /// Òş²Ø Frame
+    /// éšè— Frame
     /// </summary>
     procedure Hide(); overload; override;
     procedure Hide(Ani: TFrameAniType; SwitchFlag: Boolean = False); reintroduce; overload;
     /// <summary>
-    /// Íê³Éµ±Ç° Frame (·µ»ØÉÏÒ»¸ö Frame »ò ¹Ø±Õ)
+    /// å®Œæˆå½“å‰ Frame (è¿”å›ä¸Šä¸€ä¸ª Frame æˆ– å…³é—­)
     /// </summary>
     procedure Finish(); overload; virtual;
     procedure Finish(Ani: TFrameAniType); overload; virtual;
 
     /// <summary>
-    /// ¿ªÊ¼/ÖØĞÂ¿ªÊ¼µ±Ç°Frame
+    /// å¼€å§‹/é‡æ–°å¼€å§‹å½“å‰Frame
     /// </summary>
     procedure Resume; virtual;
     /// <summary>
-    /// ÔİÍ£µ±Ç°Frame
+    /// æš‚åœå½“å‰Frame
     /// </summary>
     procedure Pause(AFinish: Boolean = False); virtual;
 
     /// <summary>
-    /// Æô¶¯Ê±µÄ²ÎÊı
+    /// å¯åŠ¨æ—¶çš„å‚æ•°
     /// </summary>
     property Params: TFrameParams read GetParams write SetParams;
     /// <summary>
-    /// Æô¶¯´ËFrameµÄFrame
+    /// å¯åŠ¨æ­¤Frameçš„Frame
     /// </summary>
     property Last: TFrameView read FLastView;
 
     /// <summary>
-    /// Ë½ÓĞÔ¤Éè²ÎÊı (Ë½ÓĞ£¬·ÇÏß³Ì°²È«)
+    /// ç§æœ‰é¢„è®¾å‚æ•° (ç§æœ‰ï¼Œéçº¿ç¨‹å®‰å…¨)
     /// </summary>
     property Preferences: TFrameState read GetPreferences;
     /// <summary>
-    /// ¹²ÓĞÔ¤Éè²ÎÊı (È«¾Ö£¬·ÇÏß³Ì°²È«)
+    /// å…±æœ‰é¢„è®¾å‚æ•° (å…¨å±€ï¼Œéçº¿ç¨‹å®‰å…¨)
     /// </summary>
     property SharedPreferences: TFrameState read GetSharedPreferences;
     /// <summary>
-    /// ÊÇ·ñÕıÔÚShow
+    /// æ˜¯å¦æ­£åœ¨Show
     /// </summary>
     property Showing: Boolean read FShowing;
 
     property DataAsPointer: Pointer read GetDataAsPointer;
 
     /// <summary>
-    /// µ±Ç° Frame Ëù°ó¶¨µÄ Form ¶ÔÏó
+    /// å½“å‰ Frame æ‰€ç»‘å®šçš„ Form å¯¹è±¡
     /// </summary>
     property ParentForm: TCustomForm read GetParentForm;
 
     /// <summary>
-    /// µ±Ç° Frame Ëù°ó¶¨µÄ Form ¶ÔÏó¶ÔÓ¦µÄ»î¶¯Frame
+    /// å½“å‰ Frame æ‰€ç»‘å®šçš„ Form å¯¹è±¡å¯¹åº”çš„æ´»åŠ¨Frame
     /// </summary>
     property ActiveFrame: TFrameView read GetActiveFrame;
 
     /// <summary>
-    /// µÈ´ı¶Ô»°¿òÊÇ·ñ±»È¡ÏûÁË
+    /// ç­‰å¾…å¯¹è¯æ¡†æ˜¯å¦è¢«å–æ¶ˆäº†
     /// </summary>
     property IsWaitDismiss: Boolean read GetIsWaitDismiss;
     /// <summary>
-    /// ÊÇ·ñÒÑ¾­ÊÍ·Å
+    /// æ˜¯å¦å·²ç»é‡Šæ”¾
     /// </summary>
     property IsDestroy: Boolean read GetIsDestroy;
     /// <summary>
-    /// ÊÇ·ñÊ¹ÓÃÁËÄ¬ÈÏ±³¾°É«
+    /// æ˜¯å¦ä½¿ç”¨äº†é»˜è®¤èƒŒæ™¯è‰²
     /// </summary>
     property IsUseDefaultBackColor: Boolean read FUseDefaultBackColor;
     /// <summary>
-    /// ÊÇ·ñÔÚÇ°Ì¨
+    /// æ˜¯å¦åœ¨å‰å°
     /// </summary>
     property IsResumed: Boolean read FResumed;
   published
     property Title: string read GetTitle write SetTitle;
     property DataString: string read GetDataString write SetDataString;
     /// <summary>
-    /// ±³¾°ÑÕÉ«
+    /// èƒŒæ™¯é¢œè‰²
     /// </summary>
     property BackColor: TAlphaColor read GetBackColor write SetBackColor;
     /// <summary>
-    /// APP ¶¥²¿×´Ì¬ÌõÑÕÉ«
+    /// APP é¡¶éƒ¨çŠ¶æ€æ¡é¢œè‰²
     /// </summary>
     property StatusColor: TAlphaColor read GetStatusColor write SetStatusColor;
     /// <summary>
-    /// APP ¶¥²¿×´Ì¬ÌõÍ¸Ã÷
+    /// APP é¡¶éƒ¨çŠ¶æ€æ¡é€æ˜
     /// </summary>
     property StatusTransparent: Boolean read GetStatusTransparent write SetStatusTransparent;
     /// <summary>
-    /// APP ¶¥²¿×´Ì¬ÌõºÚÉ«Í¼±ê
+    /// APP é¡¶éƒ¨çŠ¶æ€æ¡é»‘è‰²å›¾æ ‡
     /// </summary>
     property StatusLight: Boolean read GetStatusLight write SetStatusLight;
 
@@ -543,7 +543,7 @@ const
 
 var
   /// <summary>
-  /// Ä¬ÈÏ¹ı³¡¶¯»­
+  /// é»˜è®¤è¿‡åœºåŠ¨ç”»
   /// </summary>
   DefaultAnimate: TFrameAniType = TFrameAniType.MoveInOut;
 
@@ -566,7 +566,7 @@ uses
 
 var
   /// <summary>
-  /// ¹«¹²×´Ì¬Êı¾İ
+  /// å…¬å…±çŠ¶æ€æ•°æ®
   /// </summary>
   FPublicState: TFrameState = nil;
 
@@ -579,8 +579,8 @@ var
 {$IFDEF ANDROID}
 {$IF CompilerVersion >= 33}
 type
-  // ¸ĞĞ» Ì·ÇÕ
-  // ¼àÌı´´½¨ÊÂ¼ş
+  // æ„Ÿè°¢ è°­é’¦
+  // ç›‘å¬åˆ›å»ºäº‹ä»¶
   TKSCListener = class(TJavaLocal, JOnKeyboardStateChangedListener)
   public
     { JOnKeyboardStateChangedListener }
@@ -594,7 +594,7 @@ var
   FSystemUiVisibility: Integer = -1;
 {$ENDIF}
 
-// ½â¾öÓĞÊ±·µ»Ø¼üÊ§Ğ§ÎÊÌâ
+// è§£å†³æœ‰æ—¶è¿”å›é”®å¤±æ•ˆé—®é¢˜
 var
   FVKState: PByte = nil;
   FFirstCreateFrame: Boolean = True;
@@ -639,7 +639,7 @@ end;
 
 procedure TKSCListener.onVirtualKeyboardFrameChanged(newFrame: JRect);
 begin
-  // µ×²¿µ¼º½À¸Òş²ØÏÔÊ¾£¬Ò²»á´¥·¢ÕâÀï£¬Ëµ°×ÁË£¬ÕâÀïÊÇ²¼¾Ö¸Ä±ä¶¼»á´¥·¢
+  // åº•éƒ¨å¯¼èˆªæ éšè—æ˜¾ç¤ºï¼Œä¹Ÿä¼šè§¦å‘è¿™é‡Œï¼Œè¯´ç™½äº†ï¼Œè¿™é‡Œæ˜¯å¸ƒå±€æ”¹å˜éƒ½ä¼šè§¦å‘
   TFrameView.UpdateStatusBar;
   TThread.CreateAnonymousThread(procedure begin
     TFrameView.UpdateStatusBar;
@@ -665,7 +665,7 @@ end;
 
 procedure TFrameView.AfterDialogKey(var Key: Word; Shift: TShiftState);
 begin
-  // Èç¹û°´ÏÂÁË·µ»Ø¼ü£¬ÇÒÔÊĞíÈ¡Ïû¶Ô»°¿ò£¬Ôò¹Ø±Õ¶Ô»°¿ò
+  // å¦‚æœæŒ‰ä¸‹äº†è¿”å›é”®ï¼Œä¸”å…è®¸å–æ¶ˆå¯¹è¯æ¡†ï¼Œåˆ™å…³é—­å¯¹è¯æ¡†
   if DoCanKeyFinish and (Key in [vkEscape, vkHardwareBack]) then begin
     Key := 0;
     Finish;
@@ -676,7 +676,7 @@ end;
 procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
   AEvent: TNotifyEventA);
 
-  // µ­Èëµ­³ö
+  // æ·¡å…¥æ·¡å‡º
   procedure DoFadeInOut();
   var
     NewValue: Single;
@@ -704,7 +704,7 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
     end;
   end;
 
-  // ÒÆÈëÒÆ³ö, ÓÒ±ß½øÈë
+  // ç§»å…¥ç§»å‡º, å³è¾¹è¿›å…¥
   procedure DoMoveInOut();
   var
     NewValue: Single;
@@ -712,17 +712,17 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
     if IsIn then begin
       Self.Opacity := 1;
       if not SwitchFlag then begin
-        Self.Position.X := Self.Width - 1;  //Ä¿±êframeĞÂÏÔÊ¾
+        Self.Position.X := Self.Width - 1;  //ç›®æ ‡frameæ–°æ˜¾ç¤º
         NewValue := 0;
       end else begin
-        Self.Position.X := -Self.Width + 1;  //Ä¿±êframe·µ»ØÏÔÊ¾
+        Self.Position.X := -Self.Width + 1;  //ç›®æ ‡frameè¿”å›æ˜¾ç¤º
         NewValue := 0;
       end;
     end else begin
       if not SwitchFlag then
-        NewValue := -Self.Width + 1 //¾ÉµÄframeÏòÓÒ·µ»Ø
+        NewValue := -Self.Width + 1 //æ—§çš„frameå‘å³è¿”å›
       else
-        NewValue := Self.Width - 1; //¾ÉµÄframeÏò×óÒş²Ø
+        NewValue := Self.Width - 1; //æ—§çš„frameå‘å·¦éšè—
       if FinishIsFreeApp then begin
         if Assigned(AEvent) then
           AEvent(Self);
@@ -732,7 +732,7 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
     TFrameAnimator.AnimateFloat(Self, 'Position.X', NewValue, AEvent);
   end;
 
-  // ¶¥²¿ÒÆÈëÒÆ³ö, ÓÒ±ß½øÈë
+  // é¡¶éƒ¨ç§»å…¥ç§»å‡º, å³è¾¹è¿›å…¥
   procedure DoTopMoveInOut();
   var
     LForm: TCustomForm;
@@ -762,7 +762,7 @@ procedure TFrameView.AnimatePlay(Ani: TFrameAniType; IsIn, SwitchFlag: Boolean;
     end;
   end;
 
-  // µ×²¿ÒÆÈëÒÆ³ö, ÓÒ±ß½øÈë
+  // åº•éƒ¨ç§»å…¥ç§»å‡º, å³è¾¹è¿›å…¥
   procedure DoBottomMoveInOut();
   var
     LForm: TCustomForm;
@@ -817,7 +817,7 @@ begin
         DoBottomMoveInOut;
     else
       begin
-        // ÎŞ¶¯»­Ğ§¹û
+        // æ— åŠ¨ç”»æ•ˆæœ
         if Assigned(AEvent) then
           AEvent(Self);
         if IsIn then
@@ -913,12 +913,12 @@ end;
 
 procedure TFrameView.Close(Ani: TFrameAniType);
 begin
-  // Èç¹ûÕıÔÚÏÔÊ¾ÖĞ£¬ÉèÖÃĞèÒªFinish±êÊ¶
+  // å¦‚æœæ­£åœ¨æ˜¾ç¤ºä¸­ï¼Œè®¾ç½®éœ€è¦Finishæ ‡è¯†
   if FShowing then begin
     FNeedFinish := True;
     Exit;
   end;
-  // ¶¯»­Ö´ĞĞÖĞ£¬ ÉèÖÃĞèÒª¹Ø±ÕµÄ±êÊ¶
+  // åŠ¨ç”»æ‰§è¡Œä¸­ï¼Œ è®¾ç½®éœ€è¦å…³é—­çš„æ ‡è¯†
   FWaitDialog := nil;
   if FAnimateing then
     FNeedFree := True
@@ -935,7 +935,7 @@ class function TFrameView.CreateFrame(Parent: TFmxObject;
   {$IFDEF ANDROID}
   procedure DoUpdateParentFormState(Parent: TFmxObject);
   begin
-    // ÉèÖÃÁË×´Ì¬ÌõÑÕÉ«£¬²¢ÇÒ×´Ì¬Ìõ¸ß¶È´óÓÚ0Ê±£¬½«¸¸¼¶FormµÄPadding.TopÉèÎª×´Ì¬Ìõ¸ß¶È
+    // è®¾ç½®äº†çŠ¶æ€æ¡é¢œè‰²ï¼Œå¹¶ä¸”çŠ¶æ€æ¡é«˜åº¦å¤§äº0æ—¶ï¼Œå°†çˆ¶çº§Formçš„Padding.Topè®¾ä¸ºçŠ¶æ€æ¡é«˜åº¦
     if (FDefaultStatusColor <> 0) and (TView.GetStatusHeight > 0) then begin
       while Parent <> nil do begin
         if (Parent is TCommonCustomForm) then begin
@@ -958,14 +958,14 @@ begin
   if (Assigned(Parent)) then begin
     try
       {$IFDEF ANDROID}
-      // ¼ì²âÊÇ·ñÊÇµÚÒ»´Î´´½¨ Frame
+      // æ£€æµ‹æ˜¯å¦æ˜¯ç¬¬ä¸€æ¬¡åˆ›å»º Frame
       if FFirstCreateFrame then begin
         DoUpdateParentFormState(Parent);
         FFirstCreateFrame := False;
       end;
       {$ENDIF}
 
-      // ¼ì²âÊÇ·ñÊÇ´æÔÚDialog
+      // æ£€æµ‹æ˜¯å¦æ˜¯å­˜åœ¨Dialog
       if Parent is TControl then begin
         Dlg := TDialog.GetDialog(Parent as TControl);
         if Assigned(Dlg) then begin
@@ -1037,8 +1037,8 @@ begin
   {$IF CompilerVersion >= 33}
   TMessageManager.DefaultManager.SubscribeToMessage(TPermissionsRequestResultMessage, TFrameView.DoActivateMessage);
 
-  // ¸ĞĞ» Ì·ÇÕ
-  // Ôö¼ÓÒ»¸ö¼üÅÌÊÂ¼şµÄ¼àÌı ÕâÊÇÒòÎªfmx.jarÖĞµÄBUGÒı·¢µÄ£¬Ô­±¾Ó¦¸ÃÊÇ²»ĞèÒªÕâ¸ö¼àÌıµÄ
+  // æ„Ÿè°¢ è°­é’¦
+  // å¢åŠ ä¸€ä¸ªé”®ç›˜äº‹ä»¶çš„ç›‘å¬ è¿™æ˜¯å› ä¸ºfmx.jarä¸­çš„BUGå¼•å‘çš„ï¼ŒåŸæœ¬åº”è¯¥æ˜¯ä¸éœ€è¦è¿™ä¸ªç›‘å¬çš„
   FKSListener := TKSCListener.Create;
   MainActivity.getVirtualKeyboard.addOnKeyboardStateChangedListener(FKSListener);
   {$ENDIF}
@@ -1147,7 +1147,7 @@ class procedure TFrameView.UpdateStatusBar(const AForm: TCommonCustomForm; const
       if AForm is TCustomForm then
         TCustomForm(AForm).Fill.Color := AColor;
 
-      {$IF CompilerVersion >= 33} // Delphi 10.3 ¼°Ö®ºóµÄ°æ±¾
+      {$IF CompilerVersion >= 33} // Delphi 10.3 åŠä¹‹åçš„ç‰ˆæœ¬
       if not FStatusTransparentNewMethod then
         Exit;
 
@@ -1159,18 +1159,18 @@ class procedure TFrameView.UpdateStatusBar(const AForm: TCommonCustomForm; const
           if TJBuild_VERSION.JavaClass.SDK_INT >= 21 then begin
             FSystemUiVisibility := wnd.getDecorView.getSystemUiVisibility;
 
-            // ÊÇ·ñÎªÏµÍ³ view Ô¤Áô¿Õ¼ä
+            // æ˜¯å¦ä¸ºç³»ç»Ÿ view é¢„ç•™ç©ºé—´
             //wnd.getDecorView().setFitsSystemWindows(True);
-            // ĞèÒªÉèÖÃÕâ¸ö flag ²ÅÄÜµ÷ÓÃ setStatusBarColor À´ÉèÖÃ×´Ì¬À¸ÑÕÉ«
+            // éœ€è¦è®¾ç½®è¿™ä¸ª flag æ‰èƒ½è°ƒç”¨ setStatusBarColor æ¥è®¾ç½®çŠ¶æ€æ é¢œè‰²
             wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            if ATransparent then begin // Í¸Ã÷
-              // ÉèÖÃÑÕÉ«
+            if ATransparent then begin // é€æ˜
+              // è®¾ç½®é¢œè‰²
               wnd.setStatusBarColor(TJcolor.JavaClass.TRANSPARENT);
-              // È¡ÏûÉèÖÃÍ¸Ã÷×´Ì¬À¸,Ê¹ ContentView ÄÚÈİ²»ÔÙ¸²¸Ç×´Ì¬À¸
+              // å–æ¶ˆè®¾ç½®é€æ˜çŠ¶æ€æ ,ä½¿ ContentView å†…å®¹ä¸å†è¦†ç›–çŠ¶æ€æ 
               wnd.clearFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_TRANSLUCENT_STATUS);
               with TJView.JavaClass do
                 FSystemUiVisibility := FSystemUiVisibility or SYSTEM_UI_FLAG_LAYOUT_STABLE or SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
-              // ÁÁÉ«×´Ì¬À¸
+              // äº®è‰²çŠ¶æ€æ 
               if (TJBuild_VERSION.JavaClass.SDK_INT >= 23) then
                 if ALight then
                   FSystemUiVisibility := FSystemUiVisibility or TJView.JavaClass.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
@@ -1178,8 +1178,8 @@ class procedure TFrameView.UpdateStatusBar(const AForm: TCommonCustomForm; const
                   FSystemUiVisibility := FSystemUiVisibility and not TJView.JavaClass.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
               wnd.getDecorView().setSystemUiVisibility(FSystemUiVisibility);
             end
-            else begin // °ëÍ¸Ã÷
-              // ÉèÖÃÑÕÉ«
+            else begin // åŠé€æ˜
+              // è®¾ç½®é¢œè‰²
               wnd.setStatusBarColor(AlphaColorToJColor(AColor));
               wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_TRANSLUCENT_STATUS);
               with TJView.JavaClass do
@@ -1188,7 +1188,7 @@ class procedure TFrameView.UpdateStatusBar(const AForm: TCommonCustomForm; const
             end;
           end
           else begin
-            // ÊÇ·ñÎªÏµÍ³ view Ô¤Áô¿Õ¼ä
+            // æ˜¯å¦ä¸ºç³»ç»Ÿ view é¢„ç•™ç©ºé—´
             wnd.getDecorView().setFitsSystemWindows(True);
             wnd.addFlags(TJWindowManager_LayoutParams.JavaClass.FLAG_TRANSLUCENT_STATUS);
           end;
@@ -1211,7 +1211,7 @@ end;
 class procedure TFrameView.UpdateStatusBar;
 begin
 {$IFDEF ANDROID}
-  {$IF CompilerVersion >= 33} // Delphi 10.3 ¼°Ö®ºóµÄ°æ±¾
+  {$IF CompilerVersion >= 33} // Delphi 10.3 åŠä¹‹åçš„ç‰ˆæœ¬
   if (not FStatusTransparentNewMethod) or (FSystemUiVisibility = -1) then
     Exit;
   CallInUiThread(procedure
@@ -1360,12 +1360,12 @@ begin
     case TApplicationEventMessage(M).Value.Event of
       TApplicationEvent.BecameActive: begin
         {$IFDEF ANDROID}
-        // ¸ĞĞ»Ì·ÇÕµÄu_Immerse.pas
+        // æ„Ÿè°¢è°­é’¦çš„u_Immerse.pas
         TFrameView.UpdateStatusBar;
         {$ENDIF}
         DealForm(Screen.ActiveForm, True);
         {$IFDEF ANDROID}
-        // ÁÙÊ±µÄ·½°¸£¬ÔİÎ´Éî¾¿Ô­Òò
+        // ä¸´æ—¶çš„æ–¹æ¡ˆï¼Œæš‚æœªæ·±ç©¶åŸå› 
         TThread.CreateAnonymousThread(procedure begin
           Sleep(100);
           TFrameView.UpdateStatusBar;
@@ -1663,10 +1663,12 @@ end;
 
 procedure TFrameView.HideWaitDialog;
 begin
-  if not IsWaitDismiss then begin
-    FWaitDialog.Dismiss;
-    FWaitDialog := nil;
-  end;
+  TThread.Synchronize(TThread.CurrentThread, procedure begin
+    if not IsWaitDismiss then begin
+      FWaitDialog.Dismiss;
+      FWaitDialog := nil;
+    end;
+  end);
 end;
 
 procedure TFrameView.Hint(const Msg: string);
@@ -1794,8 +1796,8 @@ begin
   if FDefaultStatusColor <> Value then begin
     FDefaultStatusColor := Value;
     {$IF Defined(ANDROID) or Defined(IOS)}
-    // ÔÚÒÆ¶¯Æ½Ì¨Ê±£¬ÉèÖÃ×´Ì¬ÌõÑÕÉ«Ê±£¬Èç¹û±³¾°ÑÕÉ«ÎªÍ¸Ã÷£¬ÇÒ×´Ì¬Ìõ¸ß¶È>0Ê±£¬
-    // ½«±³¾°ÑÕÉ«ÉèÎª°×É«
+    // åœ¨ç§»åŠ¨å¹³å°æ—¶ï¼Œè®¾ç½®çŠ¶æ€æ¡é¢œè‰²æ—¶ï¼Œå¦‚æœèƒŒæ™¯é¢œè‰²ä¸ºé€æ˜ï¼Œä¸”çŠ¶æ€æ¡é«˜åº¦>0æ—¶ï¼Œ
+    // å°†èƒŒæ™¯é¢œè‰²è®¾ä¸ºç™½è‰²
     if (Value and $FF000000 > 0) and (FDefaultBackColor = 0){$IFDEF ANDROID} and (TView.GetStatusHeight > 0){$ENDIF} then
       FDefaultBackColor := $fff1f2f3;
     {$ENDIF}
@@ -1844,7 +1846,7 @@ begin
   if FNeedDoCreate and Assigned(Parent) then begin
     FNeedDoCreate := False;
     if FUseDefaultBackColor and Assigned(TDialog.GetDialog(Self)) then
-      BackColor := 0;  // ×÷ÎªDialogµÄ×ÓViewÊ±£¬²»Ê¹ÓÃÄ¬ÈÏ±³¾°É«
+      BackColor := 0;  // ä½œä¸ºDialogçš„å­Viewæ—¶ï¼Œä¸ä½¿ç”¨é»˜è®¤èƒŒæ™¯è‰²
     DoCreate();
   end;
 end;
@@ -1923,16 +1925,20 @@ end;
 
 procedure TFrameView.ShowWaitDialog(const AMsg: string; ACancelable: Boolean);
 begin
-  if IsWaitDismiss then begin
-    FWaitDialog := nil;
-    FWaitDialog := TProgressDialog.Create(Self);
-  end;
-  FWaitDialog.Cancelable := ACancelable;
-  if not Assigned(FWaitDialog.RootView) then
-    FWaitDialog.InitView(AMsg)
-  else
-    FWaitDialog.Message := AMsg;
-  TDialog(FWaitDialog).Show();
+  TThread.Synchronize(TThread.CurrentThread,
+  procedure
+  begin
+    if IsWaitDismiss then begin
+      FWaitDialog := nil;
+      FWaitDialog := TProgressDialog.Create(Self);
+    end;
+    FWaitDialog.Cancelable := ACancelable;
+    if not Assigned(FWaitDialog.RootView) then
+      FWaitDialog.InitView(AMsg)
+    else
+      FWaitDialog.Message := AMsg;
+    TDialog(FWaitDialog).Show();
+  end);
 end;
 
 function TFrameView.StartFrame(FrameClass: TFrameViewClass;
@@ -1988,12 +1994,16 @@ end;
 
 procedure TFrameView.UpdateWaitDialog(const AMsg: string);
 begin
-  if IsWaitDismiss then
-    Exit;
-  if Assigned(FWaitDialog.RootView) then begin
-    FWaitDialog.Message := AMsg;
-    FWaitDialog.RootView.MessageView.Text := AMsg;
-  end;
+  TThread.Synchronize(TThread.CurrentThread,
+  procedure
+  begin
+    if IsWaitDismiss then
+      Exit;
+    if Assigned(FWaitDialog.RootView) then begin
+      FWaitDialog.Message := AMsg;
+      FWaitDialog.RootView.MessageView.Text := AMsg;
+    end;
+  end);
 end;
 
 function TFrameView.StartFrame(FrameClass: TFrameViewClass;
