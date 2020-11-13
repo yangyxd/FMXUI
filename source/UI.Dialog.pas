@@ -199,6 +199,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    procedure Assign(Dest: TPersistent); override;
   published
     // ’⁄’÷≤„—’…´
     property DialogMaskColor: TAlphaColor read FDialogMaskColor write FDialogMaskColor default COLOR_DialogMaskColor;
@@ -3372,6 +3373,22 @@ begin
 end;
 
 { TDialogStyleManager }
+
+procedure TDialogStyleManager.Assign(Dest: TPersistent);
+var
+  LStyleMgr: TDialogStyleManager;
+begin
+  if not Assigned(Dest) then begin
+    LStyleMgr := TDialogStyleManager.Create(nil);
+    try
+      Assign(LStyleMgr);
+    finally
+      FreeAndNil(LStyleMgr);
+    end;
+  end
+  else
+    inherited;
+end;
 
 procedure TDialogStyleManager.AssignTo(Dest: TPersistent);
 var

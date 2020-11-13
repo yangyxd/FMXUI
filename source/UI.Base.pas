@@ -7678,7 +7678,7 @@ begin
       TViewAccessoryType.Detail: Add(LoadFromResource('ICON_DETAIL')); // Add(GetAccessoryFromResource('listviewstyle.accessorydetail'));
       TViewAccessoryType.Ellipses: Add(LoadFromResource('ICON_Ellipses')); //AddEllipsesAccessory;
       TViewAccessoryType.Flag: Add(LoadFromResource('icon_Flag')); //AddFlagAccessory;
-      TViewAccessoryType.Back: AddBackAccessory;// Add(GetAccessoryFromResource('backtoolbutton.icon'));
+      TViewAccessoryType.Back: Add(LoadFromResource('ICON_BACK')); //AddBackAccessory;// Add(GetAccessoryFromResource('backtoolbutton.icon'));
       TViewAccessoryType.Refresh: Add(LoadFromResource('ICON_REFRESH')); // Add(GetAccessoryFromResource('refreshtoolbutton.icon'));
       TViewAccessoryType.Action: Add(LoadFromResource('ICON_ACTION')); // Add(GetAccessoryFromResource('actiontoolbutton.icon'));
 
