@@ -3799,11 +3799,14 @@ end;
 
 function TBadgeView.IsVisibleView: Boolean;
 begin
-  if FStyle = TBadgeStyle.Icon then
-    Result := (FValue > 0) and Assigned(FIcon) and Assigned(FIcon.Bitmap) and Assigned(FIcon.Bitmap.Bitmap) and
-      (FIcon.Bitmap.Bitmap.Width > 0) and (FIcon.Bitmap.Bitmap.Height > 0)
+  case FStyle of
+    TBadgeStyle.NumberText: Result := FValue > 0;
+    TBadgeStyle.Icon:
+      Result := Assigned(FIcon) and Assigned(FIcon.Bitmap) and Assigned(FIcon.Bitmap.Bitmap) and
+        (FIcon.Bitmap.Bitmap.Width > 0) and (FIcon.Bitmap.Bitmap.Height > 0);
   else
-    Result := (FValue > 0)
+    Result := True;
+  end;
 end;
 
 procedure TBadgeView.MarginsChanged(Sender: TObject);
