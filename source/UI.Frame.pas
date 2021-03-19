@@ -601,14 +601,13 @@ var
 type
   TMyAndroidApplicationGlue = class(TAndroidApplicationGlue)
   private
+    class var FOldonWindowFocusChanged: TOnWindowFocusChangedCallback;
+
     /// <summary>Called when window changes focus</summary>
     class procedure onWindowFocusChanged(activity: PANativeActivity; focused: Integer); cdecl; static;
 
     class procedure BindCallbacks;
     class function GetActivityCallbacks: PANativeActivityCallbacks;
-  protected
-    /// <summary>Invokes <c>OnApplicationCommandEvent</c> event with specified command</summary>
-    class procedure DoApplicationCommandChanged(const ACommand: TAndroidApplicationCommand);
   end;
 {$ENDIF}
 
@@ -681,30 +680,26 @@ end;
 {$IF CompilerVersion >= 34}
 class procedure TMyAndroidApplicationGlue.onWindowFocusChanged(activity: PANativeActivity; focused: Integer); cdecl;
 begin
-  if focused <> 0 then begin
-    DoApplicationCommandChanged(TAndroidApplicationCommand.GainedFocus);
-    TFrameView.DoActivateMessage(nil, TApplicationEventMessage.Create(TApplicationEventData.Create(TApplicationEvent.BecameActive, nil)));
-  end
-  else begin
-    DoApplicationCommandChanged(TAndroidApplicationCommand.LostFocus);
-    TFrameView.DoActivateMessage(nil, TApplicationEventMessage.Create(TApplicationEventData.Create(TApplicationEvent.WillBecomeInactive, nil)));
-  end;
+  if Assigned(FOldonWindowFocusChanged) then
+    FOldonWindowFocusChanged(activity, focused);
+
+  if focused <> 0 then
+    TFrameView.DoActivateMessage(nil, TApplicationEventMessage.Create(TApplicationEventData.Create(TApplicationEvent.BecameActive, nil)))
+  else
+    TFrameView.DoActivateMessage(nil, TApplicationEventMessage.Create(TApplicationEventData.Create(TApplicationEvent.WillBecomeInactive, nil)))
 end;
 
 class procedure TMyAndroidApplicationGlue.BindCallbacks;
 begin
-  GetActivityCallbacks^.onWindowFocusChanged := @onWindowFocusChanged;
+  with GetActivityCallbacks^ do begin
+    FOldonWindowFocusChanged := onWindowFocusChanged;
+    onWindowFocusChanged := @TMyAndroidApplicationGlue.onWindowFocusChanged;
+  end;
 end;
 
 class function TMyAndroidApplicationGlue.GetActivityCallbacks: PANativeActivityCallbacks;
 begin
   Result := Current.NativeActivity.callbacks;
-end;
-
-class procedure TMyAndroidApplicationGlue.DoApplicationCommandChanged(const ACommand: TAndroidApplicationCommand);
-begin
-  if Assigned(Current.OnApplicationCommandEvent) then
-    Current.OnApplicationCommandEvent(Current, ACommand);
 end;
 {$ENDIF}
 {$ENDIF}
