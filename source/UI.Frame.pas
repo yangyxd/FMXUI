@@ -1,4 +1,4 @@
-{*******************************************************}
+﻿{*******************************************************}
 {                                                       }
 {       FMX UI Frame 管理单元                           }
 {                                                       }
@@ -551,6 +551,10 @@ implementation
 
 {$IFDEF ANDROID}
 uses
+  {$IF CompilerVersion >= 34}
+  Androidapi.AppGlue,
+  Androidapi.NativeActivity,
+  {$ENDIF}
   Androidapi.Helpers,
   Androidapi.Jni,
   //Androidapi.JNI.Media,
@@ -592,6 +596,20 @@ type
 var
   FKSListener: TKSCListener = nil;
   FSystemUiVisibility: Integer = -1;
+{$ENDIF}
+{$IF CompilerVersion >= 34}
+type
+  TMyAndroidApplicationGlue = class(TAndroidApplicationGlue)
+  private
+    /// <summary>Called when window changes focus</summary>
+    class procedure onWindowFocusChanged(activity: PANativeActivity; focused: Integer); cdecl; static;
+
+    class procedure BindCallbacks;
+    class function GetActivityCallbacks: PANativeActivityCallbacks;
+  protected
+    /// <summary>Invokes <c>OnApplicationCommandEvent</c> event with specified command</summary>
+    class procedure DoApplicationCommandChanged(const ACommand: TAndroidApplicationCommand);
+  end;
 {$ENDIF}
 
 // 解决有时返回键失效问题
@@ -657,6 +675,36 @@ end;
 procedure TKSCListener.onVirtualKeyboardWillShown;
 begin
   TFrameView.UpdateStatusBar;
+end;
+{$ENDIF}
+
+{$IF CompilerVersion >= 34}
+class procedure TMyAndroidApplicationGlue.onWindowFocusChanged(activity: PANativeActivity; focused: Integer); cdecl;
+begin
+  if focused <> 0 then begin
+    DoApplicationCommandChanged(TAndroidApplicationCommand.GainedFocus);
+    TFrameView.DoActivateMessage(nil, TApplicationEventMessage.Create(TApplicationEventData.Create(TApplicationEvent.BecameActive, nil)));
+  end
+  else begin
+    DoApplicationCommandChanged(TAndroidApplicationCommand.LostFocus);
+    TFrameView.DoActivateMessage(nil, TApplicationEventMessage.Create(TApplicationEventData.Create(TApplicationEvent.WillBecomeInactive, nil)));
+  end;
+end;
+
+class procedure TMyAndroidApplicationGlue.BindCallbacks;
+begin
+  GetActivityCallbacks^.onWindowFocusChanged := @onWindowFocusChanged;
+end;
+
+class function TMyAndroidApplicationGlue.GetActivityCallbacks: PANativeActivityCallbacks;
+begin
+  Result := Current.NativeActivity.callbacks;
+end;
+
+class procedure TMyAndroidApplicationGlue.DoApplicationCommandChanged(const ACommand: TAndroidApplicationCommand);
+begin
+  if Assigned(Current.OnApplicationCommandEvent) then
+    Current.OnApplicationCommandEvent(Current, ACommand);
 end;
 {$ENDIF}
 {$ENDIF}
@@ -1041,6 +1089,10 @@ begin
   // 增加一个键盘事件的监听 这是因为fmx.jar中的BUG引发的，原本应该是不需要这个监听的
   FKSListener := TKSCListener.Create;
   MainActivity.getVirtualKeyboard.addOnKeyboardStateChangedListener(FKSListener);
+  {$ENDIF}
+
+  {$IF CompilerVersion >= 34}
+  TMyAndroidApplicationGlue.BindCallbacks;
   {$ENDIF}
   {$ENDIF}
 end;
