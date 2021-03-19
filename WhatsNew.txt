@@ -1,11 +1,11 @@
 ﻿FMXUI  (YangYxd)
 
 [Current Version]
-  2020.05.28.001
+  2021.03.19.001
 
 [Update History]
  - -----------------------------------
- - ????.??.??
+ - 2021.03.19.001
  * [Added]   Compatible with 10.4
  * [Added]   Transparent statusbar in Android (Thanks for code: 谭钦 report: 意帆, Udcover, 凌风)
  * [Added]   Resume & Pause to TFrameView
