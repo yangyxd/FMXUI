@@ -32,6 +32,7 @@ type
     BadgeView1: TBadgeView;
     BadgeView2: TBadgeView;
     View1: TView;
+    BadgeView4: TBadgeView;
     procedure btnBackClick(Sender: TObject);
     procedure GridsLayout1Resize(Sender: TObject);
     procedure TextView2Click(Sender: TObject);

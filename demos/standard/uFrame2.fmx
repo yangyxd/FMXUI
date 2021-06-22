@@ -604,4 +604,21 @@ object Frame2: TFrame2
     Position.Y = 304.000000000000000000
     TabOrder = 3
   end
+  object BadgeView4: TBadgeView
+    AutoSize = False
+    TargetView = TextView4
+    Style = Text
+    Value = 8
+    Background.XRadius = 16.000000000000000000
+    Background.YRadius = 16.000000000000000000
+    TextValue = 'Test'
+    Icon.Bitmap.WrapMode = TileStretch
+    Scale.X = 0.800000011920929000
+    Scale.Y = 0.800000011920929000
+    Size.Width = 32.000000000000000000
+    Size.Height = 32.000000000000000000
+    Size.PlatformDefault = False
+    Position.X = 276.000000000000000000
+    Position.Y = 109.800003051757800000
+  end
 end

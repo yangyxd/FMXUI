@@ -865,7 +865,7 @@ type
   /// 提示样式
   /// </summary>
   TBadgeStyle = (EmptyText {空白}, NumberText {数字值 (显示数字)},
-    NewText {显示New文本}, HotText {显示Hot文本}, Icon {显示指定的图像});
+    NewText {显示New文本}, HotText {显示Hot文本}, Icon {显示指定的图像}, Text {自定义文本});
 
   /// <summary>
   /// 标记提示接口

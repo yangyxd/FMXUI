@@ -874,6 +874,7 @@ type
     FAdjustSizeing: Boolean;
     FValueOutTail: string;
     FGravity: TLayoutGravity;
+    FTextValue: string;
     procedure SetValue(const Value: Integer);
     procedure SetMaxValue(const Value: Integer);
     procedure SetTargetView(const Value: IView);
@@ -891,6 +892,7 @@ type
     function GetStyle: TBadgeStyle;
     procedure MarginsChanged(Sender: TObject);
     procedure SetGravity(const Value: TLayoutGravity);
+    procedure SetTextValue(const Value: string);
   protected
     procedure Paint; override;
     procedure Resize; override;
@@ -936,6 +938,10 @@ type
     /// 背景颜色
     /// </summary>
     property Background: TBadgeBackground read FBackground write SetBackground;
+    /// <summary>
+    /// 自定义文本
+    /// </summary>
+    property TextValue: string read FTextValue write SetTextValue;
     /// <summary>
     /// 字体设置
     /// </summary>
@@ -3636,7 +3642,7 @@ begin
     P.Width := Width;
     P.Height := Height;
     case FStyle of
-      TBadgeStyle.NumberText, TBadgeStyle.NewText, TBadgeStyle.HotText:
+      TBadgeStyle.NumberText, TBadgeStyle.NewText, TBadgeStyle.HotText, TBadgeStyle.Text:
         begin
           FText.CalcTextObjectSize(FText.Text, 0, GetSceneScale, nil, P);
           P.Width := P.Width + Padding.Left + Padding.Right;
@@ -3794,6 +3800,7 @@ begin
       end;
     TBadgeStyle.NewText: Result := 'NEW';
     TBadgeStyle.HotText: Result := 'HOT';
+    TBadgeStyle.Text: Result := FTextValue;
   end;
 end;
 
@@ -3949,6 +3956,15 @@ end;
 procedure TBadgeView.SetTextSettings(const Value: TSimpleTextSettings);
 begin
   FText.Assign(Value);
+end;
+
+procedure TBadgeView.SetTextValue(const Value: string);
+begin
+  if FTextValue <> Value then begin
+    FTextValue := Value;
+    FText.Text := GetViewText;
+    Repaint;
+  end;
 end;
 
 { TSimpleTextSettings }
