@@ -1452,7 +1452,7 @@ begin
 
   // 如果列表高度为自动大小时，计算一下父级视图的最大高度，在自动调整大小时会使用
   if HeightSize = TViewSize.WrapContent then
-    FContentViews.FMaxParentHeight := GetParentMaxHeight
+    FContentViews.FMaxParentHeight := Min(GetParentMaxHeight, Height)
   else
     FContentViews.FMaxParentHeight := 0;
 
@@ -3019,7 +3019,7 @@ end;
 
 function TListViewContent.ObjectAtPoint(AScreenPoint: TPointF): IControl;
 begin
-  if {$IF not Defined(ANDROID) and not Defined(IOS)}ListView.FMouseDown and{$ENDIF} Assigned(ListView.FAniCalculations) and (ListView.FAniCalculations.Shown) then
+  if {$IF not Defined(ANDROID) and not Defined(IOS)}ListView.FMouseDown and{$ENDIF} ListView.IsDragScrolling then
     Result := nil   // 手势滚动中，不允许点击子项
   else
     Result := inherited ObjectAtPoint(AScreenPoint);

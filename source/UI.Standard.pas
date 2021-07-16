@@ -456,6 +456,8 @@ type
 
     // 刷新开始
     procedure PullRefreshStart(); virtual;
+    // 是否拖动滚动中
+    function IsDragScrolling: Boolean;
 
     property VScrollBarValue: Double read GetVScrollBarValue write SetVScrollBarValue;
     property HScrollBarValue: Double read GetHScrollBarValue write SetHScrollBarValue;
@@ -516,6 +518,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     function PointInObjectLocal(X, Y: Single): Boolean; override;
+    procedure EndUpdate; override;
     property ScrollBox: TScrollView read FScrollBox;
   end;
 
@@ -2662,6 +2665,13 @@ end;
 function TScrollView.IsScrollBarAutoShowing: Boolean;
 begin
   Result :=  Assigned(FAniCalculations) and FAniCalculations.AutoShowing;
+end;
+
+function TScrollView.IsDragScrolling: Boolean;
+begin
+  //todo: FAniCalculations.Shown判断不准确
+  //拖动滚动尚且还好，代码滚动会导致Shown这里不对
+  Result := CanDragScroll and Assigned(FAniCalculations) and (FAniCalculations.Shown);
 end;
 
 function TScrollView.IsStoredScrollbarWidth: Boolean;
@@ -6427,6 +6437,16 @@ begin
     FScrollBox.ContentRemoveObject(AObject);
 end;
 
+procedure TViewScrollContent.EndUpdate;
+begin
+  inherited;
+
+  // 数量减少导致的滚动没有归位的情况
+  // 增加貌似不会有这个情况，但减少会有，待完善
+  if IsContentChanged then
+    DoRealign;
+end;
+
 function TViewScrollContent.GetChildrenRect: TRectF;
 begin
   Result := GetUpdateRect;
@@ -6450,7 +6470,7 @@ end;
 
 function TViewScrollContent.ObjectAtPoint(P: TPointF): IControl;
 begin
-  if Assigned(FScrollBox.FAniCalculations) and (FScrollBox.FAniCalculations.Shown) then
+  if FScrollBox.IsDragScrolling then
     Result := nil   // 手势滚动中，不允许点击子项
   else
     Result := inherited ObjectAtPoint(P);

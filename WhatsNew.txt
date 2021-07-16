@@ -5,6 +5,11 @@
 
 [Update History]
  - -----------------------------------
+ - ????.??.??
+ * [Added]   Add TBadgeStyle.Text
+ * [Fixed]   Fix ScrollView error when scrolled
+ * [Fixed]   Fix ListviewEx error HeightSize = TViewSize.WrapContent (Thanks for code: yangyxd)
+- -----------------------------------
  - 2021.03.19.001
  * [Added]   Compatible with 10.4
  * [Added]   Transparent statusbar in Android (Thanks for code: 谭钦 report: 意帆, Udcover, 凌风)

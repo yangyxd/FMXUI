@@ -5207,7 +5207,7 @@ end;
 
 function TGridViewContent.ObjectAtPoint(AScreenPoint: TPointF): IControl;
 begin
-  if Assigned(GridView.FAniCalculations) and (GridView.FAniCalculations.Shown) then
+  if GridView.IsDragScrolling then
     Result := nil   // 手势滚动中，不允许点击子项
   else
     Result := inherited ObjectAtPoint(AScreenPoint);
