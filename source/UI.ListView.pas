@@ -1937,8 +1937,9 @@ procedure TListViewContent.DoRealign;
   begin
     for I := 0 to Parent.ControlsCount - 1 do begin
       Control := Parent.Controls[I];
-      if not Control.Visible then
-        Continue;
+      // Disabled by kngstr
+      //if not Control.Visible then
+      //  Continue;
       if Control.HitTest then begin
         Control.OnClick := DoItemChildClick;
         FItemViews.AddOrUpdate(THashType(Control), Index);
@@ -3918,7 +3919,7 @@ var
   Node: TTreeListNode<T>;
 begin
   Node := Nodes[Index];
-  if (Node.Level = 0) or (Node.Count > 1) then
+  if (Node.Level = 0) or (Node.Count > 0) then
     Result := GetNodeGroupView(Index, Node, ConvertView, Parent)
   else
     Result := GetNodeItemView(Index, Node, ConvertView, Parent)

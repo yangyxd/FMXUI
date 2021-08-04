@@ -7,8 +7,10 @@
  - -----------------------------------
  - ????.??.??
  * [Added]   Add TBadgeStyle.Text
+ * [Tweaked] ListviewEx deal with invisible control's OnClick property
  * [Fixed]   Fix ScrollView error when scrolled
  * [Fixed]   Fix ListviewEx error HeightSize = TViewSize.WrapContent (Thanks for code: yangyxd)
+ * [Fixed]   Fix ListviewEx rendering error (Thanks for code: 田园生活者)
 - -----------------------------------
  - 2021.03.19.001
  * [Added]   Compatible with 10.4

@@ -6,9 +6,11 @@
 【主要更改】
  - -----------------------------------
  - ????.??.??
- * [Added]   添加 TBadgeStyle.Text
- * [Fixed]   ScrollView滚动过后产生的问题
- * [Fixed]   ListviewEx自动高度不准确的问题 (感谢代码：yangyxd)
+ * [新增] 添加 TBadgeStyle.Text
+ * [优化] ListviewEx现在接管不可见控件的OnClick
+ * [修正] ScrollView滚动过后产生的问题
+ * [修正] ListviewEx自动高度不准确的问题 (感谢代码：yangyxd)
+ * [修正] ListviewEx多层时绘制错误的问题 (感谢代码：田园生活者)
 - -----------------------------------
  - 2021.03.19.001
  * [新增] 兼容10.4
