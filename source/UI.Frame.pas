@@ -177,6 +177,7 @@ type
     FUseDefaultStatusLight: Boolean;
     FUseDefaultStatusTransparent: Boolean;
     FOnShow: TNotifyEvent;
+    FOnShown: TNotifyEvent;
     FOnHide: TNotifyEvent;
     FOnFinish: TNotifyEvent;
     FOnReStart: TNotifyEvent;
@@ -230,6 +231,10 @@ type
     /// Frame 正在显示之前触发
     /// </summary>
     procedure DoShow(); virtual;
+    /// <summary>
+    /// Frame 完全显示之后触发
+    /// </summary>
+    procedure DoShown(); virtual;
     /// <summary>
     /// Frame 隐藏显示时触发 (尽量使用 DoFinish )
     /// </summary>
@@ -526,6 +531,7 @@ type
     property StatusLight: Boolean read GetStatusLight write SetStatusLight;
 
     property OnShow: TNotifyEvent read FOnShow write FOnShow;
+    property OnShown: TNotifyEvent read FOnShown write FOnShown;
     property OnHide: TNotifyEvent read FOnHide write FOnHide;
     property OnFinish: TNotifyEvent read FOnFinish write FOnFinish;
     property OnReStart: TNotifyEvent read FOnReStart write FOnReStart;
@@ -1519,6 +1525,12 @@ begin
   Resume;
 end;
 
+procedure TFrameView.DoShown;
+begin
+  if Assigned(FOnShown) then
+    FOnShown(Self);
+end;
+
 procedure TFrameView.Finish(Ani: TFrameAniType);
 begin
   if FShowing then begin
@@ -1790,6 +1802,7 @@ begin
       FShowing := False;
       if Assigned(AOnFinish) then
         AOnFinish(Sender);
+      DoShown;
     end
   );
   FHideing := False;
