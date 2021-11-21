@@ -311,7 +311,6 @@ type
     function GetColumnDivider: Boolean;
     procedure SetColumnDivider(const Value: Boolean);
   protected
-    function CreateScroll: TScrollBar; override;
     function GetRealDrawState: TViewState; override;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
     function IsStoredDividerHeight: Boolean; virtual;
@@ -894,14 +893,6 @@ begin
     FContentViews.Align := TAlignLayout.Client;
   end else
     RealignContent;
-end;
-
-function TListViewEx.CreateScroll: TScrollBar;
-begin
-  if CanDragScroll then
-    Result := TSmallScrollBar.Create(Self)
-  else
-    Result := TScrollBar.Create(Self);
 end;
 
 destructor TListViewEx.Destroy;

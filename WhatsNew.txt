@@ -7,6 +7,7 @@
  - -----------------------------------
  - ????.??.??
  * [Added]   Add TBadgeStyle.Text
+ * [Added]   Add TScrollView.DefaultScrollbarWidth & TScrollView.DefaultScrollbarClass
  * [Tweaked] ListviewEx deal with invisible control's OnClick property
  * [Fixed]   Fix ScrollView error when scrolled
  * [Fixed]   Fix ListviewEx error HeightSize = TViewSize.WrapContent (Thanks for code: yangyxd)

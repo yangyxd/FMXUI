@@ -1872,10 +1872,7 @@ end;
 
 function TGridBase.CreateScroll: TScrollBar;
 begin
-  if CanDragScroll then
-    Result := TSmallScrollBar.Create(Self)
-  else
-    Result := TScrollBar.Create(Self);
+  Result := inherited;
   Result.Cursor := crArrow;
 end;
 

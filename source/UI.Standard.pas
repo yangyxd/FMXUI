@@ -307,6 +307,7 @@ type
   TPositionChangeEvent = procedure(Sender: TObject; const OldViewportPosition,
     NewViewportPosition: TPointD; const ContentSizeChanged: Boolean) of object;
   PRectD = ^TRectD;
+  TScrollBarClass = class of TScrollBar;
 
   /// <summary>
   /// 滚动视图
@@ -316,6 +317,10 @@ type
     ChangeRepaintedIncidentDelay = 0.1; // seconds
     PhysicsProcessingInterval = 8; // 8 ms for ~120 frames per second
     DefaultScrollingStretchGlowColor: TAlphaColor = $FFC0C0C0;
+  private
+    class var
+      FDefaultScrollbarWidth: Single;
+      FDefaultScrollbarClass: TScrollBarClass;
   private
     FCanAnimation: Boolean;
     FInInternalAlign: Boolean;
@@ -448,6 +453,11 @@ type
     function CanDragScroll: Boolean; virtual;
 
     property InInternalAlign: Boolean read FInInternalAlign;
+  public
+      // 默认滚动条宽度
+    class property DefaultScrollbarWidth: Single read FDefaultScrollbarWidth write FDefaultScrollbarWidth;
+      // 默认滚动条类
+    class property DefaultScrollbarClass: TScrollBarClass read FDefaultScrollbarClass write FDefaultScrollbarClass;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -2199,7 +2209,7 @@ end;
 constructor TScrollView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FScrollbarWidth := 0;
+  FScrollbarWidth := TScrollView.DefaultScrollbarWidth;
   FContentBounds := nil;
   FShowScrollBars := True;
   FDragScroll := False;
@@ -2220,7 +2230,12 @@ end;
 
 function TScrollView.CreateScroll: TScrollBar;
 begin
-  Result := TSmallScrollBar.Create(Self);
+  if Assigned(TScrollView.DefaultScrollbarClass) then
+    Result := TScrollView.DefaultScrollbarClass.Create(Self)
+  else if CanDragScroll then
+    Result := TSmallScrollBar.Create(Self)
+  else
+    Result := TScrollBar.Create(Self);
 end;
 
 destructor TScrollView.Destroy;
