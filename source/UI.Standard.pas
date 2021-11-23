@@ -5830,6 +5830,8 @@ begin
   case FContent.Orientation of
     TOrientation.Horizontal: ScrollValue := HScrollBarValue;
     TOrientation.Vertical: ScrollValue := VScrollBarValue;
+  else
+    ScrollValue := 0;
   end;
 
   // ÏÂÀ­Ë¢ÐÂ

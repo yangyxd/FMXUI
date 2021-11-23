@@ -190,7 +190,9 @@ type
     FTextHeight: Single;
     FLineHeight: Single;
     FLineTop: Single;
+    {$IF (not Defined(ANDROID)) or (CompilerVersion < 33)}
     FCharsBuffer: string;
+    {$ENDIF}
     FTextLayout: TTextLayout;
     FTextService: TTextService;
     FFirstVisibleChar: Integer;

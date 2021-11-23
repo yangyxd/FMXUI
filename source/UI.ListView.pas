@@ -1462,7 +1462,7 @@ end;
 procedure TListViewEx.ScrollToIndex(const Index: Integer);
 var
   I, J: Integer;
-  Y, DividerH, ItemDefaultH, H: Double;
+  Y, DividerH, ItemDefaultH: Double;
 begin
   if not Assigned(FAdapter) then
     Exit;

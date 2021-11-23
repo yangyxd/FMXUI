@@ -6668,10 +6668,6 @@ var
   I, J, LCount: Integer;
   // LDataSet: TDataSet;
   Item: TGridColumnItem;
-  List: TArray<TGridColumnItem>;
-  ListValue: TArray<Extended>;
-  ListType: TArray<Byte>;
-  B: Boolean;
 begin
   if not(gvFixedFooter in FOptions) then
     Exit;

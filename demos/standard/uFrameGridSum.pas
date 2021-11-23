@@ -42,8 +42,9 @@ type
     procedure btnBackClick(Sender: TObject);
     procedure ButtonView5Click(Sender: TObject);
   private
-    procedure DoShow(); override;
     { Private declarations }
+  protected
+    procedure DoShow(); override;
   public
     { Public declarations }
   end;

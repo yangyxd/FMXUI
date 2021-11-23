@@ -1158,7 +1158,9 @@ begin
     // Self not Active
     if Assigned(LFrame) and (LFrame <> Self) and (LFrame.FLastView = Self) then
       LFrame.FLastView := FLastView;
-  end;
+  end
+  else
+    LFrame := nil;
 
   DoPause;
 

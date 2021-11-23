@@ -56,7 +56,7 @@ uses
   {$IFDEF ANDROID}
   FMX.Platform.Android, FMX.Helpers.Android, Androidapi.Helpers,
   FMX.VirtualKeyboard.Android, Androidapi.JNI.GraphicsContentViewText,
-  Androidapi.JNI.Embarcadero,
+  Androidapi.JNI.Embarcadero, Androidapi.JNI.App,
   {$IF RTLVersion>=32}
   Androidapi.NativeActivity, Androidapi.AppGlue,
   {$ENDIF}
@@ -111,8 +111,10 @@ type
 
   TAndroidContentChangeMessage = TMessage<TRect>;
 
+{$IF DEFINED(ANDROID) OR DEFINED(IOS)}
 var
   VKHandler: TVKStateHandler;
+{$ENDIF}
 {$IFDEF ANDROID}
   {$IF RTLVersion>=33}// 10.3+
   _AndroidVKBounds: TRectF;
@@ -167,8 +169,6 @@ begin
 end;
 
 function GetVirtalKeyboardBounds: TRectF; overload;
-var
-  b: TRectF;
 begin
   if not GetVirtalKeyboardBounds(Result) then
     Result := TRectF.Empty;
@@ -307,7 +307,6 @@ procedure TVKStateHandler.AdjustCtrl(ACtrl: TControl; AVKBounds: TRectF;
 var
   ACaretRect: TRectF;
   AForm: TCommonCustomForm;
-  I: Integer;
   ADelta: Integer;
 begin
   if EnableVirtalKeyboardHelper and AVKVisible and Assigned(ACtrl) then begin
@@ -456,7 +455,7 @@ var
   function CaretVisible: Boolean;
   var
     pt: TPointF;
-    AParent, AChild: TControl;
+    AChild: TControl;
   begin
     pt := AFlasher.Pos;
     AChild := ACtrl;
