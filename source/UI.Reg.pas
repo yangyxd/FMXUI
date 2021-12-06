@@ -35,6 +35,8 @@ uses
   UI.Utils.SVGImage,
   UI.Design.SVGImage,
 
+  UI.Design.ImageIndex,
+
   UI.Frame,
   {$IFDEF MSWINDOWS}
   Windows, Registry,
@@ -202,6 +204,8 @@ begin
   RegisterPropertyEditor(TypeInfo(TViewAccessory), TPersistent, '', TViewAccessoryProperty);
 
   RegisterPropertyEditor(TypeInfo(TSVGImage), TPersistent, '', TSVGImageProperty);
+
+  RegisterPropertyEditor(TypeInfo(TImageIndex), TViewImagesBrush, '', TImageIndexProperty);
 
   //RegisterPropertyEditor(TypeInfo(TCustomImageList), TPersistent, '', TShareImageListProperty);
 
