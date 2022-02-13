@@ -7,8 +7,10 @@
  - -----------------------------------
  - ????.??.??
  * [新增] 添加 TBadgeStyle.Text
+ * [新增] 增加TImageIndexProperty属性编辑器（感谢代码：ying32）
  * [新增] TScrollView添加滚动条默认类和默认宽度
  * [优化] ListviewEx现在接管不可见控件的OnClick
+ * [优化] Hex2Color中的StrToIntDef改为StrToUIntDef（感谢：qq143626） GH-43
  * [修正] ScrollView滚动过后产生的问题
  * [修正] ListviewEx自动高度不准确的问题 (感谢代码：yangyxd)
  * [修正] ListviewEx多层时绘制错误的问题 (感谢代码：田园生活者)
