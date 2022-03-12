@@ -458,7 +458,7 @@ type
     /// <summary>
     /// 暂停当前Frame
     /// </summary>
-    procedure Pause(AFinish: Boolean = False); virtual;
+    procedure Pause(AResume: Boolean = False); virtual;
 
     /// <summary>
     /// 启动时的参数
@@ -1143,7 +1143,7 @@ begin
   end;
 end;
 
-procedure TFrameView.Pause(AFinish: Boolean);
+procedure TFrameView.Pause(AResume: Boolean);
 var
   [Weak] LFrame: TFrameView;
 begin
@@ -1153,7 +1153,7 @@ begin
     Exit;
   FResumed := False;
 
-  if AFinish then begin
+  if AResume then begin
     LFrame := ActiveFrame;
     // Self not Active
     if Assigned(LFrame) and (LFrame <> Self) and (LFrame.FLastView = Self) then
@@ -1164,7 +1164,7 @@ begin
 
   DoPause;
 
-  if AFinish then begin
+  if AResume then begin
     if LFrame = Self then
       if Assigned(FLastView) and not FLastView.IsDestroy then
         FLastView.Resume;
@@ -1479,7 +1479,7 @@ end;
 
 procedure TFrameView.DoFinish;
 begin
-  Pause;
+  Pause(True);
   if Assigned(FOnFinish) then begin
     FOnFinish(Self);
     FOnFinish := nil;
@@ -1494,7 +1494,7 @@ end;
 
 procedure TFrameView.DoHide;
 begin
-  Pause;
+  Pause(True);
   if Assigned(FOnHide) then
     FOnHide(Self);
 end;
@@ -1766,8 +1766,8 @@ end;
 
 procedure TFrameView.InternalHide;
 begin
-  DoHide;
   FHideing := True;
+  DoHide;
   Visible := False;
   FHideing := False;
   FNeedHide := False;
