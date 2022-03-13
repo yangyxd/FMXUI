@@ -133,6 +133,9 @@ function GetAngle(const CX, CY, X, Y: Single): Single;
 // 判断两个方法是否相等
 function EqulsMethod(const A, B: TNotifyEvent): Boolean;
 
+// 获得一个大小写及数字混合的随机字符串
+function RandomStr(StrLength: Integer; Upper: boolean=False; Lower: boolean=False; Number: boolean=True): string;
+
 type
   {$if CompilerVersion < 23}
   NativeUInt = Cardinal;
@@ -983,6 +986,29 @@ begin
         Result := Text2Color(V)
     end else
       Result := Text2Color(V)
+  end;
+end;
+
+function RandomStr(StrLength: Integer; Upper: boolean=False; Lower: boolean=False; Number: boolean=True): string;
+var
+  i: Byte;
+  s: string;
+begin
+  if Upper then
+    s := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  else
+    s := '';
+  if Lower then
+    s := s + 'abcdefghijklmnopqrstuvwxyz';
+  if Number then
+    s := s + '0123456789';
+  if s = '' then
+    exit;
+  result := '';
+  for i := 0 to StrLength - 1 do
+  begin
+    Randomize;
+    result := result + s[Random(Length(s) - 1) + 1];
   end;
 end;
 
