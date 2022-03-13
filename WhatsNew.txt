@@ -7,11 +7,14 @@
  - -----------------------------------
  - ????.??.??
  * [Added]   Add TBadgeStyle.Text
+ * [Added]   Add TImageIndexProperty（Thanks for code: ying32）
  * [Added]   Add TScrollView.DefaultScrollbarWidth & TScrollView.DefaultScrollbarClass
  * [Tweaked] ListviewEx deal with invisible control's OnClick property
- * [Fixed]   Fix ScrollView error when scrolled
- * [Fixed]   Fix ListviewEx error HeightSize = TViewSize.WrapContent (Thanks for code: yangyxd)
- * [Fixed]   Fix ListviewEx rendering error (Thanks for code: 田园生活者)
+ * [Tweaked] Hex2Color change StrToIntDef to StrToUIntDef（Thanks for report: qq143626） GH-43
+ * [Fixed]   ScrollView error when scrolled
+ * [Fixed]   ListviewEx error HeightSize = TViewSize.WrapContent (Thanks for code: yangyxd)
+ * [Fixed]   ListviewEx rendering error (Thanks for code: 田园生活者)
+ * [Fixed]   Active frame error when hiding (Thanks for report: keven)
 - -----------------------------------
  - 2021.03.19.001
  * [Added]   Compatible with 10.4

@@ -878,7 +878,7 @@ end;
 
 function Hex2Color(const s: string): TAlphaColor;
 begin
-  Result := StrToIntDef('$ff' + Copy(S, 2, Length(S) - 1), 0)
+  Result := StrToUIntDef('$ff' + Copy(S, 2, Length(S) - 1), 0)
 end;
 
 function Text2Color(const s:string): TAlphaColor;
@@ -903,7 +903,7 @@ begin
   if (s='maroon') then result:=TAlphaColorRec.Maroon else
   if (s='pink') then result:=TAlphaColorRec.Pink else
   if (s='orange') then result:=TAlphaColorRec.Orange else
-  if (Length(s) = 6) then result := StrToIntDef('$ff' + s, 0)
+  if (Length(s) = 6) then result := StrToUIntDef('$ff' + s, 0)
 end;
 
 function RgbStrToColor(const s: string): TAlphaColor;
@@ -975,7 +975,7 @@ begin
   if V = '' then Exit;
   case PChar(V)^ of
     '#': Result := Hex2Color(V);
-    '$': Result := StrToIntDef(V, DefaultValue);
+    '$': Result := StrToUIntDef(V, DefaultValue);
   else
     if Length(V) > 9 then begin
       if PInt64(PChar(V))^ = PInt64(PChar('rgb('))^ then begin
