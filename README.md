@@ -15,7 +15,10 @@ FMXUI
   
 ## Project Participant (Thank)
   **[@KngStr](https://github.com/KngStr)**
-  
+
+## Contributing
+  Welcome to contribute to FMXUI. Clone your own fork FMXUI repository, commit your work on topic branches and make pull requests. See [CONTRIBUTING.md] for details.
+
 ## FMXUI Classes
 
   `TView` basic view  
