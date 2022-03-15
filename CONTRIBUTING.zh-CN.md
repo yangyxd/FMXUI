@@ -1,10 +1,6 @@
 贡献新的代码或者文档更新
 ----------------------------------------------
-派生(Fork)仓库
-克隆(Clone)到本地
-创建新的分枝
-提交(Push)您的工作
-创建合并请求(Pull Requests)
+派生(Fork)仓库，克隆(Clone)到本地，创建新的分枝，提交(Push)您的工作，创建合并请求(Pull Requests)，
 详情如下：
 
 1. [派生(Fork)](https://help.github.com/en/github/getting-started-with-github/fork-a-repo) FMXUI 仓库.
