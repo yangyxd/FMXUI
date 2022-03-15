@@ -1167,7 +1167,7 @@ begin
   if AResume then begin
     if LFrame = Self then
       if Assigned(FLastView) and not FLastView.IsDestroy then
-        FLastView.Resume;
+        FLastView.Show(TFrameAniType.None, nil);
   end;
 end;
 
@@ -1799,6 +1799,8 @@ begin
   Opacity := 0;
   FHideing := True;
   Visible := True;
+  // make sure this is front
+  BringToFront;
   AnimatePlay(Ani, True, SwitchFlag,
     procedure (Sender: TObject) begin
       FShowing := False;
