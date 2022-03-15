@@ -19,6 +19,9 @@ FMXUI
 ## 协作者 (感谢)
   **[@KngStr](https://github.com/KngStr)**
   
+## 贡献
+  欢迎大家捐助FMXUI。克隆你自己的Fork，提交你的更改到你自己Fork的分枝，然后提交Pull。更多细节请查看[CONTRIBUTING.zh-CN.md]
+  
 ## 类介绍
 
   `TView`  基本视图  
