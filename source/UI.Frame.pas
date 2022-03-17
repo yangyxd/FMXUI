@@ -1479,7 +1479,7 @@ end;
 
 procedure TFrameView.DoFinish;
 begin
-  Pause(True);
+  Pause(False);
   if Assigned(FOnFinish) then begin
     FOnFinish(Self);
     FOnFinish := nil;

@@ -565,8 +565,8 @@ begin
     LInfo := AMsg.MinMaxInfo;
     if not Assigned(LInfo) then
       Exit;
-    LInfo^.ptMaxSize.X := Screen.WorkAreaWidth;
-    LInfo^.ptMaxSize.Y := Screen.WorkAreaHeight;
+    LInfo^.ptMaxSize.X := {$IF RTLVersion >= 35}Trunc{$ENDIF}(Screen.WorkAreaWidth);
+    LInfo^.ptMaxSize.Y := {$IF RTLVersion >= 35}Trunc{$ENDIF}(Screen.WorkAreaHeight);
     AMsg.Result := 1;
   end;
 end;
