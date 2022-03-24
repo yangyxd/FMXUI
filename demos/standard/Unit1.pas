@@ -21,7 +21,9 @@ type
     { Private declarations }
     {$IF DEFINED(ANDROID) AND (RTLVersion >= 33)}
     procedure PermissionsCheck;
-    procedure PermissionsResultHandler(const APermissions: TArray<string>; const AGrantResults: TArray<TPermissionStatus>);
+    procedure PermissionsResultHandler(Sender: TObject; const APermissions: TClassicStringDynArray;
+      const AGrantResults: TClassicPermissionStatusDynArray);
+
     {$ENDIF}
   public
     { Public declarations }
@@ -73,8 +75,8 @@ begin
        JStringToString(TJManifest_permission.JavaClass.WRITE_EXTERNAL_STORAGE)], PermissionsResultHandler);
 end;
 
-procedure TForm1.PermissionsResultHandler(const APermissions: TArray<string>;
-  const AGrantResults: TArray<TPermissionStatus>);
+procedure TForm1.PermissionsResultHandler(Sender: TObject; const APermissions: TClassicStringDynArray;
+      const AGrantResults: TClassicPermissionStatusDynArray);
 begin
   if PermissionsService.IsEveryPermissionGranted(
     [JStringToString(TJManifest_permission.JavaClass.CAMERA),
