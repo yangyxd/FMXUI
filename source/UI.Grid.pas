@@ -5465,7 +5465,7 @@ end;
 function TGridAdapterBase.GetCellSettings(const ACol, ARow: Integer;
   out ACellSettings: TGridCellSettings): Boolean;
 var
-  Key: Int64;
+  Key: UInt64;
 begin
   Key := TGridBase.GetKey(ACol, ARow);
   if FCellSetttings.ContainsKey(Key) then begin
@@ -5809,7 +5809,7 @@ procedure TGridColumnItem.SetIndex(const Value: Integer);
 var
   ARow, ACol, NewCol: Integer;
   I: Integer;
-  Key: Int64;
+  Key: UInt64;
   Item, LItem: TGridColumnItem;
   //LNotify: TCollectionNotifyEvent<TGridColumnItem>;
   LNotify: TYXDIntHashItemFreeNotify;
@@ -5934,7 +5934,7 @@ procedure TGridColumns.Assign(Source: TPersistent);
 var
   Src: TGridColumns;
   I, J: Integer;
-  Key: Int64;
+  Key: UInt64;
   Item: TGridColumnItem;
   LOnChange: TNotifyEvent;
 begin
@@ -6090,7 +6090,7 @@ end;
 
 function TGridColumns.GetItem(const ACol, ARow: Integer): TGridColumnItem;
 var
-  Key: Int64;
+  Key: UInt64;
   V, LMaxRows, LMaxCols: Integer;
 begin
   Key := TGridBase.GetKey(ACol, ARow);
@@ -6322,7 +6322,7 @@ end;
 procedure TGridColumns.SetItem(const ACol, ARow: Integer;
   const Value: TGridColumnItem);
 var
-  Key: Int64;
+  Key: UInt64;
   V: Integer;
 begin
   Key := TGridBase.GetKey(ACol, ARow);
@@ -7939,7 +7939,7 @@ procedure TGridColumnsSetting.WriteCollumnsData(Writer: TWriter);
 var
   List, DataItem: TJSONobject;
   I, J: Integer;
-  Key: Int64;
+  Key: UInt64;
   Item: TGridColumnItem;
 begin
   List := TJSONObject.Create;

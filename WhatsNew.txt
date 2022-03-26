@@ -15,6 +15,7 @@
  * [Fixed]   ListviewEx error HeightSize = TViewSize.WrapContent (Thanks for code: yangyxd)
  * [Fixed]   ListviewEx rendering error (Thanks for code: 田园生活者)
  * [Fixed]   Active frame error when hiding (Thanks for report: keven, 柴头柴脑)
+ * [Fixed]   Range check error of GridView（Thanks for report: CPU风扇）
 - -----------------------------------
  - 2021.03.19.001
  * [Added]   Compatible with 10.4
