@@ -262,7 +262,7 @@ type
     function GetColumnWidths(const ACol: Integer): Single;
   protected
     FShowColIndex: Boolean;
-    function GetItemOfKey(const Key: Int64): TGridColumnItem;
+    function GetItemOfKey(const Key: UInt64): TGridColumnItem;
     procedure DoItemChange(Sender: TObject);
     procedure DoItemChangeEx(Sender: TGridColumnItem; const ACol, ARow: Integer);
     procedure DoChange(); virtual;
@@ -6216,7 +6216,7 @@ begin
   end;
 end;
 
-function TGridColumns.GetItemOfKey(const Key: Int64): TGridColumnItem;
+function TGridColumns.GetItemOfKey(const Key: UInt64): TGridColumnItem;
 var
   V, LMaxRows, LMaxCols: Integer;
 begin
