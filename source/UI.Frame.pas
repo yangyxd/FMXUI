@@ -1798,9 +1798,11 @@ begin
   {$ENDIF}
   Opacity := 0;
   FHideing := True;
-  Visible := True;
   // make sure this is front
-  BringToFront;
+  if not Visible then begin
+    Visible := True;
+    BringToFront;
+  end;
   AnimatePlay(Ani, True, SwitchFlag,
     procedure (Sender: TObject) begin
       FShowing := False;
