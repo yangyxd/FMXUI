@@ -9,6 +9,7 @@
  * [Added]   Add TBadgeStyle.Text
  * [Added]   Add TImageIndexProperty（Thanks for code: ying32）
  * [Added]   Add TScrollView.DefaultScrollbarWidth & TScrollView.DefaultScrollbarClass
+ * [Added]   Add SetMaxWidth and SetHeight to TDialogBuilder (Thanks: 恢弘)
  * [Tweaked] ListviewEx deal with invisible control's OnClick property
  * [Tweaked] Hex2Color change StrToIntDef to StrToUIntDef（Thanks for report: qq143626） GH-43
  * [Fixed]   ScrollView error when scrolled

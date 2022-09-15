@@ -631,7 +631,6 @@ type
     FMessage: string;
     FMessageIsHtml: Boolean;
     FCancelable: Boolean;
-    FIsMaxWidth: Boolean;
     FIsSingleChoice: Boolean;
     FIsMultiChoice: Boolean;
     FItemSingleLine: Boolean;
@@ -641,6 +640,8 @@ type
     FTag: Integer;
 
     FWidth: Single;
+    FMaxWidth: Single;
+    FHeight: Single;
     FMaxHeight: Single;
     FListItemDefaultHeight: Single;
     FPosition: TDialogViewPosition;
@@ -716,10 +717,6 @@ type
     /// </summary>
     function SetStyleManager(AValue: TDialogStyleManager): TDialogBuilder;
 
-    /// <summary>
-    /// 设置是否最大化宽度
-    /// </summary>
-    function SetIsMaxWidth(AIsMaxWidth: Boolean): TDialogBuilder;
     /// <summary>
     /// 设置标题
     /// </summary>
@@ -872,7 +869,15 @@ type
     /// 设置宽度
     /// </summary>
     function SetWidth(const V: Single): TDialogBuilder;
+    /// <summary>
+    /// 设置最大宽度
+    /// </summary>
+    function SetMaxWidth(const V: Single): TDialogBuilder;
 
+    /// <summary>
+    /// 设置高度
+    /// </summary>
+    function SetHeight(const V: Single): TDialogBuilder;
     /// <summary>
     /// 设置最大高度
     /// </summary>
@@ -902,7 +907,6 @@ type
     property Message: string read FMessage;
     property MessageIsHtml: Boolean read FMessageIsHtml;
     property Cancelable: Boolean read FCancelable;
-    property IsMaxWidth: Boolean read FIsMaxWidth;
     property IsSingleChoice: Boolean read FIsSingleChoice;
     property IsMultiChoice: Boolean read FIsMultiChoice;
     property ItemSingleLine: Boolean read FItemSingleLine;
@@ -1155,6 +1159,12 @@ begin
   FMaskVisible := MaskVisible;
 end;
 
+function TDialogBuilder.SetHeight(const V: Single): TDialogBuilder;
+begin
+  Result := Self;
+  FHeight := V;
+end;
+
 function TDialogBuilder.SetSingleChoiceItems(AItems: TStrings;
   ACheckedItem: Integer; AListener: TOnDialogClickListenerA): TDialogBuilder;
 begin
@@ -1214,12 +1224,6 @@ function TDialogBuilder.SetIcon(AIcon: TBitmap): TDialogBuilder;
 begin
   Result := Self;
   FIcon := AIcon;
-end;
-
-function TDialogBuilder.SetIsMaxWidth(AIsMaxWidth: Boolean): TDialogBuilder;
-begin
-  Result := Self;
-  FIsMaxWidth := AIsMaxWidth;
 end;
 
 function TDialogBuilder.SetItems(AItems: TStrings;
@@ -1282,6 +1286,12 @@ function TDialogBuilder.SetMaxHeight(const V: Single): TDialogBuilder;
 begin
   Result := Self;
   FMaxHeight := V;
+end;
+
+function TDialogBuilder.SetMaxWidth(const V: Single): TDialogBuilder;
+begin
+  Result := Self;
+  FMaxWidth := V;
 end;
 
 function TDialogBuilder.SetWidth(const V: Single): TDialogBuilder;
@@ -2449,7 +2459,15 @@ begin
     FViewRoot.FLayBubble.MaxWidth := Builder.FWidth;
     FViewRoot.FLayBubble.AdjustViewBounds := True;
   end;
+  if Builder.FMaxWidth > 0 then
+    FViewRoot.FLayBubble.MaxWidth := Builder.FMaxWidth;
 
+  if Builder.FHeight > 0 then begin
+    FViewRoot.FLayBubble.HeightSize := TViewSize.CustomSize;
+    FViewRoot.FLayBubble.Size.Height := Builder.FHeight;
+    FViewRoot.FLayBubble.MaxHeight := Builder.FHeight;
+    FViewRoot.FLayBubble.AdjustViewBounds := True;
+  end;
   if FBuilder.FMaxHeight > 0 then
     FViewRoot.FLayBubble.MaxHeight := FBuilder.FMaxHeight;
 
@@ -2602,15 +2620,23 @@ begin
     FViewRoot.FLayBubble.MaxWidth := FBuilder.FTarget.Width;
     FViewRoot.FLayBubble.AdjustViewBounds := True;
   end;
+  if Builder.FMaxWidth > 0 then
+    FViewRoot.FLayBubble.MaxWidth := Builder.FMaxWidth;
+
+  if Builder.FHeight > 0 then begin
+    FViewRoot.FLayBubble.HeightSize := TViewSize.CustomSize;
+    FViewRoot.FLayBubble.Size.Height := Builder.FHeight;
+    FViewRoot.FLayBubble.MaxHeight := Builder.FHeight;
+    FViewRoot.FLayBubble.AdjustViewBounds := True;
+  end;
+  if FBuilder.FMaxHeight > 0 then
+    FViewRoot.FLayBubble.MaxHeight := FBuilder.FMaxHeight;
 
   FViewRoot.FLayBubble.Paddings := '1';
   with TDrawableBorder(FViewRoot.FLayBubble.Background).Border do begin
     Style := TViewBorderStyle.RectBorder;
     Color.Default := StyleMgr.ListItemPressedColor;
   end;
-
-  if FBuilder.FMaxHeight > 0 then
-    FViewRoot.FLayBubble.MaxHeight := FBuilder.FMaxHeight;
 
   AdjustDownPopupPosition();
 
