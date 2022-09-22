@@ -5779,13 +5779,13 @@ begin
     FDisablePaint := True;
 
     inherited DoRealign;
-    DoRealignContent();
     if Assigned(FAniCalculations) then begin
       LDisableAlign := FDisableAlign;
       FDisableAlign := True;
       RealignContent;
       FDisableAlign := LDisableAlign;
     end;
+    DoRealignContent();
   finally
     FDisablePaint := LDisablePaint;
     FContent.Invalidate;
