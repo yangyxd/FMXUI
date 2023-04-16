@@ -17,6 +17,7 @@
  * [Fixed]   ListviewEx rendering error (Thanks for code: 田园生活者)
  * [Fixed]   Active frame error when hiding (Thanks for report: keven, 柴头柴脑)
  * [Fixed]   Range check error of GridView（Thanks for report: CPU风扇, 柴头柴脑）
+ * [Fixed]   fix HtmlText click error when have same url (Thanks for code: wr960204) GH-57
 - -----------------------------------
  - 2021.03.19.001
  * [Added]   Compatible with 10.4

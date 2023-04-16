@@ -9181,7 +9181,7 @@ var
   Item: THtmlTextItem;
   I: Integer;
 begin
-  if (Button = TMouseButton.mbLeft) and (FLinkHot >= 0) and (FLinkHot < FLinkHrefs.Count) then begin
+  if (Button = TMouseButton.mbLeft) and (FLinkHot >= 0) and (FLinkHot < FLinkRangeCount) then begin
     if Assigned(Sender) then begin
       for I := 0 to FList.Count - 1 do begin
         if FList[I].Link = FLinkHot then begin
