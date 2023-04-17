@@ -18,6 +18,7 @@
  * [Fixed]   Active frame error when hiding (Thanks for report: keven, 柴头柴脑)
  * [Fixed]   Range check error of GridView（Thanks for report: CPU风扇, 柴头柴脑）
  * [Fixed]   fix HtmlText click error when have same url (Thanks for code: wr960204) GH-57
+ * [Fixed]   fix Animation error under 11.3 (Thanks for report: marlonnardi, 柴头柴脑) GH-55
 - -----------------------------------
  - 2021.03.19.001
  * [Added]   Compatible with 10.4
