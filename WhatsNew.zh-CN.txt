@@ -12,6 +12,7 @@
  * [新增] TDialogBuilder添加SetMaxWidth和SetHeight（感谢建议：恢弘）
  * [优化] ListviewEx现在接管不可见控件的OnClick
  * [优化] Hex2Color中的StrToIntDef改为StrToUIntDef（感谢：qq143626） GH-43
+ * [修正] 权限申请在11的兼容性，删除AndroidManifest.template.xml和info.plist.TemplateiOS.xml
  * [修正] ScrollView滚动过后产生的问题
  * [修正] ListviewEx自动高度不准确的问题 (感谢代码：yangyxd)
  * [修正] ListviewEx多层时绘制错误的问题 (感谢代码：田园生活者)

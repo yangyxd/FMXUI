@@ -20,8 +20,20 @@ type
   private
     { Private declarations }
     {$IF DEFINED(ANDROID) AND (RTLVersion >= 33)}
+    FPermissionCamera,
+    FPermissionReadExternalStorage,
+    FPermissionWriteExternalStorage: string;
     procedure PermissionsCheck;
-    procedure PermissionsResultHandler(const APermissions: TArray<string>; const AGrantResults: TArray<TPermissionStatus>);
+    procedure PermissionsResultHandler(
+      {$IF RTLVersion >= 35}
+      Sender: TObject; const APermissions: TClassicStringDynArray; const AGrantResults: TClassicPermissionStatusDynArray
+      {$ELSE}
+      const APermissions: TArray<string>; const AGrantResults: TArray<TPermissionStatus>
+      {$ENDIF}
+      );
+    {$IF RTLVersion >= 35}
+    procedure PermissionsDisplayRationaleHandler(Sender: TObject; const APermissions: TClassicStringDynArray; const APostRationaleProc: TProc);
+    {$ENDIF}
     {$ENDIF}
   public
     { Public declarations }
@@ -52,7 +64,6 @@ begin
   TFrameView.SetDefaultStatusTransparent(True);
   TFrameView.SetDefaultStatusColor($ff800080);
   //TFrameView.SetDefaultBackColor($fff1f2f3);
-
 end;
 
 procedure TForm1.FormShow(Sender: TObject);
@@ -67,23 +78,66 @@ end;
 {$IF DEFINED(ANDROID) AND (RTLVersion >= 33)}
 procedure TForm1.PermissionsCheck;
 begin
-  if TJBuild_VERSION.JavaClass.SDK_INT >= 23 then
-    PermissionsService.RequestPermissions([JStringToString(TJManifest_permission.JavaClass.CAMERA),
-       JStringToString(TJManifest_permission.JavaClass.READ_EXTERNAL_STORAGE),
-       JStringToString(TJManifest_permission.JavaClass.WRITE_EXTERNAL_STORAGE)], PermissionsResultHandler);
+  if TJBuild_VERSION.JavaClass.SDK_INT >= 23 then begin
+    FPermissionCamera := JStringToString(TJManifest_permission.JavaClass.CAMERA);
+    FPermissionReadExternalStorage := JStringToString(TJManifest_permission.JavaClass.READ_EXTERNAL_STORAGE);
+    FPermissionWriteExternalStorage := JStringToString(TJManifest_permission.JavaClass.WRITE_EXTERNAL_STORAGE);
+
+    PermissionsService.RequestPermissions([FPermissionCamera,
+       FPermissionReadExternalStorage, FPermissionWriteExternalStorage],
+       PermissionsResultHandler{$IF RTLVersion >= 35}, PermissionsDisplayRationaleHandler{$ENDIF});
+  end;
 end;
 
-procedure TForm1.PermissionsResultHandler(const APermissions: TArray<string>;
-  const AGrantResults: TArray<TPermissionStatus>);
+procedure TForm1.PermissionsResultHandler(
+  {$IF RTLVersion >= 35}
+  Sender: TObject; const APermissions: TClassicStringDynArray; const AGrantResults: TClassicPermissionStatusDynArray
+  {$ELSE}
+  const APermissions: TArray<string>; const AGrantResults: TArray<TPermissionStatus>
+  {$ENDIF}
+);
 begin
-  if PermissionsService.IsEveryPermissionGranted(
-    [JStringToString(TJManifest_permission.JavaClass.CAMERA),
-     JStringToString(TJManifest_permission.JavaClass.READ_EXTERNAL_STORAGE),
-     JStringToString(TJManifest_permission.JavaClass.WRITE_EXTERNAL_STORAGE)]) then
+  if PermissionsService.IsEveryPermissionGranted([FPermissionCamera,
+    FPermissionReadExternalStorage, FPermissionWriteExternalStorage]) then
     Toast('Permission granted')
   else
     Toast('Permission not granted');
 end;
+
+{$IF RTLVersion >= 35}
+procedure TForm1.PermissionsDisplayRationaleHandler(Sender: TObject;const APermissions: TClassicStringDynArray; const APostRationaleProc: TProc);
+var
+  I: Integer;
+  RationaleMsg: string;
+begin
+  RationaleMsg := '';
+  for I := 0 to High(APermissions) do
+  begin
+    if APermissions[I] = FPermissionCamera then
+      RationaleMsg := RationaleMsg + 'The app needs to access the camera to take a photo' + SLineBreak + SLineBreak
+    else if APermissions[I] = FPermissionReadExternalStorage then
+      RationaleMsg := RationaleMsg + 'The app needs to load files from your device' + SLineBreak + SLineBreak
+    else if APermissions[I] = FPermissionWriteExternalStorage then
+      RationaleMsg := RationaleMsg + 'The app needs to write files to your device' + SLineBreak + SLineBreak;
+  end;
+
+  TDialogBuilder.Create(Self)
+    .SetTitle('Warnning')
+    .SetMessage(RationaleMsg)
+    .SetPositiveButton('OK',
+      procedure (Dialog: IDialog; Which: Integer) begin
+        APostRationaleProc;
+      end
+    )
+    .SetNegativeButton('Exit',
+      procedure (Dialog: IDialog; Which: Integer) begin
+        Close;
+      end
+    )
+    .SetCancelable(False)
+    .Show;
+end;
+{$ENDIF}
 {$ENDIF}
 
 end.

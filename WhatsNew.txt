@@ -12,6 +12,7 @@
  * [Added]   Add SetMaxWidth and SetHeight to TDialogBuilder (Thanks: 恢弘)
  * [Tweaked] ListviewEx deal with invisible control's OnClick property
  * [Tweaked] Hex2Color change StrToIntDef to StrToUIntDef（Thanks for report: qq143626） GH-43
+ * [Fixed]   Permissions request error in 11. Remove AndroidManifest.template.xml and info.plist.TemplateiOS.xml
  * [Fixed]   ScrollView error when scrolled
  * [Fixed]   ListviewEx error HeightSize = TViewSize.WrapContent (Thanks for code: yangyxd)
  * [Fixed]   ListviewEx rendering error (Thanks for code: 田园生活者)
