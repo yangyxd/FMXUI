@@ -2207,7 +2207,7 @@ procedure TListViewContent.DoRealign;
           FItemClick.AddOrSetValue(View, View.OnClick);
         View.OnClick := FNewOnClick;
       end else begin
-        FItemViews.AddOrUpdate(THashType(View), I);
+        FItemViews.AddOrUpdate(THashType(ItemView), I);
         if Assigned(ItemView.OnClick) and (not EqulsMethod(FNewOnClick, ItemView.OnClick)) then
           FItemClick.AddOrSetValue(ItemView, ItemView.OnClick);
         ItemView.OnClick := FNewOnClick;
