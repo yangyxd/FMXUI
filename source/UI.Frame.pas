@@ -1047,7 +1047,7 @@ begin
 
       Result := Create(Parent);
       Result.Name := '';
-      Result.TagObject := Params;
+      Result.Params := Params;
       Result.Parent := Parent;
       Result.Align := TAlignLayout.Client;
       Result.FLastView := nil;
@@ -1354,7 +1354,6 @@ end;
 
 destructor TFrameView.Destroy;
 var
-  Obj: TObject;
   LFrame: TFrameView;
 begin
   if Assigned(ParentForm) and TFrameView.GetFormActiveFrame(ParentForm, LFrame) and (LFrame = Self) then
@@ -1364,9 +1363,6 @@ begin
 
   DoFree();
   FWaitDialog := nil;
-  Obj := TagObject;
-  if Assigned(Obj) then
-    FreeAndNil(Obj);
   if Assigned(FNextView) then
     FNextView.FLastView := nil;
   FLastView := nil;
@@ -1625,13 +1621,8 @@ end;
 
 function TFrameView.GetParams: TFrameParams;
 begin
-  if FParams = nil then begin
-    if (TagObject <> nil) and (TagObject is TFrameParams) then begin
-      FParams := TagObject as TFrameParams;
-      TagObject := nil;
-    end else
-      FParams := TFrameParams.Create(9);
-  end;
+  if FParams = nil then
+    FParams := TFrameParams.Create(9);
   Result := FParams;
 end;
 
