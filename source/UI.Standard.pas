@@ -6039,13 +6039,22 @@ end;
 procedure TPullScrollView.HScrollChange(Sender: TObject);
 var
   H: Single;
+  SaveDisableAlign: Boolean;
 begin
   if FScrolling then Exit;
   inherited HScrollChange(Sender);
   if Assigned(FContent) then begin
     H := Padding.Left - HScrollBarValue;
     DoUpdateHeaderFooter(H);
-    FContent.Position.X := H + FOffsetScroll;
+
+    // Disable align in 11.3
+    SaveDisableAlign := FDisableAlign;
+    FDisableAlign := True;
+    try
+      FContent.Position.X := H + FOffsetScroll;
+    finally
+      FDisableAlign := SaveDisableAlign;
+    end;
   end;
 end;
 
@@ -6375,13 +6384,22 @@ end;
 procedure TPullScrollView.VScrollChange(Sender: TObject);
 var
   V: Single;
+  SaveDisableAlign: Boolean;
 begin
   if FScrolling then Exit;
   inherited VScrollChange(Sender);
   if Assigned(FContent) then begin
     V := Padding.Top - VScrollBarValue;
     DoUpdateHeaderFooter(V);
-    FContent.Position.Y := V + FOffsetScroll;
+
+    // Disable align in 11.3
+    SaveDisableAlign := FDisableAlign;
+    FDisableAlign := True;
+    try
+      FContent.Position.Y := V + FOffsetScroll;
+    finally
+      FDisableAlign := SaveDisableAlign;
+    end;
   end;
 end;
 
