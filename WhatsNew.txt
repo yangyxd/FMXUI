@@ -1,11 +1,11 @@
 ﻿FMXUI  (YangYxd)
 
 [Current Version]
-  2021.03.19.001
+  2023.06.30.001
 
 [Update History]
  - -----------------------------------
- - ????.??.??
+ - 2023.06.30.001
  * [Added]   Add TBadgeStyle.Text
  * [Added]   Add TImageIndexProperty（Thanks for code: ying32）
  * [Added]   Add TScrollView.DefaultScrollbarWidth & TScrollView.DefaultScrollbarClass
