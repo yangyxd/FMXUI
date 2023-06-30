@@ -561,7 +561,6 @@ type
     function GetContentChildCount: Integer;
     function GetContentControlItem(const Index: Integer): TControl;
   protected
-    function CreateScroll: TScrollBar; override;
     procedure InvalidateContentSize(); override; // 计算内容区大小
     procedure VScrollChange(Sender: TObject); override;
     procedure HScrollChange(Sender: TObject); override;
@@ -5591,14 +5590,6 @@ begin
   RealignContent;
 end;
 
-function TPullScrollView.CreateScroll: TScrollBar;
-begin
-  if CanDragScroll then
-    Result := TSmallScrollBar.Create(Self)
-  else
-    Result := TScrollBar.Create(Self);
-end;
-
 destructor TPullScrollView.Destroy;
 begin
   FContent := nil;
@@ -6549,4 +6540,3 @@ initialization
 finalization
 
 end.
-
