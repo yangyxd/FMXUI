@@ -5,6 +5,9 @@
 
 [Update History]
  - -----------------------------------
+ - ????.??.??
+ * [Added]   Add TListViewEx.OnItemDblClick (Thanks for code: dqi1999)
+ - -----------------------------------
  - 2023.06.30.001
  * [Added]   Add TBadgeStyle.Text
  * [Added]   Add TImageIndexProperty（Thanks for code: ying32）

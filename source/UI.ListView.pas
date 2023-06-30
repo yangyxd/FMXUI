@@ -159,7 +159,6 @@ type
     function GetAbsoluteColumnCount: Integer;
     function GetAbsoluteColumnWidth: Single;
     procedure SetViewTop(const Value: Double);
-
   protected
     function ObjectAtPoint(AScreenPoint: TPointF): IControl; override;
   protected
@@ -173,15 +172,15 @@ type
     procedure Resize; override;
     procedure AfterPaint; override;
     procedure PaintBackground; override;               // 画列表背景
-
   protected
     procedure DoItemClick(Sender: TObject);
     procedure DoItemChildClick(Sender: TObject);
+    procedure DoItemDblClick(Sender: TObject);
+
     procedure DoFooterClick(Sender: TObject);
     procedure DoMouseDownFrame(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Single);
     procedure ClearViews;        // 清除当前显示的列表项，并清空缓存
     procedure HideViews;         // 隐藏当前显示的列表项
-
   protected
     // 下拉刷新，上拉加载更多
     FState: TListViewState;      // 列表视图状态
@@ -280,8 +279,10 @@ type
 
     FOnDrawViewBackgroud: TOnDrawViewBackgroud;
     FOnItemMeasureHeight: TOnItemMeasureHeight;
+
     FOnItemClick: TOnItemClick;
     FOnItemClickEx: TOnItemClickEx;
+    FOnItemDblClick: TOnItemClick;
 
     FOnInitFooter: TOnInitHeader;
     FOnInitHeader: TOnInitHeader;
@@ -468,6 +469,7 @@ type
     /// </summary>
     property OnItemMeasureHeight: TOnItemMeasureHeight read FOnItemMeasureHeight
       write FOnItemMeasureHeight;
+
     /// <summary>
     /// 列表项点击事件
     /// </summary>
@@ -476,6 +478,10 @@ type
     /// 列表项内部控件点击事件
     /// </summary>
     property OnItemClickEx: TOnItemClickEx read FOnItemClickEx write FOnItemClickEx;
+    /// <summary>
+    /// 列表项双击事件
+    /// </summary>
+    property OnItemDblClick: TOnItemClick read FOnItemDblClick write FOnItemDblClick;
 
     property HitTest default True;
     property Clickable default True;
@@ -1803,6 +1809,18 @@ begin
   end;
 end;
 
+procedure TListViewContent.DoItemDblClick(Sender: TObject);
+var
+  ItemIndex: NativeInt;
+begin
+  if FItemViews.TryGetValue(THashType(Sender), ItemIndex) then begin
+    if FItemClick.ContainsKey(Sender) and Assigned(FItemClick[Sender]) then
+      FItemClick[Sender](Sender);
+    if Assigned(ListView.FOnItemDblClick) then
+      ListView.FOnItemDblClick(ListView, ItemIndex,  TView(FViews[ItemIndex]));
+  end;
+end;
+
 procedure TListViewContent.DoMouseDownFrame(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Single);
 begin
@@ -2206,11 +2224,13 @@ procedure TListViewContent.DoRealign;
         if Assigned(View.OnClick) and (not EqulsMethod(FNewOnClick, View.OnClick)) then
           FItemClick.AddOrSetValue(View, View.OnClick);
         View.OnClick := FNewOnClick;
+        View.OnDblClick := DoItemDblClick;
       end else begin
         FItemViews.AddOrUpdate(THashType(ItemView), I);
         if Assigned(ItemView.OnClick) and (not EqulsMethod(FNewOnClick, ItemView.OnClick)) then
           FItemClick.AddOrSetValue(ItemView, ItemView.OnClick);
         ItemView.OnClick := FNewOnClick;
+        ItemView.OnDblClick := DoItemDblClick;
       end;
 
       // 调整大小和位置
