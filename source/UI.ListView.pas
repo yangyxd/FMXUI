@@ -399,6 +399,9 @@ type
     property Empty: Boolean read IsEmpty;
     property Adapter: IListAdapter read FAdapter write SetAdapter;
     property ItemPosition[Index: Integer]: TListItemPoint read GetItemPosition;
+    /// <summary>
+    /// Get item view by item index. Return nil if it's not found.
+    /// </summary>
     property ItemViews[Index: Integer]: TControl read GetItemViews;
     property ContentViews: TListViewContent read FContentViews;
 
@@ -1101,7 +1104,8 @@ end;
 
 function TListViewEx.GetItemViews(Index: Integer): TControl;
 begin
-  Result := FContentViews.FViews.Items[Index];
+  if not FContentViews.FViews.TryGetValue(Index, TViewBase(Result)) then
+    Result := nil;
 end;
 
 function TListViewEx.GetLastRowIndex: Integer;
