@@ -1504,7 +1504,7 @@ end;
 
 procedure TFrameView.DoHide;
 begin
-  Pause(True);
+  Pause(False);
   if Assigned(FOnHide) then
     FOnHide(Self);
 end;

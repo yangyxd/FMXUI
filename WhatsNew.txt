@@ -7,6 +7,7 @@
  - -----------------------------------
  - ????.??.??
  * [Added]   Add TListViewEx.OnItemDblClick (Thanks for code: dqi1999)
+ * [Fixed]   Unnecessary showing of frame (Thanks for report: 00121)
  - -----------------------------------
  - 2023.06.30.001
  * [Added]   Add TBadgeStyle.Text
