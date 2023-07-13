@@ -6311,7 +6311,8 @@ begin
     Self.PrefixStyle := Src.PrefixStyle;
     Self.Trimming := Src.Trimming;
     Self.WordWrap := Src.WordWrap;
-    Self.FText := Src.FText;
+    //Only settings are allowed
+    //Self.FText := Src.FText;
     Self.OnChanged := LastOnChange;
     DoChange;
   end else
