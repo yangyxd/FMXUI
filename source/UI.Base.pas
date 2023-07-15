@@ -712,8 +712,6 @@ type
     FChecked: TAlphaColor;
     FEnabled: TAlphaColor;
     FActivated: TAlphaColor;
-    FHintText: TAlphaColor;
-    FColorStoreState: Cardinal;
     procedure SetDefault(const Value: TAlphaColor);
     procedure SetActivated(const Value: TAlphaColor);
     procedure SetChecked(const Value: TAlphaColor);
@@ -722,8 +720,6 @@ type
     procedure SetHovered(const Value: TAlphaColor);
     procedure SetPressed(const Value: TAlphaColor);
     procedure SetSelected(const Value: TAlphaColor);
-    function GetColorStoreState(const Index: Integer): Boolean;
-    procedure SetColorStoreState(const Index: Integer; const Value: Boolean);
   private
     function ColorDefaultStored: Boolean;
     function ColorActivatedStored: Boolean;
@@ -734,31 +730,39 @@ type
     function ColorPressedStored: Boolean;
     function ColorSelectedStored: Boolean;
   protected
+    FDefaultDefault: TAlphaColor;
+    FDefaultPressed: TAlphaColor;
+    FDefaultFocused: TAlphaColor;
+    FDefaultHovered: TAlphaColor;
+    FDefaultSelected: TAlphaColor;
+    FDefaultChecked: TAlphaColor;
+    FDefaultEnabled: TAlphaColor;
+    FDefaultActivated: TAlphaColor;
+
     procedure DoChange(Sender: TObject);
     function GetValue(const Index: Integer): TAlphaColor;
     procedure SetValue(const Index: Integer; const Value: TAlphaColor);
   public
     constructor Create(const ADefaultColor: TAlphaColor = TAlphaColorRec.Black);
-    destructor Destroy; override;
 
     procedure Assign(Source: TPersistent); override;
 
     // 根据当前状态获取颜色，如果颜色为 Null 则返回上一次获取到的颜色
     function GetStateColor(State: TViewState): TAlphaColor;
 
-    function GetColor(State: TViewState): TAlphaColor;
-    procedure SetColor(State: TViewState; const Value: TAlphaColor);
-
-    property DefaultChange: Boolean index 1 read GetColorStoreState write SetColorStoreState;
-    property PressedChange: Boolean index 2 read GetColorStoreState write SetColorStoreState;
-    property FocusedChange: Boolean index 3 read GetColorStoreState write SetColorStoreState;
-    property HoveredChange: Boolean index 4 read GetColorStoreState write SetColorStoreState;
-    property SelectedChange: Boolean index 5 read GetColorStoreState write SetColorStoreState;
-    property CheckedChange: Boolean index 6 read GetColorStoreState write SetColorStoreState;
-    property EnabledChange: Boolean index 7 read GetColorStoreState write SetColorStoreState;
-    property ActivatedChange: Boolean index 8 read GetColorStoreState write SetColorStoreState;
+    function GetColor(State: TViewState): TAlphaColor; virtual;
+    procedure SetColor(State: TViewState; const Value: TAlphaColor); virtual;
 
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
+
+    property DefaultDefault: TAlphaColor read FDefaultDefault write FDefaultDefault;
+    property DefaultPressed: TAlphaColor read FDefaultPressed write FDefaultPressed;
+    property DefaultFocused: TAlphaColor read FDefaultFocused write FDefaultFocused;
+    property DefaultHovered: TAlphaColor read FDefaultHovered write FDefaultHovered;
+    property DefaultSelected: TAlphaColor read FDefaultSelected write FDefaultSelected;
+    property DefaultChecked: TAlphaColor read FDefaultChecked write FDefaultChecked;
+    property DefaultEnabled: TAlphaColor read FDefaultEnabled write FDefaultEnabled;
+    property DefaultActivated: TAlphaColor read FDefaultActivated write FDefaultActivated;
   published
     property Default: TAlphaColor read FDefault write SetDefault stored ColorDefaultStored;
     property Pressed: TAlphaColor read FPressed write SetPressed stored ColorPressedStored;
@@ -772,10 +776,22 @@ type
 
   TTextColor = class(TViewColor)
   private
+    FHintText: TAlphaColor;
     procedure SetHintText(const Value: TAlphaColor);
-    function GetHintText: TAlphaColor;
+    function ColorHintTextStored: Boolean;
+  protected
+    FDefaultHintText: TAlphaColor;
+  public
+    constructor Create(const ADefaultColor: TAlphaColor = TAlphaColorRec.Black);
+
+    procedure Assign(Source: TPersistent); override;
+
+    function GetColor(State: TViewState): TAlphaColor; override;
+    procedure SetColor(State: TViewState; const Value: TAlphaColor); override;
+
+    property DefaultHintText: TAlphaColor read FDefaultHintText write FDefaultHintText;
   published
-    property HintText: TAlphaColor read GetHintText write SetHintText default TAlphaColorRec.Gray;
+    property HintText: TAlphaColor read FHintText write SetHintText stored ColorHintTextStored default TAlphaColorRec.Gray;
   end;
 
   /// <summary>
@@ -3252,13 +3268,14 @@ var
   Src: TViewColor;
 begin
   if Source = nil then begin
-    Self.FPressed := TAlphaColorRec.Null;
-    Self.FFocused := TAlphaColorRec.Null;
-    Self.FHovered := TAlphaColorRec.Null;
-    Self.FSelected := TAlphaColorRec.Null;
-    Self.FChecked := TAlphaColorRec.Null;
-    Self.FEnabled := TAlphaColorRec.Null;
-    Self.FActivated := TAlphaColorRec.Null;
+    Self.FDefault := FDefaultDefault;
+    Self.FPressed := FDefaultPressed;
+    Self.FFocused := FDefaultFocused;
+    Self.FHovered := FDefaultHovered;
+    Self.FSelected := FDefaultSelected;
+    Self.FChecked := FDefaultChecked;
+    Self.FEnabled := FDefaultEnabled;
+    Self.FActivated := FDefaultActivated;
     if Assigned(FOnChanged) then
       FOnChanged(Self);
   end else if Source is TViewColor then begin
@@ -3271,7 +3288,6 @@ begin
     Self.FChecked := Src.FChecked;
     Self.FEnabled := Src.FEnabled;
     Self.FActivated := Src.FActivated;
-    Self.FHintText := Src.FHintText;
     if Assigned(FOnChanged) then
       FOnChanged(Self);
   end else
@@ -3280,60 +3296,48 @@ end;
 
 constructor TViewColor.Create(const ADefaultColor: TAlphaColor);
 begin
-  FDefault := ADefaultColor;
-  FPressed := TAlphaColorRec.Null;
-  FFocused := TAlphaColorRec.Null;
-  FHovered := TAlphaColorRec.Null;
-  FSelected := TAlphaColorRec.Null;
-  FChecked := TAlphaColorRec.Null;
-  FEnabled := TAlphaColorRec.Null;
-  FActivated := TAlphaColorRec.Null;
-  FHintText := TAlphaColorRec.Gray;
+  FDefaultDefault := ADefaultColor;
+  FDefault := FDefaultDefault;
 end;
 
 function TViewColor.ColorActivatedStored: Boolean;
 begin
-  Result := GetColorStoreState(8);
+  Result := FActivated <> FDefaultActivated;
 end;
 
 function TViewColor.ColorCheckedStored: Boolean;
 begin
-  Result := GetColorStoreState(6);
+  Result := FChecked <> FDefaultChecked;
 end;
 
 function TViewColor.ColorDefaultStored: Boolean;
 begin
-  Result := GetColorStoreState(1);
+  Result := FDefault <> FDefaultDefault;
 end;
 
 function TViewColor.ColorEnabledStored: Boolean;
 begin
-  Result := GetColorStoreState(7);
+  Result := FEnabled <> FDefaultEnabled;
 end;
 
 function TViewColor.ColorFocusedStored: Boolean;
 begin
-  Result := GetColorStoreState(3);
+  Result := FFocused <> FDefaultFocused;
 end;
 
 function TViewColor.ColorHoveredStored: Boolean;
 begin
-  Result := GetColorStoreState(4);
+  Result := FHovered <> FDefaultHovered;
 end;
 
 function TViewColor.ColorPressedStored: Boolean;
 begin
-  Result := GetColorStoreState(2);
+  Result := FPressed <> FDefaultPressed;
 end;
 
 function TViewColor.ColorSelectedStored: Boolean;
 begin
-  Result := GetColorStoreState(5);
-end;
-
-destructor TViewColor.Destroy;
-begin
-  inherited;
+  Result := FSelected <> FDefaultSelected;
 end;
 
 procedure TViewColor.DoChange(Sender: TObject);
@@ -3354,16 +3358,8 @@ begin
     TViewState.Enabled: Result := FEnabled;
     TViewState.Activated: Result := FActivated;
   else
-    if Ord(State) = 8 then
-      Result := FHintText
-    else
-      raise EDrawableError.Create(Format(SInvViewValue, [Integer(State)]));
+    raise EDrawableError.Create(Format(SInvViewValue, [Integer(State)]));
   end;
-end;
-
-function TViewColor.GetColorStoreState(const Index: Integer): Boolean;
-begin
-  Result := (FColorStoreState and Index) <> 0;
 end;
 
 function TViewColor.GetStateColor(State: TViewState): TAlphaColor;
@@ -3386,7 +3382,6 @@ procedure TViewColor.SetActivated(const Value: TAlphaColor);
 begin
   if FActivated <> Value then begin
     FActivated := Value;
-    ActivatedChange := True;
     DoChange(Self);
   end;
 end;
@@ -3395,7 +3390,6 @@ procedure TViewColor.SetChecked(const Value: TAlphaColor);
 begin
   if FChecked <> Value then begin
     FChecked := Value;
-    CheckedChange := True;
     DoChange(Self);
   end;
 end;
@@ -3412,28 +3406,15 @@ begin
     TViewState.Enabled: FEnabled := Value;
     TViewState.Activated: FActivated := Value;
   else
-    if Ord(State) = 8 then
-      FHintText := Value
-    else
-      raise EDrawableError.Create(Format(SInvViewValue, [Integer(State)]));
+    raise EDrawableError.Create(Format(SInvViewValue, [Integer(State)]));
   end;
   DoChange(Self);
-end;
-
-procedure TViewColor.SetColorStoreState(const Index: Integer;
-  const Value: Boolean);
-begin
-  if Value then
-    FColorStoreState := (FColorStoreState or Cardinal(Index))
-  else
-    FColorStoreState := (FColorStoreState and (not Index));
 end;
 
 procedure TViewColor.SetDefault(const Value: TAlphaColor);
 begin
   if Value <> FDefault then begin
     FDefault := Value;
-    DefaultChange := True;
     DoChange(Self);
   end;
 end;
@@ -3442,7 +3423,6 @@ procedure TViewColor.SetEnabled(const Value: TAlphaColor);
 begin
   if FEnabled <> Value then begin
     FEnabled := Value;
-    EnabledChange := True;
     DoChange(Self);
   end;
 end;
@@ -3451,7 +3431,6 @@ procedure TViewColor.SetFocused(const Value: TAlphaColor);
 begin
   if Focused <> Value then begin
     FFocused := Value;
-    FocusedChange := True;
     DoChange(Self);
   end;
 end;
@@ -3460,7 +3439,6 @@ procedure TViewColor.SetHovered(const Value: TAlphaColor);
 begin
   if FHovered <> Value then begin
     FHovered := Value;
-    HoveredChange := True;
     DoChange(Self);
   end;
 end;
@@ -3469,7 +3447,6 @@ procedure TViewColor.SetPressed(const Value: TAlphaColor);
 begin
   if FPressed <> Value then begin
     FPressed := Value;
-    PressedChange := True;
     DoChange(Self);
   end;
 end;
@@ -3478,7 +3455,6 @@ procedure TViewColor.SetSelected(const Value: TAlphaColor);
 begin
   if FSelected <> Value then begin
     FSelected := Value;
-    SelectedChange := True;
     DoChange(Self);
   end;
 end;
@@ -3490,9 +3466,47 @@ end;
 
 { TTextColor }
 
-function TTextColor.GetHintText: TAlphaColor;
+procedure TTextColor.Assign(Source: TPersistent);
+var
+  Src: TTextColor;
 begin
-  Result := FHintText;
+  if Source = nil then
+    FHintText := FDefaultHintText
+  else if Source is TTextColor then begin
+    Src := TTextColor(Source);
+    FHintText := Src.FHintText;
+  end;
+
+  inherited;
+end;
+
+function TTextColor.ColorHintTextStored: Boolean;
+begin
+  Result := FHintText <> FDefaultHintText;
+end;
+
+constructor TTextColor.Create(const ADefaultColor: TAlphaColor);
+begin
+  inherited;
+
+  FDefaultHintText := TAlphaColorRec.Gray;
+  FHintText := TAlphaColorRec.Gray;
+end;
+
+function TTextColor.GetColor(State: TViewState): TAlphaColor;
+begin
+  if State = TViewState.Custom then
+    Result := FHintText
+  else
+    Result := inherited;
+end;
+
+procedure TTextColor.SetColor(State: TViewState; const Value: TAlphaColor);
+begin
+  if State = TViewState.Custom then
+    HintText := Value
+  else
+    inherited;
 end;
 
 procedure TTextColor.SetHintText(const Value: TAlphaColor);

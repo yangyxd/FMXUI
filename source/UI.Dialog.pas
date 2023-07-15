@@ -3504,7 +3504,7 @@ begin
   FButtonBorder.Width := SIZE_ButtonBorder;
   FButtonBorder.Style := TViewBorderStyle.RectBorder;
   FButtonBorder.Color.Default := COLOR_ButtonBorderColor;
-  FButtonBorder.Color.DefaultChange := False;
+  FButtonBorder.Color.DefaultDefault := COLOR_ButtonBorderColor;
 
   FButtonTextColor := TTextColor.Create(COLOR_ButtonTextColor);
   FButtonTextColor.Pressed := COLOR_ButtonTextPressColor;

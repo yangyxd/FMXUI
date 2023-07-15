@@ -1968,9 +1968,9 @@ begin
     DefaultStyle := TViewBorderStyle.RectBorder;
     Style := DefaultStyle;
     Color.Default := $AFCCCCCC;
-    Color.DefaultChange := False;
+    Color.DefaultDefault := Color.Default;
     Color.Pressed := $EF33ccff;
-    Color.PressedChange := False;
+    Color.DefaultPressed := Color.Pressed;
   end;
   Result.OnChanged := DoBackgroundChanged;
 end;

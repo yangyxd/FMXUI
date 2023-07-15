@@ -1794,7 +1794,7 @@ begin
 
     with TDrawableBorder(Background) do begin
       Border.Color.Default := TGridFixedSetting.CDefaultFixedDividerColor;
-      Border.Color.DefaultChange := False;
+      Border.Color.DefaultDefault := Border.Color.Default;
       Border.Style := TViewBorderStyle.RectBorder;
       Border.DefaultStyle := Border.Style;
       ItemDefault.Color := TAlphaColorRec.White;
