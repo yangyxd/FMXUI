@@ -9,6 +9,7 @@
  * [Added]   Add TListViewEx.OnItemDblClick (Thanks for code: dqi1999)
  * [Fixed]   Unnecessary showing of frame (Thanks for report: 00121)
  * [Fixed]   Remove `Text` from TTextSettingsBase.Assign (Thanks for code: dqi1999)
+ * [Fixed]   ACCESS VIOLATION error in TDrawableBase.Assign (Thanks for code: dqi1999)
  - -----------------------------------
  - 2023.06.30.001
  * [Added]   Add TBadgeStyle.Text

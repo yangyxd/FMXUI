@@ -2339,6 +2339,7 @@ procedure TDrawableBase.Assign(Source: TPersistent);
     else begin
       GetStateBrush(State, V);
       FreeAndNil(V);
+      SetStateBrush(State, nil);
     end;
   end;
 
