@@ -873,6 +873,13 @@ begin
     CountChar;
 end;
 
+{$IF CompilerVersion < 32.0}
+function StrToUIntDef(const s: string; const ADefault: Cardinal): Cardinal;
+begin
+  Result := StrToIntDef(S, ADefault);
+end;
+{$ENDIF <10.2}
+
 function Hex2Color(const s: string): TAlphaColor;
 begin
   Result := StrToUIntDef('$ff' + Copy(S, 2, Length(S) - 1), 0)

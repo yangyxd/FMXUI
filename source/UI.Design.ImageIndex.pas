@@ -136,7 +136,7 @@ begin
   begin
     FMXBitmap.Canvas.BeginScene();
     try
-      AImageList.Draw(FMXBitmap.Canvas, Rect(0, 0, ImageWidth, ImageHeight), AIndex);
+      AImageList.Draw(FMXBitmap.Canvas, RectF(0, 0, ImageWidth, ImageHeight), AIndex);
     finally
       FMXBitmap.Canvas.EndScene;
     end;
