@@ -7,6 +7,7 @@
  - -----------------------------------
  - ????.??.??
  * [新增] 添加TListViewEx.OnItemDblClick（感谢代码：dqi1999）
+ * [新增] 按钮样式面板和视图颜色面板（感谢代码：dqi1999）
  * [优化] TViewColor设计器修改记录方式（感谢报告：dqi1999）
  * [修正] 修正frame异常show的bug（感谢报告：00121）
  * [修正] TTextSettingsBase.Assign时不复制Text内容（感谢报告：dqi1999）

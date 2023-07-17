@@ -1,0 +1,581 @@
+object ButtonViewStyleEditor: TButtonViewStyleEditor
+  Left = 0
+  Top = 0
+  BorderStyle = None
+  Caption = 'Form4'
+  ClientHeight = 504
+  ClientWidth = 508
+  Position = ScreenCenter
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnShow = FormShow
+  DesignerMasterStyle = 0
+  object ViewMain: TView
+    Align = Client
+    Background.Border.Color.Default = xFF3854C1
+    Background.Border.Width = 2.000000000000000000
+    Clickable = True
+    Gravity = None
+    Padding.Left = 2.000000000000000000
+    Padding.Top = 2.000000000000000000
+    Padding.Right = 2.000000000000000000
+    Padding.Bottom = 2.000000000000000000
+    Margins.Left = 3.000000000000000000
+    Margins.Top = 3.000000000000000000
+    Margins.Right = 3.000000000000000000
+    Margins.Bottom = 3.000000000000000000
+    HitTest = True
+    Size.Width = 502.000000000000000000
+    Size.Height = 498.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 18
+    OnMouseDown = ViewMainMouseDown
+    object EditView1: TEditView
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      Align = Bottom
+      Background.ItemDefault.Color = xFFEBEEE8
+      Background.Border.Color.Default = xBFC0C0C0
+      Background.Border.Color.Focused = xFF0066CC
+      Background.Border.Color.Hovered = claSilver
+      ClipChildren = True
+      Padding.Left = 6.000000000000000000
+      Padding.Top = 2.000000000000000000
+      Padding.Right = 6.000000000000000000
+      Padding.Bottom = 2.000000000000000000
+      Size.Width = 498.000000000000000000
+      Size.Height = 36.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 2.000000000000000000
+      Position.Y = 418.000000000000000000
+      TabOrder = 3
+      TextSettings.Color.Default = xFF3D3939
+      TextSettings.Font.Size = 16.000000000000000000
+      TextSettings.Gravity = CenterVertical
+      DisableFocusEffect = True
+    end
+    object TabControl1: TTabControl
+      Align = Client
+      Margins.Left = 2.000000000000000000
+      Margins.Right = 2.000000000000000000
+      Size.Width = 494.000000000000000000
+      Size.Height = 327.000000000000000000
+      Size.PlatformDefault = False
+      TabIndex = 0
+      TabOrder = 2
+      TabPosition = Top
+      OnChange = TabControl1Change
+      object TabItem1: TTabItem
+        CustomIcon = <
+          item
+          end>
+        IsSelected = True
+        Size.Width = 73.000000000000000000
+        Size.Height = 26.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = ''
+        TabOrder = 0
+        Text = 'BootStrap'
+        ExplicitSize.cx = 75.000000000000000000
+        ExplicitSize.cy = 26.000000000000000000
+        object Rectangle2: TRectangle
+          Align = Client
+          Fill.Color = xFFE7EFF5
+          Size.Width = 494.000000000000000000
+          Size.Height = 301.000000000000000000
+          Size.PlatformDefault = False
+          object View1: TView
+            Align = Left
+            Gravity = None
+            Margins.Left = 10.000000000000000000
+            Margins.Top = 10.000000000000000000
+            Size.Width = 153.000000000000000000
+            Size.Height = 291.000000000000000000
+            Size.PlatformDefault = False
+            Position.X = 10.000000000000000000
+            Position.Y = 10.000000000000000000
+            TabOrder = 0
+            object TextView1: TTextView
+              Align = Top
+              Background.ItemDefault.Color = xFF1E50A2
+              Background.ItemDefault.Kind = Solid
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 0
+              Text = 'Bootstrap'
+              TextSettings.Color.Default = xFFFFC4C4
+              TextSettings.Font.Size = 14.000000000000000000
+              TextSettings.Gravity = Center
+            end
+          end
+          object View2: TView
+            Align = Right
+            Gravity = None
+            Margins.Left = 30.000000000000000000
+            Margins.Top = 10.000000000000000000
+            Margins.Right = 30.000000000000000000
+            Size.Width = 153.000000000000000000
+            Size.Height = 291.000000000000000000
+            Size.PlatformDefault = False
+            Position.X = 311.000000000000000000
+            Position.Y = 10.000000000000000000
+            TabOrder = 1
+            object TextView2: TTextView
+              Align = Top
+              Background.ItemDefault.Color = xFF1E50A2
+              Background.ItemDefault.Kind = Solid
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 0
+              Text = 'Bootstrap'
+              TextSettings.Color.Default = xFFFFC4C4
+              TextSettings.Font.Size = 14.000000000000000000
+              TextSettings.Gravity = Center
+            end
+          end
+        end
+      end
+      object TabItem2: TTabItem
+        Tag = 1
+        CustomIcon = <
+          item
+          end>
+        IsSelected = False
+        Size.Width = 93.000000000000000000
+        Size.Height = 26.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = ''
+        TabOrder = 0
+        Text = 'Angular-Light'
+        ExplicitSize.cx = 75.000000000000000000
+        ExplicitSize.cy = 26.000000000000000000
+        object Rectangle3: TRectangle
+          Align = Client
+          Fill.Color = xFFE7EFF5
+          Size.Width = 50.000000000000000000
+          Size.Height = 50.000000000000000000
+          Size.PlatformDefault = False
+          object View3: TView
+            Align = Left
+            Gravity = None
+            Margins.Left = 30.000000000000000000
+            Margins.Top = 10.000000000000000000
+            Size.Width = 100.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Position.X = 30.000000000000000000
+            Position.Y = 10.000000000000000000
+            TabOrder = 0
+            object TextView3: TTextView
+              Align = Top
+              Background.ItemDefault.Color = xFF1E50A2
+              Background.ItemDefault.Kind = Solid
+              Size.Width = 100.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 0
+              Text = 'Angular-Light'
+              TextSettings.Color.Default = xFFFFC4C4
+              TextSettings.Font.Size = 14.000000000000000000
+              TextSettings.Gravity = Center
+            end
+          end
+          object View4: TView
+            Align = Left
+            Gravity = None
+            Margins.Left = 10.000000000000000000
+            Margins.Top = 10.000000000000000000
+            Size.Width = 112.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Position.X = 140.000000000000000000
+            Position.Y = 10.000000000000000000
+            TabOrder = 1
+            object TextView4: TTextView
+              Align = Top
+              Background.ItemDefault.Color = xFF1E50A2
+              Background.ItemDefault.Kind = Solid
+              Size.Width = 112.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 0
+              Text = 'Bootstrap'
+              TextSettings.Color.Default = xFFFFC4C4
+              TextSettings.Font.Size = 14.000000000000000000
+              TextSettings.Gravity = Center
+            end
+          end
+          object View5: TView
+            Align = Left
+            Gravity = None
+            Margins.Left = 10.000000000000000000
+            Margins.Top = 10.000000000000000000
+            Size.Width = 111.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Position.X = 262.000000000000000000
+            Position.Y = 10.000000000000000000
+            TabOrder = 2
+            object TextView5: TTextView
+              Align = Top
+              Background.ItemDefault.Color = xFF1E50A2
+              Background.ItemDefault.Kind = Solid
+              Size.Width = 111.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 0
+              Text = 'Bootstrap'
+              TextSettings.Color.Default = xFFFFC4C4
+              TextSettings.Font.Size = 14.000000000000000000
+              TextSettings.Gravity = Center
+            end
+          end
+          object View6: TView
+            Align = Left
+            Gravity = None
+            Margins.Left = 10.000000000000000000
+            Margins.Top = 10.000000000000000000
+            Size.Width = 111.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Position.X = 383.000000000000000000
+            Position.Y = 10.000000000000000000
+            TabOrder = 3
+            object TextView6: TTextView
+              Align = Top
+              Background.ItemDefault.Color = xFF1E50A2
+              Background.ItemDefault.Kind = Solid
+              Size.Width = 111.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 0
+              Text = 'Bootstrap'
+              TextSettings.Color.Default = xFFFFC4C4
+              TextSettings.Font.Size = 14.000000000000000000
+              TextSettings.Gravity = Center
+            end
+          end
+        end
+      end
+      object TabItem3: TTabItem
+        Tag = 2
+        CustomIcon = <
+          item
+          end>
+        IsSelected = False
+        Size.Width = 92.000000000000000000
+        Size.Height = 26.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = ''
+        TabOrder = 0
+        Text = 'Angular-Dark'
+        ExplicitSize.cx = 75.000000000000000000
+        ExplicitSize.cy = 26.000000000000000000
+        object Rectangle1: TRectangle
+          Align = Client
+          Fill.Color = xFFE7EFF5
+          Size.Width = 50.000000000000000000
+          Size.Height = 50.000000000000000000
+          Size.PlatformDefault = False
+          object View7: TView
+            Align = Left
+            Gravity = None
+            Margins.Left = 30.000000000000000000
+            Margins.Top = 10.000000000000000000
+            Size.Width = 100.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Position.X = 30.000000000000000000
+            Position.Y = 10.000000000000000000
+            TabOrder = 0
+            object TextView7: TTextView
+              Align = Top
+              Background.ItemDefault.Color = xFF1E50A2
+              Background.ItemDefault.Kind = Solid
+              Size.Width = 100.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 0
+              Text = 'Bootstrap'
+              TextSettings.Color.Default = xFFFFC4C4
+              TextSettings.Font.Size = 14.000000000000000000
+              TextSettings.Gravity = Center
+            end
+          end
+          object View8: TView
+            Align = Left
+            Gravity = None
+            Margins.Left = 10.000000000000000000
+            Margins.Top = 10.000000000000000000
+            Size.Width = 112.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Position.X = 140.000000000000000000
+            Position.Y = 10.000000000000000000
+            TabOrder = 1
+            object TextView8: TTextView
+              Align = Top
+              Background.ItemDefault.Color = xFF1E50A2
+              Background.ItemDefault.Kind = Solid
+              Size.Width = 112.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 0
+              Text = 'Bootstrap'
+              TextSettings.Color.Default = xFFFFC4C4
+              TextSettings.Font.Size = 14.000000000000000000
+              TextSettings.Gravity = Center
+            end
+          end
+          object View9: TView
+            Align = Left
+            Gravity = None
+            Margins.Left = 10.000000000000000000
+            Margins.Top = 10.000000000000000000
+            Size.Width = 110.702697753906300000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Position.X = 262.000000000000000000
+            Position.Y = 10.000000000000000000
+            TabOrder = 2
+            object TextView9: TTextView
+              Align = Top
+              Background.ItemDefault.Color = xFF1E50A2
+              Background.ItemDefault.Kind = Solid
+              Size.Width = 110.702697753906300000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 0
+              Text = 'Bootstrap'
+              TextSettings.Color.Default = xFFFFC4C4
+              TextSettings.Font.Size = 14.000000000000000000
+              TextSettings.Gravity = Center
+            end
+          end
+          object View10: TView
+            Align = Left
+            Gravity = None
+            Margins.Left = 10.000000000000000000
+            Margins.Top = 10.000000000000000000
+            Size.Width = 111.323822021484400000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Position.X = 382.702697753906200000
+            Position.Y = 10.000000000000000000
+            TabOrder = 3
+            object TextView10: TTextView
+              Align = Top
+              Background.ItemDefault.Color = xFF1E50A2
+              Background.ItemDefault.Kind = Solid
+              Size.Width = 111.323822021484400000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 0
+              Text = 'Bootstrap'
+              TextSettings.Color.Default = xFFFFC4C4
+              TextSettings.Font.Size = 14.000000000000000000
+              TextSettings.Gravity = Center
+            end
+          end
+        end
+      end
+    end
+    object TextViewFamily: TTextView
+      Align = Top
+      Background.ItemDefault.Color = xFF065279
+      Background.ItemDefault.Kind = Solid
+      Size.Width = 498.000000000000000000
+      Size.Height = 33.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 2.000000000000000000
+      Position.Y = 2.000000000000000000
+      TabOrder = 0
+      OnMouseDown = TextViewFamilyMouseDown
+      Text = 'Bootstrap'
+      TextSettings.Color.Default = claWhite
+      TextSettings.Font.Size = 18.000000000000000000
+      TextSettings.Gravity = Center
+    end
+    object View11: TView
+      Align = Bottom
+      Gravity = None
+      Size.Width = 498.000000000000000000
+      Size.Height = 42.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 2.000000000000000000
+      Position.Y = 454.000000000000000000
+      TabOrder = 4
+      object ButtonView1: TButtonView
+        Background.XRadius = 5.000000000000000000
+        Background.YRadius = 5.000000000000000000
+        Background.ItemDefault.Color = xFF0D6EFD
+        Background.ItemPressed.Color = xFF0A58CA
+        Background.ItemActivated.Color = xFFFF3838
+        Background.ItemActivated.Kind = Solid
+        Background.Border.Color.Default = claNull
+        Background.Border.Color.Pressed = xFF86B6FE
+        Background.Border.Color.Focused = xFF0D6EFD
+        Background.Border.Color.Hovered = xFF86B6FE
+        Background.Border.Width = 2.000000000000000000
+        Size.Width = 100.000000000000000000
+        Size.Height = 25.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 169.000000000000000000
+        Position.Y = 9.000000000000000000
+        TabOrder = 5
+        OnClick = ButtonView1Click
+        Text = 'OK'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = xFF212529
+        TextSettings.Color.Focused = xFF212529
+        TextSettings.Color.Hovered = xFF212529
+        TextSettings.Color.HintText = claBlack
+        TextSettings.Gravity = Center
+        ModalResult = 1
+      end
+      object ButtonView2: TButtonView
+        Background.XRadius = 5.000000000000000000
+        Background.YRadius = 5.000000000000000000
+        Background.ItemDefault.Color = xFF6C757D
+        Background.ItemPressed.Color = xFF565E64
+        Background.Border.Color.Default = claNull
+        Background.Border.Color.Pressed = xFFB6BABE
+        Background.Border.Color.Focused = xFF6C757D
+        Background.Border.Color.Hovered = xFFB6BABE
+        Background.Border.Width = 2.000000000000000000
+        Size.Width = 100.000000000000000000
+        Size.Height = 25.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 385.000000000000000000
+        Position.Y = 8.000000000000000000
+        TabOrder = 4
+        Text = 'Cancel'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claBlack
+        TextSettings.Color.Hovered = claBlack
+        TextSettings.Color.Checked = claBlack
+        TextSettings.Color.HintText = claBlack
+        TextSettings.Gravity = Center
+        ModalResult = 2
+      end
+      object ButtonView3: TButtonView
+        Background.XRadius = 5.000000000000000000
+        Background.YRadius = 5.000000000000000000
+        Background.ItemDefault.Color = xFFDC3545
+        Background.ItemPressed.Color = xFFB02A37
+        Background.ItemActivated.Color = xFFFF3838
+        Background.ItemActivated.Kind = Solid
+        Background.Border.Color.Default = claNull
+        Background.Border.Color.Pressed = xFFEE9AA2
+        Background.Border.Color.Focused = xFFDC3545
+        Background.Border.Color.Hovered = xFFEE9AA2
+        Background.Border.Width = 2.000000000000000000
+        Size.Width = 100.000000000000000000
+        Size.Height = 25.000000000000000000
+        Size.PlatformDefault = False
+        Position.X = 277.000000000000000000
+        Position.Y = 8.000000000000000000
+        TabOrder = 3
+        OnClick = ButtonView3Click
+        Text = 'Apply'
+        TextSettings.Color.Default = claWhite
+        TextSettings.Color.Pressed = claBlack
+        TextSettings.Color.Hovered = claBlack
+        TextSettings.Color.Checked = claBlack
+        TextSettings.Color.HintText = claBlack
+        TextSettings.Gravity = Center
+      end
+    end
+    object ViewStyle: TView
+      Align = Top
+      Gravity = None
+      Size.Width = 498.000000000000000000
+      Size.Height = 56.000000000000000000
+      Size.PlatformDefault = False
+      Position.X = 2.000000000000000000
+      Position.Y = 35.000000000000000000
+      TabOrder = 1
+      object GridPanelLayout1: TGridPanelLayout
+        Align = Client
+        Size.Width = 498.000000000000000000
+        Size.Height = 56.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        ColumnCollection = <
+          item
+            Value = 50.000000000000000000
+          end
+          item
+            Value = 50.000000000000000000
+          end>
+        ControlCollection = <
+          item
+            Column = 0
+            Control = SourceButton
+            Row = 0
+          end
+          item
+            Column = 1
+            Control = DestButton
+            Row = 0
+          end>
+        RowCollection = <
+          item
+            Value = 100.000000000000000000
+          end>
+        object SourceButton: TButtonView
+          Align = Center
+          Background.XRadius = 5.000000000000000000
+          Background.YRadius = 5.000000000000000000
+          Background.ItemDefault.Color = claNull
+          Background.ItemPressed.Color = xFFDC3545
+          Background.Border.Color.Default = xFFDC3545
+          Background.Border.Color.Pressed = xFFEE9AA2
+          Background.Border.Color.Focused = xFFE35D6A
+          Background.Border.Color.Selected = xFFDC3545
+          Background.Border.Width = 3.000000000000000000
+          Size.Width = 100.000000000000000000
+          Size.Height = 30.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          TextSettings.Color.Default = xFFDC3545
+          TextSettings.Color.Pressed = claWhite
+          TextSettings.Color.Focused = claWhite
+          TextSettings.Color.Hovered = claWhite
+          TextSettings.Color.Selected = xFFDC3545
+          TextSettings.Color.HintText = claBlack
+          TextSettings.Gravity = Center
+          HtmlText = 'Source Button'
+        end
+        object DestButton: TButtonView
+          Anchors = []
+          Background.XRadius = 5.000000000000000000
+          Background.YRadius = 5.000000000000000000
+          Background.ItemDefault.Color = claNull
+          Background.ItemPressed.Color = xFF198754
+          Background.Border.Color.Default = xFF198754
+          Background.Border.Color.Pressed = xFF8CC3AA
+          Background.Border.Color.Focused = xFF479F76
+          Background.Border.Color.Selected = xFF198754
+          Background.Border.Width = 3.000000000000000000
+          Size.Width = 105.000000000000000000
+          Size.Height = 30.000000000000000000
+          Size.PlatformDefault = False
+          Position.X = 321.000000000000000000
+          Position.Y = 13.000000000000000000
+          TabOrder = 1
+          Text = 'Dest Button'
+          TextSettings.Color.Default = xFF198754
+          TextSettings.Color.Pressed = claWhite
+          TextSettings.Color.Focused = claWhite
+          TextSettings.Color.Hovered = claWhite
+          TextSettings.Color.Selected = xFF198754
+          TextSettings.Color.HintText = claBlack
+          TextSettings.Gravity = Center
+        end
+      end
+    end
+  end
+end
