@@ -30,6 +30,7 @@
  * [Fixed]   fix Animation error under 11.3 (Thanks for report: marlonnardi, 柴头柴脑) GH-55
  * [Fixed]   ListviewEx item click not work with non TView control
  * [Fixed]   fix TPullScrollView/TVertScrollView/THorzScrollView pull action position error under 11.3 (Thanks for report: marlonnardi) GH-58
+ * [Fixed]   NativeInt as a Weak Alias under 12 (Thanks for report: marlonnardi) fixed GH-62
 - -----------------------------------
  - 2021.03.19.001
  * [Added]   Compatible with 10.4

@@ -150,9 +150,10 @@ type
     Key: THashType;
     case Value: Int64 of
       0: (AsNumber: Number);
-      1: (AsDouble: Double);
-      2: (AsInt64: Int64);
-      3: (AsPointer: Pointer);
+      1: (AsInteger: Integer);
+      2: (AsDouble: Double);
+      3: (AsInt64: Int64);
+      4: (AsPointer: Pointer);
   end;
 
   /// <summary>删除哈希表一个元素的通知</summary>
@@ -181,19 +182,19 @@ type
 
     function Find(const Key: THashType): PPIntHashItem;
 
-    procedure Add(const Key: THashType; const Value: Number); overload;
+    procedure Add(const Key: THashType; const Value: Integer); overload;
     procedure Add(const Key: THashType; const Value: Double); overload;
     procedure Add(const Key: THashType; const Value: Int64); overload;
     procedure Add(const Key: THashType; const Value: Pointer); overload;
     procedure Add(const Key: THashType; const Value: TObject); overload;
 
-    procedure AddOrUpdate(const Key: THashType; const Value: Number); overload;
+    procedure AddOrUpdate(const Key: THashType; const Value: Integer); overload;
     procedure AddOrUpdate(const Key: THashType; const Value: Double); overload;
     procedure AddOrUpdate(const Key: THashType; const Value: Int64); overload;
     procedure AddOrUpdate(const Key: THashType; const Value: Pointer); overload;
     procedure AddOrUpdate(const Key: THashType; const Value: TObject); overload;
 
-    function Modify(const Key: THashType; const Value: Number): Boolean; overload;
+    function Modify(const Key: THashType; const Value: Integer): Boolean; overload;
     function Modify(const Key: THashType; const Value: Double): Boolean; overload;
     function Modify(const Key: THashType; const Value: Int64): Boolean; overload;
     function Modify(const Key: THashType; const Value: Pointer): Boolean; overload;
@@ -203,7 +204,7 @@ type
     function TryGetValue(const Key: THashType; out Data: Pointer): Boolean; overload;
     function TryGetValue(const Key: THashType; out Data: Int64): Boolean; overload;
     function TryGetValue(const Key: THashType; out Data: Double): Boolean; overload;
-    function TryGetValue(const Key: THashType; out Data: Number): Boolean; overload;
+    function TryGetValue(const Key: THashType; out Data: Integer): Boolean; overload;
 
     function ValueOf(const Key: THashType; const DefaultValue: Number = -1): Number;
 
@@ -995,7 +996,7 @@ end;
 
 { TIntHash }
 
-procedure TIntHash.Add(const Key: THashType; const Value: Number);
+procedure TIntHash.Add(const Key: THashType; const Value: Integer);
 var
   Hash: Integer;
   Bucket: PIntHashItem;
@@ -1003,7 +1004,7 @@ begin
   Hash := Key mod Cardinal(Length(Buckets));
   New(Bucket);
   Bucket^.Key := Key;
-  Bucket^.AsNumber := Value;
+  Bucket^.AsInteger := Value;
   Bucket^.Next := Buckets[Hash];
   Buckets[Hash] := Bucket;
   Inc(FCount);
@@ -1077,7 +1078,7 @@ begin
     Add(Key, Value);
 end;
 
-procedure TIntHash.AddOrUpdate(const Key: THashType; const  Value: Number);
+procedure TIntHash.AddOrUpdate(const Key: THashType; const  Value: Integer);
 begin
   if not Modify(Key, Value) then
     Add(Key, Value);
@@ -1336,7 +1337,7 @@ begin
     Result := False;
 end;
 
-function TIntHash.Modify(const Key: THashType; const Value: Number): Boolean;
+function TIntHash.Modify(const Key: THashType; const Value: Integer): Boolean;
 var
   P: PIntHashItem;
 begin
@@ -1346,7 +1347,7 @@ begin
     Result := True;
     if Assigned(FOnFreeItem) then
       FOnFreeItem(P);
-    P^.AsNumber := Value;
+    P^.AsInteger := Value;
   end else
     Result := False;
 end;
@@ -1373,14 +1374,14 @@ begin
   AddOrUpdate(Key, Value);
 end;
 
-function TIntHash.TryGetValue(const Key: THashType; out Data: Number): Boolean;
+function TIntHash.TryGetValue(const Key: THashType; out Data: Integer): Boolean;
 var
   P: PIntHashItem;
 begin
   P := Find(Key)^;
   if P <> nil then begin
     Result := True;
-    Data := P^.AsNumber
+    Data := P^.AsInteger
   end else begin
     Result := False;
     Data := 0;
