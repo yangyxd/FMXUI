@@ -205,6 +205,9 @@ type
     function TryGetValue(const Key: THashType; out Data: Int64): Boolean; overload;
     function TryGetValue(const Key: THashType; out Data: Double): Boolean; overload;
     function TryGetValue(const Key: THashType; out Data: Integer): Boolean; overload;
+    {$IF CompilerVersion < 36.0}
+    function TryGetValue(const Key: THashType; out Data: Number): Boolean; overload;
+    {$ENDIF <12}
 
     function ValueOf(const Key: THashType; const DefaultValue: Number = -1): Number;
 
@@ -1429,6 +1432,22 @@ begin
     Data := 0;
   end;
 end;
+
+{$IF CompilerVersion < 36.0}
+function TIntHash.TryGetValue(const Key: THashType; out Data: Number): Boolean;
+var
+  P: PIntHashItem;
+begin
+  P := Find(Key)^;
+  if P <> nil then begin
+    Result := True;
+    Data := P^.AsNumber
+  end else begin
+    Result := False;
+    Data := 0;
+  end;
+end;
+{$ENDIF <12}
 
 function TIntHash.TryGetValue(const Key: THashType; out Data: Int64): Boolean;
 var
