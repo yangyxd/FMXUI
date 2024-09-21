@@ -54,7 +54,14 @@ type
     procedure ItemMeasureHeight(const Index: Integer; var AHeight: Single);
     procedure Clear;
     procedure Repaint;
+    /// <summary>
+    /// reset and refresh views
+    /// </summary>
     procedure NotifyDataChanged;
+    /// <summary>
+    /// only refresh item view, ignore size and position
+    /// </summary>
+    procedure QucikNotifyDataChanged(const Index: Integer);
     property Count: Integer read GetCount;
     property Items[const Index: Integer]: Pointer read GetItem; default;
   end;
@@ -546,6 +553,7 @@ type
     procedure Clear; virtual;
     procedure Repaint; virtual;
     procedure NotifyDataChanged; virtual;
+    procedure QucikNotifyDataChanged(const Index: Integer); virtual;
 
     property ListView: TListViewEx read FListView write FListView;
     property Count: Integer read GetCount;
@@ -3170,6 +3178,20 @@ procedure TListAdapterBase.NotifyDataChanged;
 begin
   if Assigned(FListView) then
     FListView.NotifyDataChanged;
+end;
+
+procedure TListAdapterBase.QucikNotifyDataChanged(const Index: Integer);
+var
+  LItemView: TControl;
+begin
+  if (not Assigned(FListView)) or (FListView.Count = 0) then
+    Exit;
+
+  if (FListView.FirstRowIndex <= Index + 1) and (FListView.LastRowIndex >= Index - 1) then begin
+    LItemView := FListView.ItemViews[Index];
+    if Assigned(LItemView) then
+      LItemView := GetView(Index, TViewBase(LItemView), TViewGroup(FListView.ContentViews));
+  end;
 end;
 
 procedure TListAdapterBase.Repaint;
