@@ -2370,6 +2370,9 @@ begin
     FCornerType := Src.FCornerType;
     FCorners := Src.Corners;
     FKind := Src.FKind;
+    FXRadius := Src.FXRadius;
+    FYRadius := Src.FYRadius;
+    FIsEmpty := Src.FIsEmpty;
     AssignItem(TViewState.None, Src);
     AssignItem(TViewState.Pressed, Src);
     AssignItem(TViewState.Focused, Src);
@@ -3056,6 +3059,7 @@ begin
     FHeight := TDrawableIcon(Source).FHeight;
     FPadding := TDrawableIcon(Source).FPadding;
     FPosition := TDrawableIcon(Source).FPosition;
+    FImageLink.Images := TDrawableIcon(Source).Images;
   end;
   inherited Assign(Source);
 end;
