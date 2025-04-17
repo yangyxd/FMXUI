@@ -234,7 +234,11 @@ begin
       except
       end;
     finally
+      {$IF defined(VER240)}
+      FAsync.Free;
+      {$ELSE}
       FAsync.DisposeOf;
+      {$IFEND}
       FAsync := nil;
       AtomicDecrement(FAsyncRef);
     end;

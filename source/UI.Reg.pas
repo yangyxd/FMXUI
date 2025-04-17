@@ -177,6 +177,8 @@ begin
   RegisterComponents(PageName, [TMultiPathView]);
   RegisterComponents(PageName, [TCameraViewer]);
 
+  RegisterComponents(PageName, [TStyleViewManager]);
+
   RegisterComponents(PageName, [THorzScrollView]);
   RegisterComponents(PageName, [TVertScrollView]);
   RegisterComponents(PageName, [TListViewEx]);
@@ -301,6 +303,9 @@ begin
       'Drawable',
       'GroupIndex',
       'OnDrawBackgroud',
+      { TStyleView }
+      'StyleManager',
+      'StyleType',
       { TProgressView }
       'Min',
       'Max',
@@ -468,6 +473,8 @@ begin
     ]);
   AddEnumElementAliases(TypeInfo(TCalendarViewType),
     ['Days', 'Months', 'Years', 'Decades', 'Centuries']);
+  AddEnumElementAliases(TypeInfo(TStyleViewType),
+    ['None', 'Default', 'Primarty', 'Success', 'Warning', 'Danger', 'Info', 'Text']);
 end;
 
 procedure UnregisterAliases;
@@ -490,6 +497,7 @@ begin
   RemoveEnumElementAliases(TypeInfo(TViewAccessoryStyle));
   RemoveEnumElementAliases(TypeInfo(TViewAccessoryType));
   RemoveEnumElementAliases(TypeInfo(TCalendarViewType));
+  RemoveEnumElementAliases(TypeInfo(TStyleViewType));
 end;
 
 { TViewControlEditor }

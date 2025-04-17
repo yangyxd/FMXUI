@@ -106,6 +106,12 @@ type
   TViewBrushKind = (None, Solid, Gradient, Bitmap, Resource, Patch9Bitmap, AccessoryBitmap, SVGImage);
 
   /// <summary>
+  /// 样式类型
+  /// </summary>
+  TStyleViewType = (None {无}, Default {默认}, Primarty {主要}, Success {成功},
+    Warning {警告}, Danger {危险}, Info {信息}, Text {文本} );
+
+  /// <summary>
   /// 附件样式
   /// </summary>
   TViewAccessoryStyle = (Accessory, Path);
