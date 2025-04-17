@@ -787,9 +787,114 @@ type
   end;
 
 type
+  TStyleViewColor = class(TPersistent)
+  private
+    FOnChanged: TNotifyEvent;
+    FText: TTextColor;
+    FBackground: TViewColor;
+    FBorder: TViewBorder;
+    procedure SetBackgroundColor(const Value: TViewColor);
+    procedure SetBorderColor(const Value: TViewBorder);
+    procedure SetTextColor(const Value: TTextColor);
+  protected
+    procedure DoChanged(); virtual;
+  public
+    constructor Create; virtual;
+    destructor Destroy; override;
+    procedure Assign(Source: TPersistent); override;
+    property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
+  published
+    property TextColor: TTextColor read FText write SetTextColor;
+    property BackgroundColor: TViewColor read FBackground write SetBackgroundColor;
+    property BorderColor: TViewBorder read FBorder write SetBorderColor;
+  end;
+
+  TStyleViewStyles = class(TPersistent)
+  private
+    FOnChanged: TNotifyEvent;
+    FStyleDefault: TStyleViewColor;
+    FStylePrimarty: TStyleViewColor;
+    FStyleSuccess: TStyleViewColor;
+    FStyleWarning: TStyleViewColor;
+    FStyleDanger: TStyleViewColor;
+    FStyleInfo: TStyleViewColor;
+    FStyleText: TStyleViewColor;
+    procedure SetStyleDanger(const Value: TStyleViewColor);
+    procedure SetStyleInfo(const Value: TStyleViewColor);
+    procedure SetStylePrimarty(const Value: TStyleViewColor);
+    procedure SetStyleSuccess(const Value: TStyleViewColor);
+    procedure SetStyleText(const Value: TStyleViewColor);
+    procedure SetStyleWarning(const Value: TStyleViewColor);
+    procedure SetStyleDefault(const Value: TStyleViewColor);
+  protected
+    procedure DoChanged(Sender: TObject); virtual;
+  public
+    constructor Create; virtual;
+    destructor Destroy; override;
+    procedure Assign(Source: TPersistent); override;
+    property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
+  published
+    // 默认颜色
+    property StyleDefault: TStyleViewColor read FStyleDefault write SetStyleDefault;
+    // 主要颜色
+    property StylePrimarty: TStyleViewColor read FStylePrimarty write SetStylePrimarty;
+    // 成功颜色
+    property StyleSuccess: TStyleViewColor read FStyleSuccess write SetStyleSuccess;
+    // 信息颜色
+    property StyleInfo: TStyleViewColor read FStyleInfo write SetStyleInfo;
+    // 警告颜色
+    property StyleWarning: TStyleViewColor read FStyleWarning write SetStyleWarning;
+    // 危险颜色
+    property StyleDanger: TStyleViewColor read FStyleDanger write SetStyleDanger;
+    // 文本样式
+    property StyleText: TStyleViewColor read FStyleText write SetStyleText;
+  end;
+
+type
+  /// <summary>
+  /// 样式管理器
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TStyleViewManager = class(TComponent)
+  private
+    FDisableChanged: Boolean;
+    FStyles: TStyleViewStyles;
+    FPlainStyles: TStyleViewStyles;
+    FPlain: Boolean;
+    procedure SetPlain(const Value: Boolean);
+    procedure SetPlainStyles(const Value: TStyleViewStyles);
+    procedure SetStyles(const Value: TStyleViewStyles);
+  protected
+    procedure DoChanged(Sender: TObject);
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    procedure Assign(Source: TPersistent); override;
+  published
+    // 标准样式
+    property Styles: TStyleViewStyles read FStyles write SetStyles;
+    // 朴素样式
+    property PlainStyles: TStyleViewStyles read FPlainStyles write SetPlainStyles;
+    // 是否是朴素样式
+    property Plain: Boolean read FPlain write SetPlain default False;
+  end;
+
+type
   TStyleView = class(TTextView)
+  private
+    [Weak] FStyleManager: TStyleViewManager;
+    FStyleType: TStyleViewType;
+    procedure SetStyleManager(const Value: TStyleViewManager);
+    procedure SetStyleType(const Value: TStyleViewType);
   protected
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  published
+    // 样式管理器
+    property StyleManager: TStyleViewManager read FStyleManager write SetStyleManager;
+    property StyleType: TStyleViewType read FStyleType write SetStyleType default TStyleViewType.None;
   end;
 
 type
@@ -1911,6 +2016,34 @@ end;
 function TStyleView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
 begin
   Result := inherited CanRePaintBk(View, State);
+end;
+
+constructor TStyleView.Create(AOwner: TComponent);
+begin
+  FStyleManager := nil;
+  inherited Create(AOwner);
+end;
+
+destructor TStyleView.Destroy;
+begin
+  SetStyleManager(nil);
+  inherited;
+end;
+
+procedure TStyleView.SetStyleManager(const Value: TStyleViewManager);
+begin
+  if FStyleManager <> Value then begin
+    FStyleManager := Value;
+    DoChanged(Self);
+  end;
+end;
+
+procedure TStyleView.SetStyleType(const Value: TStyleViewType);
+begin
+  if FStyleType <> Value then begin
+    FStyleType := Value;
+    DoChanged(Self);
+  end;
 end;
 
 { TButtonView }
@@ -6533,6 +6666,244 @@ end;
 procedure THorzScrollView.DoSetDefaulatScrollBars;
 begin
   ScrollBars := TViewScroll.Horizontal;
+end;
+
+{ TStyleViewColor }
+
+procedure TStyleViewColor.Assign(Source: TPersistent);
+var
+  SaveChange: TNotifyEvent;
+begin
+  if Source is TStyleViewColor then begin
+    SaveChange := FOnChanged;
+    FOnChanged := nil;
+    FBackground.OnChanged := nil;
+    FBorder.OnChanged := nil;
+    FText.OnChanged := nil;
+    FBackground.Assign(TStyleViewColor(Source).FBackground);
+    FBorder.Assign(TStyleViewColor(Source).FBorder);
+    FText.Assign(TStyleViewColor(Source).FText);
+    FBackground.OnChanged := Self.FOnChanged;
+    FBorder.OnChanged := Self.FOnChanged;
+    FText.OnChanged := Self.FOnChanged;
+    FOnChanged := SaveChange;
+    if Assigned(FOnChanged) then
+      FOnChanged(Self);
+  end else
+    inherited;
+end;
+
+constructor TStyleViewColor.Create;
+begin
+  FBackground := TViewColor.Create(TAlphaColorRec.Null);
+  FText := TTextColor.Create(TAlphaColorRec.Null);
+  FBorder := TViewBorder.Create(TViewBorderStyle.None);
+  FBackground.OnChanged := Self.FOnChanged;
+  FBorder.OnChanged := Self.FOnChanged;
+  FText.OnChanged := Self.FOnChanged;
+end;
+
+destructor TStyleViewColor.Destroy;
+begin
+  FreeAndNil(FBackground);
+  FreeAndNil(FBorder);
+  FreeAndNil(FText);
+  inherited;
+end;
+
+procedure TStyleViewColor.DoChanged;
+begin
+  if Assigned(FOnChanged) then
+    FOnChanged(Self);
+end;
+
+procedure TStyleViewColor.SetBackgroundColor(const Value: TViewColor);
+begin
+  if (FBackground <> Value) then
+    FBackground.Assign(Value);
+end;
+
+procedure TStyleViewColor.SetBorderColor(const Value: TViewBorder);
+begin
+  if (FBorder <> Value) then
+    FBorder.Assign(Value);
+end;
+
+procedure TStyleViewColor.SetTextColor(const Value: TTextColor);
+begin
+  if (FText <> Value) then
+    FText.Assign(Value);
+end;
+
+{ TStyleViewStyles }
+
+procedure TStyleViewStyles.Assign(Source: TPersistent);
+var
+  SaveChange: TNotifyEvent;
+begin
+  if Source is TStyleViewStyles then begin
+    SaveChange := FOnChanged;
+    FOnChanged := nil;
+    FStylePrimarty.Assign(TStyleViewStyles(Source).FStylePrimarty);
+    FStyleSuccess.Assign(TStyleViewStyles(Source).FStyleSuccess);
+    FStyleWarning.Assign(TStyleViewStyles(Source).FStyleWarning);
+    FStyleDanger.Assign(TStyleViewStyles(Source).FStyleDanger);
+    FStyleInfo.Assign(TStyleViewStyles(Source).FStyleInfo);
+    FStyleText.Assign(TStyleViewStyles(Source).FStyleText);
+    FOnChanged := SaveChange;
+    if Assigned(FOnChanged) then
+      FOnChanged(Self);
+  end else
+    inherited;
+end;
+
+constructor TStyleViewStyles.Create;
+begin
+  FStyleDefault := TStyleViewColor.Create;
+  FStylePrimarty := TStyleViewColor.Create;
+  FStyleSuccess := TStyleViewColor.Create;
+  FStyleWarning := TStyleViewColor.Create;
+  FStyleDanger := TStyleViewColor.Create;
+  FStyleInfo := TStyleViewColor.Create;
+  FStyleText := TStyleViewColor.Create;
+  // 初始化颜色
+  FStyleDefault.FText.Default := $FF282828;
+  FStyleDefault.FText.Hovered := $ff409eff;
+  FStyleDefault.FText.Pressed := $ff1f93ff;
+  FStyleDefault.FText.Checked := $ff409eff;
+  FStyleDefault.FText.Enabled := $ffc0c4cc;
+  FStyleDefault.FBorder.Color.Default := $ffdcdfe6;
+  FStyleDefault.FBorder.Color.Hovered := $ff4da9ff;
+  FStyleDefault.FBorder.Color.Pressed := $ff1f93ff;
+  FStyleDefault.FBorder.Color.Checked := $ff409eff;
+  FStyleDefault.FBorder.Color.Enabled := $ffe0e3e9;
+  FStyleDefault.FBackground.Default := $ffFFFFFF;
+  FStyleDefault.FBackground.Hovered := $ffecf5ff;
+  FStyleDefault.FBackground.Pressed := $ffecf5ff;
+  FStyleDefault.FBackground.Checked := $ffecf5ff;
+  FStyleDefault.FBackground.Enabled := $ffFFFFFF;
+  // 挂钩事件
+  FStyleDefault.OnChanged := DoChanged;
+  FStylePrimarty.OnChanged := DoChanged;
+  FStyleSuccess.OnChanged := DoChanged;
+  FStyleWarning.OnChanged := DoChanged;
+  FStyleDanger.OnChanged := DoChanged;
+  FStyleInfo.OnChanged := DoChanged;
+  FStyleText.OnChanged := DoChanged;
+end;
+
+destructor TStyleViewStyles.Destroy;
+begin
+  FreeAndNil(FStyleDefault);
+  FreeAndNil(FStylePrimarty);
+  FreeAndNil(FStyleSuccess);
+  FreeAndNil(FStyleWarning);
+  FreeAndNil(FStyleDanger);
+  FreeAndNil(FStyleInfo);
+  FreeAndNil(FStyleText);
+  inherited;
+end;
+
+procedure TStyleViewStyles.DoChanged(Sender: TObject);
+begin
+  if Assigned(FOnChanged) then
+    FOnChanged(Self);
+end;
+
+procedure TStyleViewStyles.SetStyleDanger(const Value: TStyleViewColor);
+begin
+  if FStyleDanger <> Value then FStyleDanger.Assign(Value);
+end;
+
+procedure TStyleViewStyles.SetStyleDefault(const Value: TStyleViewColor);
+begin
+  if FStyleDefault <> Value then FStyleDefault.Assign(Value);
+end;
+
+procedure TStyleViewStyles.SetStyleInfo(const Value: TStyleViewColor);
+begin
+  if FStyleInfo <> Value then FStyleInfo.Assign(Value);
+end;
+
+procedure TStyleViewStyles.SetStylePrimarty(const Value: TStyleViewColor);
+begin
+  if FStylePrimarty <> Value then FStylePrimarty.Assign(Value);
+end;
+
+procedure TStyleViewStyles.SetStyleSuccess(const Value: TStyleViewColor);
+begin
+  if FStyleSuccess <> Value then FStyleSuccess.Assign(Value);
+end;
+
+procedure TStyleViewStyles.SetStyleText(const Value: TStyleViewColor);
+begin
+  if FStyleText <> Value then FStyleText.Assign(Value);
+end;
+
+procedure TStyleViewStyles.SetStyleWarning(const Value: TStyleViewColor);
+begin
+  if FStyleWarning <> Value then FStyleWarning.Assign(Value);
+end;
+
+{ TStyleViewManager }
+
+procedure TStyleViewManager.Assign(Source: TPersistent);
+var
+  SaveChange: TNotifyEvent;
+begin
+  if Source is TStyleViewManager then begin
+    FDisableChanged := True;
+    try
+      FPlain := TStyleViewManager(Source).FPlain;
+      FPlainStyles.Assign(TStyleViewManager(Source).FPlainStyles);
+      FStyles.Assign(TStyleViewManager(Source).FStyles);
+    finally
+      FDisableChanged := False;
+      DoChanged(Self);
+    end;
+  end else
+    inherited;
+end;
+
+constructor TStyleViewManager.Create(AOwner: TComponent);
+begin
+  FDisableChanged := False;
+  FPlain := False;
+  inherited;
+  FStyles := TStyleViewStyles.Create();
+  FPlainStyles := TStyleViewStyles.Create();
+  FStyles.OnChanged := DoChanged;
+  FPlainStyles.OnChanged := DoChanged;
+end;
+
+destructor TStyleViewManager.Destroy;
+begin
+  FreeAndNil(FStyles);
+  FreeAndNil(FPlainStyles);
+  inherited;
+end;
+
+procedure TStyleViewManager.DoChanged(Sender: TObject);
+begin
+  if FDisableChanged then Exit;
+end;
+
+procedure TStyleViewManager.SetPlain(const Value: Boolean);
+begin
+  if FPlain <> Value then begin
+    FPlain := Value;
+    DoChanged(Self);
+  end;
+end;
+
+procedure TStyleViewManager.SetPlainStyles(const Value: TStyleViewStyles);
+begin
+  if FPlainStyles <> Value then FPlainStyles.Assign(Value);
+end;
+
+procedure TStyleViewManager.SetStyles(const Value: TStyleViewStyles);
+begin
+  if FStyles <> Value then FStyles.Assign(Value);
 end;
 
 initialization
