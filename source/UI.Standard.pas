@@ -831,6 +831,7 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
+    procedure InitColor; virtual;
     procedure Assign(Source: TPersistent); override;
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
   published
@@ -848,6 +849,11 @@ type
     property StyleDanger: TStyleViewColor read FStyleDanger write SetStyleDanger;
     // 文本样式
     property StyleText: TStyleViewColor read FStyleText write SetStyleText;
+  end;
+
+  TStyleViewPlainStyles = class(TStyleViewStyles)
+  protected
+    procedure InitColor(); override;
   end;
 
 type
@@ -6766,30 +6772,7 @@ begin
   FStyleDanger := TStyleViewColor.Create;
   FStyleInfo := TStyleViewColor.Create;
   FStyleText := TStyleViewColor.Create;
-  // 初始化颜色
-  FStyleDefault.FText.Default := $FF282828;
-  FStyleDefault.FText.Hovered := $ff409eff;
-  FStyleDefault.FText.Pressed := $ff1f93ff;
-  FStyleDefault.FText.Checked := $ff409eff;
-  FStyleDefault.FText.Enabled := $ffc0c4cc;
-  FStyleDefault.FBorder.Color.Default := $ffdcdfe6;
-  FStyleDefault.FBorder.Color.Hovered := $ff4da9ff;
-  FStyleDefault.FBorder.Color.Pressed := $ff1f93ff;
-  FStyleDefault.FBorder.Color.Checked := $ff409eff;
-  FStyleDefault.FBorder.Color.Enabled := $ffe0e3e9;
-  FStyleDefault.FBackground.Default := $ffFFFFFF;
-  FStyleDefault.FBackground.Hovered := $ffecf5ff;
-  FStyleDefault.FBackground.Pressed := $ffecf5ff;
-  FStyleDefault.FBackground.Checked := $ffecf5ff;
-  FStyleDefault.FBackground.Enabled := $ffFFFFFF;
-  // 挂钩事件
-  FStyleDefault.OnChanged := DoChanged;
-  FStylePrimarty.OnChanged := DoChanged;
-  FStyleSuccess.OnChanged := DoChanged;
-  FStyleWarning.OnChanged := DoChanged;
-  FStyleDanger.OnChanged := DoChanged;
-  FStyleInfo.OnChanged := DoChanged;
-  FStyleText.OnChanged := DoChanged;
+  InitColor;
 end;
 
 destructor TStyleViewStyles.Destroy;
@@ -6808,6 +6791,79 @@ procedure TStyleViewStyles.DoChanged(Sender: TObject);
 begin
   if Assigned(FOnChanged) then
     FOnChanged(Self);
+end;
+
+procedure TStyleViewStyles.InitColor;
+begin
+  // Default
+  with FStyleDefault do begin
+    FText.Default := $FF282828;
+    FText.Hovered := $ff409eff;
+    FText.Pressed := $ff1f93ff;
+    FText.Checked := $ff409eff;
+    FText.Enabled := $ffc0c4cc;
+    FBorder.Color.Default := $ffdcdfe6;
+    FBorder.Color.Hovered := $ff4da9ff;
+    FBorder.Color.Pressed := $ff1f93ff;
+    FBorder.Color.Checked := $ff409eff;
+    FBorder.Color.Enabled := $ffe0e3e9;
+    FBackground.Default := $ffFFFFFF;
+    FBackground.Hovered := $ffecf5ff;
+    FBackground.Pressed := $ffecf5ff;
+    FBackground.Checked := $ffecf5ff;
+    FBackground.Enabled := $ffFFFFFF;
+    OnChanged := Self.DoChanged;
+  end;
+  // Primarty
+  with FStylePrimarty do begin
+    FText.Default := $ffffffff;
+    FBackground.Default := $ff409eff;
+    FBackground.Hovered := $ff66b1ff;
+    FBackground.Pressed := $ff3a8ee6;
+    FBackground.Checked := $ff3a8ee6;
+    FBackground.Enabled := $ffa0cfff;
+    OnChanged := Self.DoChanged;
+  end;
+  // Success
+  with FStyleSuccess do begin
+    FText.Default := $ffffffff;
+    FBackground.Default := $ff67c23a;
+    FBackground.Hovered := $ff85ce61;
+    FBackground.Pressed := $ff5daf34;
+    FBackground.Checked := $ff5daf34;
+    FBackground.Enabled := $ffb3e19d;
+    OnChanged := Self.DoChanged;
+  end;
+  // Info
+  with FStyleInfo do begin
+    FText.Default := $ffffffff;
+    FBackground.Default := $ff909399;
+    FBackground.Hovered := $ffa6a9ad;
+    FBackground.Pressed := $ff82848a;
+    FBackground.Checked := $ff82848a;
+    FBackground.Enabled := $ffc8c9cc;
+    OnChanged := Self.DoChanged;
+  end;
+  // Warning
+  with FStyleWarning do begin
+    FText.Default := $ffffffff;
+    FBackground.Default := $ffe6a23c;
+    FBackground.Hovered := $ffebb563;
+    FBackground.Pressed := $ffcf9236;
+    FBackground.Checked := $ffcf9236;
+    FBackground.Enabled := $fff3d19e;
+    OnChanged := Self.DoChanged;
+  end;
+  // Danger
+  with FStyleDanger do begin
+    FText.Default := $ffffffff;
+    FBackground.Default := $fff56c6c;
+    FBackground.Hovered := $fff78989;
+    FBackground.Pressed := $ffdd6161;
+    FBackground.Checked := $ffdd6161;
+    FBackground.Enabled := $fffab6b6;
+    OnChanged := Self.DoChanged;
+  end;
 end;
 
 procedure TStyleViewStyles.SetStyleDanger(const Value: TStyleViewColor);
@@ -6845,6 +6901,13 @@ begin
   if FStyleWarning <> Value then FStyleWarning.Assign(Value);
 end;
 
+{ TStyleViewPlainStyles }
+
+procedure TStyleViewPlainStyles.InitColor;
+begin
+  inherited InitColor;
+end;
+
 { TStyleViewManager }
 
 procedure TStyleViewManager.Assign(Source: TPersistent);
@@ -6871,7 +6934,7 @@ begin
   FPlain := False;
   inherited;
   FStyles := TStyleViewStyles.Create();
-  FPlainStyles := TStyleViewStyles.Create();
+  FPlainStyles := TStyleViewPlainStyles.Create();
   FStyles.OnChanged := DoChanged;
   FPlainStyles.OnChanged := DoChanged;
 end;
@@ -6905,6 +6968,7 @@ procedure TStyleViewManager.SetStyles(const Value: TStyleViewStyles);
 begin
   if FStyles <> Value then FStyles.Assign(Value);
 end;
+
 
 initialization
 
