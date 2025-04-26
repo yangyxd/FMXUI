@@ -407,7 +407,7 @@ type
 
     function GetBrush(const State: TViewState; AutoCreate: Boolean): TBrush;
     function GetStateBrush(const State: TViewState): TBrush; overload;
-    function GetStateItem(AState: TViewState): TBrush;
+    function GetStateItem(AState: TViewState): TBrush; virtual;
     function GetStateImagesItem(AState: TViewState): TBrush;
 
     procedure Assign(Source: TPersistent); override;
@@ -417,7 +417,7 @@ type
       const ADefaultColor: TAlphaColor = TAlphaColors.Null); overload; virtual;
     function CreateBrush(): TBrush; overload;
 
-    procedure Draw(Canvas: TCanvas); virtual;
+    procedure Draw(Canvas: TCanvas; AView: IView); virtual;
     procedure DrawTo(Canvas: TCanvas; const R: TRectF); inline;
     procedure DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState); overload;
     procedure DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState; const AOpacity: Single); overload; virtual;
@@ -638,6 +638,7 @@ type
     FPadding: Integer;
     FPosition: TDrawablePosition;
     FImageLink: TGlyphImageLink;
+    FStyleBrush: TViewImagesBrush;
 
     procedure SetHeight(const Value: Integer);
     procedure SetWidth(const Value: Integer);
@@ -664,6 +665,7 @@ type
     function GetEmpty: Boolean; override;
     function GetStateImageIndex(): Integer; overload;
     function GetStateImageIndex(State: TViewState): Integer; overload; virtual;
+    function GetStateItem(AState: TViewState): TBrush; override;
   public
     constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
@@ -678,7 +680,7 @@ type
       const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
       const ADefaultColor: TAlphaColor = TAlphaColors.Null); override;
 
-    procedure Draw(Canvas: TCanvas); override;
+    procedure Draw(Canvas: TCanvas; AView: IView); override;
     procedure DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState; const AOpacity: Single); override;
     procedure DrawImage(Canvas: TCanvas; Index: Integer; const R: TRectF); overload;
     procedure DrawImage(Canvas: TCanvas; Index: Integer; const R: TRectF; const AOpacity: Single); overload; virtual;
@@ -943,6 +945,7 @@ type
     function GetWidth: Single;
     function GetHeight: Single;
     function GetOpacity: Single;
+    function GetTextColor(const State: TViewState): TAlphaColor;
 
     function IsAutoSize: Boolean;
 
@@ -1458,6 +1461,7 @@ type
     function GetContentBounds: TRectD; virtual;
     function CanAnimation: Boolean; virtual;
     function GetScrollSmallChangeFraction: Single; virtual;
+    function GetTextColor(const State: TViewState): TAlphaColor; virtual;
   protected
     {$IFDEF ANDROID}
     class procedure InitAudioManager();
@@ -2485,7 +2489,7 @@ end;
 
 function TDrawableBase.GetValue(const Index: Integer): TBrush;
 begin
-  Result := GetBrush(TViewState(Index), not (csLoading in FView.GetComponentState));
+  Result := GetBrush(TViewState(Index), (FView = nil) or (not (csLoading in FView.GetComponentState)));
 end;
 
 function TDrawableBase.GetXRadius: Single;
@@ -2511,7 +2515,7 @@ function TDrawableBase.GetBrush(const State: TViewState; AutoCreate: Boolean): T
 begin
   GetStateBrush(State, Result);
   if (Result = nil) and
-    (AutoCreate or (csLoading in FView.GetComponentState)) then
+    (AutoCreate or (FView = nil) or (csLoading in FView.GetComponentState)) then
   begin
     CreateBrush(Result);
     SetStateBrush(State, Result);
@@ -2595,20 +2599,22 @@ begin
     Result := nil;
 end;
 
-procedure TDrawableBase.Draw(Canvas: TCanvas);
+procedure TDrawableBase.Draw(Canvas: TCanvas; AView: IView);
 var
   V: TBrush;
   R: TRectF;
   AState: TViewState;
+  AStyleColor: TAlphaColor;
 begin
-  if FIsEmpty or (not Assigned(FView)) then Exit;
-  if FView.InVisible or (csDestroying in FView.GetComponentState) then Exit;
-  AState := FView.GetDrawState;
-  R := GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight);
+  if AView = nil then AView := FView;
+  if FIsEmpty or (not Assigned(AView)) then Exit;
+  if AView.InVisible or (csDestroying in AView.GetComponentState) then Exit;
+  AState := AView.GetDrawState;
+  R := GetDrawRect(0, 0, AView.GetWidth, AView.GetHeight);
   V := GetStateItem(AState);
   if V <> nil then
-    FillRect(Canvas, R, XRadius, YRadius, FCorners, FView.Opacity, V, FCornerType);
-  DoDrawed(Canvas, R, AState, FView.Opacity);
+    FillRect(Canvas, R, XRadius, YRadius, FCorners, AView.Opacity, V, FCornerType);
+  DoDrawed(Canvas, R, AState, AView.Opacity);
 end;
 
 procedure TDrawableBase.DrawBrushTo(Canvas: TCanvas; ABrush: TBrush;
@@ -2969,7 +2975,7 @@ end;
 function TDrawable.GetValue(const Index: Integer): TViewBrush;
 begin
   Result := inherited GetBrush(TViewState(Index),
-    not (csLoading in FView.GetComponentState)) as TViewBrush;
+    not ((FView = nil) or (csLoading in FView.GetComponentState))) as TViewBrush;
 end;
 
 procedure TDrawable.SetPadding(const Value: TBounds);
@@ -3081,6 +3087,7 @@ begin
   FHeight := 16;
   FPosition := TDrawablePosition.Left;
   FPadding := 4;
+  FStyleBrush := nil;
 end;
 
 procedure TDrawableIcon.CreateBrush(var Value: TBrush;
@@ -3096,17 +3103,20 @@ end;
 destructor TDrawableIcon.Destroy;
 begin
   FImageLink.DisposeOf;
+  FreeAndNil(FStyleBrush);
   inherited;
 end;
 
-procedure TDrawableIcon.Draw(Canvas: TCanvas);
+procedure TDrawableIcon.Draw(Canvas: TCanvas; AView: IView);
 var
   ImageIndex: Integer;
 begin
-  inherited Draw(Canvas);
+  inherited Draw(Canvas, AView);
   ImageIndex := GetStateImageIndex();
-  if (ImageIndex >= 0) and Assigned(FImageLink.Images) then
-    DrawImage(Canvas, ImageIndex, GetDrawRect(0, 0, FView.GetWidth, FView.GetHeight), FView.GetOpacity);
+  if (ImageIndex >= 0) and Assigned(FImageLink.Images) then begin
+    if AView = nil then AView := FView;    
+    DrawImage(Canvas, ImageIndex, GetDrawRect(0, 0, AView.GetWidth, AView.GetHeight), AView.GetOpacity);
+  end;
 end;
 
 procedure TDrawableIcon.DrawImage(Canvas: TCanvas; Index: Integer;
@@ -3199,6 +3209,34 @@ begin
     V := GetStateImagesItem(State);
     if Assigned(V) then
       Result := TViewImagesBrush(V).FImageIndex;
+  end;
+end;
+
+function TDrawableIcon.GetStateItem(AState: TViewState): TBrush;
+var
+  LBrush: TViewImagesBrush;
+begin
+  Result := inherited GetStateItem(AState);
+  if (Result <> nil) and (Result = FDefault) and (Result is TViewImagesBrush) and (not (csDesigning in FView.GetComponentState)) then begin
+    if FView.GetTextColor(TViewState.None) = TAlphaColorRec.Null then Exit;
+    if not Assigned(FStyleBrush) then begin
+      LBrush := TViewImagesBrush(Result);
+      if ((LBrush.Kind = TViewBrushKind.SVGImage) and (LBrush.SVGImage.Color = TAlphaColorRec.Null)) or
+        ((LBrush.Kind = TViewBrushKind.AccessoryBitmap) and (LBrush.Accessory.FAccessoryColor = TAlphaColorRec.Null)) then
+      begin
+        FStyleBrush := TViewImagesBrush.Create(TBrushKind(LBrush.DefaultKind), LBrush.DefaultColor);
+        FStyleBrush.FOwner := Self;
+        FStyleBrush.Kind := LBrush.Kind;
+        FStyleBrush.Assign(Result);
+      end;
+    end;
+    if Assigned(FStyleBrush) then begin
+      if FStyleBrush.Kind = TViewBrushKind.SVGImage then
+        FStyleBrush.SvgImage.Color := FView.GetTextColor(AState);
+      if FStyleBrush.Kind = TViewBrushKind.AccessoryBitmap then
+        FStyleBrush.Accessory.SetAccessoryColor(FView.GetTextColor(AState));
+      Result := FStyleBrush;
+    end;
   end;
 end;
 
@@ -4226,6 +4264,11 @@ begin
   Result := StatusHeight;
 end;
 
+function TView.GetTextColor(const State: TViewState): TAlphaColor;
+begin
+  Result := TAlphaColorRec.Null;
+end;
+
 function TView.GetViewBackground: TDrawable;
 begin
   if not Assigned(FBackground) then
@@ -4778,9 +4821,12 @@ begin
 end;
 
 procedure TView.PaintBackground;
+var
+  ABackground: TDrawable;
 begin
-  if Assigned(FBackground) and (AbsoluteInVisible = False) then
-    FBackground.Draw(Canvas);
+  ABackground := Background;
+  if Assigned(ABackground) and (AbsoluteInVisible = False) then
+    ABackground.Draw(Canvas, Self);
 end;
 
 procedure TView.PlayClickEffect;
@@ -6811,7 +6857,12 @@ end;
 
 function TTextSettings.GetStateColor(const State: TViewState): TAlphaColor;
 begin
-  Result := FColor.GetStateColor(State);
+  if Assigned(FOwner) then begin
+    Result := TView(FOwner).GetTextColor(State);
+    if Result = TAlphaColorRec.Null then
+      Result := FColor.GetStateColor(State);
+  end else
+    Result := FColor.GetStateColor(State);
   if FOpacity < 1 then
     TColorRec(Result).A := Round(TColorRec(Result).A * FOpacity);
 end;
@@ -7256,6 +7307,13 @@ begin
       end;
     end else
       Accessory.Assign(TViewBrushBase(Source).FAccessory);
+    if TViewBrushBase(Source).FSvgImage = nil then begin
+      if FSvgImage <> nil then begin
+        FreeAndNil(FSvgImage);
+        DoSvgImageChange(Self);
+      end;
+    end else
+      SvgImage.Assign(TViewBrushBase(Source).FSvgImage);
   end;
 end;
 

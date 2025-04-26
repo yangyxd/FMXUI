@@ -791,11 +791,9 @@ type
   private
     FOnChanged: TNotifyEvent;
     FText: TTextColor;
-    FBackground: TViewColor;
-    FBorder: TViewBorder;
-    procedure SetBackgroundColor(const Value: TViewColor);
-    procedure SetBorderColor(const Value: TViewBorder);
+    FBackground: TDrawableBorder;
     procedure SetTextColor(const Value: TTextColor);
+    procedure SetBackground(const Value: TDrawableBorder);
   protected
     procedure DoChanged(); virtual;
   public
@@ -805,8 +803,7 @@ type
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
   published
     property TextColor: TTextColor read FText write SetTextColor;
-    property BackgroundColor: TViewColor read FBackground write SetBackgroundColor;
-    property BorderColor: TViewBorder read FBorder write SetBorderColor;
+    property Background: TDrawableBorder read FBackground write SetBackground;
   end;
 
   TStyleViewStyles = class(TPersistent)
@@ -828,32 +825,34 @@ type
     procedure SetStyleDefault(const Value: TStyleViewColor);
   protected
     procedure DoChanged(Sender: TObject); virtual;
+    procedure DoInitColor; virtual;  
+    procedure SetBackgroundColor(Item: TViewBrush; AColor: TAlphaColor; AKind: TViewBrushKind = TViewBrushKind.Solid);    
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    procedure InitColor; virtual;
+    function GetStyle(AType: TStyleViewType): TStyleViewColor;
     procedure Assign(Source: TPersistent); override;
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
   published
     // 默认颜色
-    property StyleDefault: TStyleViewColor read FStyleDefault write SetStyleDefault;
+    property Default: TStyleViewColor read FStyleDefault write SetStyleDefault;
     // 主要颜色
-    property StylePrimarty: TStyleViewColor read FStylePrimarty write SetStylePrimarty;
+    property Primarty: TStyleViewColor read FStylePrimarty write SetStylePrimarty;
     // 成功颜色
-    property StyleSuccess: TStyleViewColor read FStyleSuccess write SetStyleSuccess;
+    property Success: TStyleViewColor read FStyleSuccess write SetStyleSuccess;
     // 信息颜色
-    property StyleInfo: TStyleViewColor read FStyleInfo write SetStyleInfo;
+    property Info: TStyleViewColor read FStyleInfo write SetStyleInfo;
     // 警告颜色
-    property StyleWarning: TStyleViewColor read FStyleWarning write SetStyleWarning;
+    property Warning: TStyleViewColor read FStyleWarning write SetStyleWarning;
     // 危险颜色
-    property StyleDanger: TStyleViewColor read FStyleDanger write SetStyleDanger;
+    property Danger: TStyleViewColor read FStyleDanger write SetStyleDanger;
     // 文本样式
-    property StyleText: TStyleViewColor read FStyleText write SetStyleText;
+    property Text: TStyleViewColor read FStyleText write SetStyleText;
   end;
 
   TStyleViewPlainStyles = class(TStyleViewStyles)
   protected
-    procedure InitColor(); override;
+    procedure DoInitColor(); override;
   end;
 
 type
@@ -864,14 +863,15 @@ type
   TStyleViewManager = class(TComponent)
   private
     FDisableChanged: Boolean;
+    FViewList: TList<TControl>;
     FStyles: TStyleViewStyles;
     FPlainStyles: TStyleViewStyles;
-    FPlain: Boolean;
-    procedure SetPlain(const Value: Boolean);
     procedure SetPlainStyles(const Value: TStyleViewStyles);
     procedure SetStyles(const Value: TStyleViewStyles);
   protected
     procedure DoChanged(Sender: TObject);
+    procedure AddView(Control: TControl);
+    procedure RemoveView(Control: TControl);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -881,8 +881,6 @@ type
     property Styles: TStyleViewStyles read FStyles write SetStyles;
     // 朴素样式
     property PlainStyles: TStyleViewStyles read FPlainStyles write SetPlainStyles;
-    // 是否是朴素样式
-    property Plain: Boolean read FPlain write SetPlain default False;
   end;
 
 type
@@ -890,17 +888,25 @@ type
   private
     [Weak] FStyleManager: TStyleViewManager;
     FStyleType: TStyleViewType;
+    FStylePlain: Boolean;
     procedure SetStyleManager(const Value: TStyleViewManager);
     procedure SetStyleType(const Value: TStyleViewType);
+    procedure SetStylePlain(const Value: Boolean);
   protected
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
+    function GetBackground: TDrawable; override;
+    function GetViewBackground: TDrawable; override;
+    function GetTextColor(const State: TViewState): TAlphaColor; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   published
     // 样式管理器
     property StyleManager: TStyleViewManager read FStyleManager write SetStyleManager;
+    // 样式类型
     property StyleType: TStyleViewType read FStyleType write SetStyleType default TStyleViewType.None;
+    // 是否是朴素样式
+    property StylePlain: Boolean read FStylePlain write SetStylePlain default False;
   end;
 
 type
@@ -1443,17 +1449,21 @@ end;
 function TTextView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
 var
   Border: TViewBorder;
+  ABackground: TDrawable;
 begin
   Result := inherited CanRePaintBk(View, State);
   if (not Result) then begin
     if (Assigned(FDrawable)) then
       Result := not FDrawable.IsEmpty;
-    if (not Result) and (Assigned(FBackground)) then begin
-      Border := TDrawableBorder(FBackground).Border;
-      Result := Assigned(Border) and (Border.Style <> TViewBorderStyle.None) and
-        (Border.Width > 0) and (Border.Color.GetColor(State) <> TAlphaColorRec.Null);
-      if (not Result) and (FText.TextLength > 0) then
-        Result := (HitTest) or (TViewState.Pressed in FViewState);
+    if not Result then begin
+      ABackground := Background;
+      if (Assigned(ABackground)) then begin
+        Border := TDrawableBorder(ABackground).Border;
+        Result := Assigned(Border) and (Border.Style <> TViewBorderStyle.None) and
+          (Border.Width > 0) and (Border.Color.GetColor(State) <> TAlphaColorRec.Null);
+        if (not Result) and (FText.TextLength > 0) then
+          Result := (HitTest) or (TViewState.Pressed in FViewState);
+      end;
     end;
   end;
 end;
@@ -2027,6 +2037,7 @@ end;
 constructor TStyleView.Create(AOwner: TComponent);
 begin
   FStyleManager := nil;
+  FStylePlain := False;
   inherited Create(AOwner);
 end;
 
@@ -2036,10 +2047,60 @@ begin
   inherited;
 end;
 
+function TStyleView.GetBackground: TDrawable;
+begin
+  if (FStyleType <> TStyleViewType.None) and Assigned(FStyleManager) then begin
+    if FStylePlain then
+      Result := FStyleManager.FPlainStyles.GetStyle(FStyleType).FBackground
+    else
+      Result := FStyleManager.FStyles.GetStyle(FStyleType).FBackground;
+  end else
+    Result := inherited GetBackground;
+end;
+
+function TStyleView.GetTextColor(const State: TViewState): TAlphaColor;
+begin
+  if (FStyleType <> TStyleViewType.None) and Assigned(FStyleManager) then begin
+    if FStylePlain then
+      Result := FStyleManager.FPlainStyles.GetStyle(FStyleType).FText.GetStateColor(State)
+    else
+      Result := FStyleManager.FStyles.GetStyle(FStyleType).FText.GetStateColor(State);
+    Exit;
+  end;
+  Result := inherited GetTextColor(State);
+end;
+
+function TStyleView.GetViewBackground: TDrawable;
+begin
+  Result := nil;
+  if (FStyleType <> TStyleViewType.None) and Assigned(FStyleManager) then begin
+    if FStylePlain then
+      Result := FStyleManager.FPlainStyles.GetStyle(FStyleType).FBackground
+    else
+      Result := FStyleManager.FStyles.GetStyle(FStyleType).FBackground;
+  end;
+  if not Assigned(Result) then
+    Result := inherited GetViewBackground();
+end;
+
 procedure TStyleView.SetStyleManager(const Value: TStyleViewManager);
 begin
   if FStyleManager <> Value then begin
+    if Assigned(FStyleManager) then
+      FStyleManager.RemoveView(Self);
     FStyleManager := Value;
+    if Assigned(FStyleManager) then
+      FStyleManager.AddView(Self);
+    if csDestroying in ComponentState then
+      Exit;
+    DoChanged(Self);
+  end;
+end;
+
+procedure TStyleView.SetStylePlain(const Value: Boolean);
+begin
+  if FStylePlain <> Value then begin
+    FStylePlain := Value;
     DoChanged(Self);
   end;
 end;
@@ -6684,13 +6745,10 @@ begin
     SaveChange := FOnChanged;
     FOnChanged := nil;
     FBackground.OnChanged := nil;
-    FBorder.OnChanged := nil;
     FText.OnChanged := nil;
     FBackground.Assign(TStyleViewColor(Source).FBackground);
-    FBorder.Assign(TStyleViewColor(Source).FBorder);
     FText.Assign(TStyleViewColor(Source).FText);
     FBackground.OnChanged := Self.FOnChanged;
-    FBorder.OnChanged := Self.FOnChanged;
     FText.OnChanged := Self.FOnChanged;
     FOnChanged := SaveChange;
     if Assigned(FOnChanged) then
@@ -6701,18 +6759,17 @@ end;
 
 constructor TStyleViewColor.Create;
 begin
-  FBackground := TViewColor.Create(TAlphaColorRec.Null);
+  FBackground := TDrawableBorder.Create(nil, TViewBrushKind.Solid);
+  FBackground.XRadius := 3;
+  FBackground.YRadius := 3;
   FText := TTextColor.Create(TAlphaColorRec.Null);
-  FBorder := TViewBorder.Create(TViewBorderStyle.None);
   FBackground.OnChanged := Self.FOnChanged;
-  FBorder.OnChanged := Self.FOnChanged;
   FText.OnChanged := Self.FOnChanged;
 end;
 
 destructor TStyleViewColor.Destroy;
 begin
   FreeAndNil(FBackground);
-  FreeAndNil(FBorder);
   FreeAndNil(FText);
   inherited;
 end;
@@ -6723,22 +6780,16 @@ begin
     FOnChanged(Self);
 end;
 
-procedure TStyleViewColor.SetBackgroundColor(const Value: TViewColor);
-begin
-  if (FBackground <> Value) then
-    FBackground.Assign(Value);
-end;
-
-procedure TStyleViewColor.SetBorderColor(const Value: TViewBorder);
-begin
-  if (FBorder <> Value) then
-    FBorder.Assign(Value);
-end;
-
 procedure TStyleViewColor.SetTextColor(const Value: TTextColor);
 begin
   if (FText <> Value) then
     FText.Assign(Value);
+end;
+
+procedure TStyleViewColor.SetBackground(const Value: TDrawableBorder);
+begin
+  if (FBackground <> Value) then
+    FBackground.Assign(Value);
 end;
 
 { TStyleViewStyles }
@@ -6772,7 +6823,7 @@ begin
   FStyleDanger := TStyleViewColor.Create;
   FStyleInfo := TStyleViewColor.Create;
   FStyleText := TStyleViewColor.Create;
-  InitColor;
+  DoInitColor;
 end;
 
 destructor TStyleViewStyles.Destroy;
@@ -6793,7 +6844,7 @@ begin
     FOnChanged(Self);
 end;
 
-procedure TStyleViewStyles.InitColor;
+procedure TStyleViewStyles.DoInitColor;
 begin
   // Default
   with FStyleDefault do begin
@@ -6802,68 +6853,113 @@ begin
     FText.Pressed := $ff1f93ff;
     FText.Checked := $ff409eff;
     FText.Enabled := $ffc0c4cc;
-    FBorder.Color.Default := $ffdcdfe6;
-    FBorder.Color.Hovered := $ff4da9ff;
-    FBorder.Color.Pressed := $ff1f93ff;
-    FBorder.Color.Checked := $ff409eff;
-    FBorder.Color.Enabled := $ffe0e3e9;
-    FBackground.Default := $ffFFFFFF;
-    FBackground.Hovered := $ffecf5ff;
-    FBackground.Pressed := $ffecf5ff;
-    FBackground.Checked := $ffecf5ff;
-    FBackground.Enabled := $ffFFFFFF;
+    FText.Focused := $ff409eff;
+    with FBackground.Border do begin
+      DefaultStyle := TViewBorderStyle.RectBorder;
+      Style := DefaultStyle;
+      Color.Default := $ffdcdfe6;
+      Color.Hovered := $ffc6e2ff;
+      Color.Pressed := $ff1f93ff;
+      Color.Checked := $ff409eff;
+      Color.Enabled := $ffe0e3e9;
+      Color.Focused := Color.Hovered;
+    end;  
+    SetBackgroundColor(FBackground.ItemDefault, $ffFFFFFF);
+    SetBackgroundColor(FBackground.ItemHovered, $ffecf5ff);
+    SetBackgroundColor(FBackground.ItemPressed, $ffecf5ff);
+    SetBackgroundColor(FBackground.ItemChecked, $ffecf5ff);
+    SetBackgroundColor(FBackground.ItemEnabled, $ffFFFFFF);
+    SetBackgroundColor(FBackground.ItemFocused, $ffecf5ff);
     OnChanged := Self.DoChanged;
   end;
   // Primarty
   with FStylePrimarty do begin
     FText.Default := $ffffffff;
-    FBackground.Default := $ff409eff;
-    FBackground.Hovered := $ff66b1ff;
-    FBackground.Pressed := $ff3a8ee6;
-    FBackground.Checked := $ff3a8ee6;
-    FBackground.Enabled := $ffa0cfff;
+    SetBackgroundColor(FBackground.ItemDefault, $ff409eff);
+    SetBackgroundColor(FBackground.ItemHovered, $ff66b1ff);
+    SetBackgroundColor(FBackground.ItemPressed, $ff3a8ee6);
+    SetBackgroundColor(FBackground.ItemChecked, $ff3a8ee6);
+    SetBackgroundColor(FBackground.ItemEnabled, $ffa0cfff);
+    SetBackgroundColor(FBackground.ItemFocused, $ff66b1ff);
     OnChanged := Self.DoChanged;
   end;
   // Success
   with FStyleSuccess do begin
     FText.Default := $ffffffff;
-    FBackground.Default := $ff67c23a;
-    FBackground.Hovered := $ff85ce61;
-    FBackground.Pressed := $ff5daf34;
-    FBackground.Checked := $ff5daf34;
-    FBackground.Enabled := $ffb3e19d;
+    SetBackgroundColor(FBackground.ItemDefault, $ff67c23a);
+    SetBackgroundColor(FBackground.ItemHovered, $ff85ce61);
+    SetBackgroundColor(FBackground.ItemPressed, $ff5daf34);
+    SetBackgroundColor(FBackground.ItemChecked, $ff5daf34);
+    SetBackgroundColor(FBackground.ItemEnabled, $ffb3e19d);
+    SetBackgroundColor(FBackground.ItemFocused, $ff85ce61);
     OnChanged := Self.DoChanged;
   end;
   // Info
   with FStyleInfo do begin
     FText.Default := $ffffffff;
-    FBackground.Default := $ff909399;
-    FBackground.Hovered := $ffa6a9ad;
-    FBackground.Pressed := $ff82848a;
-    FBackground.Checked := $ff82848a;
-    FBackground.Enabled := $ffc8c9cc;
+    SetBackgroundColor(FBackground.ItemDefault, $ff909399);
+    SetBackgroundColor(FBackground.ItemHovered, $ffa6a9ad);
+    SetBackgroundColor(FBackground.ItemPressed, $ff82848a);
+    SetBackgroundColor(FBackground.ItemChecked, $ff82848a);
+    SetBackgroundColor(FBackground.ItemEnabled, $ffc8c9cc);
+    SetBackgroundColor(FBackground.ItemFocused, $ffa6a9ad);
     OnChanged := Self.DoChanged;
   end;
   // Warning
   with FStyleWarning do begin
     FText.Default := $ffffffff;
-    FBackground.Default := $ffe6a23c;
-    FBackground.Hovered := $ffebb563;
-    FBackground.Pressed := $ffcf9236;
-    FBackground.Checked := $ffcf9236;
-    FBackground.Enabled := $fff3d19e;
+    SetBackgroundColor(FBackground.ItemDefault, $ffe6a23c);
+    SetBackgroundColor(FBackground.ItemHovered, $ffebb563);
+    SetBackgroundColor(FBackground.ItemPressed, $ffcf9236);
+    SetBackgroundColor(FBackground.ItemChecked, $ffcf9236);
+    SetBackgroundColor(FBackground.ItemEnabled, $fff3d19e);
+    SetBackgroundColor(FBackground.ItemFocused, $ffebb563);
     OnChanged := Self.DoChanged;
   end;
   // Danger
   with FStyleDanger do begin
     FText.Default := $ffffffff;
-    FBackground.Default := $fff56c6c;
-    FBackground.Hovered := $fff78989;
-    FBackground.Pressed := $ffdd6161;
-    FBackground.Checked := $ffdd6161;
-    FBackground.Enabled := $fffab6b6;
+    SetBackgroundColor(FBackground.ItemDefault, $fff56c6c);
+    SetBackgroundColor(FBackground.ItemHovered, $fff78989);
+    SetBackgroundColor(FBackground.ItemPressed, $ffdd6161);
+    SetBackgroundColor(FBackground.ItemChecked, $ffdd6161);
+    SetBackgroundColor(FBackground.ItemEnabled, $fffab6b6);
+    SetBackgroundColor(FBackground.ItemFocused, $fff78989);
     OnChanged := Self.DoChanged;
   end;
+  // Text
+  with FStyleText do begin
+    FText.Default := $ff46a1ff;
+    FText.Hovered := $ff6ab3ff;
+    FText.Pressed := $ff3481d0;
+    FText.Checked := $ff3481d0;
+    FText.Enabled := $ffc0c4cc;
+    FText.Focused := FText.Hovered;
+    OnChanged := Self.DoChanged;
+  end;
+end;
+
+function TStyleViewStyles.GetStyle(AType: TStyleViewType): TStyleViewColor;
+begin
+  case AType of
+    TStyleViewType.None: Result := nil;
+    TStyleViewType.Default: Result := FStyleDefault;
+    TStyleViewType.Primarty: Result := FStylePrimarty;
+    TStyleViewType.Success: Result := FStyleSuccess;
+    TStyleViewType.Warning: Result := FStyleWarning;
+    TStyleViewType.Danger: Result := FStyleDanger;
+    TStyleViewType.Info: Result := FStyleInfo;
+    TStyleViewType.Text: Result := FStyleText;
+  end;
+end;
+
+procedure TStyleViewStyles.SetBackgroundColor(Item: TViewBrush;
+  AColor: TAlphaColor; AKind: TViewBrushKind);
+begin
+  Item.Color := AColor;
+  Item.DefaultColor := AColor;
+  Item.Kind := AKind;
+  Item.DefaultKind := TBrushKind.Solid;
 end;
 
 procedure TStyleViewStyles.SetStyleDanger(const Value: TStyleViewColor);
@@ -6903,12 +6999,181 @@ end;
 
 { TStyleViewPlainStyles }
 
-procedure TStyleViewPlainStyles.InitColor;
+procedure TStyleViewPlainStyles.DoInitColor;
 begin
-  inherited InitColor;
+  // Default
+  with FStyleDefault do begin
+    FText.Default := $FF282828;
+    FText.Hovered := $ff409eff;
+    FText.Pressed := $ff3a8ee6;
+    FText.Checked := FText.Pressed;
+    FText.Enabled := $ffc0c4cc;
+    FText.Focused := $ff409eff;
+    with FBackground.Border do begin
+      DefaultStyle := TViewBorderStyle.RectBorder;
+      Style := DefaultStyle;
+      Color.Default := $ffdcdfe6;
+      Color.Hovered := FText.Hovered;
+      Color.Pressed := FText.Pressed;
+      Color.Checked := FText.Pressed;
+      Color.Enabled := $ffebeef5;
+      Color.Focused := Color.Hovered;
+    end; 
+    SetBackgroundColor(FBackground.ItemDefault, $ffffffff);
+    OnChanged := Self.DoChanged;
+  end;
+  // Primarty
+  with FStylePrimarty do begin
+    FText.Default := $ff409eff;
+    FText.Hovered := $ffffffff;
+    FText.Pressed := FText.Hovered;
+    FText.Checked := FText.Hovered;
+    FText.Enabled := $ff8cc5ff;
+    FText.Focused := $ffffffff;
+    with FBackground.Border do begin
+      DefaultStyle := TViewBorderStyle.RectBorder;
+      Style := DefaultStyle;
+      Color.Default := $ffb3d8ff;
+      Color.Hovered := $ff409eff;
+      Color.Pressed := $ff3a8ee6;
+      Color.Checked := Color.Pressed;
+      Color.Enabled := $ffd9ecff;
+      Color.Focused := Color.Hovered;
+    end; 
+    SetBackgroundColor(FBackground.ItemDefault, $ffecf5ff);
+    SetBackgroundColor(FBackground.ItemHovered, FBackground.Border.Color.Hovered);
+    SetBackgroundColor(FBackground.ItemPressed, FBackground.Border.Color.Pressed);
+    SetBackgroundColor(FBackground.ItemChecked, FBackground.Border.Color.Pressed);
+    SetBackgroundColor(FBackground.ItemEnabled, FBackground.ItemDefault.Color);
+    SetBackgroundColor(FBackground.ItemFocused, FBackground.ItemHovered.Color);
+    OnChanged := Self.DoChanged;
+  end;
+  // Success
+  with FStyleSuccess do begin
+    FText.Default := $ff67c23a;
+    FText.Hovered := $ffffffff;
+    FText.Pressed := FText.Hovered;
+    FText.Checked := FText.Hovered;
+    FText.Enabled := $ffa4da89;
+    FText.Focused := $ffffffff;
+    with FBackground.Border do begin
+      DefaultStyle := TViewBorderStyle.RectBorder;
+      Style := DefaultStyle;
+      Color.Default := $ffc2e7b0;
+      Color.Hovered := $ff67c23a;
+      Color.Pressed := $ff5daf34;
+      Color.Checked := Color.Pressed;
+      Color.Enabled := $ffe1f3d8;
+      Color.Focused := Color.Hovered;
+    end; 
+    SetBackgroundColor(FBackground.ItemDefault, $fff0f9eb);
+    SetBackgroundColor(FBackground.ItemHovered, FBackground.Border.Color.Hovered);
+    SetBackgroundColor(FBackground.ItemPressed, FBackground.Border.Color.Pressed);
+    SetBackgroundColor(FBackground.ItemChecked, FBackground.Border.Color.Pressed);
+    SetBackgroundColor(FBackground.ItemEnabled, FBackground.ItemDefault.Color);
+    SetBackgroundColor(FBackground.ItemFocused, FBackground.ItemHovered.Color);
+    OnChanged := Self.DoChanged;
+  end;
+  // Info
+  with FStyleInfo do begin
+    FText.Default := $ff909399;
+    FText.Hovered := $ffffffff;
+    FText.Pressed := FText.Hovered;
+    FText.Checked := FText.Hovered;
+    FText.Enabled := $ffbcbec2;
+    FText.Focused := $ffffffff;
+    with FBackground.Border do begin
+      DefaultStyle := TViewBorderStyle.RectBorder;
+      Style := DefaultStyle;
+      Color.Default := $ffd3d4d6;
+      Color.Hovered := $ff909399;
+      Color.Pressed := $ff82848a;
+      Color.Checked := Color.Pressed;
+      Color.Enabled := $ffe9e9eb;
+      Color.Focused := Color.Hovered;
+    end; 
+    SetBackgroundColor(FBackground.ItemDefault, $fff4f4f5);
+    SetBackgroundColor(FBackground.ItemHovered, FBackground.Border.Color.Hovered);
+    SetBackgroundColor(FBackground.ItemPressed, FBackground.Border.Color.Pressed);
+    SetBackgroundColor(FBackground.ItemChecked, FBackground.Border.Color.Pressed);
+    SetBackgroundColor(FBackground.ItemEnabled, FBackground.ItemDefault.Color);
+    SetBackgroundColor(FBackground.ItemFocused, FBackground.ItemHovered.Color);
+    OnChanged := Self.DoChanged;
+  end;
+  // Warning
+  with FStyleWarning do begin
+    FText.Default := $ffe6a23c;
+    FText.Hovered := $ffffffff;
+    FText.Pressed := FText.Hovered;
+    FText.Checked := FText.Hovered;
+    FText.Enabled := $fff0c78a;
+    FText.Focused := $ffffffff;
+    with FBackground.Border do begin
+      DefaultStyle := TViewBorderStyle.RectBorder;
+      Style := DefaultStyle;
+      Color.Default := $ffe6a23c;
+      Color.Hovered := $ffe6a23c;
+      Color.Pressed := $ffcf9236;
+      Color.Checked := Color.Pressed;
+      Color.Enabled := $fffaecd8;
+      Color.Focused := Color.Hovered;
+    end;
+    SetBackgroundColor(FBackground.ItemDefault, $fffdf6ec);
+    SetBackgroundColor(FBackground.ItemHovered, FBackground.Border.Color.Hovered);
+    SetBackgroundColor(FBackground.ItemPressed, FBackground.Border.Color.Pressed);
+    SetBackgroundColor(FBackground.ItemChecked, FBackground.Border.Color.Pressed);
+    SetBackgroundColor(FBackground.ItemEnabled, FBackground.ItemDefault.Color);
+    SetBackgroundColor(FBackground.ItemFocused, FBackground.ItemHovered.Color);
+    OnChanged := Self.DoChanged;
+  end;
+  // Danger
+  with FStyleDanger do begin
+    FText.Default := $ffe6a23c;
+    FText.Hovered := $ffffffff;
+    FText.Pressed := FText.Hovered;
+    FText.Checked := FText.Hovered;
+    FText.Enabled := $fff9a9a9;
+    FText.Focused := $ffffffff;
+    with FBackground.Border do begin
+      DefaultStyle := TViewBorderStyle.RectBorder;
+      Style := DefaultStyle;
+      Color.Default := $ffe6a23c;
+      Color.Hovered := $fff56c6c;
+      Color.Pressed := $ffdd6161;
+      Color.Checked := Color.Pressed;
+      Color.Enabled := $fffde2e2;
+      Color.Focused := Color.Hovered;
+    end; 
+    SetBackgroundColor(FBackground.ItemDefault, $fffef0f0);
+    SetBackgroundColor(FBackground.ItemHovered, FBackground.Border.Color.Hovered);
+    SetBackgroundColor(FBackground.ItemPressed, FBackground.Border.Color.Pressed);
+    SetBackgroundColor(FBackground.ItemChecked, FBackground.Border.Color.Pressed);
+    SetBackgroundColor(FBackground.ItemEnabled, FBackground.ItemDefault.Color);
+    SetBackgroundColor(FBackground.ItemFocused, FBackground.ItemHovered.Color);
+    OnChanged := Self.DoChanged;
+  end;
+  // Text
+  with FStyleText do begin
+    FText.Default := $ff46a1ff;
+    FText.Hovered := $ff6ab3ff;
+    FText.Pressed := $ff3481d0;
+    FText.Checked := $ff3481d0;
+    FText.Enabled := $ffc0c4cc;
+    FText.Focused := FText.Hovered;
+    OnChanged := Self.DoChanged;
+  end;
 end;
 
 { TStyleViewManager }
+
+procedure TStyleViewManager.AddView(Control: TControl);
+begin
+  if not Assigned(FViewList) then Exit;
+  if csDestroying in ComponentState then
+    Exit;
+  if FViewList.IndexOf(Control) < 0 then
+    FViewList.Add(Control);
+end;
 
 procedure TStyleViewManager.Assign(Source: TPersistent);
 var
@@ -6917,7 +7182,6 @@ begin
   if Source is TStyleViewManager then begin
     FDisableChanged := True;
     try
-      FPlain := TStyleViewManager(Source).FPlain;
       FPlainStyles.Assign(TStyleViewManager(Source).FPlainStyles);
       FStyles.Assign(TStyleViewManager(Source).FStyles);
     finally
@@ -6931,32 +7195,52 @@ end;
 constructor TStyleViewManager.Create(AOwner: TComponent);
 begin
   FDisableChanged := False;
-  FPlain := False;
   inherited;
   FStyles := TStyleViewStyles.Create();
   FPlainStyles := TStyleViewPlainStyles.Create();
   FStyles.OnChanged := DoChanged;
   FPlainStyles.OnChanged := DoChanged;
+  FViewList := TList<TControl>.Create;
 end;
 
 destructor TStyleViewManager.Destroy;
+var
+  I: Integer;
+  View: TControl;
 begin
+  FDisableChanged := True;
+  for I := 0 to FViewList.Count - 1 do begin
+    View := FViewList[I];
+    if Assigned(View) and (View is TStyleView) then
+      TStyleView(View).SetStyleManager(nil);
+  end;
   FreeAndNil(FStyles);
   FreeAndNil(FPlainStyles);
+  FViewList.Clear;
+  FreeAndNil(FViewList);
   inherited;
 end;
 
 procedure TStyleViewManager.DoChanged(Sender: TObject);
+var
+  I: Integer;
+  View: TControl;
 begin
-  if FDisableChanged then Exit;
+  if FDisableChanged or (not Assigned(FViewList)) then Exit;
+  for I := 0 to FViewList.Count - 1 do begin
+    View := FViewList[I];
+    if not Assigned(View) then Continue;
+    if not View.Visible then Continue;
+    View.Repaint;
+  end;
 end;
 
-procedure TStyleViewManager.SetPlain(const Value: Boolean);
+procedure TStyleViewManager.RemoveView(Control: TControl);
 begin
-  if FPlain <> Value then begin
-    FPlain := Value;
-    DoChanged(Self);
-  end;
+  if not Assigned(FViewList) then Exit;
+  if csDestroying in ComponentState then
+    Exit;
+  FViewList.Remove(Control);
 end;
 
 procedure TStyleViewManager.SetPlainStyles(const Value: TStyleViewStyles);
