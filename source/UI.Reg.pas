@@ -306,6 +306,7 @@ begin
       { TStyleView }
       'StyleManager',
       'StyleType',
+      'StylePlain',
       { TProgressView }
       'Min',
       'Max',

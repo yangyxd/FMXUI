@@ -1974,7 +1974,7 @@ begin
     FInnerLanguage := DefaultLanguage;
 
   if Assigned(FBackground) then
-    FBackground.Draw(Canvas);
+    FBackground.Draw(Canvas, Self);
 
   if FCanAniMove then
     FCurState.XOffset := -FAniCalc.ViewportPosition.X
