@@ -582,11 +582,17 @@ type
     procedure SetList(const Value: TStrings);
     function GetList: TStrings;
     function GetArray: TArray<string>;
+    procedure SetFontColor(const Value: TViewColor);
+    procedure SetItemIndex(const Value: Integer);
   protected
     FListNeedFree: Boolean;
     FWordWrap: Boolean;
     FFontSize: Single;
     FItemIndex: Integer;
+    FPadding: TRectF;
+    FFontColor: TViewColor;
+    FHeightSize: TViewSize;
+    FCheckedBackgroudColor: TAlphaColor;
     { IListAdapter }
     function GetCount: Integer; override;
     function GetItem(const Index: Integer): Pointer; override;
@@ -609,7 +615,11 @@ type
     property DefaultItemHeight: Single read FDefaultItemHeight write FDefaultItemHeight;
     property WordWrap: Boolean read FWordWrap write FWordWrap;
     property FontSize: Single read FFontSize write FFontSize;
-    property ItemIndex: Integer read FItemIndex write FItemIndex;
+    property ItemIndex: Integer read FItemIndex write SetItemIndex;
+    property Padding: TRectF read FPadding write FPadding;
+    property FontColor: TViewColor read FFontColor write SetFontColor;
+    property HeightSize: TViewSize read FHeightSize write FHeightSize;
+    property CheckedBackgroudColor: TAlphaColor read FCheckedBackgroudColor write FCheckedBackgroudColor;
   end;
 
   /// <summary>
@@ -3267,6 +3277,8 @@ constructor TStringsListAdapter.Create(const AItems: TArray<string>);
 begin
   FWordWrap := True;
   FFontSize := TListTextItem.C_FontSize;
+  FPadding := RectF(8, 8, 8, 8);
+  FHeightSize := TViewSize.WrapContent;
   SetArray(AItems);
   DoInitData;
 end;
@@ -3275,6 +3287,8 @@ constructor TStringsListAdapter.Create(const AItems: TStrings);
 begin
   FWordWrap := True;
   FFontSize := TListTextItem.C_FontSize;
+  FPadding := RectF(8, 8, 8, 8);
+  FHeightSize := TViewSize.WrapContent;
   if AItems <> nil then
     SetList(AItems);
   DoInitData;
@@ -3351,12 +3365,21 @@ begin
     ViewItem.TextSettings.Font.Size := FFontSize;
     ViewItem.TextSettings.WordWrap := FWordWrap;
     ViewItem.Gravity := TLayoutGravity.CenterVertical;
-    ViewItem.Padding.Rect := RectF(8, 8, 8, 8);
+    ViewItem.Padding.Rect := FPadding;
     ViewItem.CanFocus := False;
-  end else
+  end else begin
     ViewItem := ConvertView as TListTextItem;
-  ViewItem.HeightSize := TViewSize.WrapContent;
+    ViewItem.Width := Parent.Width;
+  end;
+  ViewItem.BeginUpdate;
+  if Assigned(FFontColor) then
+    ViewItem.TextSettings.Color := FFontColor;
+  ViewItem.HeightSize := FHeightSize;
+  ViewItem.Background.ItemChecked.Kind := TViewBrushKind.Solid;
+  ViewItem.Background.ItemChecked.Color := FCheckedBackgroudColor;
+  ViewItem.IsChecked := Index = FItemIndex;
   ViewItem.Text := Items[Index];
+  ViewItem.EndUpdate;
   Result := ViewItem;
 end;
 
@@ -3391,6 +3414,17 @@ procedure TStringsListAdapter.SetArrayLength(const ACount: Integer);
 begin
   FArray.Len := ACount;
   FFlags := 1;
+end;
+
+procedure TStringsListAdapter.SetFontColor(const Value: TViewColor);
+begin
+  FFontColor := Value;
+end;
+
+procedure TStringsListAdapter.SetItemIndex(const Value: Integer);
+begin
+  if FItemIndex <> Value then
+    FItemIndex := Value;
 end;
 
 procedure TStringsListAdapter.SetItemValue(const Index: Integer;

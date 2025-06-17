@@ -20,7 +20,7 @@ implementation
 uses
   UI.Debug,
   System.SysUtils, System.Actions,
-  UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.Calendar,
+  UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.Calendar, UI.ComboBox,
 
   UI.Grid,
   UI.Design.GridColumns,
@@ -193,6 +193,8 @@ begin
   RegisterComponents(PageName, [TCalendarLanguage_CN]);
   RegisterComponents(PageName, [TCalendarLanguage_EN]);
 
+  RegisterComponents(PageName, [TComboBoxView]);
+
   RegisterComponents(PageName, [TDialogStyleManager]);
   RegisterComponents(PageName, [TToastManager]);
 
@@ -349,7 +351,9 @@ begin
       'RowCount',
       'ShowColIndex',
       'ColumnsSettings',
-
+      { TComboBoxView }
+      'Items',
+      'ItemIndex',
       { CalendarView }
       'DateTime',
       'DaysOfWeekDisabled',
