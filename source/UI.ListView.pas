@@ -2799,7 +2799,7 @@ begin
   LS.OnItemMeasureHeight := ListView.FOnItemMeasureHeight;
 
   // 修正向上拉出全部区域后，回弹时显示错误的问题
-  if (LS.ScrollValue = 0){$IFDEF MSWINDOWS} and (ListView.DragScroll){$ENDIF} then begin
+  if (LS.ScrollValue = 0){$IFDEF MSWINDOWS} and (LS.MoveSpace >= 0){$ENDIF} then begin
     FFirstRowIndex := 0;
     LS.MoveSpace := 0;
   end;
