@@ -592,7 +592,7 @@ type
     FPadding: TRectF;
     FFontColor: TViewColor;
     FHeightSize: TViewSize;
-    FCheckedBackgroudColor: TAlphaColor;
+    FListItemCheckedColor, FListItemHoveredColor: TAlphaColor;
     { IListAdapter }
     function GetCount: Integer; override;
     function GetItem(const Index: Integer): Pointer; override;
@@ -619,7 +619,8 @@ type
     property Padding: TRectF read FPadding write FPadding;
     property FontColor: TViewColor read FFontColor write SetFontColor;
     property HeightSize: TViewSize read FHeightSize write FHeightSize;
-    property CheckedBackgroudColor: TAlphaColor read FCheckedBackgroudColor write FCheckedBackgroudColor;
+    property ListItemCheckedColor: TAlphaColor read FListItemCheckedColor write FListItemCheckedColor;
+    property ListItemHoveredColor: TAlphaColor read FListItemHoveredColor write FListItemHoveredColor;
   end;
 
   /// <summary>
@@ -2787,7 +2788,7 @@ begin
   end else
     LS.CheckViews := FViews.Count > 0;
 
-  //LogD(Format('Height: %.2f; ViewCount: %d.', [Height, FViews.Count]));
+  // LogD(Format('Height: %.2f; ViewCount: %d.', [Height, FViews.Count]));
 
   // 默认行高
   LS.ItemDefaultH := FAdapter.ItemDefaultHeight;
@@ -2798,18 +2799,21 @@ begin
   LS.OnItemMeasureHeight := ListView.FOnItemMeasureHeight;
 
   // 修正向上拉出全部区域后，回弹时显示错误的问题
-  if LS.ScrollValue = 0 then begin
+  if (LS.ScrollValue = 0){$IFDEF MSWINDOWS} and (ListView.DragScroll){$ENDIF} then begin
     FFirstRowIndex := 0;
     LS.MoveSpace := 0;
   end;
 
   BeginUpdate;
   try
+    // LogD(Format('DoRealign: %.2f; ViewCount: %d, LS.MoveSpace: %.2f', [Height, FViews.Count, LS.MoveSpace]));
     if (LS.MoveSpace >= 0) then begin
       LS.IsAutoSize := (FMaxParentHeight > 0) and (LS.ScrollValue = 0);  // 如果需要自动调整大小，且滚动条偏移为0时，说明正在初始化列表
+      // LogD('向下滚动 处理');
       DoRealignDown(LS);   // 向下滚动
     end else begin
       LS.IsAutoSize := False;
+      // LogD('向上滚动 处理');
       DoRealignUp(LS);    // 向上滚动
     end;
 
@@ -3360,23 +3364,27 @@ begin
   if (ConvertView = nil) or (not (ConvertView is TListTextItem)) then begin
     ViewItem := TListTextItem.Create(Parent);
     ViewItem.Parent := Parent;
-    ViewItem.Width := Parent.Width;
-    ViewItem.MinHeight := ItemDefaultHeight;
-    ViewItem.TextSettings.Font.Size := FFontSize;
-    ViewItem.TextSettings.WordWrap := FWordWrap;
-    ViewItem.Gravity := TLayoutGravity.CenterVertical;
-    ViewItem.Padding.Rect := FPadding;
     ViewItem.CanFocus := False;
   end else begin
     ViewItem := ConvertView as TListTextItem;
-    ViewItem.Width := Parent.Width;
+
   end;
   ViewItem.BeginUpdate;
+  ViewItem.Width := Parent.Width;
+  ViewItem.MinHeight := ItemDefaultHeight;
+  ViewItem.TextSettings.Font.Size := FFontSize;
+  ViewItem.TextSettings.WordWrap := FWordWrap;
+  ViewItem.Gravity := TLayoutGravity.CenterVertical;
+  ViewItem.Padding.Rect := FPadding;
   if Assigned(FFontColor) then
     ViewItem.TextSettings.Color := FFontColor;
   ViewItem.HeightSize := FHeightSize;
+  ViewItem.Background.ItemDefault.Color := TAlphaColorRec.Null;
+  ViewItem.Background.ItemDefault.Kind := TViewBrushKind.None;
   ViewItem.Background.ItemChecked.Kind := TViewBrushKind.Solid;
-  ViewItem.Background.ItemChecked.Color := FCheckedBackgroudColor;
+  ViewItem.Background.ItemChecked.Color := FListItemCheckedColor;
+  ViewItem.Background.ItemHovered.Kind := TViewBrushKind.Solid;
+  ViewItem.Background.ItemHovered.Color := FListItemHoveredColor;
   ViewItem.IsChecked := Index = FItemIndex;
   ViewItem.Text := Items[Index];
   ViewItem.EndUpdate;

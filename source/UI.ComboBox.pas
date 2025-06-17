@@ -22,6 +22,9 @@ uses
   FMX.Ani, FMX.StdActns;
 
 type
+  TOnInitListAdapter = function (Sender: TObject): TStringsListAdapter of object;
+
+type
   TCustomComboBoxView = class(TTextView)
   private
     FItems: TStrings;
@@ -29,7 +32,6 @@ type
     FItemIndex: Integer;
     FDropDownCount: Integer;
     FOnChange: TNotifyEvent;
-    FOnSelect: TNotifyEvent;
     FOnPopup: TNotifyEvent;
     FOnClosePopup: TNotifyEvent;
     FItemWidth: Single;
@@ -43,7 +45,9 @@ type
     FCanUseListPicker: Boolean;
     FListBackground: TViewBrush;
     FListTextColor: TViewColor;
-    FListCheckedBackgroudColor: TAlphaColor;
+    FListItemCheckedColor: TAlphaColor;
+    FListItemHoveredColor: TAlphaColor;
+    FOnInitListAdapter: TOnInitListAdapter;
     function GetCount: Integer;
     function GetItems: TStrings;
     function IsItemHeightStored: Boolean;
@@ -55,12 +59,12 @@ type
     procedure SetItemWidth(const Value: Single);
     procedure SetListBackground(const Value: TViewBrush);
     procedure SetListTextColor(const Value: TViewColor);
-    procedure SetListCheckedBackgroudColor(const Value: TAlphaColor);
   protected
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); override;
     procedure KeyDown(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState); override;
     procedure DoListItemClick(Sender: TObject; ItemIndex: Integer; const ItemView: TControl);
+    procedure DoItemMeasureHeight(Sender: TObject; Index: Integer; var AHeight: Single);
   protected
     procedure Loaded; override;
     procedure DoChange; dynamic;
@@ -91,7 +95,8 @@ type
     property ListBox: TListViewEx read FListBox;
     property ListBackground: TViewBrush read FListBackground write SetListBackground;
     property ListTextColor: TViewColor read FListTextColor write SetListTextColor;
-    property ListCheckedBackgroudColor: TAlphaColor read FListCheckedBackgroudColor write SetListCheckedBackgroudColor;
+    property ListItemCheckedColor: TAlphaColor read FListItemCheckedColor write FListItemCheckedColor;
+    property ListItemHoveredColor: TAlphaColor read FListItemHoveredColor write FListItemHoveredColor;
     property Popup: TPopup read FPopup;
     property CanFocus default True;
     property CanParentFocus;
@@ -105,11 +110,11 @@ type
     property DropDownKind: TDropDownKind read FDropDownKind write FDropDownKind default TDropDownKind.Native;
     property DropDownCount: Integer read FDropDownCount write SetDropDownCount default 8;
     property DroppedDown: Boolean read FDroppedDown;
+    property Gravity default TLayoutGravity.CenterVertical;
     property OnChange: TNotifyEvent read FOnChange write FOnChange;
-    property OnSelect: TNotifyEvent read FOnSelect write FOnSelect;
     property OnClosePopup: TNotifyEvent read FOnClosePopup write FOnClosePopup;
     property OnPopup: TNotifyEvent read FOnPopup write FOnPopup;
-    property Gravity default TLayoutGravity.CenterVertical;
+    property OnInitListAdapter: TOnInitListAdapter read FOnInitListAdapter write FOnInitListAdapter;
   end;
 
 type
@@ -127,7 +132,10 @@ type
     property DropDownButton;
     property ListBackground;
     property ListTextColor;
-    property ListCheckedBackgroudColor;
+    property ListItemCheckedColor;
+    property ListItemHoveredColor;
+
+    property OnInitListAdapter;
 
     property OnDragEnter;
     property OnDragLeave;
@@ -219,7 +227,8 @@ end;
 
 procedure TCustomComboBoxView.Clear;
 begin
-  FItems.Clear;
+  if FItems.Count > 0 then
+    FItems.Clear;
 end;
 
 procedure TCustomComboBoxView.ClearSelection;
@@ -290,11 +299,11 @@ begin
   Result.ItemPressed.Kind := TViewBrushKind.Solid;
   Result.ItemPressed.DefaultKind := TBrushKind.Solid;
   Result.ItemHovered.Color := $ffe5f1fb;
-  Result.ItemHovered.DefaultColor := Result.ItemPressed.Color;
+  Result.ItemHovered.DefaultColor := Result.ItemHovered.Color;
   Result.ItemHovered.Kind := TViewBrushKind.Solid;
   Result.ItemHovered.DefaultKind := TBrushKind.Solid;
   Result.ItemFocused.Color := $ffe5f1fb;
-  Result.ItemFocused.DefaultColor := Result.ItemPressed.Color;
+  Result.ItemFocused.DefaultColor := Result.ItemFocused.Color;
   Result.ItemFocused.Kind := TViewBrushKind.Solid;
   Result.ItemFocused.DefaultKind := TBrushKind.Solid;
   with TDrawableBorder(Result).Border do begin
@@ -339,10 +348,12 @@ end;
 destructor TCustomComboBoxView.Destroy;
 begin
   TComboBoxHelper.Unregister(Self);
+  TStringsListAdapter(FListBox.Adapter).FontColor := nil;
   FreeAndNil(FDropDownButton);
   FreeAndNil(FItems);
   FreeAndNil(FListPicker);
   FreeAndNil(FListBackground);
+  FreeAndNil(FListTextColor);
   inherited;
 end;
 
@@ -372,6 +383,12 @@ end;
 procedure TCustomComboBoxView.DoDropDownButtonChanged(Sender: TObject);
 begin
   Repaint;
+end;
+
+procedure TCustomComboBoxView.DoItemMeasureHeight(Sender: TObject;
+  Index: Integer; var AHeight: Single);
+begin
+  AHeight := FItemHeight;
 end;
 
 procedure TCustomComboBoxView.DoListItemClick(Sender: TObject;
@@ -440,8 +457,8 @@ begin
       FOldItemIndex := ItemIndex;
       if Items.Count > 0 then
       begin
-        FDroppedDown := True;
         RecalculatePopupSize;
+        FDroppedDown := True;
         if ItemIndex >= 0 then
           FListBox.ScrollToIndex(ItemIndex)
         else
@@ -473,22 +490,29 @@ end;
 
 function TCustomComboBoxView.GetListAdapter: TStringsListAdapter;
 begin
-  Result := TStringsListAdapter.Create(FItems);
-  Result.DefaultItemHeight := FItemHeight;
-  Result.FontSize := TextSettings.Font.Size;
-  Result.WordWrap := False;
-  Result.Padding := RectF(4, 0, 4, 0);
-  Result.HeightSize := TViewSize.CustomSize;
+  Result := nil;
+  if Assigned(FOnInitListAdapter) then
+    Result := FOnInitListAdapter(Self);
+  if not Assigned(Result) then begin
+    Result := TStringsListAdapter.Create(FItems);
+    Result.DefaultItemHeight := FItemHeight;
+    Result.FontSize := TextSettings.Font.Size;
+    Result.WordWrap := False;
+    Result.Padding := RectF(4, 0, 4, 0);
+    Result.HeightSize := TViewSize.CustomSize;
+  end;
 end;
 
 function TCustomComboBoxView.CreateListBox(): TListViewEx;
 begin
   Result := TListViewEx.Create(Self);
   Result.Background.ItemDefault.Color := $ff909090;
+  Result.Background.ItemDefault.Kind := TViewBrushKind.Solid;
   Result.Adapter := GetListAdapter();
   Result.DividerHeight := 0;
   Result.Margin := '1';
   Result.OnItemClick := DoListItemClick;
+  Result.OnItemMeasureHeight := DoItemMeasureHeight;
 end;
 
 procedure TCustomComboBoxView.InitPicker(AListPicker: TCustomListPicker);
@@ -692,12 +716,14 @@ procedure TCustomComboBoxView.RecalculatePopupSize;
 var
   PopupContentHeight: Single;
 begin
+  FListBox.Align := TAlignLayout.Client;
   FListBox.Parent := FPopup;
   FListBox.Visible := True;
-  if Assigned(FListBackground) then
-    FListBox.Background.ItemDefault.Assign(FListBackground);
+  FListBox.Background.ItemDefault := FListBackground;
   TStringsListAdapter(FListBox.Adapter).FontColor := FListTextColor;
-  TStringsListAdapter(FListBox.Adapter).CheckedBackgroudColor := FListCheckedBackgroudColor;
+  TStringsListAdapter(FListBox.Adapter).DefaultItemHeight := FItemHeight;
+  TStringsListAdapter(FListBox.Adapter).ListItemCheckedColor := FListItemCheckedColor;
+  TStringsListAdapter(FListBox.Adapter).ListItemHoveredColor := FListItemHoveredColor;
   FListbox.NotifyDataChanged;
   FPopup.ApplyStyleLookup;
   if Pressed or DoubleClick then
@@ -743,12 +769,14 @@ begin
       ListBox.Adapter.NotifyDataChanged;
     end;
     Repaint;
+    DoChange;
   end;
 end;
 
 procedure TCustomComboBoxView.SetItems(const Value: TStrings);
 begin
   FItems.Assign(Value);
+  DoChange;
 end;
 
 procedure TCustomComboBoxView.SetItemWidth(const Value: Single);
@@ -765,13 +793,6 @@ begin
     if Assigned(Value) then
       FListBackground.Assign(Value);
   end;
-end;
-
-procedure TCustomComboBoxView.SetListCheckedBackgroudColor(
-  const Value: TAlphaColor);
-begin
-  if FListCheckedBackgroudColor <> Value then
-    FListCheckedBackgroudColor := Value;
 end;
 
 procedure TCustomComboBoxView.SetListTextColor(const Value: TViewColor);
