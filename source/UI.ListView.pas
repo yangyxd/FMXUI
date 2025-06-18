@@ -177,6 +177,7 @@ type
   protected
     procedure DoItemClick(Sender: TObject);
     procedure DoItemChildClick(Sender: TObject);
+    procedure DoItemDblClick(Sender: TObject);
     procedure DoFooterClick(Sender: TObject);
     procedure DoMouseDownFrame(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Single);
     procedure ClearViews;        // 清除当前显示的列表项，并清空缓存
@@ -281,6 +282,7 @@ type
     FOnDrawViewBackgroud: TOnDrawViewBackgroud;
     FOnItemMeasureHeight: TOnItemMeasureHeight;
     FOnItemClick: TOnItemClick;
+    FOnItemDblClick: TOnItemClick;
     FOnItemClickEx: TOnItemClickEx;
 
     FOnInitFooter: TOnInitHeader;
@@ -476,6 +478,10 @@ type
     /// 列表项内部控件点击事件
     /// </summary>
     property OnItemClickEx: TOnItemClickEx read FOnItemClickEx write FOnItemClickEx;
+    /// <summary>
+    /// 列表项双击事件
+    /// </summary>
+    property OnItemDblClick: TOnItemClick read FOnItemDblClick write FOnItemDblClick;
 
     property HitTest default True;
     property Clickable default True;
@@ -1814,6 +1820,14 @@ begin
   end;
 end;
 
+procedure TListViewContent.DoItemDblClick(Sender: TObject);
+var
+  ItemIndex: NativeInt;
+begin
+  if Assigned(ListView.FOnItemDblClick) and FItemViews.TryGetValue(THashType(Sender), ItemIndex) then
+    ListView.FOnItemDblClick(ListView, ItemIndex,  TView(FViews[ItemIndex]));
+end;
+
 procedure TListViewContent.DoMouseDownFrame(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Single);
 begin
@@ -2217,11 +2231,13 @@ procedure TListViewContent.DoRealign;
         if Assigned(View.OnClick) and (not EqulsMethod(FNewOnClick, View.OnClick)) then
           FItemClick.AddOrSetValue(View, View.OnClick);
         View.OnClick := FNewOnClick;
+        View.OnDblClick := DoItemDblClick;
       end else begin
         FItemViews.AddOrUpdate(THashType(ItemView), I);
         if Assigned(ItemView.OnClick) and (not EqulsMethod(FNewOnClick, ItemView.OnClick)) then
           FItemClick.AddOrSetValue(ItemView, ItemView.OnClick);
         ItemView.OnClick := FNewOnClick;
+        View.OnDblClick := DoItemDblClick;
       end;
 
       // 调整大小和位置
