@@ -944,6 +944,7 @@ end;
 procedure TListViewEx.DoMouseEnter;
 begin
   inherited;
+  if csDesigning in ComponentState then Exit;
   {$IF not Defined(ANDROID) and not Defined(IOS)}
   FMouseEnter := True;
   if DragScroll and Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then
@@ -954,6 +955,7 @@ end;
 procedure TListViewEx.DoMouseLeave;
 begin
   inherited;
+  if csDesigning in ComponentState then Exit;
   {$IF not Defined(ANDROID) and not Defined(IOS)}
   FMouseEnter := False;
   if DragScroll and Assigned(FPointTarget) and (FPointTarget as TObject <> Self) then

@@ -181,6 +181,28 @@ type
   end;
 
 type
+  TEditUndoData = class(TObject)
+  private
+    FIsUndoing, FIsChange: Boolean;
+    FEdit: TEditViewBase;
+    FText: string;
+    function GetCanUndo: Boolean;
+  protected
+    procedure DoRecordUndo();
+  public
+    constructor Create(Edit: TEditViewBase); virtual;
+    destructor Destroy; override;
+    procedure Clear();
+    procedure Init();
+    function Undo(): string;
+    procedure Change();
+    procedure DoExit();
+    procedure DoKeyDown(Shift: TShiftState; var Key: Word; var KeyChar: System.WideChar);
+    procedure DoKeyUp(Shift: TShiftState; var Key: Word);
+    property CanUndo: Boolean read GetCanUndo;
+  end;
+
+type
   TCustomEditView = class(TEditViewBase, ITextInput, ICaret, ITextActions, IVirtualKeyboardControl
     {$IF CompilerVersion > 30.0}, IReadOnly{$ENDIF})
   private
@@ -217,6 +239,7 @@ type
     FEditPopupMenu: TPopupMenu;
     FSelectionMode: TSelectionMode;
     FOnModelChange: TNotifyEvent;
+    FUndoData: TEditUndoData;
     function GetCaretPosition: Integer; overload;
     function GetCaretPosition(const Value: Single): Integer; overload;
     function GetOriginCaretPosition: Integer;
@@ -327,6 +350,7 @@ type
     procedure PMGetTextContentRect(var Message: TDispatchMessageWithValue<TRectF>); message PM_EDIT_GET_TEXT_CONTENT_RECT;
     { Base Mouse, Touches and Keyboard Events }
     procedure KeyDown(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState); override;
+    procedure KeyUp(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
@@ -354,6 +378,7 @@ type
     procedure DoDelete(Sender: TObject);
     procedure DoPaste(Sender: TObject);
     procedure DoSelectAll(Sender: TObject);
+    procedure DoUndo(Sender: TObject);
     { Spelling }
     procedure UpdateSpellPopupMenu(const APoint: TPointF);
     procedure SpellFixContextMenuHandler(Sender: TObject);
@@ -382,6 +407,8 @@ type
     { Content alignment }
     procedure RealignContent; virtual;
     procedure UpdateLayoutSize;
+
+    property UndoData: TEditUndoData read FUndoData;
   protected
     procedure Loaded; override;
     procedure Resize; override;
@@ -536,12 +563,18 @@ type
     property OnResize;
   end;
 
+type
+  TTimeoutCallback = reference to procedure(const Data: TObject);
+
+procedure SetTimeout(Callback: TTimeoutCallback; DelayMS: Integer = 1000; const Data: TObject = nil);
+
 implementation
 
 const
   LOUPE_OFFSET = 10;
   IMEWindowGap = 2; // 2 is small space between conrol and IME window
 
+  UndoStyleName = 'undo'; //Do not localize
   CutStyleName = 'cut'; //Do not localize
   CopyStyleName = 'copy'; //Do not localize
   PasteStyleName = 'paste'; //Do not localize
@@ -551,6 +584,51 @@ const
   CaretColorStyleResouceName = 'caretcolor';
   LeftSelectionPointStyleResourceName = 'leftselectionpoint';
   RightSelectionPointStyleResourceName = 'rightselectionpoint';
+
+type
+  TTimeout = class
+  private
+    FTimer: TTimer;
+    FCallBack: TTimeoutCallback;
+    FData: TObject;
+    procedure OnTimer(Sender: TObject);
+  public
+     destructor Destroy; override;
+  end;
+
+{ TTimeout }
+
+destructor TTimeout.Destroy;
+begin
+  FData := nil;
+  FCallBack := nil;
+  FreeAndNil(FTimer);
+  inherited;
+end;
+
+procedure TTimeout.OnTimer(Sender: TObject);
+begin
+  FTimer.Enabled := False;
+  try
+    if Assigned(FCallBack) then FCallBack(FData);
+  finally
+    Free;
+  end;
+end;
+
+procedure SetTimeout(Callback: TTimeoutCallback; DelayMS: Integer; const Data: TObject);
+var
+  T: TTimeout;
+begin
+  T := TTimeout.Create;
+  T.FData := Data;
+  T.FCallBack := CallBack;
+  T.FTimer := TTimer.Create(nil);
+  T.FTimer.Interval := DelayMS;
+  T.FTimer.Enabled := False;
+  T.FTimer.OnTimer := T.OnTimer;
+  T.FTimer.Enabled := True;
+end;
 
 function LinkObserversValueModified(const AObservers: TObservers): Boolean;
 begin
@@ -1173,6 +1251,8 @@ begin
   FSpellUnderlineBrush.Dash := TStrokeDash.Dot;
   FSpellUnderlineBrush.Thickness := 1;
   FModel.Receiver := Self;
+
+  FUndoData := TEditUndoData.Create(Self);
 end;
 
 function TCustomEditView.CreatePopupMenu: TPopupMenu;
@@ -1181,6 +1261,12 @@ var
 begin
   Result := TPopupMenu.Create(Self);
   Result.Stored := False;
+
+  TmpItem := TMenuItem.Create(Result);
+  TmpItem.Parent := Result;
+  TmpItem.Text := SEditUndo;
+  TmpItem.StyleName := UndoStyleName;
+  TmpItem.OnClick := DoUndo;
 
   TmpItem := TMenuItem.Create(Result);
   TmpItem.Parent := Result;
@@ -1251,6 +1337,7 @@ end;
 
 destructor TCustomEditView.Destroy;
 begin
+  FreeAndNil(FUndoData);
   FModel.Receiver := nil;
   FModel.Free;
   FLoupeService := nil;
@@ -1332,6 +1419,7 @@ begin
   end else
   {$ENDIF}
     inherited DoExit;
+  if Assigned(FUndoData) then FUndoData.DoExit;
 end;
 
 procedure TCustomEditView.DoInitStyle;
@@ -1648,12 +1736,27 @@ begin
   {$ENDIF}
   if Assigned(FOnModelChange) then
     FOnModelChange(Sender);
+  if Assigned(FUndoData) then
+    FUndoData.Change;
 end;
 
 procedure TCustomEditView.DoTyping;
 begin
   if Assigned(Model.OnTyping) then
     Model.OnTyping(Self);
+end;
+
+procedure TCustomEditView.DoUndo(Sender: TObject);
+begin
+  if Assigned(FUndoData) and (FUndoData.CanUndo) then begin
+    FUndoData.FIsUndoing := True;
+    try
+      Text := FUndoData.Undo;
+      SelectAll;
+    finally
+      FUndoData.FIsUndoing := False;
+    end;
+  end;
 end;
 
 procedure TCustomEditView.EndIMEInput;
@@ -2128,6 +2231,7 @@ begin
     Exit;
   KeyHandled := False;
   try
+    if Assigned(FUndoData) then FUndoData.DoKeyDown(Shift, Key, KeyChar);
     if Observers.IsObserving(TObserverMapping.EditLinkID) then
     begin
       if (Key = vkBack) or (Key = vkDelete) or ((Key = vkInsert) and (ssShift in Shift)) then
@@ -2418,6 +2522,13 @@ begin
       KeyChar := #0;
     end;
   end;
+end;
+
+procedure TCustomEditView.KeyUp(var Key: Word; var KeyChar: System.WideChar;
+  Shift: TShiftState);
+begin
+  inherited;
+  if Assigned(FUndoData) then FUndoData.DoKeyUp(Shift, Key);
 end;
 
 procedure TCustomEditView.Loaded;
@@ -3051,9 +3162,16 @@ begin
 end;
 
 procedure TCustomEditView.SetText(const Value: string);
+var
+  bUndo: Boolean;
 begin
   if FTextService.CombinedText <> Value then
   begin
+    if Assigned(FUndoData) then begin
+      bUndo := FUndoData.FIsUndoing;
+      if not bUndo then
+        FUndoData.Clear;
+    end;
     SetTextInternal(Value);
     SetCaretPosition(Min(Value.Length, FTextService.CaretPosition.X));
     Model.DisableNotify;
@@ -3290,6 +3408,7 @@ var
 
 begin
   SelTextIsValid := not SelText.IsEmpty;
+  SetParam(UndoStyleName, (Assigned(FUndoData) and FUndoData.CanUndo) and not Model.ReadOnly and Model.InputSupport and not Model.Password);
   SetParam(CutStyleName, SelTextIsValid and not Model.ReadOnly and Model.InputSupport and not Model.Password);
   SetParam(CopyStyleName, SelTextIsValid and not Model.Password);
   if FClipboardSvc <> nil then
@@ -3413,6 +3532,101 @@ end;
 destructor TEditView.Destroy;
 begin
   inherited Destroy;
+end;
+
+{ TEditUndoData }
+
+procedure TEditUndoData.Change;
+begin
+  if FIsUndoing then Exit;
+  FIsChange := True;
+  SetTimeout(procedure (const Data: TObject)
+    begin
+      if FIsUndoing then Exit;
+      DoRecordUndo();
+    end, 500);
+end;
+
+procedure TEditUndoData.Clear;
+begin
+  FIsChange := False;
+  FIsUndoing := False;
+end;
+
+constructor TEditUndoData.Create(Edit: TEditViewBase);
+var
+  I: Integer;
+begin
+  FEdit := Edit;
+  FIsUndoing := False;
+  FText := '';
+  Clear();
+  Init();
+end;
+
+destructor TEditUndoData.Destroy;
+begin
+  FEdit := nil;
+  Clear();
+  inherited;
+end;
+
+procedure TEditUndoData.DoExit;
+begin
+  if FIsChange then DoRecordUndo();
+end;
+
+procedure TEditUndoData.DoKeyDown(Shift: TShiftState; var Key: Word; var KeyChar: System.WideChar);
+begin
+  if (Key = Ord('Z')) and (Shift = [ssCtrl]) and (not FIsUndoing) then
+  begin
+    if CanUndo then begin
+      FIsUndoing := True;
+      try
+        FEdit.Text := Undo();
+        TCustomEditView(FEdit).SelectAll;
+      finally
+        FIsUndoing := False;
+      end;
+    end;
+    Key := 0; // ×èÖ¹Ä¬ÈÏ´¦Àí
+    KeyChar := #0;
+  end;
+end;
+
+procedure TEditUndoData.DoKeyUp(Shift: TShiftState; var Key: Word);
+begin
+  if (Key = 13) or (Key = 8) then begin // VK_RETURN, VK_BACK
+    if not FIsUndoing then DoRecordUndo;
+  end;
+end;
+
+procedure TEditUndoData.DoRecordUndo;
+begin
+  FIsChange := False;
+  if not Assigned(FEdit) then Exit;
+  Init();
+end;
+
+function TEditUndoData.GetCanUndo: Boolean;
+begin
+  Result := True;
+end;
+
+procedure TEditUndoData.Init;
+begin
+  if (FEdit.Text <> FText) then Exit;
+  FText := FEdit.Text;
+end;
+
+function TEditUndoData.Undo: string;
+begin
+  if not CanUndo then begin
+    Result := FEdit.Text;
+    Exit;
+  end;
+  Result := FText;
+  FText := FEdit.Text;
 end;
 
 initialization
