@@ -194,6 +194,7 @@ begin
   RegisterComponents(PageName, [TCalendarLanguage_EN]);
 
   RegisterComponents(PageName, [TComboBoxView]);
+  RegisterComponents(PageName, [TComboBoxEditView]);
 
   RegisterComponents(PageName, [TDialogStyleManager]);
   RegisterComponents(PageName, [TToastManager]);

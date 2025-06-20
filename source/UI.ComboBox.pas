@@ -3,7 +3,7 @@ unit UI.ComboBox;
 interface
 
 uses
-  UI.Base, UI.Utils, UI.Ani, UI.ListView, UI.Standard,
+  UI.Base, UI.Utils, UI.Ani, UI.ListView, UI.Standard, UI.Edit,
   FMX.Effects, FMX.Text,
   {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
   {$IF CompilerVersion > 30.0}
@@ -25,8 +25,9 @@ type
   TOnInitListAdapter = function (Sender: TObject): TStringsListAdapter of object;
 
 type
-  TCustomComboBoxView = class(TTextView)
+  TCustomDownPopup = class
   private
+    [Weak] FOwner: TView;
     FItems: TStrings;
     FOldItemIndex: Integer;
     FItemIndex: Integer;
@@ -54,19 +55,18 @@ type
     function ItemsStored: Boolean;
     procedure SetDropDownCount(const Value: Integer);
     procedure SetItemHeight(const Value: Single);
-    procedure SetItems(const Value: TStrings);
     procedure SetItemIndex(const Value: Integer);
+    procedure SetItems(const Value: TStrings);
     procedure SetItemWidth(const Value: Single);
     procedure SetListBackground(const Value: TViewBrush);
     procedure SetListTextColor(const Value: TViewColor);
   protected
-    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
-    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); override;
-    procedure KeyDown(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState); override;
-    procedure DoListItemClick(Sender: TObject; ItemIndex: Integer; const ItemView: TControl);
-    procedure DoItemMeasureHeight(Sender: TObject; Index: Integer; var AHeight: Single);
-  protected
-    procedure Loaded; override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); virtual;
+    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); virtual;
+    function KeyDown(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState; out OldItemIndex, NewItemIndex: Integer): Boolean; virtual;
+    procedure KeyDownHandle(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState; var OldItemIndex, NewItemIndex: Integer); virtual;
+    procedure DoListItemClick(Sender: TObject; ItemIndex: Integer; const ItemView: TControl); virtual;
+    procedure DoItemMeasureHeight(Sender: TObject; Index: Integer; var AHeight: Single); virtual;
     procedure DoChange; dynamic;
     procedure DoPopup(Sender: TObject);
     procedure DoClosePopup(Sender: TObject);
@@ -76,16 +76,12 @@ type
     function UseNativePicker: Boolean;
     procedure InitPicker(AListPicker: TCustomListPicker); virtual;
     procedure RecalculatePopupSize; virtual;
-    procedure DefineProperties(Filer: TFiler); override;
-    procedure DoPaintBackground(var R: TRectF); override;
+    procedure DoPaintBackground(Canvas: TCanvas; var R: TRectF; DrawState: TViewState); virtual;
     function CreateListBox(): TListViewEx; virtual;
     function GetListAdapter(): TStringsListAdapter;
-    function CreateBackground: TDrawable; override;
     function CreateDropDownButton: TDrawableIcon; virtual;
-    function GetDefaultSize: TSizeF; override;
-    procedure SetName(const Value: TComponentName); override;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TView); virtual;
     destructor Destroy; override;
     procedure AddItem(const Item: String; AObject: TObject); virtual;
     procedure Clear; virtual;
@@ -98,8 +94,6 @@ type
     property ListItemCheckedColor: TAlphaColor read FListItemCheckedColor write FListItemCheckedColor;
     property ListItemHoveredColor: TAlphaColor read FListItemHoveredColor write FListItemHoveredColor;
     property Popup: TPopup read FPopup;
-    property CanFocus default True;
-    property CanParentFocus;
     property Items: TStrings read GetItems write SetItems stored ItemsStored;
     property Count: Integer read GetCount;
     property CanUseListPicker: Boolean read FCanUseListPicker write FCanUseListPicker default True;
@@ -110,11 +104,170 @@ type
     property DropDownKind: TDropDownKind read FDropDownKind write FDropDownKind default TDropDownKind.Native;
     property DropDownCount: Integer read FDropDownCount write SetDropDownCount default 8;
     property DroppedDown: Boolean read FDroppedDown;
-    property Gravity default TLayoutGravity.CenterVertical;
-    property OnChange: TNotifyEvent read FOnChange write FOnChange;
+    property OnItemChange: TNotifyEvent read FOnChange write FOnChange;
     property OnClosePopup: TNotifyEvent read FOnClosePopup write FOnClosePopup;
     property OnPopup: TNotifyEvent read FOnPopup write FOnPopup;
     property OnInitListAdapter: TOnInitListAdapter read FOnInitListAdapter write FOnInitListAdapter;
+  end;
+
+type
+  TCustomComboBoxView = class(TTextView)
+  private
+    FDownPopup: TCustomDownPopup;
+    FOnItemChange: TNotifyEvent;
+    FOnClosePopup: TNotifyEvent;
+    function GetCanUseListPicker: Boolean;
+    function GetCount: Integer;
+    function GetDropDownButton: TDrawableIcon;
+    function GetDropDownCount: Integer;
+    function GetDropDownKind: TDropDownKind;
+    function GetDroppedDown: Boolean;
+    function GetItemHeight: Single;
+    function GetItemIndex: Integer;
+    function GetItems: TStrings;
+    function GetItemWidth: Single;
+    function GetListBackground: TViewBrush;
+    function GetListBox: TListViewEx;
+    function GetListItemCheckedColor: TAlphaColor;
+    function GetListItemHoveredColor: TAlphaColor;
+    function GetListTextColor: TViewColor;
+    function GetOnInitListAdapter: TOnInitListAdapter;
+    function GetOnPopup: TNotifyEvent;
+    function GetPopup: TPopup;
+    function IsItemHeightStored: Boolean;
+    function ItemsStored: Boolean;
+    procedure SetDropDownCount(const Value: Integer);
+    procedure SetItemHeight(const Value: Single);
+    procedure SetItemIndex(const Value: Integer);
+    procedure SetItems(const Value: TStrings);
+    procedure SetItemWidth(const Value: Single);
+    procedure SetListBackground(const Value: TViewBrush);
+    procedure SetListTextColor(const Value: TViewColor);
+    procedure SetOnInitListAdapter(const Value: TOnInitListAdapter);
+    procedure SetOnPopup(const Value: TNotifyEvent);
+    procedure SetCanUseListPicker(const Value: Boolean);
+    procedure SetDropDownKind(const Value: TDropDownKind);
+    procedure SetListItemCheckedColor(const Value: TAlphaColor);
+    procedure SetListItemHoveredColor(const Value: TAlphaColor);
+  protected
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
+    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); override;
+    procedure KeyDown(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState); override;
+  protected
+    procedure DefineProperties(Filer: TFiler); override;
+    procedure DoPaintBackground(var R: TRectF); override;
+    function CreateBackground: TDrawable; override;
+    function GetDefaultSize: TSizeF; override;
+    procedure SetName(const Value: TComponentName); override;
+    procedure DoItemChange(Sender: TObject); virtual;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    procedure AddItem(const Item: String; AObject: TObject); virtual;
+    procedure Clear;
+    procedure ClearSelection;
+    procedure DeleteSelected;
+    procedure DropDown;
+    property ListBox: TListViewEx read GetListBox;
+    property ListBackground: TViewBrush read GetListBackground write SetListBackground;
+    property ListTextColor: TViewColor read GetListTextColor write SetListTextColor;
+    property ListItemCheckedColor: TAlphaColor read GetListItemCheckedColor write SetListItemCheckedColor;
+    property ListItemHoveredColor: TAlphaColor read GetListItemHoveredColor write SetListItemHoveredColor;
+    property Popup: TPopup read GetPopup;
+    property CanFocus default True;
+    property CanParentFocus;
+    property Items: TStrings read GetItems write SetItems stored ItemsStored;
+    property Count: Integer read GetCount;
+    property CanUseListPicker: Boolean read GetCanUseListPicker write SetCanUseListPicker default True;
+    property DropDownButton: TDrawableIcon read GetDropDownButton;
+    property ItemIndex: Integer read GetItemIndex write SetItemIndex;
+    property ItemWidth: Single read GetItemWidth write SetItemWidth;
+    property ItemHeight: Single read GetItemHeight write SetItemHeight stored IsItemHeightStored;
+    property DropDownKind: TDropDownKind read GetDropDownKind write SetDropDownKind default TDropDownKind.Native;
+    property DropDownCount: Integer read GetDropDownCount write SetDropDownCount default 8;
+    property DroppedDown: Boolean read GetDroppedDown;
+    property Gravity default TLayoutGravity.CenterVertical;
+    property OnChange: TNotifyEvent read FOnItemChange write FOnItemChange;
+    property OnClosePopup: TNotifyEvent read FOnClosePopup write FOnClosePopup;
+    property OnPopup: TNotifyEvent read GetOnPopup write SetOnPopup;
+    property OnInitListAdapter: TOnInitListAdapter read GetOnInitListAdapter write SetOnInitListAdapter;
+  end;
+
+type
+  TCustomComboBoxEditView = class(TEditView)
+  private
+    FDownPopup: TCustomDownPopup;
+    FOnItemChange: TNotifyEvent;
+    FOnClosePopup: TNotifyEvent;
+    function GetCanUseListPicker: Boolean;
+    function GetCount: Integer;
+    function GetDropDownButton: TDrawableIcon;
+    function GetDropDownCount: Integer;
+    function GetDropDownKind: TDropDownKind;
+    function GetDroppedDown: Boolean;
+    function GetItemHeight: Single;
+    function GetItemIndex: Integer;
+    function GetItems: TStrings;
+    function GetItemWidth: Single;
+    function GetListBackground: TViewBrush;
+    function GetListBox: TListViewEx;
+    function GetListItemCheckedColor: TAlphaColor;
+    function GetListItemHoveredColor: TAlphaColor;
+    function GetListTextColor: TViewColor;
+    function GetOnInitListAdapter: TOnInitListAdapter;
+    function GetOnPopup: TNotifyEvent;
+    function GetPopup: TPopup;
+    function IsItemHeightStored: Boolean;
+    function ItemsStored: Boolean;
+    procedure SetDropDownCount(const Value: Integer);
+    procedure SetItemHeight(const Value: Single);
+    procedure SetItemIndex(const Value: Integer);
+    procedure SetItems(const Value: TStrings);
+    procedure SetItemWidth(const Value: Single);
+    procedure SetListBackground(const Value: TViewBrush);
+    procedure SetListTextColor(const Value: TViewColor);
+    procedure SetOnInitListAdapter(const Value: TOnInitListAdapter);
+    procedure SetOnPopup(const Value: TNotifyEvent);
+    procedure SetCanUseListPicker(const Value: Boolean);
+    procedure SetDropDownKind(const Value: TDropDownKind);
+    procedure SetListItemCheckedColor(const Value: TAlphaColor);
+    procedure SetListItemHoveredColor(const Value: TAlphaColor);
+  protected
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
+    procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); override;
+    procedure KeyDown(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState); override;
+  protected
+    procedure DoPaintBackground(var R: TRectF); override;
+    function GetDefaultSize: TSizeF; override;
+    procedure DoItemChange(Sender: TObject); virtual;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    procedure AddItem(const Item: String; AObject: TObject); virtual;
+    procedure Clear;
+    procedure ClearSelection;
+    procedure DeleteSelected;
+    procedure DropDown;
+    property ListBox: TListViewEx read GetListBox;
+    property ListBackground: TViewBrush read GetListBackground write SetListBackground;
+    property ListTextColor: TViewColor read GetListTextColor write SetListTextColor;
+    property ListItemCheckedColor: TAlphaColor read GetListItemCheckedColor write SetListItemCheckedColor;
+    property ListItemHoveredColor: TAlphaColor read GetListItemHoveredColor write SetListItemHoveredColor;
+    property Popup: TPopup read GetPopup;
+    property Items: TStrings read GetItems write SetItems stored ItemsStored;
+    property Count: Integer read GetCount;
+    property CanUseListPicker: Boolean read GetCanUseListPicker write SetCanUseListPicker default True;
+    property DropDownButton: TDrawableIcon read GetDropDownButton;
+    property ItemIndex: Integer read GetItemIndex write SetItemIndex;
+    property ItemWidth: Single read GetItemWidth write SetItemWidth;
+    property ItemHeight: Single read GetItemHeight write SetItemHeight stored IsItemHeightStored;
+    property DropDownKind: TDropDownKind read GetDropDownKind write SetDropDownKind default TDropDownKind.Native;
+    property DropDownCount: Integer read GetDropDownCount write SetDropDownCount default 8;
+    property DroppedDown: Boolean read GetDroppedDown;
+    property OnItemChange: TNotifyEvent read FOnItemChange write FOnItemChange;
+    property OnClosePopup: TNotifyEvent read FOnClosePopup write FOnClosePopup;
+    property OnPopup: TNotifyEvent read GetOnPopup write SetOnPopup;
+    property OnInitListAdapter: TOnInitListAdapter read GetOnInitListAdapter write SetOnInitListAdapter;
   end;
 
 type
@@ -164,6 +317,28 @@ type
     property OnMouseLeave;
   end;
 
+type
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TComboBoxEditView = class(TCustomComboBoxEditView)
+  published
+    property Items;
+    property ItemIndex default -1;
+    property ItemHeight;
+    property CanUseListPicker default True;
+    property DropDownKind;
+    property DropDownCount default 8;
+    property DropDownButton;
+    property ListBackground;
+    property ListTextColor;
+    property ListItemCheckedColor;
+    property ListItemHoveredColor;
+
+    property OnInitListAdapter;
+    property OnItemChange;
+    property OnClosePopup;
+    property OnPopup;
+  end;
+
 implementation
 
 resourcestring
@@ -183,15 +358,15 @@ type
   public
     class procedure Initialize;
     class procedure Uninitialize;
-    class procedure Register(const AControl: TCustomComboBoxView);
-    class procedure Unregister(const AControl: TCustomComboBoxView);
-    class function AreItemsChanged(const AControl: TCustomComboBoxView): Boolean;
-    class procedure SetItemsChanged(const AControl: TCustomComboBoxView; const AChanged: Boolean);
+    class procedure Register(const AControl: TCustomDownPopup);
+    class procedure Unregister(const AControl: TCustomDownPopup);
+    class function AreItemsChanged(const AControl: TCustomDownPopup): Boolean;
+    class procedure SetItemsChanged(const AControl: TCustomDownPopup; const AChanged: Boolean);
   end;
 
 { TComboBoxHelper }
 
-class function TComboBoxHelper.AreItemsChanged(const AControl: TCustomComboBoxView): Boolean;
+class function TComboBoxHelper.AreItemsChanged(const AControl: TCustomDownPopup): Boolean;
 begin
   Result := FItems.TryGetValue(AControl, Result) and Result;
 end;
@@ -206,48 +381,51 @@ begin
   FreeAndNil(FItems);
 end;
 
-class procedure TComboBoxHelper.SetItemsChanged(const AControl: TCustomComboBoxView; const AChanged: Boolean);
+class procedure TComboBoxHelper.SetItemsChanged(const AControl: TCustomDownPopup; const AChanged: Boolean);
 begin
   FItems.AddOrSetValue(AControl, AChanged);
 end;
 
-class procedure TComboBoxHelper.Register(const AControl: TCustomComboBoxView);
+class procedure TComboBoxHelper.Register(const AControl: TCustomDownPopup);
 begin
   FItems.Add(AControl, True);
 end;
 
-class procedure TComboBoxHelper.Unregister(const AControl: TCustomComboBoxView);
+class procedure TComboBoxHelper.Unregister(const AControl: TCustomDownPopup);
 begin
   FItems.Remove(AControl);
 end;
 
-{ TCustomComboBoxView }
+type
+  TControlEx = class(TControl);
+  TScrollViewX = class(TScrollView);
 
-procedure TCustomComboBoxView.AddItem(const Item: String; AObject: TObject);
+{ TCustomDownPopup }
+
+procedure TCustomDownPopup.AddItem(const Item: String; AObject: TObject);
 begin
   FItems.AddObject(Item, AObject);
 end;
 
-procedure TCustomComboBoxView.Clear;
+procedure TCustomDownPopup.Clear;
 begin
-  if FItems.Count > 0 then
-    FItems.Clear;
+  if FItems.Count > 0 then FItems.Clear;
 end;
 
-procedure TCustomComboBoxView.ClearSelection;
+procedure TCustomDownPopup.ClearSelection;
 begin
   ItemIndex := -1;
 end;
 
-constructor TCustomComboBoxView.Create(AOwner: TComponent);
+constructor TCustomDownPopup.Create(AOwner: TView);
 var
   PickerService: IFMXPickerService;
 begin
-  inherited Create(AOwner);
+  FOwner := AOwner;
   if TPlatformServices.Current.SupportsPlatformService(IFMXPickerService, PickerService) then
   begin
     FListPicker := PickerService.CreateListPicker;
-    FListPicker.Parent := Self;
+    FListPicker.Parent := AOwner;
     FListPicker.OnValueChanged := DoOnValueChangedFromDropDownList;
     FListPicker.OnHide := DoClosePicker;
     FListPicker.OnShow := DoPopup;
@@ -260,17 +438,16 @@ begin
   FDropDownKind := TDropDownKind.Custom;
   DropDownCount := 8;
   FDroppedDown := False;
-  FPopup := TPopup.Create(Self);
+  FPopup := TPopup.Create(AOwner);
   FPopup.StyleLookup := 'combopopupstyle';
-  FPopup.PlacementTarget := Self;
+  FPopup.PlacementTarget := AOwner;
   FPopup.Stored := False;
-  FPopup.Parent := Self;
+  FPopup.Parent := AOwner;
   FPopup.Locked := True;
   FPopup.DragWithParent := True;
   FPopup.OnClosePopup := DoClosePopup;
   FPopup.OnPopup := DoPopup;
-  FListTextColor := TViewColor.Create(TextSettings.Color.Default);
-  FListTextColor.Assign(TextSettings.Color);
+  FListTextColor := TViewColor.Create(TAlphaColorRec.Black);
   FListBackground := TViewBrush.Create(TViewBrushKind.Solid, TAlphaColorRec.Null);
   FListBox := CreateListBox;
   if FListBox = nil then
@@ -280,53 +457,14 @@ begin
   FListBox.Stored := False;
   FListBox.Align := TAlignLayout.Client;
   FItemIndex := -1;
-  SetAcceptsControls(False);
   DropDownKind := TDropDownKind.Native;
   TComboBoxHelper.Register(Self);
-
-  Clickable := True;
-  CanFocus := True;
-  Padding.DefaultValue := RectF(4, 4, 4, 4);
-  Padding.Rect := Padding.DefaultValue;
-  Gravity := TLayoutGravity.CenterVertical;
   FDropDownButton := CreateDropDownButton;
-  if not Assigned(FBackground) then
-    FBackground := CreateBackground;
 end;
 
-function TCustomComboBoxView.CreateBackground: TDrawable;
+function TCustomDownPopup.CreateDropDownButton: TDrawableIcon;
 begin
-  Result := TDrawableBorder.Create(Self, TViewBrushKind.Solid, $ffe1e1e1);
-  Result.ItemPressed.Color := $ffcce4f7;
-  Result.ItemPressed.DefaultColor := Result.ItemPressed.Color;
-  Result.ItemPressed.Kind := TViewBrushKind.Solid;
-  Result.ItemPressed.DefaultKind := TBrushKind.Solid;
-  Result.ItemHovered.Color := $ffe5f1fb;
-  Result.ItemHovered.DefaultColor := Result.ItemHovered.Color;
-  Result.ItemHovered.Kind := TViewBrushKind.Solid;
-  Result.ItemHovered.DefaultKind := TBrushKind.Solid;
-  Result.ItemFocused.Color := $ffe5f1fb;
-  Result.ItemFocused.DefaultColor := Result.ItemFocused.Color;
-  Result.ItemFocused.Kind := TViewBrushKind.Solid;
-  Result.ItemFocused.DefaultKind := TBrushKind.Solid;
-  with TDrawableBorder(Result).Border do begin
-    DefaultStyle := TViewBorderStyle.RectBorder;
-    Style := DefaultStyle;
-    Color.Default := $ffadadad;
-    Color.DefaultChange := False;
-    Color.Pressed := $ef1fc9ff;
-    Color.PressedChange := False;
-    Color.Hovered := $EF33ccff;
-    Color.PressedChange := False;
-    Color.Focused := $EF33ccff;
-    Color.PressedChange := False;
-  end;
-  Result.OnChanged := DoBackgroundChanged;
-end;
-
-function TCustomComboBoxView.CreateDropDownButton: TDrawableIcon;
-begin
-  Result := TDrawableIcon.Create(Self);
+  Result := TDrawableIcon.Create(FOwner);
   Result.SizeWidth := 16;
   Result.SizeHeight := 16;
   Result.Padding := 2;
@@ -337,19 +475,24 @@ begin
   Result.OnChanged := DoDropDownButtonChanged;
 end;
 
-procedure TCustomComboBoxView.DefineProperties(Filer: TFiler);
+function TCustomDownPopup.CreateListBox: TListViewEx;
 begin
-  inherited;
-  Filer.DefineProperty('UseSmallScrollBars', IgnoreBooleanValue, nil, False);
+  Result := TListViewEx.Create(FOwner);
+  Result.Background.ItemDefault.Color := $ff909090;
+  Result.Background.ItemDefault.Kind := TViewBrushKind.Solid;
+  Result.Adapter := GetListAdapter();
+  Result.DividerHeight := 0;
+  Result.Margin := '1';
+  Result.OnItemClick := DoListItemClick;
+  Result.OnItemMeasureHeight := DoItemMeasureHeight;
 end;
 
-procedure TCustomComboBoxView.DeleteSelected;
+procedure TCustomDownPopup.DeleteSelected;
 begin
-  if ItemIndex <> -1 then
-    Items.Delete(ItemIndex);
+  if ItemIndex <> -1 then Items.Delete(ItemIndex);
 end;
 
-destructor TCustomComboBoxView.Destroy;
+destructor TCustomDownPopup.Destroy;
 begin
   TComboBoxHelper.Unregister(Self);
   TStringsListAdapter(FListBox.Adapter).FontColor := nil;
@@ -358,83 +501,78 @@ begin
   FreeAndNil(FListPicker);
   FreeAndNil(FListBackground);
   FreeAndNil(FListTextColor);
+  FOwner := nil;
   inherited;
 end;
 
-procedure TCustomComboBoxView.DoChange;
+procedure TCustomDownPopup.DoChange;
 begin
-  if Assigned(FOnChange) then
-    FOnChange(Self);
+  if Assigned(FOnChange) then FOnChange(Self);
 end;
 
-procedure TCustomComboBoxView.DoClosePicker(Sender: TObject);
+procedure TCustomDownPopup.DoClosePicker(Sender: TObject);
 begin
-  if not (csDestroying in ComponentState) then
-  begin
+  if not (csDestroying in FOwner.ComponentState) then begin
     FDroppedDown := False;
     if Assigned(FOnClosePopup) then
       FOnClosePopup(Self);
   end;
 end;
 
-procedure TCustomComboBoxView.DoClosePopup(Sender: TObject);
+procedure TCustomDownPopup.DoClosePopup(Sender: TObject);
 begin
   FDroppedDown := False;
   if Assigned(FOnClosePopup) then
     FOnClosePopup(Self);
 end;
 
-procedure TCustomComboBoxView.DoDropDownButtonChanged(Sender: TObject);
+procedure TCustomDownPopup.DoDropDownButtonChanged(Sender: TObject);
 begin
-  Repaint;
+  FOwner.Repaint;
 end;
 
-procedure TCustomComboBoxView.DoItemMeasureHeight(Sender: TObject;
-  Index: Integer; var AHeight: Single);
+procedure TCustomDownPopup.DoItemMeasureHeight(Sender: TObject; Index: Integer;
+  var AHeight: Single);
 begin
   AHeight := FItemHeight;
 end;
 
-procedure TCustomComboBoxView.DoListItemClick(Sender: TObject;
-  ItemIndex: Integer; const ItemView: TControl);
+procedure TCustomDownPopup.DoListItemClick(Sender: TObject; ItemIndex: Integer;
+  const ItemView: TControl);
 begin
   Self.ItemIndex := ItemIndex;
   FPopup.IsOpen := False;
 end;
 
-procedure TCustomComboBoxView.DoOnValueChangedFromDropDownList(Sender: TObject;
+procedure TCustomDownPopup.DoOnValueChangedFromDropDownList(Sender: TObject;
   const AValueIndex: Integer);
 var
   LChanged: Boolean;
 begin
-  if Observers.IsObserving(TObserverMapping.EditLinkID) then
-    if not TLinkObservers.EditLinkEdit(Observers) then
+  if FOwner.Observers.IsObserving(TObserverMapping.EditLinkID) then
+    if not TLinkObservers.EditLinkEdit(FOwner.Observers) then
       Exit;
   LChanged := ItemIndex <> AValueIndex;
   if LChanged then
-    TLinkObservers.PositionLinkPosChanging(Observers);
+    TLinkObservers.PositionLinkPosChanging(FOwner.Observers);
   ItemIndex := AValueIndex;
   if LChanged then
-    TLinkObservers.ListSelectionChanged(Observers);
+    TLinkObservers.ListSelectionChanged(FOwner.Observers);
 end;
 
-procedure TCustomComboBoxView.DoPaintBackground(var R: TRectF);
+procedure TCustomDownPopup.DoPaintBackground(Canvas: TCanvas; var R: TRectF; DrawState: TViewState);
 begin
-  R := RectF(R.Left + Padding.Left, R.Top + Padding.Top + 1,
-    R.Right - Padding.Right, R.Bottom - Padding.Bottom);
   if Assigned(FDropDownButton) and (not FDropDownButton.IsEmpty) then
     FDropDownButton.AdjustDraw(Canvas, R, True, DrawState);
-  if (Assigned(TextSettings)) then
-    DoPaintText(R);
 end;
 
-procedure TCustomComboBoxView.DoPopup(Sender: TObject);
+procedure TCustomDownPopup.DoPopup(Sender: TObject);
 begin
   if Assigned(FOnPopup) then
     FOnPopup(Self);
 end;
 
-procedure TCustomComboBoxView.DropDown;
+procedure TCustomDownPopup.DropDown;
 begin
   if UseNativePicker then
   begin
@@ -477,22 +615,17 @@ begin
   end;
 end;
 
-function TCustomComboBoxView.GetCount: Integer;
+function TCustomDownPopup.GetCount: Integer;
 begin
   Result := FItems.Count;
 end;
 
-function TCustomComboBoxView.GetDefaultSize: TSizeF;
-begin
-  Result := TSizeF.Create(100, 22);
-end;
-
-function TCustomComboBoxView.GetItems: TStrings;
+function TCustomDownPopup.GetItems: TStrings;
 begin
   Result := FItems;
 end;
 
-function TCustomComboBoxView.GetListAdapter: TStringsListAdapter;
+function TCustomDownPopup.GetListAdapter: TStringsListAdapter;
 begin
   Result := nil;
   if Assigned(FOnInitListAdapter) then
@@ -500,28 +633,17 @@ begin
   if not Assigned(Result) then begin
     Result := TStringsListAdapter.Create(FItems);
     Result.DefaultItemHeight := FItemHeight;
-    Result.FontSize := TextSettings.Font.Size;
+    if FOwner is TTextView then
+      Result.FontSize := TTextView(FOwner).TextSettings.Font.Size;
     Result.WordWrap := False;
     Result.Padding := RectF(4, 0, 4, 0);
     Result.HeightSize := TViewSize.CustomSize;
   end;
 end;
 
-function TCustomComboBoxView.CreateListBox(): TListViewEx;
+procedure TCustomDownPopup.InitPicker(AListPicker: TCustomListPicker);
 begin
-  Result := TListViewEx.Create(Self);
-  Result.Background.ItemDefault.Color := $ff909090;
-  Result.Background.ItemDefault.Kind := TViewBrushKind.Solid;
-  Result.Adapter := GetListAdapter();
-  Result.DividerHeight := 0;
-  Result.Margin := '1';
-  Result.OnItemClick := DoListItemClick;
-  Result.OnItemMeasureHeight := DoItemMeasureHeight;
-end;
-
-procedure TCustomComboBoxView.InitPicker(AListPicker: TCustomListPicker);
-begin
-  if Pressed or DoubleClick then
+  if FOwner.Pressed or TControlEx(FOwner).DoubleClick then
     AListPicker.PreferedDisplayIndex := Screen.DisplayFromPoint(Screen.MousePos).Index
   else
     AListPicker.PreferedDisplayIndex := -1;
@@ -536,19 +658,41 @@ begin
   AListPicker.CountVisibleItems := DropDownCount;
 end;
 
-function TCustomComboBoxView.IsItemHeightStored: Boolean;
+function TCustomDownPopup.IsItemHeightStored: Boolean;
 begin
   Result := FItemHeight <> 18;
 end;
 
-function TCustomComboBoxView.ItemsStored: Boolean;
+function TCustomDownPopup.ItemsStored: Boolean;
 begin
   Result := Count > 0;
 end;
 
-procedure TCustomComboBoxView.KeyDown(var Key: Word;
-  var KeyChar: System.WideChar; Shift: TShiftState);
+function TCustomDownPopup.KeyDown(var Key: Word; var KeyChar: System.WideChar;
+  Shift: TShiftState; out OldItemIndex, NewItemIndex: Integer): Boolean;
+var
+  NoVisItems: Integer;
+begin
+  Result := False;
+  if not FDroppedDown then
+    OldItemIndex := ItemIndex
+  else if DropDownKind = TDropDownKind.Native then
+    OldItemIndex := FListPicker.ItemIndex
+  else
+    OldItemIndex := TStringsListAdapter(FListBox.Adapter).ItemIndex;
+  NewItemIndex := OldItemIndex;
 
+  if FOwner.Observers.IsObserving(TObserverMapping.EditLinkID) then
+    if (KeyChar > ' ') or
+      (Key in [vkHome, vkEnd, vkUp, vkDown, vkRight, vkLeft]) then
+      if not TLinkObservers.EditLinkEdit(FOwner.Observers) then begin
+        Result := True;
+        Exit;
+      end;
+end;
+
+procedure TCustomDownPopup.KeyDownHandle(var Key: Word;
+  var KeyChar: System.WideChar; Shift: TShiftState; var OldItemIndex, NewItemIndex: Integer);
   function TryFindMatchingItem(var AItemIndex: Integer): Boolean;
   var
     I: Integer;
@@ -586,24 +730,7 @@ procedure TCustomComboBoxView.KeyDown(var Key: Word;
 
 var
   NoVisItems: Integer;
-  OldItemIndex: Integer;
-  NewItemIndex: Integer;
 begin
-   if not FDroppedDown then
-    OldItemIndex := ItemIndex
-  else if DropDownKind = TDropDownKind.Native then
-    OldItemIndex := FListPicker.ItemIndex
-  else
-    OldItemIndex := TStringsListAdapter(FListBox.Adapter).ItemIndex;
-  NewItemIndex := OldItemIndex;
-
-  if Observers.IsObserving(TObserverMapping.EditLinkID) then
-    if (KeyChar > ' ') or
-      (Key in [vkHome, vkEnd, vkUp, vkDown, vkRight, vkLeft]) then
-      if not TLinkObservers.EditLinkEdit(Observers) then
-        Exit;
-  inherited;
-
   if Count = 0 then
     Exit;
 
@@ -672,7 +799,7 @@ begin
 
     if NewItemIndex <> OldItemIndex then
     begin
-      TLinkObservers.PositionLinkPosChanging(Observers);
+      TLinkObservers.PositionLinkPosChanging(FOwner.Observers);
       try
         if not FDroppedDown then
           ItemIndex := NewItemIndex
@@ -681,30 +808,23 @@ begin
         else
           TStringsListAdapter(FListBox.Adapter).ItemIndex := NewItemIndex;
       finally
-        TLinkObservers.ListSelectionChanged(Observers);
+        TLinkObservers.ListSelectionChanged(FOwner.Observers);
       end;
     end;
     Key := 0;
   end;
 end;
 
-procedure TCustomComboBoxView.Loaded;
+procedure TCustomDownPopup.MouseDown(Button: TMouseButton; Shift: TShiftState;
+  X, Y: Single);
 begin
-  inherited Loaded;
-end;
-
-procedure TCustomComboBoxView.MouseDown(Button: TMouseButton;
-  Shift: TShiftState; X, Y: Single);
-begin
-  inherited;
   if Button = TMouseButton.mbLeft then
     DropDown;
 end;
 
-procedure TCustomComboBoxView.MouseWheel(Shift: TShiftState;
-  WheelDelta: Integer; var Handled: Boolean);
+procedure TCustomDownPopup.MouseWheel(Shift: TShiftState; WheelDelta: Integer;
+  var Handled: Boolean);
 begin
-  inherited;
   if WheelDelta < 0 then
   begin
     if ItemIndex < Count - 1 then
@@ -716,7 +836,7 @@ begin
   Handled := True;
 end;
 
-procedure TCustomComboBoxView.RecalculatePopupSize;
+procedure TCustomDownPopup.RecalculatePopupSize;
 var
   PopupContentHeight: Single;
 begin
@@ -730,12 +850,12 @@ begin
   TStringsListAdapter(FListBox.Adapter).ListItemHoveredColor := FListItemHoveredColor;
   FListbox.NotifyDataChanged;
   FPopup.ApplyStyleLookup;
-  if Pressed or DoubleClick then
+  if FOwner.Pressed or TControlEx(FOwner).DoubleClick then
     FPopup.PreferedDisplayIndex := Screen.DisplayFromPoint(Screen.MousePos).Index
   else
     FPopup.PreferedDisplayIndex := -1;
   if SameValue(ItemWidth, 0, TEpsilon.Position) then
-    FPopup.Width := Width
+    FPopup.Width := FOwner.Width
   else
     FPopup.Width := ItemWidth;
 
@@ -747,51 +867,52 @@ begin
     FListBox.Padding.Bottom + FPopup.Padding.Bottom + FListBox.Margins.Top + FListBox.Margins.Bottom;
 end;
 
-procedure TCustomComboBoxView.SetDropDownCount(const Value: Integer);
+procedure TCustomDownPopup.SetDropDownCount(const Value: Integer);
 begin
   if FDropDownCount <> Value then
     FDropDownCount := Value;
 end;
 
-procedure TCustomComboBoxView.SetItemHeight(const Value: Single);
+procedure TCustomDownPopup.SetItemHeight(const Value: Single);
 begin
   if FItemHeight <> Value then begin
     FItemHeight := Value;
     if Assigned(TStringsListAdapter(FListBox.Adapter)) then
       TStringsListAdapter(FListBox.Adapter).DefaultItemHeight := FItemHeight;
-    RealignContent;
+    if FOwner is TScrollView then
+      TScrollViewX(FOwner).RealignContent;
   end;
 end;
 
-procedure TCustomComboBoxView.SetItemIndex(const Value: Integer);
+procedure TCustomDownPopup.SetItemIndex(const Value: Integer);
 begin
   if FItemIndex <> Value then begin
     FItemIndex := Value;
-    Text := Items[Value];
     if FPopup.IsOpen and (not FCanUseListPicker) then begin
       TStringsListAdapter(FListBox.Adapter).ItemIndex := Value;
       ListBox.Adapter.NotifyDataChanged;
     end;
-    Repaint;
+    FOwner.Repaint;
     DoChange;
   end;
 end;
 
-procedure TCustomComboBoxView.SetItems(const Value: TStrings);
+procedure TCustomDownPopup.SetItems(const Value: TStrings);
 begin
   FItems.Assign(Value);
   DoChange;
 end;
 
-procedure TCustomComboBoxView.SetItemWidth(const Value: Single);
+procedure TCustomDownPopup.SetItemWidth(const Value: Single);
 begin
   if FItemWidth <> Value then begin
     FItemWidth := Value;
-    RealignContent;
+    if FOwner is TScrollView then
+      TScrollViewX(FOwner).RealignContent;
   end;
 end;
 
-procedure TCustomComboBoxView.SetListBackground(const Value: TViewBrush);
+procedure TCustomDownPopup.SetListBackground(const Value: TViewBrush);
 begin
   if FListBackground <> Value then begin
     if Assigned(Value) then
@@ -799,10 +920,311 @@ begin
   end;
 end;
 
-procedure TCustomComboBoxView.SetListTextColor(const Value: TViewColor);
+procedure TCustomDownPopup.SetListTextColor(const Value: TViewColor);
 begin
   if FListTextColor <> Value then
     FListTextColor.Assign(Value);
+end;
+
+function TCustomDownPopup.UseNativePicker: Boolean;
+begin
+  Result := FCanUseListPicker and (TDropDownKind.Native = DropDownKind) and (FListPicker <> nil);
+end;
+
+
+{ TCustomComboBoxView }
+
+procedure TCustomComboBoxView.AddItem(const Item: String; AObject: TObject);
+begin
+  FDownPopup.AddItem(Item, AObject);
+end;
+
+procedure TCustomComboBoxView.Clear;
+begin
+  FDownPopup.Clear;
+end;
+
+procedure TCustomComboBoxView.ClearSelection;
+begin
+  FDownPopup.ClearSelection;
+end;
+
+constructor TCustomComboBoxView.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FDownPopup := TCustomDownPopup.Create(Self);
+  FDownPopup.FOnChange := DoItemChange;
+
+  Clickable := True;
+  CanFocus := True;
+  Padding.DefaultValue := RectF(4, 4, 4, 4);
+  Padding.Rect := Padding.DefaultValue;
+  Gravity := TLayoutGravity.CenterVertical;
+
+  if not Assigned(FBackground) then
+    FBackground := CreateBackground;
+end;
+
+function TCustomComboBoxView.CreateBackground: TDrawable;
+begin
+  Result := TDrawableBorder.Create(Self, TViewBrushKind.Solid, $ffe1e1e1);
+  Result.ItemPressed.Color := $ffcce4f7;
+  Result.ItemPressed.DefaultColor := Result.ItemPressed.Color;
+  Result.ItemPressed.Kind := TViewBrushKind.Solid;
+  Result.ItemPressed.DefaultKind := TBrushKind.Solid;
+  Result.ItemHovered.Color := $ffe5f1fb;
+  Result.ItemHovered.DefaultColor := Result.ItemHovered.Color;
+  Result.ItemHovered.Kind := TViewBrushKind.Solid;
+  Result.ItemHovered.DefaultKind := TBrushKind.Solid;
+  Result.ItemFocused.Color := $ffe5f1fb;
+  Result.ItemFocused.DefaultColor := Result.ItemFocused.Color;
+  Result.ItemFocused.Kind := TViewBrushKind.Solid;
+  Result.ItemFocused.DefaultKind := TBrushKind.Solid;
+  with TDrawableBorder(Result).Border do begin
+    DefaultStyle := TViewBorderStyle.RectBorder;
+    Style := DefaultStyle;
+    Color.Default := $ffadadad;
+    Color.DefaultChange := False;
+    Color.Pressed := $ef1fc9ff;
+    Color.PressedChange := False;
+    Color.Hovered := $EF33ccff;
+    Color.PressedChange := False;
+    Color.Focused := $EF33ccff;
+    Color.PressedChange := False;
+  end;
+  Result.OnChanged := DoBackgroundChanged;
+end;
+
+procedure TCustomComboBoxView.DefineProperties(Filer: TFiler);
+begin
+  inherited;
+  Filer.DefineProperty('UseSmallScrollBars', IgnoreBooleanValue, nil, False);
+end;
+
+procedure TCustomComboBoxView.DeleteSelected;
+begin
+  FDownPopup.DeleteSelected;
+end;
+
+destructor TCustomComboBoxView.Destroy;
+begin
+  if Assigned(FDownPopup) then begin
+    FDownPopup.FOnChange := nil;
+    FreeAndNil(FDownPopup);
+  end;
+  inherited Destroy;
+end;
+
+procedure TCustomComboBoxView.DoItemChange;
+begin
+  if FDownPopup.ItemIndex < 0 then
+    Text := ''
+  else
+    Text := FDownPopup.FItems[FDownPopup.ItemIndex];
+  if Assigned(FOnItemChange) then
+    FOnItemChange(Self);
+end;
+
+procedure TCustomComboBoxView.DoPaintBackground(var R: TRectF);
+begin
+  R := RectF(R.Left + Padding.Left, R.Top + Padding.Top + 1,
+    R.Right - Padding.Right, R.Bottom - Padding.Bottom);
+  if Assigned(FDownPopup) then
+    FDownPopup.DoPaintBackground(Canvas, R, DrawState);
+  if (Assigned(TextSettings)) then
+    DoPaintText(R);
+end;
+
+procedure TCustomComboBoxView.DropDown;
+begin
+  if Assigned(FDownPopup) then FDownPopup.DropDown;
+end;
+
+function TCustomComboBoxView.GetCanUseListPicker: Boolean;
+begin
+  Result := FDownPopup.FCanUseListPicker;
+end;
+
+function TCustomComboBoxView.GetCount: Integer;
+begin
+  Result := FDownPopup.Count;
+end;
+
+function TCustomComboBoxView.GetDefaultSize: TSizeF;
+begin
+  Result := TSizeF.Create(100, 22);
+end;
+
+function TCustomComboBoxView.GetDropDownButton: TDrawableIcon;
+begin
+  Result := FDownPopup.DropDownButton;
+end;
+
+function TCustomComboBoxView.GetDropDownCount: Integer;
+begin
+  Result := FDownPopup.DropDownCount;
+end;
+
+function TCustomComboBoxView.GetDropDownKind: TDropDownKind;
+begin
+  Result := FDownPopup.FDropDownKind;
+end;
+
+function TCustomComboBoxView.GetDroppedDown: Boolean;
+begin
+  Result := FDownPopup.DroppedDown;
+end;
+
+function TCustomComboBoxView.GetItemHeight: Single;
+begin
+  Result := FDownPopup.ItemHeight;
+end;
+
+function TCustomComboBoxView.GetItemIndex: Integer;
+begin
+  Result := FDownPopup.ItemIndex;
+end;
+
+function TCustomComboBoxView.GetItems: TStrings;
+begin
+  Result := FDownPopup.FItems;
+end;
+
+function TCustomComboBoxView.GetItemWidth: Single;
+begin
+  Result := FDownPopup.ItemWidth;
+end;
+
+function TCustomComboBoxView.GetListBackground: TViewBrush;
+begin
+  Result := FDownPopup.FListBackground;
+end;
+
+function TCustomComboBoxView.GetListBox: TListViewEx;
+begin
+  Result := FDownPopup.FListBox;
+end;
+
+function TCustomComboBoxView.GetListItemCheckedColor: TAlphaColor;
+begin
+  Result := FDownPopup.FListItemCheckedColor;
+end;
+
+function TCustomComboBoxView.GetListItemHoveredColor: TAlphaColor;
+begin
+  Result := FDownPopup.FListItemHoveredColor;
+end;
+
+function TCustomComboBoxView.GetListTextColor: TViewColor;
+begin
+  Result := FDownPopup.FListTextColor;
+end;
+
+function TCustomComboBoxView.GetOnInitListAdapter: TOnInitListAdapter;
+begin
+  Result := FDownPopup.FOnInitListAdapter;
+end;
+
+function TCustomComboBoxView.GetOnPopup: TNotifyEvent;
+begin
+  Result := FDownPopup.OnPopup;
+end;
+
+function TCustomComboBoxView.GetPopup: TPopup;
+begin
+  Result := FDownPopup.Popup;
+end;
+
+function TCustomComboBoxView.IsItemHeightStored: Boolean;
+begin
+  Result := FDownPopup.IsItemHeightStored;
+end;
+
+function TCustomComboBoxView.ItemsStored: Boolean;
+begin
+  Result := FDownPopup.ItemsStored;
+end;
+
+procedure TCustomComboBoxView.KeyDown(var Key: Word;
+  var KeyChar: System.WideChar; Shift: TShiftState);
+var
+  OldItemIndex, NewItemIndex: Integer;
+begin
+  if Assigned(FDownPopup) then begin
+    if FDownPopup.KeyDown(Key, KeyChar, Shift, OldItemIndex, NewItemIndex) then Exit;
+    inherited;
+    FDownPopup.KeyDownHandle(Key, KeyChar, Shift, OldItemIndex, NewItemIndex);
+  end else
+    inherited;
+end;
+
+procedure TCustomComboBoxView.MouseDown(Button: TMouseButton;
+  Shift: TShiftState; X, Y: Single);
+begin
+  inherited;
+  if Assigned(FDownPopup) then FDownPopup.MouseDown(Button, Shift, X, Y);
+end;
+
+procedure TCustomComboBoxView.MouseWheel(Shift: TShiftState;
+  WheelDelta: Integer; var Handled: Boolean);
+begin
+  inherited;
+  if Assigned(FDownPopup) then FDownPopup.MouseWheel(Shift, WheelDelta, Handled);
+end;
+
+procedure TCustomComboBoxView.SetCanUseListPicker(const Value: Boolean);
+begin
+  FDownPopup.CanUseListPicker := Value;
+end;
+
+procedure TCustomComboBoxView.SetDropDownCount(const Value: Integer);
+begin
+  FDownPopup.DropDownCount := Value;
+end;
+
+procedure TCustomComboBoxView.SetDropDownKind(const Value: TDropDownKind);
+begin
+  FDownPopup.DropDownKind := Value;
+end;
+
+procedure TCustomComboBoxView.SetItemHeight(const Value: Single);
+begin
+  FDownPopup.ItemHeight := Value;
+end;
+
+procedure TCustomComboBoxView.SetItemIndex(const Value: Integer);
+begin
+  FDownPopup.ItemIndex := Value;
+end;
+
+procedure TCustomComboBoxView.SetItems(const Value: TStrings);
+begin
+  FDownPopup.Items := Value;
+end;
+
+procedure TCustomComboBoxView.SetItemWidth(const Value: Single);
+begin
+  FDownPopup.ItemWidth := Value;
+end;
+
+procedure TCustomComboBoxView.SetListBackground(const Value: TViewBrush);
+begin
+  FDownPopup.ListBackground := Value;
+end;
+
+procedure TCustomComboBoxView.SetListItemCheckedColor(const Value: TAlphaColor);
+begin
+  FDownPopup.ListItemCheckedColor := Value;
+end;
+
+procedure TCustomComboBoxView.SetListItemHoveredColor(const Value: TAlphaColor);
+begin
+  FDownPopup.ListItemHoveredColor := Value;
+end;
+
+procedure TCustomComboBoxView.SetListTextColor(const Value: TViewColor);
+begin
+  FDownPopup.ListTextColor := Value;
 end;
 
 procedure TCustomComboBoxView.SetName(const Value: TComponentName);
@@ -814,13 +1236,281 @@ begin
   Text := LastText;
 end;
 
-function TCustomComboBoxView.UseNativePicker: Boolean;
+procedure TCustomComboBoxView.SetOnInitListAdapter(
+  const Value: TOnInitListAdapter);
 begin
-  Result := FCanUseListPicker and (TDropDownKind.Native = DropDownKind) and (FListPicker <> nil);
+  FDownPopup.OnInitListAdapter := Value;
+end;
+
+procedure TCustomComboBoxView.SetOnPopup(const Value: TNotifyEvent);
+begin
+  FDownPopup.OnPopup := Value;
+end;
+
+{ TCustomComboBoxEditView }
+
+procedure TCustomComboBoxEditView.AddItem(const Item: String; AObject: TObject);
+begin
+  FDownPopup.AddItem(Item, AObject);
+end;
+
+procedure TCustomComboBoxEditView.Clear;
+begin
+  FDownPopup.Clear;
+end;
+
+procedure TCustomComboBoxEditView.ClearSelection;
+begin
+  FDownPopup.ClearSelection;
+end;
+
+constructor TCustomComboBoxEditView.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FDownPopup := TCustomDownPopup.Create(Self);
+  FDownPopup.FOnChange := DoItemChange;
+end;
+
+procedure TCustomComboBoxEditView.DeleteSelected;
+begin
+  FDownPopup.DeleteSelected;
+end;
+
+destructor TCustomComboBoxEditView.Destroy;
+begin
+  FDownPopup.FOnChange := nil;
+  FreeAndNil(FDownPopup);
+  inherited;
+end;
+
+procedure TCustomComboBoxEditView.DoItemChange(Sender: TObject);
+begin
+  if FDownPopup.ItemIndex < 0 then
+    Text := ''
+  else
+    Text := FDownPopup.FItems[FDownPopup.ItemIndex];
+  if Assigned(FOnItemChange) then
+    FOnItemChange(Self);
+end;
+
+procedure TCustomComboBoxEditView.DoPaintBackground(var R: TRectF);
+begin
+  R := RectF(R.Left + Padding.Left, R.Top + Padding.Top + 1,
+    R.Right - Padding.Right, R.Bottom - Padding.Bottom);
+  if Assigned(FDownPopup) then
+    FDownPopup.DoPaintBackground(Canvas, R, DrawState);
+  if (Assigned(TextSettings)) then
+    DoPaintText(R);
+end;
+
+procedure TCustomComboBoxEditView.DropDown;
+begin
+  if Assigned(FDownPopup) then FDownPopup.DropDown;
+end;
+
+function TCustomComboBoxEditView.GetCanUseListPicker: Boolean;
+begin
+  Result := FDownPopup.FCanUseListPicker;
+end;
+
+function TCustomComboBoxEditView.GetCount: Integer;
+begin
+  Result := FDownPopup.Count;
+end;
+
+function TCustomComboBoxEditView.GetDefaultSize: TSizeF;
+begin
+  Result := TSizeF.Create(100, 22);
+end;
+
+function TCustomComboBoxEditView.GetDropDownButton: TDrawableIcon;
+begin
+  Result := FDownPopup.DropDownButton;
+end;
+
+function TCustomComboBoxEditView.GetDropDownCount: Integer;
+begin
+  Result := FDownPopup.DropDownCount;
+end;
+
+function TCustomComboBoxEditView.GetDropDownKind: TDropDownKind;
+begin
+  Result := FDownPopup.DropDownKind;
+end;
+
+function TCustomComboBoxEditView.GetDroppedDown: Boolean;
+begin
+  Result := FDownPopup.DroppedDown;
+end;
+
+function TCustomComboBoxEditView.GetItemHeight: Single;
+begin
+  Result := FDownPopup.ItemHeight;
+end;
+
+function TCustomComboBoxEditView.GetItemIndex: Integer;
+begin
+  Result := FDownPopup.ItemIndex;
+end;
+
+function TCustomComboBoxEditView.GetItems: TStrings;
+begin
+  Result := FDownPopup.Items;
+end;
+
+function TCustomComboBoxEditView.GetItemWidth: Single;
+begin
+  Result := FDownPopup.ItemWidth;
+end;
+
+function TCustomComboBoxEditView.GetListBackground: TViewBrush;
+begin
+  Result := FDownPopup.ListBackground;
+end;
+
+function TCustomComboBoxEditView.GetListBox: TListViewEx;
+begin
+  Result := FDownPopup.ListBox;
+end;
+
+function TCustomComboBoxEditView.GetListItemCheckedColor: TAlphaColor;
+begin
+  Result := FDownPopup.ListItemCheckedColor;
+end;
+
+function TCustomComboBoxEditView.GetListItemHoveredColor: TAlphaColor;
+begin
+  Result := FDownPopup.ListItemHoveredColor;
+end;
+
+function TCustomComboBoxEditView.GetListTextColor: TViewColor;
+begin
+  Result := FDownPopup.ListTextColor;
+end;
+
+function TCustomComboBoxEditView.GetOnInitListAdapter: TOnInitListAdapter;
+begin
+  Result := FDownPopup.OnInitListAdapter;
+end;
+
+function TCustomComboBoxEditView.GetOnPopup: TNotifyEvent;
+begin
+  Result := FDownPopup.OnPopup;
+end;
+
+function TCustomComboBoxEditView.GetPopup: TPopup;
+begin
+  Result := FDownPopup.Popup;
+end;
+
+function TCustomComboBoxEditView.IsItemHeightStored: Boolean;
+begin
+  Result := FDownPopup.IsItemHeightStored;
+end;
+
+function TCustomComboBoxEditView.ItemsStored: Boolean;
+begin
+  Result := FDownPopup.ItemsStored;
+end;
+
+procedure TCustomComboBoxEditView.KeyDown(var Key: Word;
+  var KeyChar: System.WideChar; Shift: TShiftState);
+var
+  OldItemIndex, NewItemIndex: Integer;
+begin
+  if Assigned(FDownPopup) then begin
+    if FDownPopup.KeyDown(Key, KeyChar, Shift, OldItemIndex, NewItemIndex) then Exit;
+    inherited;
+    FDownPopup.KeyDownHandle(Key, KeyChar, Shift, OldItemIndex, NewItemIndex);
+  end else
+    inherited;
+end;
+
+procedure TCustomComboBoxEditView.MouseDown(Button: TMouseButton;
+  Shift: TShiftState; X, Y: Single);
+begin
+  inherited;
+  if Assigned(FDownPopup) then FDownPopup.MouseDown(Button, Shift, X, Y);
+end;
+
+procedure TCustomComboBoxEditView.MouseWheel(Shift: TShiftState;
+  WheelDelta: Integer; var Handled: Boolean);
+begin
+  inherited;
+  if Assigned(FDownPopup) then FDownPopup.MouseWheel(Shift, WheelDelta, Handled);
+end;
+
+procedure TCustomComboBoxEditView.SetCanUseListPicker(const Value: Boolean);
+begin
+  FDownPopup.CanUseListPicker := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetDropDownCount(const Value: Integer);
+begin
+  FDownPopup.DropDownCount := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetDropDownKind(const Value: TDropDownKind);
+begin
+  FDownPopup.DropDownKind := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetItemHeight(const Value: Single);
+begin
+  FDownPopup.ItemHeight := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetItemIndex(const Value: Integer);
+begin
+  FDownPopup.ItemIndex := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetItems(const Value: TStrings);
+begin
+  FDownPopup.Items := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetItemWidth(const Value: Single);
+begin
+  FDownPopup.ItemWidth := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetListBackground(const Value: TViewBrush);
+begin
+  FDownPopup.ListBackground := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetListItemCheckedColor(
+  const Value: TAlphaColor);
+begin
+  FDownPopup.ListItemCheckedColor := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetListItemHoveredColor(
+  const Value: TAlphaColor);
+begin
+  FDownPopup.ListItemHoveredColor := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetListTextColor(const Value: TViewColor);
+begin
+  FDownPopup.ListTextColor := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetOnInitListAdapter(
+  const Value: TOnInitListAdapter);
+begin
+  FDownPopup.OnInitListAdapter := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetOnPopup(const Value: TNotifyEvent);
+begin
+  FDownPopup.OnPopup := Value;
 end;
 
 initialization
   TComboBoxHelper.Initialize;
+
 finalization
   TComboBoxHelper.Uninitialize;
 
