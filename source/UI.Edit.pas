@@ -183,23 +183,29 @@ type
 type
   TEditUndoData = class(TObject)
   private
-    FIsUndoing, FIsChange: Boolean;
     FEdit: TEditViewBase;
-    FText: string;
+    FText0, FText1: string;
+    FIsUndone: Boolean;
+    FChangeTimer: TTimer;
+    FTimeoutMs: Integer;
+    FIsUndoing: Boolean;
+    procedure HandleChangeTimer(Sender: TObject);
     function GetCanUndo: Boolean;
-  protected
-    procedure DoRecordUndo();
+    procedure ScheduleTextCapture;
+    procedure CaptureCurrentText;
+    function GetCanRedo: Boolean;
   public
     constructor Create(Edit: TEditViewBase); virtual;
     destructor Destroy; override;
-    procedure Clear();
-    procedure Init();
-    function Undo(): string;
-    procedure Change();
-    procedure DoExit();
-    procedure DoKeyDown(Shift: TShiftState; var Key: Word; var KeyChar: System.WideChar);
+    procedure Clear;
+    function Undo: string;
+    function Redo: string;
+    procedure Change;
+    procedure DoExit;
+    procedure DoKeyDown(Shift: TShiftState; var Key: Word; var KeyChar: WideChar);
     procedure DoKeyUp(Shift: TShiftState; var Key: Word);
     property CanUndo: Boolean read GetCanUndo;
+    property CanRedo: Boolean read GetCanRedo;
   end;
 
 type
@@ -379,6 +385,7 @@ type
     procedure DoPaste(Sender: TObject);
     procedure DoSelectAll(Sender: TObject);
     procedure DoUndo(Sender: TObject);
+    procedure DoRedo(Sender: TObject);
     { Spelling }
     procedure UpdateSpellPopupMenu(const APoint: TPointF);
     procedure SpellFixContextMenuHandler(Sender: TObject);
@@ -570,11 +577,15 @@ procedure SetTimeout(Callback: TTimeoutCallback; DelayMS: Integer = 1000; const 
 
 implementation
 
+resourcestring
+  SEditRedo = 'Redo';
+
 const
   LOUPE_OFFSET = 10;
   IMEWindowGap = 2; // 2 is small space between conrol and IME window
 
   UndoStyleName = 'undo'; //Do not localize
+  RedoStyleName = 'redo'; //Do not localize
   CutStyleName = 'cut'; //Do not localize
   CopyStyleName = 'copy'; //Do not localize
   PasteStyleName = 'paste'; //Do not localize
@@ -1270,6 +1281,12 @@ begin
 
   TmpItem := TMenuItem.Create(Result);
   TmpItem.Parent := Result;
+  TmpItem.Text := SEditRedo;
+  TmpItem.StyleName := RedoStyleName;
+  TmpItem.OnClick := DoRedo;
+
+  TmpItem := TMenuItem.Create(Result);
+  TmpItem.Parent := Result;
   TmpItem.Text := SEditCut;
   TmpItem.StyleName := CutStyleName;
   TmpItem.OnClick := DoCut;
@@ -1664,6 +1681,14 @@ begin
   CaretPosition := GetOriginCaretPosition;
 end;
 
+procedure TCustomEditView.DoRedo(Sender: TObject);
+begin
+  if Assigned(FUndoData) and (FUndoData.CanRedo) then begin
+    FUndoData.Redo;
+    SelectAll;
+  end;
+end;
+
 procedure TCustomEditView.DoRightSelPtChangePosition(Sender: TObject; var X,
   Y: Single);
 var
@@ -1749,13 +1774,8 @@ end;
 procedure TCustomEditView.DoUndo(Sender: TObject);
 begin
   if Assigned(FUndoData) and (FUndoData.CanUndo) then begin
-    FUndoData.FIsUndoing := True;
-    try
-      Text := FUndoData.Undo;
-      SelectAll;
-    finally
-      FUndoData.FIsUndoing := False;
-    end;
+    FUndoData.Undo;
+    SelectAll;
   end;
 end;
 
@@ -3162,16 +3182,9 @@ begin
 end;
 
 procedure TCustomEditView.SetText(const Value: string);
-var
-  bUndo: Boolean;
 begin
   if FTextService.CombinedText <> Value then
   begin
-    if Assigned(FUndoData) then begin
-      bUndo := FUndoData.FIsUndoing;
-      if not bUndo then
-        FUndoData.Clear;
-    end;
     SetTextInternal(Value);
     SetCaretPosition(Min(Value.Length, FTextService.CaretPosition.X));
     Model.DisableNotify;
@@ -3183,6 +3196,7 @@ begin
     end;
     Model.Change;
     RepaintEdit;
+    if Assigned(FUndoData) and (not FUndoData.FIsUndoing) then FUndoData.Clear;
   end;
 end;
 
@@ -3409,6 +3423,7 @@ var
 begin
   SelTextIsValid := not SelText.IsEmpty;
   SetParam(UndoStyleName, (Assigned(FUndoData) and FUndoData.CanUndo) and not Model.ReadOnly and Model.InputSupport and not Model.Password);
+  SetParam(RedoStyleName, (Assigned(FUndoData) and FUndoData.CanRedo) and not Model.ReadOnly and Model.InputSupport and not Model.Password);
   SetParam(CutStyleName, SelTextIsValid and not Model.ReadOnly and Model.InputSupport and not Model.Password);
   SetParam(CopyStyleName, SelTextIsValid and not Model.Password);
   if FClipboardSvc <> nil then
@@ -3536,97 +3551,137 @@ end;
 
 { TEditUndoData }
 
+procedure TEditUndoData.CaptureCurrentText;
+var
+  AText: string;
+begin
+  if (not Assigned(FEdit)) or TCustomEditView(FEdit).ReadOnly then Exit;
+  // 只有在文本确实改变时才记录
+  AText := FEdit.Text;
+  if (AText <> FText1) then
+  begin
+    FText0 := FText1;
+    FText1 := AText;
+    FIsUndone := False;
+  end;
+end;
+
 procedure TEditUndoData.Change;
 begin
+  FChangeTimer.Enabled := False;
   if FIsUndoing then Exit;
-  FIsChange := True;
-  SetTimeout(procedure (const Data: TObject)
-    begin
-      if FIsUndoing then Exit;
-      DoRecordUndo();
-    end, 500);
+  if (not Assigned(FEdit)) or TCustomEditView(FEdit).ReadOnly then Exit;
+  FChangeTimer.Enabled := True;
 end;
 
 procedure TEditUndoData.Clear;
 begin
-  FIsChange := False;
+  FChangeTimer.Enabled := False;
+  FText0 := FEdit.Text;
+  FText1 := FText0;
+  FIsUndone := False;
   FIsUndoing := False;
 end;
 
 constructor TEditUndoData.Create(Edit: TEditViewBase);
-var
-  I: Integer;
 begin
+  inherited Create;
   FEdit := Edit;
-  FIsUndoing := False;
-  FText := '';
-  Clear();
-  Init();
+  FText0 := '';
+  FText1 := '';
+  FIsUndone := False;
+  FTimeoutMs := 500; // 500毫秒延迟
+  FChangeTimer := TTimer.Create(nil);
+  FChangeTimer.Enabled := False;
+  FChangeTimer.Interval := FTimeoutMs;
+  FChangeTimer.OnTimer := HandleChangeTimer;
 end;
 
 destructor TEditUndoData.Destroy;
 begin
   FEdit := nil;
-  Clear();
+  FreeAndNil(FChangeTimer);
   inherited;
 end;
 
 procedure TEditUndoData.DoExit;
 begin
-  if FIsChange then DoRecordUndo();
+  // 确保在失去焦点时记录当前状态
+  FChangeTimer.Enabled := False;
+  CaptureCurrentText;
 end;
 
-procedure TEditUndoData.DoKeyDown(Shift: TShiftState; var Key: Word; var KeyChar: System.WideChar);
+procedure TEditUndoData.DoKeyDown(Shift: TShiftState; var Key: Word;
+  var KeyChar: WideChar);
 begin
-  if (Key = Ord('Z')) and (Shift = [ssCtrl]) and (not FIsUndoing) then
-  begin
-    if CanUndo then begin
-      FIsUndoing := True;
-      try
-        FEdit.Text := Undo();
-        TCustomEditView(FEdit).SelectAll;
-      finally
-        FIsUndoing := False;
-      end;
-    end;
-    Key := 0; // 阻止默认处理
+  // 处理特定的按键组合，例如Ctrl+Z
+  if (Key = Ord('Z')) and (ssCtrl in Shift) then begin
+    if (not Assigned(FEdit)) or TCustomEditView(FEdit).ReadOnly then Exit;
+    Undo;
+    TCustomEditView(FEdit).SelectAll;
+    Key := 0;
     KeyChar := #0;
   end;
 end;
 
 procedure TEditUndoData.DoKeyUp(Shift: TShiftState; var Key: Word);
 begin
-  if (Key = 13) or (Key = 8) then begin // VK_RETURN, VK_BACK
-    if not FIsUndoing then DoRecordUndo;
-  end;
 end;
 
-procedure TEditUndoData.DoRecordUndo;
+function TEditUndoData.GetCanRedo: Boolean;
 begin
-  FIsChange := False;
-  if not Assigned(FEdit) then Exit;
-  Init();
+  Result := FIsUndone;
 end;
 
 function TEditUndoData.GetCanUndo: Boolean;
 begin
-  Result := True;
+  Result := (FText0 <> FEdit.Text);
 end;
 
-procedure TEditUndoData.Init;
+procedure TEditUndoData.HandleChangeTimer(Sender: TObject);
 begin
-  if (FEdit.Text <> FText) then Exit;
-  FText := FEdit.Text;
+  FChangeTimer.Enabled := False;
+  CaptureCurrentText;
+end;
+
+function TEditUndoData.Redo: string;
+begin
+  Result := Undo();
+end;
+
+procedure TEditUndoData.ScheduleTextCapture;
+begin
+  FChangeTimer.Enabled := False;
+  FChangeTimer.Enabled := True;
 end;
 
 function TEditUndoData.Undo: string;
 begin
-  if not CanUndo then begin
-    Result := FEdit.Text;
-    Exit;
+  if not Assigned(FEdit) then Exit;
+  if TCustomEditView(FEdit).ReadOnly then Exit;
+  FIsUndoing := True;
+  try
+    if FIsUndone then
+    begin
+      // 重做 - 恢复到最后一次记录的状态
+      Result := FText1;
+      FEdit.Text := Result;
+      FIsUndone := False;
+    end
+    else
+    begin
+      // 撤消 - 恢复到最后一次记录的文本
+      if not CanUndo then
+        Exit(FEdit.Text);
+      Result := FText0;
+      FText1 := FEdit.Text;
+      FEdit.Text := Result;
+      FIsUndone := True;
+    end;
+  finally
+    TCustomEditView(FEdit).SelStart := Length(Result);
+    FIsUndoing := False;
   end;
-  Result := FText;
-  FText := FEdit.Text;
 end;
 
 initialization
