@@ -166,12 +166,15 @@ type
 
 implementation
 
-const
-  SDefaultDownBtnSVG = '<svg t="1750145518585" class="icon" viewBox="0 0 1024 1024" version="1.1" '+
-    'xmlns="http://www.w3.org/2000/svg" p-id="5310" width="128" height="128">'+
-    '<path d="M134.656 330.24c-16.896-17.92-16.896-46.592 0-64.512s45.056-17.92 62.464 0l314.368 '+
-    '332.8 313.344-332.8c16.896-17.92 45.056-17.92 62.464 0s16.896 46.592 0 64.512l-336.896 '+
-    '349.696c-10.752 9.728-24.064 20.992-37.888 18.432-13.824 3.072-28.672-7.168-39.424-18.432L134.656 330.24z" fill="" p-id="5311"/></svg>';
+resourcestring
+  SDefaultDownBtnSVG = '<svg t="1750404544438" class="icon" viewBox="0 0 1024 1024" version="1.1"'+
+    ' xmlns="http://www.w3.org/2000/svg" p-id="8070" width="128" height="128">'+
+    '<path d="M512 658.285714c-10.971429 0-21.942857-3.657143-29.257143-14.628571l-219.428571-223'+
+    '.085714c-14.628571-14.628571-14.628571-36.571429 0-47.542858 7.314286-3.657143 18.285714-7.3'+
+    '14286 25.6-7.314285 14.628571 0 21.942857 3.657143 29.257143 14.628571l193.828571 193.828572'+
+    ' 193.828571-193.828572c3.657143-7.314286 14.628571-14.628571 29.257143-14.628571 10.971429 0'+
+    ' 18.285714 3.657143 21.942857 7.314285 14.628571 14.628571 14.628571 36.571429 0 47.542858l-'+
+    '219.428571 223.085714c-7.314286 10.971429-14.628571 14.628571-25.6 14.628571z" fill="" p-id="8071"/></svg>';
 
 type
   TComboBoxHelper = class
@@ -324,8 +327,9 @@ end;
 function TCustomComboBoxView.CreateDropDownButton: TDrawableIcon;
 begin
   Result := TDrawableIcon.Create(Self);
-  Result.SizeWidth := 10;
-  Result.SizeHeight := 10;
+  Result.SizeWidth := 16;
+  Result.SizeHeight := 16;
+  Result.Padding := 2;
   Result.Position := TDrawablePosition.Right;
   TViewBrushBase(Result.ItemDefault).SVGImage.Parse(SDefaultDownBtnSVG);
   TViewBrushBase(Result.ItemDefault).SVGImage.Color := $ff000000;
