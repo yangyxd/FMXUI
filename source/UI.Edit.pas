@@ -187,13 +187,14 @@ type
     FText0, FText1: string;
     FIsUndone: Boolean;
     FChangeTimer: TTimer;
-    FTimeoutMs: Integer;
     FIsUndoing: Boolean;
     procedure HandleChangeTimer(Sender: TObject);
     function GetCanUndo: Boolean;
     procedure ScheduleTextCapture;
     procedure CaptureCurrentText;
     function GetCanRedo: Boolean;
+    procedure EnabledTimer;
+    procedure DisabledTimer;
   public
     constructor Create(Edit: TEditViewBase); virtual;
     destructor Destroy; override;
@@ -3568,15 +3569,15 @@ end;
 
 procedure TEditUndoData.Change;
 begin
-  FChangeTimer.Enabled := False;
+  DisabledTimer();
   if FIsUndoing then Exit;
   if (not Assigned(FEdit)) or TCustomEditView(FEdit).ReadOnly then Exit;
-  FChangeTimer.Enabled := True;
+  EnabledTimer;
 end;
 
 procedure TEditUndoData.Clear;
 begin
-  FChangeTimer.Enabled := False;
+  FreeAndNil(FChangeTimer);
   FText0 := FEdit.Text;
   FText1 := FText0;
   FIsUndone := False;
@@ -3590,11 +3591,7 @@ begin
   FText0 := '';
   FText1 := '';
   FIsUndone := False;
-  FTimeoutMs := 500; // 500毫秒延迟
-  FChangeTimer := TTimer.Create(nil);
-  FChangeTimer.Enabled := False;
-  FChangeTimer.Interval := FTimeoutMs;
-  FChangeTimer.OnTimer := HandleChangeTimer;
+  FChangeTimer := nil;
 end;
 
 destructor TEditUndoData.Destroy;
@@ -3604,10 +3601,15 @@ begin
   inherited;
 end;
 
+procedure TEditUndoData.DisabledTimer;
+begin
+  if Assigned(FChangeTimer) then FChangeTimer.Enabled := False;  
+end;
+
 procedure TEditUndoData.DoExit;
 begin
   // 确保在失去焦点时记录当前状态
-  FChangeTimer.Enabled := False;
+  DisabledTimer;
   CaptureCurrentText;
 end;
 
@@ -3628,6 +3630,17 @@ procedure TEditUndoData.DoKeyUp(Shift: TShiftState; var Key: Word);
 begin
 end;
 
+procedure TEditUndoData.EnabledTimer;
+begin
+  if not Assigned(FChangeTimer) then begin
+    FChangeTimer := TTimer.Create(nil);
+    FChangeTimer.Enabled := False;
+    FChangeTimer.Interval := 500;
+    FChangeTimer.OnTimer := HandleChangeTimer;
+  end;
+  FChangeTimer.Enabled := True;
+end;
+
 function TEditUndoData.GetCanRedo: Boolean;
 begin
   Result := FIsUndone;
@@ -3640,7 +3653,7 @@ end;
 
 procedure TEditUndoData.HandleChangeTimer(Sender: TObject);
 begin
-  FChangeTimer.Enabled := False;
+  DisabledTimer();
   CaptureCurrentText;
 end;
 
@@ -3651,8 +3664,8 @@ end;
 
 procedure TEditUndoData.ScheduleTextCapture;
 begin
-  FChangeTimer.Enabled := False;
-  FChangeTimer.Enabled := True;
+  DisabledTimer();
+  EnabledTimer();
 end;
 
 function TEditUndoData.Undo: string;
