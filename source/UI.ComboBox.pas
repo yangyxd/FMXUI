@@ -60,11 +60,13 @@ type
     procedure SetItemWidth(const Value: Single);
     procedure SetListBackground(const Value: TViewBrush);
     procedure SetListTextColor(const Value: TViewColor);
+    function IsListItemCheckedColorStored: Boolean;
+    function IsListItemHoveredColorStored: Boolean;
   protected
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); virtual;
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); virtual;
     function KeyDown(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState; out OldItemIndex, NewItemIndex: Integer): Boolean; virtual;
-    procedure KeyDownHandle(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState; var OldItemIndex, NewItemIndex: Integer); virtual;
+    function KeyDownHandle(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState; var OldItemIndex, NewItemIndex: Integer): Boolean; virtual;
     procedure DoListItemClick(Sender: TObject; ItemIndex: Integer; const ItemView: TControl); virtual;
     procedure DoItemMeasureHeight(Sender: TObject; Index: Integer; var AHeight: Single); virtual;
     procedure DoChange; dynamic;
@@ -91,8 +93,8 @@ type
     property ListBox: TListViewEx read FListBox;
     property ListBackground: TViewBrush read FListBackground write SetListBackground;
     property ListTextColor: TViewColor read FListTextColor write SetListTextColor;
-    property ListItemCheckedColor: TAlphaColor read FListItemCheckedColor write FListItemCheckedColor;
-    property ListItemHoveredColor: TAlphaColor read FListItemHoveredColor write FListItemHoveredColor;
+    property ListItemCheckedColor: TAlphaColor read FListItemCheckedColor write FListItemCheckedColor stored IsListItemCheckedColorStored;
+    property ListItemHoveredColor: TAlphaColor read FListItemHoveredColor write FListItemHoveredColor stored IsListItemHoveredColorStored;
     property Popup: TPopup read FPopup;
     property Items: TStrings read GetItems write SetItems stored ItemsStored;
     property Count: Integer read GetCount;
@@ -149,6 +151,8 @@ type
     procedure SetDropDownKind(const Value: TDropDownKind);
     procedure SetListItemCheckedColor(const Value: TAlphaColor);
     procedure SetListItemHoveredColor(const Value: TAlphaColor);
+    function IsListItemCheckedColorStored: Boolean;
+    function IsListItemHoveredColorStored: Boolean;
   protected
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); override;
@@ -171,8 +175,8 @@ type
     property ListBox: TListViewEx read GetListBox;
     property ListBackground: TViewBrush read GetListBackground write SetListBackground;
     property ListTextColor: TViewColor read GetListTextColor write SetListTextColor;
-    property ListItemCheckedColor: TAlphaColor read GetListItemCheckedColor write SetListItemCheckedColor;
-    property ListItemHoveredColor: TAlphaColor read GetListItemHoveredColor write SetListItemHoveredColor;
+    property ListItemCheckedColor: TAlphaColor read GetListItemCheckedColor write SetListItemCheckedColor stored IsListItemCheckedColorStored;
+    property ListItemHoveredColor: TAlphaColor read GetListItemHoveredColor write SetListItemHoveredColor stored IsListItemHoveredColorStored;
     property Popup: TPopup read GetPopup;
     property CanFocus default True;
     property CanParentFocus;
@@ -232,10 +236,13 @@ type
     procedure SetDropDownKind(const Value: TDropDownKind);
     procedure SetListItemCheckedColor(const Value: TAlphaColor);
     procedure SetListItemHoveredColor(const Value: TAlphaColor);
+    function IsListItemCheckedColorStored: Boolean;
+    function IsListItemHoveredColorStored: Boolean;
   protected
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); override;
     procedure KeyDown(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState); override;
+    procedure SetText(const Value: string); override;
   protected
     procedure DoPaintBackground(var R: TRectF); override;
     function GetDefaultSize: TSizeF; override;
@@ -251,8 +258,8 @@ type
     property ListBox: TListViewEx read GetListBox;
     property ListBackground: TViewBrush read GetListBackground write SetListBackground;
     property ListTextColor: TViewColor read GetListTextColor write SetListTextColor;
-    property ListItemCheckedColor: TAlphaColor read GetListItemCheckedColor write SetListItemCheckedColor;
-    property ListItemHoveredColor: TAlphaColor read GetListItemHoveredColor write SetListItemHoveredColor;
+    property ListItemCheckedColor: TAlphaColor read GetListItemCheckedColor write SetListItemCheckedColor stored IsListItemCheckedColorStored;
+    property ListItemHoveredColor: TAlphaColor read GetListItemHoveredColor write SetListItemHoveredColor stored IsListItemHoveredColorStored;
     property Popup: TPopup read GetPopup;
     property Items: TStrings read GetItems write SetItems stored ItemsStored;
     property Count: Integer read GetCount;
@@ -351,6 +358,10 @@ resourcestring
     ' 18.285714 3.657143 21.942857 7.314285 14.628571 14.628571 14.628571 36.571429 0 47.542858l-'+
     '219.428571 223.085714c-7.314286 10.971429-14.628571 14.628571-25.6 14.628571z" fill="" p-id="8071"/></svg>';
 
+const
+  D_ListItemCheckedColor: TAlphaColor = $ff409eff;
+  D_ListItemHoveredColor: TAlphaColor = $2f409eff;
+
 type
   TComboBoxHelper = class
   private
@@ -430,6 +441,8 @@ begin
     FListPicker.OnHide := DoClosePicker;
     FListPicker.OnShow := DoPopup;
   end;
+  FListItemCheckedColor := D_ListItemCheckedColor;
+  FListItemHoveredColor := D_ListItemHoveredColor;
   FCanUseListPicker := True;
   FItemHeight := 18;
   FItems := TStringList.Create;
@@ -448,6 +461,8 @@ begin
   FPopup.OnClosePopup := DoClosePopup;
   FPopup.OnPopup := DoPopup;
   FListTextColor := TViewColor.Create(TAlphaColorRec.Black);
+  FListTextColor.Checked := TAlphaColorRec.White;
+  FListTextColor.CheckedChange := False;
   FListBackground := TViewBrush.Create(TViewBrushKind.Solid, TAlphaColorRec.Null);
   FListBox := CreateListBox;
   if FListBox = nil then
@@ -663,6 +678,16 @@ begin
   Result := FItemHeight <> 18;
 end;
 
+function TCustomDownPopup.IsListItemCheckedColorStored: Boolean;
+begin
+  Result := FListItemCheckedColor <> D_ListItemCheckedColor;
+end;
+
+function TCustomDownPopup.IsListItemHoveredColorStored: Boolean;
+begin
+  Result := FListItemCheckedColor <> D_ListItemHoveredColor;
+end;
+
 function TCustomDownPopup.ItemsStored: Boolean;
 begin
   Result := Count > 0;
@@ -676,23 +701,24 @@ begin
   Result := False;
   if not FDroppedDown then
     OldItemIndex := ItemIndex
-  else if DropDownKind = TDropDownKind.Native then
+  else if (DropDownKind = TDropDownKind.Native) and (FCanUseListPicker) then
     OldItemIndex := FListPicker.ItemIndex
   else
     OldItemIndex := TStringsListAdapter(FListBox.Adapter).ItemIndex;
   NewItemIndex := OldItemIndex;
 
-  if FOwner.Observers.IsObserving(TObserverMapping.EditLinkID) then
+  if FCanUseListPicker and FOwner.Observers.IsObserving(TObserverMapping.EditLinkID) then begin
     if (KeyChar > ' ') or
       (Key in [vkHome, vkEnd, vkUp, vkDown, vkRight, vkLeft]) then
       if not TLinkObservers.EditLinkEdit(FOwner.Observers) then begin
         Result := True;
         Exit;
       end;
+  end;
 end;
 
-procedure TCustomDownPopup.KeyDownHandle(var Key: Word;
-  var KeyChar: System.WideChar; Shift: TShiftState; var OldItemIndex, NewItemIndex: Integer);
+function TCustomDownPopup.KeyDownHandle(var Key: Word;
+  var KeyChar: System.WideChar; Shift: TShiftState; var OldItemIndex, NewItemIndex: Integer): Boolean;
   function TryFindMatchingItem(var AItemIndex: Integer): Boolean;
   var
     I: Integer;
@@ -729,8 +755,10 @@ procedure TCustomDownPopup.KeyDownHandle(var Key: Word;
   end;
 
 var
-  NoVisItems: Integer;
+  NoVisItems, I: Integer;
+  Caption: ICaption;
 begin
+  Result := False;
   if Count = 0 then
     Exit;
 
@@ -795,18 +823,33 @@ begin
         end
         else
           Exit
+    else
+      begin
+        if Supports(FOwner, ICaption, Caption) and (Caption.Text <> '') then begin
+          for I := 0 to Count - 1 do begin
+            if Items[I].StartsWith(Caption.Text) then begin
+              NewItemIndex := I;
+              Result := True;
+              Break;
+            end;
+          end;
+        end;
+      end;
     end;
 
     if NewItemIndex <> OldItemIndex then
     begin
+      Result := True;
       TLinkObservers.PositionLinkPosChanging(FOwner.Observers);
       try
         if not FDroppedDown then
           ItemIndex := NewItemIndex
-        else if DropDownKind = TDropDownKind.Native then
+        else if (DropDownKind = TDropDownKind.Native) and (FCanUseListPicker) then
           FListPicker.ItemIndex := NewItemIndex
-        else
+        else begin
           TStringsListAdapter(FListBox.Adapter).ItemIndex := NewItemIndex;
+          TStringsListAdapter(FListBox.Adapter).NotifyDataChanged;
+        end;
       finally
         TLinkObservers.ListSelectionChanged(FOwner.Observers);
       end;
@@ -1140,6 +1183,16 @@ begin
   Result := FDownPopup.IsItemHeightStored;
 end;
 
+function TCustomComboBoxView.IsListItemCheckedColorStored: Boolean;
+begin
+  Result := FDownPopup.IsListItemCheckedColorStored;
+end;
+
+function TCustomComboBoxView.IsListItemHoveredColorStored: Boolean;
+begin
+  Result := FDownPopup.IsListItemHoveredColorStored;
+end;
+
 function TCustomComboBoxView.ItemsStored: Boolean;
 begin
   Result := FDownPopup.ItemsStored;
@@ -1408,6 +1461,16 @@ begin
   Result := FDownPopup.IsItemHeightStored;
 end;
 
+function TCustomComboBoxEditView.IsListItemCheckedColorStored: Boolean;
+begin
+  Result := FDownPopup.IsListItemCheckedColorStored;
+end;
+
+function TCustomComboBoxEditView.IsListItemHoveredColorStored: Boolean;
+begin
+  Result := FDownPopup.IsListItemHoveredColorStored;
+end;
+
 function TCustomComboBoxEditView.ItemsStored: Boolean;
 begin
   Result := FDownPopup.ItemsStored;
@@ -1416,12 +1479,24 @@ end;
 procedure TCustomComboBoxEditView.KeyDown(var Key: Word;
   var KeyChar: System.WideChar; Shift: TShiftState);
 var
+  IsDelete: Boolean;
   OldItemIndex, NewItemIndex: Integer;
+  LastText, NexText: string;
 begin
   if Assigned(FDownPopup) then begin
+    IsDelete := (Key = 8) or (Key = 46);
     if FDownPopup.KeyDown(Key, KeyChar, Shift, OldItemIndex, NewItemIndex) then Exit;
     inherited;
-    FDownPopup.KeyDownHandle(Key, KeyChar, Shift, OldItemIndex, NewItemIndex);
+    LastText := Self.Text;
+    if FDownPopup.KeyDownHandle(Key, KeyChar, Shift, OldItemIndex, NewItemIndex) and (not IsDelete) and FDownPopup.DroppedDown
+      and (NewItemIndex >= 0) then begin
+      NexText := Items[NewItemIndex];
+      if (LastText <> NexText) and (LastText.Length < NexText.Length) then begin
+        Text := NexText;
+        SelStart := LastText.Length;
+        SelLength := Text.Length - LastText.Length;
+      end;
+    end;
   end else
     inherited;
 end;
@@ -1506,6 +1581,12 @@ end;
 procedure TCustomComboBoxEditView.SetOnPopup(const Value: TNotifyEvent);
 begin
   FDownPopup.OnPopup := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetText(const Value: string);
+begin
+  inherited;
+  SelectAll();
 end;
 
 initialization

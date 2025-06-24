@@ -2553,9 +2553,14 @@ begin
 end;
 
 procedure TCustomEditView.Loaded;
+var
+  AColor: TAlphaColor;
 begin
-  inherited Loaded;
+  AColor := FModel.Caret.Color;
   DoInitStyle;
+  if AColor <> TAlphaColorRec.Null then
+    FModel.Caret.Color := AColor;
+  inherited Loaded;
 end;
 
 procedure TCustomEditView.LongTap(const X, Y: Single);
