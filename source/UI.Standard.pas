@@ -757,6 +757,7 @@ type
     function CanTriggerAcceleratorKey: Boolean; virtual;
     function GetAcceleratorChar: Char;
     function GetAcceleratorCharIndex: Integer;
+    function CreateDrawable(): TDrawableIcon; virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -941,6 +942,66 @@ type
     property Clickable default True;
     property Gravity default TLayoutGravity.Center;
     property OnCanFocus;
+  end;
+
+type
+  TCheckedIconDrawable = class(TDrawableBase)
+  private
+    FPadding: Single;
+    FDefault: TBrush;
+    procedure SetBrush(const Value: TBrush);
+    procedure SetPadding(const Value: Single);
+  public
+    constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.Solid;
+      const ADefaultColor: TAlphaColor = TAlphaColors.White);
+    procedure Assign(Source: TPersistent); override;
+  published
+    property XRadius;
+    property YRadius;
+    property Corners;
+    property CornerType;
+    property Kind;
+    property Brush: TBrush read FDefault write SetBrush;
+    property Padding: Single read FPadding write SetPadding;
+  end;
+
+type
+  TCheckBoxView = class(TTextView)
+  private
+    FFillMode: Boolean;
+    FOnlyClickCheckBox: Boolean;
+    FInCheckBox: Boolean;
+    FCheckedIconBackground: TCheckedIconDrawable;
+    FOnChange: TNotifyEvent;
+    procedure SetFillMode(const Value: Boolean);
+    procedure SetIconBackground(const Value: TCheckedIconDrawable);
+  protected
+    procedure KeyDown(var Key: Word; var KeyChar: Char; Shift: TShiftState); override;
+    procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
+    function GetDefaultSize: TSizeF; override;
+    procedure Click; override;
+    procedure InicDrawable(ADrawable: TDrawableIcon); virtual;
+    procedure DoCheckedChange(); override;
+    procedure InitDefaultCheckedDrawable(ADrawable: TDrawableIcon); virtual;
+    function CreateDrawable(): TDrawableIcon; override;
+    procedure DoCalcCheckBoxRect(var R: TRectF);
+    procedure DoPaintBackground(var R: TRectF); override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  published
+    property CanFocus default True;
+    property CanParentFocus;
+    property HitTest default True;
+    property Clickable default True;
+    property Gravity default TLayoutGravity.CenterVertical;
+    property OnCanFocus;
+    property CheckedIconBackground: TCheckedIconDrawable read FCheckedIconBackground write SetIconBackground;
+    // 选中状态为填充模式
+    property FillMode: Boolean read FFillMode write SetFillMode default False;
+    // 是否只能点击 checkBox 区域来改变选中状态
+    property OnlyClickCheckBox: Boolean read FOnlyClickCheckBox write FOnlyClickCheckBox default False;
+    property OnChange: TNotifyEvent read FOnChange write FOnChange;
   end;
 
 type
@@ -1389,6 +1450,53 @@ uses
 {$ENDIF}
   UI.ListView.Header, UI.ListView.Footer;
 
+resourcestring
+  SDefaultCheck_0_SVG = '<svg class="icon" viewBox="0 0 1024 1024" version="1.1"'+
+    ' p-id="4748" width="128" height="128"><path d="M853.333333'+
+    '33 955.73333333H170.66666667c-56.45'+
+    '76 0-102.4-45.9424-102.4-102.39786666v-682.66666667C68.26666667 114.21013333 114.208 68.26666'+
+    '667 170.66666667 68.26666667h682.66666666c56.45546667 0 102.4 45.94346667 102.4 102.4v682.666'+
+    '66666c0 56.45653333-45.9424 102.4-102.4 102.4zM170.66666667 136.53333333c-18.80746667 0-34.13'+
+    '333333 15.328-34.13333334 34.13546667v682.66666667C136.53333333 872.17706667 151.85813333 887'+
+    '.46666667 170.66666667 887.46666667h682.66666666c18.84266667 0 34.13333333-15.29173333 34.133'+
+    '33334-34.13333334v-682.66666666c0-18.8064-15.2928-34.13333333-34.13333334-34.13333334H170.666'+
+    '66667z" p-id="4750"></path></svg>';
+  SDefaultCheck_1_SVG = '<svg class="icon" viewBox="0 0 1024 1024" version="1.1"'+
+    ' p-id="4748" width="128" height="128"><path d="M741.3088 3'+
+    '85.26293333c-13.38026667-13.2768-35.0208-13.14133333-48.26453333 0.27306667L444.21013333 637.'+
+    '06666667 334.06293333 523.87946667c-13.17653333-13.55093333-34.78186667-13.78986667-48.264533'+
+    '33-0.68266667-13.51786667 13.14133333-13.824 34.78186667-0.68266667 48.26453333l134.41706667 '+
+    '138.13653334c0.06826667 0.10346667 0.20586667 0.10346667 0.27413333 0.20586666 0.0672 0.06826'+
+    '667 0.1024 0.20586667 0.17066667 0.27306667 2.1504 2.11626667 4.8128 3.41333333 7.33866667 4.'+
+    '848 1.3312 0.71786667 2.38933333 1.91146667 3.75466666 2.45653333 4.13013333 1.70666667 8.533'+
+    '33333 2.56 12.9024 2.56 4.336 0 8.66986667-0.85333333 12.76586667-2.49173333 1.33013333-0.547'+
+    '2 2.35626667-1.6384 3.61813333-2.32106667 2.56-1.4336 5.2224-2.6976 7.40693334-4.848 0.068266'+
+    '67-0.06826667 0.10346667-0.20586667 0.20586666-0.27306666 0.06826667-0.10346667 0.17066667-0.'+
+    '13546667 0.27306667-0.20586667l273.3056-276.2752c13.27573333-13.37813333 13.1392-34.98666667-'+
+    '0.24-48.26346667z" p-id="4749"></path><path d="M853.33333333 955.73333333H170.66666667c-56.45'+
+    '76 0-102.4-45.9424-102.4-102.39786666v-682.66666667C68.26666667 114.21013333 114.208 68.26666'+
+    '667 170.66666667 68.26666667h682.66666666c56.45546667 0 102.4 45.94346667 102.4 102.4v682.666'+
+    '66666c0 56.45653333-45.9424 102.4-102.4 102.4zM170.66666667 136.53333333c-18.80746667 0-34.13'+
+    '333333 15.328-34.13333334 34.13546667v682.66666667C136.53333333 872.17706667 151.85813333 887'+
+    '.46666667 170.66666667 887.46666667h682.66666666c18.84266667 0 34.13333333-15.29173333 34.133'+
+    '33334-34.13333334v-682.66666666c0-18.8064-15.2928-34.13333333-34.13333334-34.13333334H170.666'+
+    '66667z" p-id="4750"></path></svg>';
+  SDefaultCheck_2_SVG = '<svg class="icon" viewBox="0 0 1024 1024" version="1.1" p-id="4911" width'+
+    '="128" height="128"><path d="M853.33333333 68.26666667H170.66666667c-56.4576 0-102.4 45.94453'+
+    '333-102.4 102.40213333v682.66666667C68.26666667 909.79093333 114.208 955.73333333 170.6666666'+
+    '7 955.73333333h682.66666666c56.45546667 0 102.4-45.94346667 102.4-102.4v-682.66666666c0-56.45'+
+    '866667-45.9424-102.4-102.4-102.4zM741.57973333 433.52853333L468.2752 709.80266667c-0.06826667'+
+    ' 0.06826667-0.20586667 0.1024-0.27413333 0.20586666-0.1024 0.0672-0.1024 0.2048-0.2048 0.2730'+
+    '6667-2.18666667 2.11626667-4.88106667 3.41333333-7.408 4.848-1.26186667 0.7168-2.28586667 1.8'+
+    '0906667-3.61813334 2.32106667-4.096 1.6384-8.43093333 2.49173333-12.7648 2.49173333-4.3690666'+
+    '7 0-8.77333333-0.85333333-12.90346666-2.56-1.36533333-0.5792-2.45653333-1.7408-3.75466667-2.4'+
+    '5653333-2.52586667-1.4336-5.15306667-2.6976-7.33866667-4.848-0.06826667-0.0672-0.10346667-0.2'+
+    '048-0.17066666-0.27306667-0.06826667-0.1024-0.20586667-0.1024-0.27306667-0.20586667L285.14666'+
+    '667 571.46133333c-13.14133333-13.51786667-12.8352-35.1232 0.68266666-48.26453333 13.51786667-'+
+    '13.1072 35.088-12.86826667 48.26453334 0.68266667l110.1472 113.18613333 248.832-251.5296c13.2'+
+    '448-13.4144 34.88533333-13.5168 48.26453333-0.27306667 13.3504 13.27786667 13.48693333 34.885'+
+    '33333 0.24213333 48.26453334z" p-id="4912"></path></svg>';
+
 procedure DisableHitTestForControl(const AControl: TControl);
 var
   LChild: TFmxObject;
@@ -1484,12 +1592,8 @@ begin
   inherited Create(AOwner);
   EnableExecuteAction := True;
   FText := UI.Base.TTextSettings.Create(Self);
-  if csDesigning in ComponentState then begin
-    FDrawable := TDrawableIcon.Create(Self);
-    FDrawable.SizeWidth := 16;
-    FDrawable.SizeHeight := 16;
-    FDrawable.OnChanged := DoDrawableChanged;
-  end;
+  if csDesigning in ComponentState then
+    FDrawable := CreateDrawable();
   SetAcceptsControls(False);
 end;
 
@@ -1497,6 +1601,14 @@ function TTextView.CreateBackground: TDrawable;
 begin
   Result := TDrawableBorder.Create(Self);
   Result.OnChanged := DoBackgroundChanged;
+end;
+
+function TTextView.CreateDrawable: TDrawableIcon;
+begin
+  Result := TDrawableIcon.Create(Self);
+  Result.SizeWidth := 16;
+  Result.SizeHeight := 16;
+  Result.OnChanged := DoDrawableChanged;
 end;
 
 procedure TTextView.DblClick;
@@ -1800,12 +1912,8 @@ end;
 
 function TTextView.GetDrawable: TDrawableIcon;
 begin
-  if not Assigned(FDrawable) then begin
-    FDrawable := TDrawableIcon.Create(Self);
-    FDrawable.SizeWidth := 16;
-    FDrawable.SizeHeight := 16;
-    FDrawable.OnChanged := DoDrawableChanged;
-  end;
+  if not Assigned(FDrawable) then
+    FDrawable := CreateDrawable();
   Result := FDrawable;
 end;
 
@@ -2194,6 +2302,243 @@ end;
 procedure TButtonView.SetScrollbar(const Value: TViewScroll);
 begin
   FScrollbar := Value; // 不初始化滚动条
+end;
+
+{ TCheckedIconDrawable }
+
+procedure TCheckedIconDrawable.Assign(Source: TPersistent);
+begin
+  if Source is TCheckedIconDrawable then
+    FPadding := TCheckedIconDrawable(Source).FPadding;
+  inherited;
+end;
+
+constructor TCheckedIconDrawable.Create(View: IView;
+  const ADefaultKind: TViewBrushKind; const ADefaultColor: TAlphaColor);
+begin
+  inherited Create(View, ADefaultKind, ADefaultColor);
+  Self.XRadius := 2;
+  Self.YRadius := 2;
+  FPadding := 2;
+  inherited GetBrush(TViewState(0), True);
+end;
+
+procedure TCheckedIconDrawable.SetBrush(const Value: TBrush);
+begin
+  inherited SetValue(0, Value);
+end;
+
+procedure TCheckedIconDrawable.SetPadding(const Value: Single);
+begin
+  if FPadding <> Value then begin
+    FPadding := Value;
+    DoChange(Self);
+  end;
+end;
+
+{ TCheckBoxView }
+
+procedure TCheckBoxView.Click;
+begin
+  if (not FOnlyClickCheckBox) or (FInCheckBox) then
+    IsChecked := not IsChecked;
+  inherited Click;
+end;
+
+constructor TCheckBoxView.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FFillMode := False;
+  FOnlyClickCheckBox := False;
+  FInCheckBox := False;
+  Clickable := True;
+  CanFocus := True;
+  Gravity := TLayoutGravity.CenterVertical;
+  FCheckedIconBackground := TCheckedIconDrawable.Create(Self);
+  if not Assigned(FDrawable) then
+    FDrawable := CreateDrawable();
+  FCheckedIconBackground.OnChanged := DoDrawableChanged;
+end;
+
+function TCheckBoxView.CreateDrawable: TDrawableIcon;
+begin
+  Result := TDrawableIcon.Create(Self);
+  InicDrawable(Result);
+  Result.OnChanged := DoDrawableChanged;
+end;
+
+procedure TCheckBoxView.InicDrawable(ADrawable: TDrawableIcon);
+begin
+  ADrawable.SizeWidth := 16;
+  ADrawable.SizeHeight := 16;
+  TViewBrushBase(ADrawable.ItemDefault).Kind := TViewBrushKind.SVGImage;
+  TViewBrushBase(ADrawable.ItemDefault).SVGImage.Parse(SDefaultCheck_0_SVG);
+  TViewBrushBase(ADrawable.ItemDefault).SVGImage.Color := $ff606060;
+  TViewBrushBase(ADrawable.ItemHovered).Kind := TViewBrushKind.SVGImage;
+  TViewBrushBase(ADrawable.ItemHovered).SVGImage.Parse(SDefaultCheck_0_SVG);
+  TViewBrushBase(ADrawable.ItemHovered).SVGImage.Color := $ff101010;
+  InitDefaultCheckedDrawable(ADrawable);
+end;
+
+destructor TCheckBoxView.Destroy;
+begin
+  inherited;
+  FreeAndNil(FCheckedIconBackground);
+end;
+
+procedure TCheckBoxView.DoCalcCheckBoxRect(var R: TRectF);
+var
+  DR: TRectF;
+  SW, SH: Single;
+begin
+  SW := R.Right - R.Left;
+  SH := R.Bottom - R.Top;
+  case FDrawable.Position of
+    TDrawablePosition.Left:
+      begin
+        DR.Left := R.Left;
+        DR.Top := R.Top + (SH - FDrawable.SizeHeight) / 2;
+        DR.Right := DR.Left + FDrawable.SizeWidth;
+        DR.Bottom := DR.Top + FDrawable.SizeHeight;
+      end;
+    TDrawablePosition.Right:
+      begin
+        DR.Left := R.Right - FDrawable.SizeWidth;
+        DR.Top := R.Top + (SH - FDrawable.SizeHeight) / 2;
+        DR.Right := R.Right;
+        DR.Bottom := DR.Top + FDrawable.SizeHeight;
+      end;
+    TDrawablePosition.Top:
+      begin
+        DR.Left := R.Left + (SW - FDrawable.SizeWidth) / 2;
+        DR.Top := R.Top;
+        DR.Right := DR.Left + FDrawable.SizeWidth;
+        DR.Bottom := DR.Top + FDrawable.SizeHeight;
+      end;
+    TDrawablePosition.Bottom:
+      begin
+        DR.Left := R.Left + (SW - FDrawable.SizeWidth) / 2;
+        DR.Top := R.Bottom - FDrawable.SizeHeight;
+        DR.Right := DR.Left + FDrawable.SizeWidth;
+        DR.Bottom := R.Bottom;
+      end;
+    TDrawablePosition.Center:
+      begin
+        DR.Left := R.Left + (SW - FDrawable.SizeWidth) / 2;
+        DR.Top := R.Top + (SH - FDrawable.SizeHeight) / 2;
+        DR.Right := DR.Left + FDrawable.SizeWidth;
+        DR.Bottom := DR.Top + FDrawable.SizeHeight;
+      end;
+    else
+      Exit;
+  end;
+  R := DR;
+end;
+
+procedure TCheckBoxView.DoCheckedChange;
+begin
+  inherited DoCheckedChange;
+  if Assigned(FOnChange) then
+    FOnChange(Self);
+end;
+
+procedure TCheckBoxView.DoPaintBackground(var R: TRectF);
+
+  procedure DoDrawIconBackground(const R: TRectF);
+  var
+    DR: TRectF;
+  begin
+    DR := R;
+    DoCalcCheckBoxRect(DR);
+    if FCheckedIconBackground.FPadding <> 0 then begin
+      DR.Left := DR.Left + FCheckedIconBackground.FPadding;
+      DR.Top := DR.Top + FCheckedIconBackground.FPadding;
+      DR.Right := DR.Right - FCheckedIconBackground.FPadding;
+      DR.Bottom := DR.Bottom - FCheckedIconBackground.FPadding;
+    end;
+    FCheckedIconBackground.DrawStateTo(Canvas, DR, TViewState.None, Opacity);
+  end;
+
+begin
+  R := RectF(R.Left + Padding.Left, R.Top + Padding.Top,
+    R.Right - Padding.Right, R.Bottom - Padding.Bottom);
+  if Assigned(FDrawable) and (not FDrawable.IsEmpty) then begin
+    if Assigned(FCheckedIconBackground) and (not FCheckedIconBackground.IsEmpty) then
+      DoDrawIconBackground(R);
+    if FOnlyClickCheckBox and (not FInCheckBox) then begin
+      if Checked then
+        FDrawable.AdjustDraw(Canvas, R, True, TViewState.Checked)
+      else
+        FDrawable.AdjustDraw(Canvas, R, True, TViewState.None);
+    end else
+      FDrawable.AdjustDraw(Canvas, R, True, DrawState);
+  end;
+  if (Assigned(FText)) then
+    DoPaintText(R);
+end;
+
+function TCheckBoxView.GetDefaultSize: TSizeF;
+begin
+  Result := TSizeF.Create(97, 22);
+end;
+
+procedure TCheckBoxView.InitDefaultCheckedDrawable(ADrawable: TDrawableIcon);
+begin
+  TViewBrushBase(ADrawable.ItemChecked).Kind := TViewBrushKind.SVGImage;
+  if FFillMode then begin
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.Color := $ff409eff;
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.Parse(SDefaultCheck_2_SVG);
+  end else begin
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.Color := $ff101010;
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.Parse(SDefaultCheck_1_SVG);
+  end;
+end;
+
+procedure TCheckBoxView.KeyDown(var Key: Word; var KeyChar: Char;
+  Shift: TShiftState);
+begin
+  inherited;
+  if not FOnlyClickCheckBox and ((Key = vkReturn) or (KeyChar = ' ')) and (Shift = []) then begin
+    Click;
+    Key := 0;
+    KeyChar := #0;
+  end;
+end;
+
+procedure TCheckBoxView.MouseMove(Shift: TShiftState; X, Y: Single);
+var
+  R: TRectF;
+  LastCheckBox: Boolean;
+begin
+  inherited;
+  LastCheckBox := FInCheckBox;
+  if FOnlyClickCheckBox and (not (csDesigning in ComponentState)) then begin
+    if Assigned(FDrawable) and (not FDrawable.IsEmpty) then begin
+      R := RectF(0, 0, Width, Height);
+      R := RectF(R.Left + Padding.Left, R.Top + Padding.Top,
+        R.Right - Padding.Right, R.Bottom - Padding.Bottom);
+      DoCalcCheckBoxRect(R);
+      FInCheckBox := (X >= R.Left) and (X <= R.Right) and (Y >= R.Top) and (Y <= R.Bottom);
+    end else
+      FInCheckBox := False;
+  end;
+  if LastCheckBox <> FInCheckBox then
+    Invalidate;
+end;
+
+procedure TCheckBoxView.SetFillMode(const Value: Boolean);
+begin
+  if FFillMode <> Value then begin
+    FFillMode := Value;
+    if Assigned(FDrawable) then
+      InitDefaultCheckedDrawable(FDrawable);
+  end;
+end;
+
+procedure TCheckBoxView.SetIconBackground(const Value: TCheckedIconDrawable);
+begin
+  if FCheckedIconBackground <> Value then
+    FCheckedIconBackground.Assign(Value);
 end;
 
 { TScrollView }
@@ -7261,7 +7606,6 @@ procedure TStyleViewManager.SetStyles(const Value: TStyleViewStyles);
 begin
   if FStyles <> Value then FStyles.Assign(Value);
 end;
-
 
 initialization
 

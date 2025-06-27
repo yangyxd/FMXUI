@@ -414,6 +414,7 @@ type
 
     { Content alignment }
     procedure RealignContent; virtual;
+    procedure RealignDrawableContent(var ContentRect: TRectF); virtual;
     procedure UpdateLayoutSize;
 
     property UndoData: TEditUndoData read FUndoData;
@@ -2918,8 +2919,7 @@ begin
     // 计算出内容区矩形
     FContentRect := RectF(Pos.X + Padding.Left, Pos.Y + Padding.Top,
       Size.cx - Padding.Right, Size.cy - Padding.Bottom);
-    if Assigned(FDrawable) and (not FDrawable.IsEmpty) then
-      FDrawable.AdjustDraw(Canvas, FContentRect, False, DrawState);
+    RealignDrawableContent(FContentRect);
 
     // 计算出文本顶部位置
     case FText.VertAlign of
@@ -2936,6 +2936,12 @@ begin
   finally
     FDisableAlign := OldDisableAlign;
   end;
+end;
+
+procedure TCustomEditView.RealignDrawableContent(var ContentRect: TRectF);
+begin
+  if Assigned(FDrawable) and (not FDrawable.IsEmpty) then
+    FDrawable.AdjustDraw(Canvas, ContentRect, False, DrawState);
 end;
 
 procedure TCustomEditView.RepaintEdit;

@@ -37,6 +37,7 @@ type
     FOnClosePopup: TNotifyEvent;
     FItemWidth: Single;
     FItemHeight: Single;
+    FItemCheck: Boolean;
     FPopup: TPopup;
     FListBox: TListViewEx;
     FDropDownKind: TDropDownKind;
@@ -62,6 +63,7 @@ type
     procedure SetListTextColor(const Value: TViewColor);
     function IsListItemCheckedColorStored: Boolean;
     function IsListItemHoveredColorStored: Boolean;
+    procedure SetItemCheck(const Value: Boolean);
   protected
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); virtual;
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); virtual;
@@ -70,6 +72,7 @@ type
     procedure DoListItemClick(Sender: TObject; ItemIndex: Integer; const ItemView: TControl); virtual;
     procedure DoItemMeasureHeight(Sender: TObject; Index: Integer; var AHeight: Single); virtual;
     procedure DoChange; dynamic;
+    procedure DoItemsChange(Sender: TObject); virtual;
     procedure DoPopup(Sender: TObject);
     procedure DoClosePopup(Sender: TObject);
     procedure DoClosePicker(Sender: TObject);
@@ -98,11 +101,12 @@ type
     property Popup: TPopup read FPopup;
     property Items: TStrings read GetItems write SetItems stored ItemsStored;
     property Count: Integer read GetCount;
-    property CanUseListPicker: Boolean read FCanUseListPicker write FCanUseListPicker default True;
+    property CanUseListPicker: Boolean read FCanUseListPicker write FCanUseListPicker default False;
     property DropDownButton: TDrawableIcon read FDropDownButton;
     property ItemIndex: Integer read FItemIndex write SetItemIndex;
     property ItemWidth: Single read FItemWidth write SetItemWidth;
     property ItemHeight: Single read FItemHeight write SetItemHeight stored IsItemHeightStored;
+    property ItemCheck: Boolean read FItemCheck write SetItemCheck default False;
     property DropDownKind: TDropDownKind read FDropDownKind write FDropDownKind default TDropDownKind.Native;
     property DropDownCount: Integer read FDropDownCount write SetDropDownCount default 8;
     property DroppedDown: Boolean read FDroppedDown;
@@ -182,7 +186,7 @@ type
     property CanParentFocus;
     property Items: TStrings read GetItems write SetItems stored ItemsStored;
     property Count: Integer read GetCount;
-    property CanUseListPicker: Boolean read GetCanUseListPicker write SetCanUseListPicker default True;
+    property CanUseListPicker: Boolean read GetCanUseListPicker write SetCanUseListPicker default False;
     property DropDownButton: TDrawableIcon read GetDropDownButton;
     property ItemIndex: Integer read GetItemIndex write SetItemIndex;
     property ItemWidth: Single read GetItemWidth write SetItemWidth;
@@ -203,6 +207,7 @@ type
     FDownPopup: TCustomDownPopup;
     FOnItemChange: TNotifyEvent;
     FOnClosePopup: TNotifyEvent;
+    FInDropDown: Boolean;
     function GetCanUseListPicker: Boolean;
     function GetCount: Integer;
     function GetDropDownButton: TDrawableIcon;
@@ -240,11 +245,13 @@ type
     function IsListItemHoveredColorStored: Boolean;
   protected
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
+    procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); override;
     procedure KeyDown(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState); override;
     procedure SetText(const Value: string); override;
   protected
     procedure DoPaintBackground(var R: TRectF); override;
+    procedure RealignDrawableContent(var ContentRect: TRectF); override;
     function GetDefaultSize: TSizeF; override;
     procedure DoItemChange(Sender: TObject); virtual;
   public
@@ -263,7 +270,7 @@ type
     property Popup: TPopup read GetPopup;
     property Items: TStrings read GetItems write SetItems stored ItemsStored;
     property Count: Integer read GetCount;
-    property CanUseListPicker: Boolean read GetCanUseListPicker write SetCanUseListPicker default True;
+    property CanUseListPicker: Boolean read GetCanUseListPicker write SetCanUseListPicker default False;
     property DropDownButton: TDrawableIcon read GetDropDownButton;
     property ItemIndex: Integer read GetItemIndex write SetItemIndex;
     property ItemWidth: Single read GetItemWidth write SetItemWidth;
@@ -443,9 +450,11 @@ begin
   end;
   FListItemCheckedColor := D_ListItemCheckedColor;
   FListItemHoveredColor := D_ListItemHoveredColor;
-  FCanUseListPicker := True;
+  FCanUseListPicker := False;
   FItemHeight := 18;
   FItems := TStringList.Create;
+  TStringList(FItems).OnChange := DoItemsChange;
+  FItemCheck := False;
   FItemIndex := -1;
   FOldItemIndex := -1;
   FDropDownKind := TDropDownKind.Custom;
@@ -550,6 +559,13 @@ procedure TCustomDownPopup.DoItemMeasureHeight(Sender: TObject; Index: Integer;
   var AHeight: Single);
 begin
   AHeight := FItemHeight;
+end;
+
+procedure TCustomDownPopup.DoItemsChange(Sender: TObject);
+begin
+  if FItemIndex >= FItems.Count - 1 then
+    ItemIndex := FItems.Count - 1;
+  TComboBoxHelper.SetItemsChanged(Self, True);
 end;
 
 procedure TCustomDownPopup.DoListItemClick(Sender: TObject; ItemIndex: Integer;
@@ -914,6 +930,14 @@ procedure TCustomDownPopup.SetDropDownCount(const Value: Integer);
 begin
   if FDropDownCount <> Value then
     FDropDownCount := Value;
+end;
+
+procedure TCustomDownPopup.SetItemCheck(const Value: Boolean);
+begin
+  if FItemCheck <> Value then begin
+    FItemCheck := Value;
+    FCanUseListPicker := False;
+  end;
 end;
 
 procedure TCustomDownPopup.SetItemHeight(const Value: Single);
@@ -1352,6 +1376,8 @@ begin
     R.Right - Padding.Right, R.Bottom - Padding.Bottom);
   if Assigned(FDownPopup) then
     FDownPopup.DoPaintBackground(Canvas, R, DrawState);
+  if Assigned(Drawable) and (not Drawable.IsEmpty) then
+    Drawable.AdjustDraw(Canvas, R, True, DrawState);
   if (Assigned(TextSettings)) then
     DoPaintText(R);
 end;
@@ -1505,7 +1531,42 @@ procedure TCustomComboBoxEditView.MouseDown(Button: TMouseButton;
   Shift: TShiftState; X, Y: Single);
 begin
   inherited;
-  if Assigned(FDownPopup) then FDownPopup.MouseDown(Button, Shift, X, Y);
+  if Assigned(FDownPopup) and FInDropDown then begin
+    FDownPopup.MouseDown(Button, Shift, X, Y);
+    FInDropDown := False;
+  end;
+end;
+
+procedure TCustomComboBoxEditView.MouseMove(Shift: TShiftState; X, Y: Single);
+var
+  Pos: TPointF;
+  Size: TSizeF;
+  R: TRectF;
+begin
+  inherited MouseMove(Shift, X, Y);
+  FInDropDown := False;
+  if csDesigning in ComponentState then Exit;
+  if Assigned(FDownPopup) then begin
+    if Assigned(FDownPopup.DropDownButton) and (not FDownPopup.DropDownButton.IsEmpty) then begin
+      Pos.X := 0;
+      Pos.Y := 0;
+      Size.cx := Max(Width - Pos.X, 0);
+      Size.cy := Max(Height - Pos.Y, 0);
+      R := RectF(Pos.X + Padding.Left, Pos.Y + Padding.Top, Size.cx - Padding.Right, Size.cy - Padding.Bottom);
+      Pos.X := R.Left;
+      Pos.Y := R.Right;
+      FDownPopup.DropDownButton.AdjustDraw(Canvas, R, False, DrawState);
+      if R.Left <> Pos.X then begin
+        FInDropDown := (X >= 0) and (X <= R.Left);
+      end else if R.Right <> Pos.Y then begin
+        FInDropDown := (X >= R.Right) and (X <= Size.cx);
+      end;
+    end;
+  end;
+  if FInDropDown then
+    Self.Cursor := crDefault
+  else
+    Self.Cursor := crIBeam;
 end;
 
 procedure TCustomComboBoxEditView.MouseWheel(Shift: TShiftState;
@@ -1513,6 +1574,16 @@ procedure TCustomComboBoxEditView.MouseWheel(Shift: TShiftState;
 begin
   inherited;
   if Assigned(FDownPopup) then FDownPopup.MouseWheel(Shift, WheelDelta, Handled);
+end;
+
+procedure TCustomComboBoxEditView.RealignDrawableContent(
+  var ContentRect: TRectF);
+begin
+  if Assigned(FDownPopup) then begin
+    if Assigned(FDownPopup.DropDownButton) and (not FDownPopup.DropDownButton.IsEmpty) then
+      FDownPopup.DropDownButton.AdjustDraw(Canvas, ContentRect, False, DrawState);
+  end;
+  inherited RealignDrawableContent(ContentRect);
 end;
 
 procedure TCustomComboBoxEditView.SetCanUseListPicker(const Value: Boolean);

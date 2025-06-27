@@ -176,6 +176,7 @@ begin
   RegisterComponents(PageName, [TRingView]);
   RegisterComponents(PageName, [TMultiPathView]);
   RegisterComponents(PageName, [TCameraViewer]);
+  RegisterComponents(PageName, [TCheckBoxView]);
 
   RegisterComponents(PageName, [TStyleViewManager]);
 
