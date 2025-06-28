@@ -387,6 +387,7 @@ type
     procedure DoSelectAll(Sender: TObject);
     procedure DoUndo(Sender: TObject);
     procedure DoRedo(Sender: TObject);
+    procedure DoClear(Sender: TObject);
     { Spelling }
     procedure UpdateSpellPopupMenu(const APoint: TPointF);
     procedure SpellFixContextMenuHandler(Sender: TObject);
@@ -580,6 +581,7 @@ implementation
 
 resourcestring
   SEditRedo = 'Redo';
+  SEditClear = 'Clear';
 
 const
   LOUPE_OFFSET = 10;
@@ -587,6 +589,7 @@ const
 
   UndoStyleName = 'undo'; //Do not localize
   RedoStyleName = 'redo'; //Do not localize
+  ClearStyleName = 'clear'; //Do not localize
   CutStyleName = 'cut'; //Do not localize
   CopyStyleName = 'copy'; //Do not localize
   PasteStyleName = 'paste'; //Do not localize
@@ -1319,6 +1322,13 @@ begin
   TmpItem.Text := SEditSelectAll;
   TmpItem.StyleName := SelectAllStyleName;
   TmpItem.OnClick := DoSelectAll;
+
+
+  TmpItem := TMenuItem.Create(Result);
+  TmpItem.Parent := Result;
+  TmpItem.Text := SEditClear;
+  TmpItem.StyleName := ClearStyleName;
+  TmpItem.OnClick := DoClear;
 end;
 
 procedure TCustomEditView.CutToClipboard;
@@ -1376,6 +1386,11 @@ end;
 procedure TCustomEditView.DoChangeTracking;
 begin
   UpdateSpelling;
+end;
+
+procedure TCustomEditView.DoClear(Sender: TObject);
+begin
+  Text := '';
 end;
 
 procedure TCustomEditView.DoCopy(Sender: TObject);
@@ -3438,6 +3453,7 @@ begin
     SetParam(PasteStyleName, False);
   SetParam(DeleteStyleName, SelTextIsValid and not Model.ReadOnly and Model.InputSupport);
   SetParam(SelectAllStyleName, SelText <> Text);
+  SetParam(ClearStyleName, Text <> '');
 end;
 
 procedure TCustomEditView.UpdateSelectionPointPositions;
