@@ -366,11 +366,14 @@ type
     procedure SetXRadius(const Value: Single);
     procedure SetYRadius(const Value: Single);
     procedure SetCorners(const Value: TCorners);
-    function IsStoredCorners: Boolean;
     procedure SetCornerType(const Value: TCornerType);
     procedure SetKind(const Value: TDrawableKind);
     function GetXRadius: Single;
     function GetYRadius: Single;
+  protected
+    function IsStoredCorners: Boolean; virtual;
+    function IsStoredXRadius: Boolean; virtual;
+    function IsStoredYRadius: Boolean; virtual;
   protected
     [Weak] FView: IView;
     FDefault: TBrush;  // 0
@@ -437,8 +440,8 @@ type
 
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
     // ±ß¿òÔ²½Ç
-    property XRadius: Single read GetXRadius write SetXRadius;
-    property YRadius: Single read GetYRadius write SetYRadius;
+    property XRadius: Single read GetXRadius write SetXRadius stored IsStoredXRadius;
+    property YRadius: Single read GetYRadius write SetYRadius stored IsStoredYRadius;
     property Corners: TCorners read FCorners write SetCorners stored IsStoredCorners;
     property CornerType: TCornerType read FCornerType write SetCornerType default TCornerType.Round;
 
@@ -2489,6 +2492,16 @@ end;
 function TDrawableBase.IsStoredCorners: Boolean;
 begin
   Result := FCorners <> AllCorners;
+end;
+
+function TDrawableBase.IsStoredXRadius: Boolean;
+begin
+  Result := FXRadius <> 0;
+end;
+
+function TDrawableBase.IsStoredYRadius: Boolean;
+begin
+  Result := FYRadius <> 0;
 end;
 
 function TDrawableBase.GetBrush(const State: TViewState; AutoCreate: Boolean): TBrush;
@@ -9897,3 +9910,4 @@ finalization
   FreeAndNil(FAccessoryImages);
 
 end.
+

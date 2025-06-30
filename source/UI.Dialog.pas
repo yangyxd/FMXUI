@@ -2432,7 +2432,7 @@ procedure TCustomAlertDialog.InitDefaultPopView;
 var
   StyleMgr: TDialogStyleManager;
   ButtonLayoutHeight: Single;
-  BodyMH: Single;
+  BodyMH, ListP: Single;
 begin
   StyleMgr := FBuilder.FStyleManager;
   if StyleMgr = nil then
@@ -2529,23 +2529,29 @@ begin
       FViewRoot.FMsgBody.Background.Corners := [TCorner.TopLeft, TCorner.TopRight];
   end;
 
+  ListP := 0;
+
   // 设置 Body 最大高度
   if Assigned(FViewRoot.FMsgBody) then begin
     BodyMH := FViewRoot.FLayBubble.MaxHeight;
     if ButtonLayoutHeight > 0 then
       BodyMH := BodyMH - ButtonLayoutHeight;
+
     if Assigned(FViewRoot.FTitleView) and (FViewRoot.FTitleView.Visible) then
       BodyMH := BodyMH - FViewRoot.FTitleView.Height;
     FViewRoot.FMsgBody.MaxHeight := BodyMH;
 
     if Assigned(FViewRoot.FListView) then begin
-      if Assigned(FViewRoot.FMsgMessage) and (FViewRoot.FMsgMessage.Visible) then
-        FViewRoot.FListView.MaxHeight := BodyMH - FViewRoot.FMsgMessage.Height
-      else
-        FViewRoot.FListView.MaxHeight := BodyMH;
+      if (ButtonLayoutHeight = 0) and (Title = '') and (FBuilder.Message = '') then begin
+        ListP := StyleMgr.FBackgroundRadius;
+        FViewRoot.FLayBubble.Padding.Top := ListP;
+      end;
 
-      if ButtonLayoutHeight = 0 then
-        FViewRoot.FListView.Margins.Bottom := StyleMgr.FBackgroundRadius;
+      if Assigned(FViewRoot.FMsgMessage) and (FViewRoot.FMsgMessage.Visible) then begin
+        FViewRoot.FListView.MaxHeight := BodyMH - FViewRoot.FMsgMessage.Height;
+        FViewRoot.FMsgBody.MaxHeight := FViewRoot.FListView.MaxHeight;
+      end else
+        FViewRoot.FListView.MaxHeight := BodyMH - ListP;
     end;
   end;
 
@@ -2558,10 +2564,11 @@ begin
       FViewRoot.FTitleSpace.Visible := False;
   end;
 
-  if (Builder.Title = '') then begin
-    if FBuilder.Message = '' then begin
-      if Assigned(FViewRoot.FListView) then
-        FViewRoot.FListView.Margins.Top := StyleMgr.FBackgroundRadius;
+  if ButtonLayoutHeight = 0 then begin
+    if Assigned(FViewRoot.FListView) then begin
+      FViewRoot.FMsgBody.MaxHeight := FViewRoot.FMsgBody.MaxHeight - StyleMgr.FBackgroundRadius;
+      FViewRoot.FListView.MaxHeight := FViewRoot.FMsgBody.MaxHeight;
+      FViewRoot.FLayBubble.Padding.Bottom := StyleMgr.FBackgroundRadius;
     end;
   end;
 

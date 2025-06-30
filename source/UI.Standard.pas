@@ -948,9 +948,13 @@ type
   TCheckedIconDrawable = class(TDrawableBase)
   private
     FPadding: Single;
-    FDefault: TBrush;
-    procedure SetBrush(const Value: TBrush);
     procedure SetPadding(const Value: Single);
+    function IsStorePadding: Boolean;
+    function GetValue(const Index: Integer): TViewBrush;
+    procedure SetValue(const Index: Integer; const Value: TViewBrush);
+  protected
+    function IsStoredXRadius: Boolean; override;
+    function IsStoredYRadius: Boolean; override;
   public
     constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.Solid;
       const ADefaultColor: TAlphaColor = TAlphaColors.White);
@@ -961,8 +965,8 @@ type
     property Corners;
     property CornerType;
     property Kind;
-    property Brush: TBrush read FDefault write SetBrush;
-    property Padding: Single read FPadding write SetPadding;
+    property Brush: TViewBrush index 0 read GetValue write SetValue;
+    property Padding: Single read FPadding write SetPadding stored IsStorePadding;
   end;
 
 type
@@ -2317,15 +2321,30 @@ constructor TCheckedIconDrawable.Create(View: IView;
   const ADefaultKind: TViewBrushKind; const ADefaultColor: TAlphaColor);
 begin
   inherited Create(View, ADefaultKind, ADefaultColor);
-  Self.XRadius := 2;
-  Self.YRadius := 2;
+  XRadius := 2;
+  YRadius := 2;
   FPadding := 2;
   inherited GetBrush(TViewState(0), True);
 end;
 
-procedure TCheckedIconDrawable.SetBrush(const Value: TBrush);
+function TCheckedIconDrawable.GetValue(const Index: Integer): TViewBrush;
 begin
-  inherited SetValue(0, Value);
+  Result := (inherited GetBrush(TViewState(0), True)) as TViewBrush;
+end;
+
+function TCheckedIconDrawable.IsStoredXRadius: Boolean;
+begin
+  Result := XRadius <> 2.0;
+end;
+
+function TCheckedIconDrawable.IsStoredYRadius: Boolean;
+begin
+  Result := YRadius <> 2.0;
+end;
+
+function TCheckedIconDrawable.IsStorePadding: Boolean;
+begin
+  Result := FPadding <> 2.0;
 end;
 
 procedure TCheckedIconDrawable.SetPadding(const Value: Single);
@@ -2334,6 +2353,12 @@ begin
     FPadding := Value;
     DoChange(Self);
   end;
+end;
+
+procedure TCheckedIconDrawable.SetValue(const Index: Integer;
+  const Value: TViewBrush);
+begin
+  inherited SetBrush(TViewState(0), Value);
 end;
 
 { TCheckBoxView }
@@ -2372,18 +2397,23 @@ begin
   ADrawable.SizeWidth := 16;
   ADrawable.SizeHeight := 16;
   TViewBrushBase(ADrawable.ItemDefault).Kind := TViewBrushKind.SVGImage;
-  TViewBrushBase(ADrawable.ItemDefault).SVGImage.Parse(SDefaultCheck_0_SVG);
+  TViewBrushBase(ADrawable.ItemDefault).SVGImage.Parse(SDefaultCheck_0_SVG, True);
   TViewBrushBase(ADrawable.ItemDefault).SVGImage.Color := $ff606060;
+  TViewBrushBase(ADrawable.ItemDefault).SVGImage.DefaultColor := $ff606060;
   TViewBrushBase(ADrawable.ItemHovered).Kind := TViewBrushKind.SVGImage;
-  TViewBrushBase(ADrawable.ItemHovered).SVGImage.Parse(SDefaultCheck_0_SVG);
+  TViewBrushBase(ADrawable.ItemHovered).SVGImage.Parse(SDefaultCheck_0_SVG, True);
   TViewBrushBase(ADrawable.ItemHovered).SVGImage.Color := $ff101010;
+  TViewBrushBase(ADrawable.ItemHovered).SVGImage.DefaultColor := $ff101010;
   InitDefaultCheckedDrawable(ADrawable);
 end;
 
 destructor TCheckBoxView.Destroy;
 begin
   inherited;
-  FreeAndNil(FCheckedIconBackground);
+  if Assigned(FCheckedIconBackground) then begin
+    FCheckedIconBackground.OnChanged := nil;
+    FreeAndNil(FCheckedIconBackground);
+  end;
 end;
 
 procedure TCheckBoxView.DoCalcCheckBoxRect(var R: TRectF);
@@ -2487,10 +2517,12 @@ begin
   TViewBrushBase(ADrawable.ItemChecked).Kind := TViewBrushKind.SVGImage;
   if FFillMode then begin
     TViewBrushBase(ADrawable.ItemChecked).SVGImage.Color := $ff409eff;
-    TViewBrushBase(ADrawable.ItemChecked).SVGImage.Parse(SDefaultCheck_2_SVG);
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.DefaultColor := $ff409eff;
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.Parse(SDefaultCheck_2_SVG, True);
   end else begin
     TViewBrushBase(ADrawable.ItemChecked).SVGImage.Color := $ff101010;
-    TViewBrushBase(ADrawable.ItemChecked).SVGImage.Parse(SDefaultCheck_1_SVG);
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.DefaultColor := $ff101010;
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.Parse(SDefaultCheck_1_SVG, True);
   end;
 end;
 

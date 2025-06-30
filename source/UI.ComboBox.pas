@@ -665,7 +665,9 @@ begin
     Result := TStringsListAdapter.Create(FItems);
     Result.DefaultItemHeight := FItemHeight;
     if FOwner is TTextView then
-      Result.FontSize := TTextView(FOwner).TextSettings.Font.Size;
+      Result.FontSize := TTextView(FOwner).TextSettings.Font.Size
+    else if FOwner is TEditViewBase then
+      Result.FontSize := TEditViewBase(FOwner).TextSettings.Font.Size;
     Result.WordWrap := False;
     Result.Padding := RectF(4, 0, 4, 0);
     Result.HeightSize := TViewSize.CustomSize;
@@ -772,7 +774,7 @@ function TCustomDownPopup.KeyDownHandle(var Key: Word;
 
 var
   NoVisItems, I: Integer;
-  Caption: ICaption;
+  AText: string;
 begin
   Result := False;
   if Count = 0 then
@@ -841,9 +843,12 @@ begin
           Exit
     else
       begin
-        if Supports(FOwner, ICaption, Caption) and (Caption.Text <> '') then begin
+        AText := '';
+        if (FOwner is TEditViewBase) then
+          AText := TEditViewBase(FOwner).Text;
+        if (AText <> '') then begin
           for I := 0 to Count - 1 do begin
-            if Items[I].StartsWith(Caption.Text) then begin
+            if Items[I].StartsWith(AText) then begin
               NewItemIndex := I;
               Result := True;
               Break;
@@ -865,6 +870,8 @@ begin
         else begin
           TStringsListAdapter(FListBox.Adapter).ItemIndex := NewItemIndex;
           TStringsListAdapter(FListBox.Adapter).NotifyDataChanged;
+          if not FListBox.IsVisibleIndex(NewItemIndex) then
+            FListBox.ScrollToIndex(NewItemIndex);
         end;
       finally
         TLinkObservers.ListSelectionChanged(FOwner.Observers);
@@ -907,6 +914,7 @@ begin
   TStringsListAdapter(FListBox.Adapter).DefaultItemHeight := FItemHeight;
   TStringsListAdapter(FListBox.Adapter).ListItemCheckedColor := FListItemCheckedColor;
   TStringsListAdapter(FListBox.Adapter).ListItemHoveredColor := FListItemHoveredColor;
+  TStringsListAdapter(FListBox.Adapter).ItemIndex := ItemIndex;
   FListbox.NotifyDataChanged;
   FPopup.ApplyStyleLookup;
   if FOwner.Pressed or TControlEx(FOwner).DoubleClick then
@@ -958,6 +966,8 @@ begin
     if FPopup.IsOpen and (not FCanUseListPicker) then begin
       TStringsListAdapter(FListBox.Adapter).ItemIndex := Value;
       ListBox.Adapter.NotifyDataChanged;
+      if not FListBox.IsVisibleIndex(Value) then
+        FListBox.ScrollToIndex(Value);
     end;
     FOwner.Repaint;
     DoChange;

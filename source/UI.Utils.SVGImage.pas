@@ -65,8 +65,9 @@ type
     FData: TSVGDecode;
     FBitmap: TBitmap;
     FLayout: TTextLayout;
-    FColor: TAlphaColor;
+    FColor, FDefaultColor: TAlphaColor;
     FLoss: Boolean;
+    FDefaultSVG: string;
     function GetEmpty: Boolean;
     function GetHeight: Integer;
     function GetWidth: Integer;
@@ -74,6 +75,9 @@ type
     procedure SetWidth(const Value: Integer);
     procedure SetColor(const Value: TAlphaColor);
     procedure SetLoss(const Value: Boolean);
+    function IsStoreColor: Boolean;
+    function IsStoreWidth: Boolean;
+    function IsStoreHeight: Boolean;
   protected
     { rtl }
     procedure DefineProperties(Filer: TFiler); override;
@@ -98,7 +102,7 @@ type
     destructor Destroy; override;
     procedure LoadFormFile(const AFileName: string);
     procedure LoadFormStream(const AStream: TStream);
-    procedure Parse(const S: string);
+    procedure Parse(const S: string; bDefault: Boolean = False);
     procedure Assign(Source: TPersistent); override;
     procedure Clear;
     procedure ReSize();
@@ -107,11 +111,12 @@ type
     property Empty: Boolean read GetEmpty;
     property Data: TSVGDecode read FData;
     property Bitmap: TBitmap read FBitmap;
+    property DefaultColor: TAlphaColor read FDefaultColor write FDefaultColor;
     property OnChange: TNotifyEvent read FOnChange write FOnChange;
   published
-    property Width: Integer read GetWidth write SetWidth default 0;
-    property Height: Integer read GetHeight write SetHeight default 0;
-    property Color: TAlphaColor read FColor write SetColor default 0;
+    property Width: Integer read GetWidth write SetWidth stored IsStoreWidth;
+    property Height: Integer read GetHeight write SetHeight stored IsStoreHeight;
+    property Color: TAlphaColor read FColor write SetColor stored IsStoreColor;
     property Loss: Boolean read FLoss write SetLoss default True;  // Ê¸Á¿»¯
   end;
 
@@ -324,6 +329,8 @@ end;
 constructor TSVGImage.Create;
 begin
   FLoss := True;
+  FDefaultColor := 0;
+  FDefaultSVG := '';
 end;
 
 procedure TSVGImage.CreateDecode;
@@ -950,6 +957,21 @@ begin
   FBitmap := TBitmap.Create;
 end;
 
+function TSVGImage.IsStoreColor: Boolean;
+begin
+  Result := FColor <> FDefaultColor;
+end;
+
+function TSVGImage.IsStoreHeight: Boolean;
+begin
+  Result := Assigned(FBitmap) and (FBitmap.Height > 0) and ((not Assigned(FData)) or (FBitmap.Width <> FData.Size.Height));
+end;
+
+function TSVGImage.IsStoreWidth: Boolean;
+begin
+  Result := Assigned(FBitmap) and (FBitmap.Width > 0) and ((not Assigned(FData)) or (FBitmap.Width <> FData.Size.Width));
+end;
+
 procedure TSVGImage.LoadFormFile(const AFileName: string);
 begin
   CreateDecode();
@@ -980,10 +1002,14 @@ begin
   DoChange();
 end;
 
-procedure TSVGImage.Parse(const S: string);
+procedure TSVGImage.Parse(const S: string; bDefault: Boolean);
 begin
   CreateDecode();
   FData.Parse(S);
+  if bDefault then begin
+    FDefaultSVG := FData.FData.Text;
+  end else
+    FDefaultSVG := '';
   if Empty then begin
     FreeAndNil(FBitmap);
     Exit;
@@ -999,6 +1025,11 @@ procedure TSVGImage.ReadData(Reader: TReader);
 var
   Stream: TStringStream;
 begin
+  if FDefaultSVG <> '' then begin
+    Reader.ReadString;
+    Self.Parse(FDefaultSVG, True);
+    Exit;
+  end;
   try
     Stream := TStringStream.Create;
     try
@@ -1101,6 +1132,10 @@ procedure TSVGImage.WriteData(Writer: TWriter);
 var
   Stream: TStringStream;
 begin
+  if FDefaultSVG <> '' then begin
+    Writer.WriteString('');
+    Exit;
+  end;
   try
     Stream := TStringStream.Create;
     try

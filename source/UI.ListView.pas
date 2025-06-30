@@ -394,7 +394,14 @@ type
     /// </summary>
     procedure RemoveFooterView();
 
+    /// <summary>
+    /// 滚动到指定索引行
+    /// </summary>
     procedure ScrollToIndex(const Index: Integer);
+    /// <summary>
+    /// 判断指定索引行是否处理可视状态
+    /// </summary>
+    function IsVisibleIndex(const Index: Integer): Boolean;
 
     property Count: Integer read GetCount;
     property Empty: Boolean read IsEmpty;
@@ -1276,6 +1283,12 @@ begin
   Result := FDividerHeight <> -1;
 end;
 
+function TListViewEx.IsVisibleIndex(const Index: Integer): Boolean;
+begin
+  Result := Assigned(FContentViews) and (Index >= FContentViews.FFirstRowIndex)
+    and (Index <= FContentViews.FLastRowIndex);
+end;
+
 procedure TListViewEx.Loaded;
 begin
   inherited Loaded;
@@ -1515,6 +1528,7 @@ begin
   FContentViews.FViewItemBottom := 0;
   FContentViews.FLastScrollValue := 0;
 
+  FContentViews.HideViews;
   VScrollBar.ValueD := Y + 1;
 end;
 
