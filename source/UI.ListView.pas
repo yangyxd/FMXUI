@@ -1528,7 +1528,8 @@ begin
   FContentViews.FViewItemBottom := 0;
   FContentViews.FLastScrollValue := 0;
 
-  FContentViews.HideViews;
+  if VScrollBar.ValueD > Y + 1 then
+    FContentViews.HideViews;
   VScrollBar.ValueD := Y + 1;
 end;
 
