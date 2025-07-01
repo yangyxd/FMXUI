@@ -886,20 +886,17 @@ type
   end;
 
 type
-  TStyleView = class(TTextView)
+  /// <summary>
+  /// 统一样式的文本
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TTextStyleView = class(TTextView)
   private
     [Weak] FStyleManager: TStyleViewManager;
     FStyleType: TStyleViewType;
-    FStylePlain: Boolean;
-    FDrawing: Boolean;
     procedure SetStyleManager(const Value: TStyleViewManager);
     procedure SetStyleType(const Value: TStyleViewType);
-    procedure SetStylePlain(const Value: Boolean);
   protected
-    procedure PaintBackground; override;
-    function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
-    function GetBackground: TDrawable; override;
-    function GetViewBackground: TDrawable; override;
     function GetTextColor(const State: TViewState): TAlphaColor; override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -909,6 +906,22 @@ type
     property StyleManager: TStyleViewManager read FStyleManager write SetStyleManager;
     // 样式类型
     property StyleType: TStyleViewType read FStyleType write SetStyleType default TStyleViewType.None;
+  end;
+
+type
+  TStyleView = class(TTextStyleView)
+  private
+    FStylePlain: Boolean;
+    FDrawing: Boolean;
+    procedure SetStylePlain(const Value: Boolean);
+  protected
+    procedure PaintBackground; override;
+    function GetBackground: TDrawable; override;
+    function GetViewBackground: TDrawable; override;
+    function GetTextColor(const State: TViewState): TAlphaColor; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+  published
     // 是否是朴素样式
     property StylePlain: Boolean read FStylePlain write SetStylePlain default False;
   end;
@@ -972,7 +985,7 @@ type
   end;
 
 type
-  TCheckBoxView = class(TTextView)
+  TCheckBoxView = class(TTextStyleView)
   private
     FFillMode: Boolean;
     FOnlyClickCheckBox: Boolean;
@@ -2142,24 +2155,57 @@ begin
   SetFocus;
 end;
 
-{ TStyleView }
+{ TTextStyleView }
 
-function TStyleView.CanRePaintBk(const View: IView; State: TViewState): Boolean;
-begin
-  Result := inherited CanRePaintBk(View, State);
-end;
-
-constructor TStyleView.Create(AOwner: TComponent);
+constructor TTextStyleView.Create(AOwner: TComponent);
 begin
   FStyleManager := nil;
-  FStylePlain := False;
-  inherited Create(AOwner);
+  inherited;
 end;
 
-destructor TStyleView.Destroy;
+destructor TTextStyleView.Destroy;
 begin
   SetStyleManager(nil);
   inherited;
+end;
+
+function TTextStyleView.GetTextColor(const State: TViewState): TAlphaColor;
+begin
+  if (FStyleType <> TStyleViewType.None) and Assigned(FStyleManager) then begin
+    Result := FStyleManager.FPlainStyles.GetStyle(FStyleType).FText.GetStateColor(State);
+    Exit;
+  end;
+  Result := inherited GetTextColor(State);
+end;
+
+procedure TTextStyleView.SetStyleManager(const Value: TStyleViewManager);
+begin
+  if FStyleManager <> Value then begin
+    if Assigned(FStyleManager) then
+      FStyleManager.RemoveView(Self);
+    FStyleManager := Value;
+    if Assigned(FStyleManager) then
+      FStyleManager.AddView(Self);
+    if csDestroying in ComponentState then
+      Exit;
+    DoChanged(Self);
+  end;
+end;
+
+procedure TTextStyleView.SetStyleType(const Value: TStyleViewType);
+begin
+  if FStyleType <> Value then begin
+    FStyleType := Value;
+    DoChanged(Self);
+  end;
+end;
+
+{ TStyleView }
+
+constructor TStyleView.Create(AOwner: TComponent);
+begin
+  FStylePlain := False;
+  inherited Create(AOwner);
 end;
 
 function TStyleView.GetBackground: TDrawable;
@@ -2220,32 +2266,10 @@ begin
   end;
 end;
 
-procedure TStyleView.SetStyleManager(const Value: TStyleViewManager);
-begin
-  if FStyleManager <> Value then begin
-    if Assigned(FStyleManager) then
-      FStyleManager.RemoveView(Self);
-    FStyleManager := Value;
-    if Assigned(FStyleManager) then
-      FStyleManager.AddView(Self);
-    if csDestroying in ComponentState then
-      Exit;
-    DoChanged(Self);
-  end;
-end;
-
 procedure TStyleView.SetStylePlain(const Value: Boolean);
 begin
   if FStylePlain <> Value then begin
     FStylePlain := Value;
-    DoChanged(Self);
-  end;
-end;
-
-procedure TStyleView.SetStyleType(const Value: TStyleViewType);
-begin
-  if FStyleType <> Value then begin
-    FStyleType := Value;
     DoChanged(Self);
   end;
 end;
@@ -7662,6 +7686,7 @@ procedure TStyleViewManager.SetStyles(const Value: TStyleViewStyles);
 begin
   if FStyles <> Value then FStyles.Assign(Value);
 end;
+
 
 initialization
 

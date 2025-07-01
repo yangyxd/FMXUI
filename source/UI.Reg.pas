@@ -170,6 +170,7 @@ begin
   RegisterComponents(PageName, [TImageViewerEx]);
   RegisterComponents(PageName, [TTextView]);
   RegisterComponents(PageName, [TEditView]);
+  RegisterComponents(PageName, [TTextStyleView]);
   RegisterComponents(PageName, [TButtonView]);
   RegisterComponents(PageName, [TBadgeView]);
   RegisterComponents(PageName, [TProgressView]);
