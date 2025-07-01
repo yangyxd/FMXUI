@@ -435,6 +435,8 @@ type
     procedure SetBitmap(State: TViewState; const Value: TBitmap); overload;
     procedure SetBitmap(State: TViewState; const Value: TBrushBitmap); overload;
 
+    function SetCornersNotChange(const Value: TCorners): TCorners;
+
     // ÊÇ·ñÎª¿Õ
     property IsEmpty: Boolean read FIsEmpty;
 
@@ -2818,6 +2820,12 @@ begin
     FCorners := Value;
     DoChange(Self);
   end;
+end;
+
+function TDrawableBase.SetCornersNotChange(const Value: TCorners): TCorners;
+begin
+  Result := FCorners;
+  FCorners := Value;
 end;
 
 procedure TDrawableBase.SetCornerType(const Value: TCornerType);

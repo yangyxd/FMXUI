@@ -827,7 +827,7 @@ type
     procedure SetStyleDefault(const Value: TStyleViewColor);
   protected
     procedure DoChanged(Sender: TObject); virtual;
-    procedure DoInitColor; virtual;  
+    procedure DoInitColor; virtual;
     procedure SetBackgroundColor(Item: TViewBrush; AColor: TAlphaColor; AKind: TViewBrushKind = TViewBrushKind.Solid);    
   public
     constructor Create; virtual;
@@ -891,10 +891,12 @@ type
     [Weak] FStyleManager: TStyleViewManager;
     FStyleType: TStyleViewType;
     FStylePlain: Boolean;
+    FDrawing: Boolean;
     procedure SetStyleManager(const Value: TStyleViewManager);
     procedure SetStyleType(const Value: TStyleViewType);
     procedure SetStylePlain(const Value: Boolean);
   protected
+    procedure PaintBackground; override;
     function CanRePaintBk(const View: IView; State: TViewState): Boolean; override;
     function GetBackground: TDrawable; override;
     function GetViewBackground: TDrawable; override;
@@ -2185,6 +2187,10 @@ end;
 
 function TStyleView.GetViewBackground: TDrawable;
 begin
+  if not FDrawing and (csDesigning in ComponentState) then begin
+    Result := inherited GetViewBackground();
+    Exit;
+  end;
   Result := nil;
   if (FStyleType <> TStyleViewType.None) and Assigned(FStyleManager) then begin
     if FStylePlain then
@@ -2194,6 +2200,24 @@ begin
   end;
   if not Assigned(Result) then
     Result := inherited GetViewBackground();
+end;
+
+procedure TStyleView.PaintBackground;
+var
+  LCorners: TCorners;
+  ABackground: TDrawable;
+begin
+  FDrawing := True;
+  try
+    ABackground := Background;
+    if Assigned(ABackground) and Assigned(FBackground) then
+      LCorners := ABackground.SetCornersNotChange(FBackground.Corners);
+    inherited PaintBackground;
+  finally
+    if Assigned(ABackground) and Assigned(FBackground) then
+      ABackground.SetCornersNotChange(LCorners);
+    FDrawing := False;
+  end;
 end;
 
 procedure TStyleView.SetStyleManager(const Value: TStyleViewManager);
