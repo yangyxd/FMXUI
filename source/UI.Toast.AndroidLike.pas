@@ -2,6 +2,8 @@ unit UI.Toast.AndroidLike;
 
 interface
 
+{$I 'CMOV.inc'}
+
 uses
   UI.Base,
   UI.Utils,
@@ -19,6 +21,7 @@ uses
   FMX.TextLayout,
   FMX.Effects,
   FMX.Layouts,
+  FMX.Forms,
   {$ELSE}
   Windows,
   Messages,
@@ -66,8 +69,6 @@ type
   end;
 
 implementation
-
-uses FMX.Forms;
 
 const
   FViewTime = 1500;
