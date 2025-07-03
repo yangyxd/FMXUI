@@ -897,6 +897,7 @@ type
     procedure SetStyleManager(const Value: TStyleViewManager);
     procedure SetStyleType(const Value: TStyleViewType);
   protected
+    procedure DoStyleChange; virtual;
     function GetTextColor(const State: TViewState): TAlphaColor; override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -985,6 +986,9 @@ type
   end;
 
 type
+  /// <summary>
+  /// 复选框
+  /// </summary>
   TCheckBoxView = class(TTextStyleView)
   private
     FFillMode: Boolean;
@@ -999,12 +1003,15 @@ type
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
     function GetDefaultSize: TSizeF; override;
     procedure Click; override;
+    procedure DoChangeChecked; virtual;
     procedure InicDrawable(ADrawable: TDrawableIcon); virtual;
-    procedure DoCheckedChange(); override;
     procedure InitDefaultCheckedDrawable(ADrawable: TDrawableIcon); virtual;
+    procedure DoCheckedChange(); override;
     function CreateDrawable(): TDrawableIcon; override;
     procedure DoCalcCheckBoxRect(var R: TRectF);
     procedure DoPaintBackground(var R: TRectF); override;
+    function GetTextColor(const State: TViewState): TAlphaColor; override;
+    procedure DoStyleChange; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1021,6 +1028,21 @@ type
     // 是否只能点击 checkBox 区域来改变选中状态
     property OnlyClickCheckBox: Boolean read FOnlyClickCheckBox write FOnlyClickCheckBox default False;
     property OnChange: TNotifyEvent read FOnChange write FOnChange;
+  end;
+
+type
+  /// <summary>
+  /// 单选框
+  /// </summary>
+  TRadioView = class(TCheckBoxView)
+  protected
+    procedure InicDrawable(ADrawable: TDrawableIcon); override;
+    procedure InitDefaultCheckedDrawable(ADrawable: TDrawableIcon); override;
+    procedure DoChangeChecked; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+  published 
+    property GroupIndex default 1;
   end;
 
 type
@@ -1516,6 +1538,28 @@ resourcestring
     '448-13.4144 34.88533333-13.5168 48.26453333-0.27306667 13.3504 13.27786667 13.48693333 34.885'+
     '33333 0.24213333 48.26453334z" p-id="4912"></path></svg>';
 
+  SDefaultRadio_0_SVG = '<svg class="icon" viewBox="0 0 1024 1024" version="1.1" width="128" heigh'+
+    't="128"><path d="M512 960c-247.039484 0-448-200.960516-448-448S264.960516 64 512 64 960 264.9'+
+    '60516 960 512 759.039484 960 512 960zM512 128c-211.744443 0-384 172.255557-384 384s172.255557'+
+    ' 384 384 384 384-172.255557 384-384S723.744443 128 512 128z" fill="#575B66" p-id="2692"></pat'+
+    'h></svg>';
+  SDefaultRadio_1_SVG = '<svg class="icon" viewBox="0 0 1024 1024" version="1.1" width="128" heigh'+
+    't="128"><path d="M512 65.983389c-245.919634 0-446.016611 200.095256-446.016611 446.016611 0 2'+
+    '45.952318 200.064292 446.016611 446.016611 446.016611S958.016611 757.952318 958.016611 512C95'+
+    '8.016611 266.080366 757.952318 65.983389 512 65.983389zM512 894.016611c-210.655557 0-382.0166'+
+    '11-171.392017-382.016611-382.016611 0-210.655557 171.359333-382.016611 382.016611-382.016611 '+
+    '210.624593 0 382.016611 171.359333 382.016611 382.016611C894.016611 722.624593 722.624593 894'+
+    '.016611 512 894.016611z" fill="#575B66" p-id="2854"></path><path d="M512 352.00086c-88.223841'+
+    ' 0-160.00086 71.775299-160.00086 159.99914s71.775299 160.00086 160.00086 160.00086 160.00086-'+
+    '71.775299 160.00086-160.00086S600.223841 352.00086 512 352.00086z" fill="#575B66" p-id="2855"'+
+    '></path></svg>';
+  SDefaultRadio_2_SVG = '<svg class="icon" viewBox="0 0 1024 1024" version="1.1" width="128" heigh'+
+    't="128"><path d="M512 65.983389c-245.919634 0-446.016611 200.095256-446.016611 446.016611 0 2'+
+    '45.952318 200.064292 446.016611 446.016611 446.016611S958.016611 757.952318 958.016611 512C95'+
+    '8.016611 266.080366 757.952318 65.983389 512 65.983389zM512 672.00086c-88.223841 0-160.00086-'+
+    '71.775299-160.00086-160.00086s71.775299-159.99914 160.00086-159.99914 160.00086 71.775299 160'+
+    '.00086 159.99914S600.223841 672.00086 512 672.00086z" fill="#575B66" p-id="3179"></path></svg>';
+
 procedure DisableHitTestForControl(const AControl: TControl);
 var
   LChild: TFmxObject;
@@ -1695,14 +1739,14 @@ begin
       for I := 0 to ParentControl.ControlsCount - 1 do begin
         Control := ParentControl.Controls[I];
         if Control = Self then Continue;
-        if (Control is TTextView) and (TTextView(Control).FGroupIndex = FGroupIndex) then
+        if (Control is Self.ClassType) and (TTextView(Control).FGroupIndex = FGroupIndex) and (Control.ClassType = Self.ClassType) then
           TTextView(Control).Checked := False;
       end;
     end else if Parent is TCommonCustomForm then begin
       for I := 0 to TCommonCustomForm(Parent).ChildrenCount - 1 do begin
         Item := TCommonCustomForm(Parent).Children.Items[I];
         if Item = Self then Continue;
-        if (Item is TTextView) and (TTextView(Item).FGroupIndex = FGroupIndex) then
+        if (Item is Self.ClassType) and (TTextView(Item).FGroupIndex = FGroupIndex) and (Item.ClassType = Self.ClassType) then
           TTextView(Item).Checked := False;
       end;
     end;
@@ -1752,9 +1796,10 @@ var
 begin
   if InVisible then
     Exit;
-  if Text = '' then
-    FText.Draw(Canvas, FTextHint, R, GetAbsoluteOpacity, TViewState(8))
-  else begin
+  if Text = '' then begin
+    if FTextHint <> '' then
+      FText.Draw(Canvas, FTextHint, R, GetAbsoluteOpacity, TViewState(8))
+  end else begin
     case FScrollbar of
       TViewScroll.Horizontal:
         begin
@@ -2169,10 +2214,20 @@ begin
   inherited;
 end;
 
+procedure TTextStyleView.DoStyleChange;
+begin
+end;
+
 function TTextStyleView.GetTextColor(const State: TViewState): TAlphaColor;
 begin
   if (FStyleType <> TStyleViewType.None) and Assigned(FStyleManager) then begin
-    Result := FStyleManager.FPlainStyles.GetStyle(FStyleType).FText.GetStateColor(State);
+    if (State = TViewState.None) or (FStyleType = TStyleViewType.Default) then
+      Result := FStyleManager.FPlainStyles.GetStyle(FStyleType).FText.GetStateColor(State)
+    else begin
+      Result := FStyleManager.FStyles.GetStyle(FStyleType).FBackground.GetStateBrush(State).Color;
+      if Result and $FF000000 = 0 then
+        Result := FStyleManager.FPlainStyles.GetStyle(FStyleType).FText.GetStateColor(TViewState.None)
+    end;
     Exit;
   end;
   Result := inherited GetTextColor(State);
@@ -2188,6 +2243,7 @@ begin
       FStyleManager.AddView(Self);
     if csDestroying in ComponentState then
       Exit;
+    DoStyleChange();
     DoChanged(Self);
   end;
 end;
@@ -2196,6 +2252,8 @@ procedure TTextStyleView.SetStyleType(const Value: TStyleViewType);
 begin
   if FStyleType <> Value then begin
     FStyleType := Value;
+    if Assigned(FStyleManager) then      
+      DoStyleChange();
     DoChanged(Self);
   end;
 end;
@@ -2413,8 +2471,7 @@ end;
 
 procedure TCheckBoxView.Click;
 begin
-  if (not FOnlyClickCheckBox) or (FInCheckBox) then
-    IsChecked := not IsChecked;
+  DoChangeChecked();
   inherited Click;
 end;
 
@@ -2513,6 +2570,12 @@ begin
   R := DR;
 end;
 
+procedure TCheckBoxView.DoChangeChecked;
+begin
+  if (not FOnlyClickCheckBox) or (FInCheckBox) then
+    IsChecked := not IsChecked;
+end;
+
 procedure TCheckBoxView.DoCheckedChange;
 begin
   inherited DoCheckedChange;
@@ -2543,21 +2606,40 @@ begin
   if Assigned(FDrawable) and (not FDrawable.IsEmpty) then begin
     if Assigned(FCheckedIconBackground) and (not FCheckedIconBackground.IsEmpty) then
       DoDrawIconBackground(R);
-    if FOnlyClickCheckBox and (not FInCheckBox) then begin
-      if Checked then
-        FDrawable.AdjustDraw(Canvas, R, True, TViewState.Checked)
-      else
+    if Checked then begin
+      FDrawable.AdjustDraw(Canvas, R, True, TViewState.Checked);
+    end else begin
+      if FOnlyClickCheckBox and (not FInCheckBox) then begin
         FDrawable.AdjustDraw(Canvas, R, True, TViewState.None);
-    end else
-      FDrawable.AdjustDraw(Canvas, R, True, DrawState);
+      end else
+        FDrawable.AdjustDraw(Canvas, R, True, DrawState);
+    end;
   end;
   if (Assigned(FText)) then
     DoPaintText(R);
 end;
 
+procedure TCheckBoxView.DoStyleChange;
+begin
+  if TViewBrushBase(Drawable.ItemChecked).Kind = TViewBrushKind.SVGImage then begin
+    if (FStyleType <> TStyleViewType.None) and Assigned(FStyleManager) then begin
+      TViewBrushBase(Drawable.ItemChecked).SVGImage.Color := GetTextColor(TViewState.Checked)
+    end else
+      TViewBrushBase(Drawable.ItemChecked).SVGImage.Color := TViewBrushBase(Drawable.ItemChecked).SVGImage.DefaultColor
+  end;
+end;
+
 function TCheckBoxView.GetDefaultSize: TSizeF;
 begin
   Result := TSizeF.Create(97, 22);
+end;
+
+function TCheckBoxView.GetTextColor(const State: TViewState): TAlphaColor;
+begin
+  if (State = TViewState.Checked) then
+    Result := inherited GetTextColor(State)
+  else
+    Result := TAlphaColorRec.Null;
 end;
 
 procedure TCheckBoxView.InitDefaultCheckedDrawable(ADrawable: TDrawableIcon);
@@ -2619,6 +2701,49 @@ procedure TCheckBoxView.SetIconBackground(const Value: TCheckedIconDrawable);
 begin
   if FCheckedIconBackground <> Value then
     FCheckedIconBackground.Assign(Value);
+end;
+
+{ TRadioView }
+
+constructor TRadioView.Create(AOwner: TComponent);
+begin
+  inherited;
+  FGroupIndex := 1;
+end;
+
+procedure TRadioView.DoChangeChecked;
+begin
+  if (not FOnlyClickCheckBox) or (FInCheckBox) then
+    IsChecked := True;
+end;
+
+procedure TRadioView.InicDrawable(ADrawable: TDrawableIcon);
+begin
+  ADrawable.SizeWidth := 16;
+  ADrawable.SizeHeight := 16;
+  TViewBrushBase(ADrawable.ItemDefault).Kind := TViewBrushKind.SVGImage;
+  TViewBrushBase(ADrawable.ItemDefault).SVGImage.Parse(SDefaultRadio_0_SVG, True);
+  TViewBrushBase(ADrawable.ItemDefault).SVGImage.Color := $ff606060;
+  TViewBrushBase(ADrawable.ItemDefault).SVGImage.DefaultColor := $ff606060;
+  TViewBrushBase(ADrawable.ItemHovered).Kind := TViewBrushKind.SVGImage;
+  TViewBrushBase(ADrawable.ItemHovered).SVGImage.Parse(SDefaultRadio_0_SVG, True);
+  TViewBrushBase(ADrawable.ItemHovered).SVGImage.Color := $ff101010;
+  TViewBrushBase(ADrawable.ItemHovered).SVGImage.DefaultColor := $ff101010;
+  InitDefaultCheckedDrawable(ADrawable);
+end;
+
+procedure TRadioView.InitDefaultCheckedDrawable(ADrawable: TDrawableIcon);
+begin
+  TViewBrushBase(ADrawable.ItemChecked).Kind := TViewBrushKind.SVGImage;
+  if FFillMode then begin
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.Color := $ff409eff;
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.DefaultColor := $ff409eff;
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.Parse(SDefaultRadio_2_SVG, True);
+  end else begin
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.Color := $ff101010;
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.DefaultColor := $ff101010;
+    TViewBrushBase(ADrawable.ItemChecked).SVGImage.Parse(SDefaultRadio_1_SVG, True);
+  end;
 end;
 
 { TScrollView }
@@ -7685,8 +7810,7 @@ end;
 procedure TStyleViewManager.SetStyles(const Value: TStyleViewStyles);
 begin
   if FStyles <> Value then FStyles.Assign(Value);
-end;
-
+end;  
 
 initialization
 

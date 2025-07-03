@@ -23,6 +23,20 @@ uses
 
 type
   TOnInitListAdapter = function (Sender: TObject): TStringsListAdapter of object;
+  TOnMultipleCheckedChange = procedure (Sender: TObject; ItemIndex: Integer; var Checked: Boolean) of object;
+  TOnMultipleCheckedText = function (Sender: TObject): string of object;
+
+type
+  TMultipleStringsListAdapter = class(TStringsListCheckAdapter)
+  private
+    FOwner: TComponent;
+  protected
+    procedure DoCheckChange(Sender: TObject);
+    function GetView(const Index: Integer; ConvertView: TViewBase; Parent: TViewGroup): TViewBase; override;
+  public
+    constructor Create(Owner: TComponent; const AItems: TStrings); overload;
+    constructor Create(Owner: TComponent; const AItems: TArray<string>); overload;
+  end;
 
 type
   TCustomDownPopup = class
@@ -35,14 +49,16 @@ type
     FOnChange: TNotifyEvent;
     FOnPopup: TNotifyEvent;
     FOnClosePopup: TNotifyEvent;
+    FOnMultipleCheckedChange: TOnMultipleCheckedChange;
     FItemWidth: Single;
     FItemHeight: Single;
-    FItemCheck: Boolean;
+    FMultiple: Boolean;
     FPopup: TPopup;
     FListBox: TListViewEx;
     FDropDownKind: TDropDownKind;
     FDroppedDown: Boolean;
     FListPicker: TCustomListPicker;
+    FMultipleTextSeparator: string;
     FDropDownButton: TDrawableIcon;
     FCanUseListPicker: Boolean;
     FListBackground: TViewBrush;
@@ -63,13 +79,17 @@ type
     procedure SetListTextColor(const Value: TViewColor);
     function IsListItemCheckedColorStored: Boolean;
     function IsListItemHoveredColorStored: Boolean;
-    procedure SetItemCheck(const Value: Boolean);
+    procedure SetMultiple(const Value: Boolean);
+    function GetListItemCheck(const Index: Integer): Boolean;
+    procedure SetListItemCheck(const Index: Integer; const Value: Boolean);
+    function GetMultipleText: string;
   protected
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); virtual;
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); virtual;
     function KeyDown(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState; out OldItemIndex, NewItemIndex: Integer): Boolean; virtual;
     function KeyDownHandle(var Key: Word; var KeyChar: System.WideChar; Shift: TShiftState; var OldItemIndex, NewItemIndex: Integer): Boolean; virtual;
     procedure DoListItemClick(Sender: TObject; ItemIndex: Integer; const ItemView: TControl); virtual;
+    procedure DoCheckedChange(Sender: TObject; ItemIndex: Integer; const ItemView: TControl); virtual;
     procedure DoItemMeasureHeight(Sender: TObject; Index: Integer; var AHeight: Single); virtual;
     procedure DoChange; dynamic;
     procedure DoItemsChange(Sender: TObject); virtual;
@@ -100,13 +120,16 @@ type
     property ListItemHoveredColor: TAlphaColor read FListItemHoveredColor write FListItemHoveredColor stored IsListItemHoveredColorStored;
     property Popup: TPopup read FPopup;
     property Items: TStrings read GetItems write SetItems stored ItemsStored;
+    property ItemsChecked[const Index: Integer]: Boolean read GetListItemCheck write SetListItemCheck;
     property Count: Integer read GetCount;
     property CanUseListPicker: Boolean read FCanUseListPicker write FCanUseListPicker default False;
     property DropDownButton: TDrawableIcon read FDropDownButton;
     property ItemIndex: Integer read FItemIndex write SetItemIndex;
     property ItemWidth: Single read FItemWidth write SetItemWidth;
     property ItemHeight: Single read FItemHeight write SetItemHeight stored IsItemHeightStored;
-    property ItemCheck: Boolean read FItemCheck write SetItemCheck default False;
+    property Multiple: Boolean read FMultiple write SetMultiple default False;
+    property MultipleText: string read GetMultipleText;
+    property MultipleTextSeparator: string read FMultipleTextSeparator write FMultipleTextSeparator;
     property DropDownKind: TDropDownKind read FDropDownKind write FDropDownKind default TDropDownKind.Native;
     property DropDownCount: Integer read FDropDownCount write SetDropDownCount default 8;
     property DroppedDown: Boolean read FDroppedDown;
@@ -114,6 +137,7 @@ type
     property OnClosePopup: TNotifyEvent read FOnClosePopup write FOnClosePopup;
     property OnPopup: TNotifyEvent read FOnPopup write FOnPopup;
     property OnInitListAdapter: TOnInitListAdapter read FOnInitListAdapter write FOnInitListAdapter;
+    property OnMultipleCheckedChange: TOnMultipleCheckedChange read FOnMultipleCheckedChange write FOnMultipleCheckedChange;
   end;
 
 type
@@ -122,6 +146,8 @@ type
     FDownPopup: TCustomDownPopup;
     FOnItemChange: TNotifyEvent;
     FOnClosePopup: TNotifyEvent;
+    FOnGetMultipleText: TOnMultipleCheckedText;
+    FOnMultipleCheckedChange: TOnMultipleCheckedChange;
     function GetCanUseListPicker: Boolean;
     function GetCount: Integer;
     function GetDropDownButton: TDrawableIcon;
@@ -157,6 +183,10 @@ type
     procedure SetListItemHoveredColor(const Value: TAlphaColor);
     function IsListItemCheckedColorStored: Boolean;
     function IsListItemHoveredColorStored: Boolean;
+    function GetListMultiple: Boolean;
+    procedure SetListMultiple(const Value: Boolean);
+    function GetListItemCheck(const Index: Integer): Boolean;
+    procedure SetListItemCheck(const Index: Integer; const Value: Boolean);
   protected
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseWheel(Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean); override;
@@ -168,6 +198,7 @@ type
     function GetDefaultSize: TSizeF; override;
     procedure SetName(const Value: TComponentName); override;
     procedure DoItemChange(Sender: TObject); virtual;
+    procedure DoMultipleCheckedChange(Sender: TObject; ItemIndex: Integer; var Checked: Boolean); virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -181,10 +212,12 @@ type
     property ListTextColor: TViewColor read GetListTextColor write SetListTextColor;
     property ListItemCheckedColor: TAlphaColor read GetListItemCheckedColor write SetListItemCheckedColor stored IsListItemCheckedColorStored;
     property ListItemHoveredColor: TAlphaColor read GetListItemHoveredColor write SetListItemHoveredColor stored IsListItemHoveredColorStored;
+    property ListMultiple: Boolean read GetListMultiple write SetListMultiple default False;
     property Popup: TPopup read GetPopup;
     property CanFocus default True;
     property CanParentFocus;
     property Items: TStrings read GetItems write SetItems stored ItemsStored;
+    property ItemsChecked[const Index: Integer]: Boolean read GetListItemCheck write SetListItemCheck;
     property Count: Integer read GetCount;
     property CanUseListPicker: Boolean read GetCanUseListPicker write SetCanUseListPicker default False;
     property DropDownButton: TDrawableIcon read GetDropDownButton;
@@ -199,15 +232,19 @@ type
     property OnClosePopup: TNotifyEvent read FOnClosePopup write FOnClosePopup;
     property OnPopup: TNotifyEvent read GetOnPopup write SetOnPopup;
     property OnInitListAdapter: TOnInitListAdapter read GetOnInitListAdapter write SetOnInitListAdapter;
+    property OnMultipleCheckedChange: TOnMultipleCheckedChange read FOnMultipleCheckedChange write FOnMultipleCheckedChange;
+    property OnMultipleCheckedText: TOnMultipleCheckedText read FOnGetMultipleText write FOnGetMultipleText;
   end;
 
 type
   TCustomComboBoxEditView = class(TEditView)
   private
+    FInDropDown: Boolean;
     FDownPopup: TCustomDownPopup;
     FOnItemChange: TNotifyEvent;
     FOnClosePopup: TNotifyEvent;
-    FInDropDown: Boolean;
+    FOnGetMultipleText: TOnMultipleCheckedText;
+    FOnMultipleCheckedChange: TOnMultipleCheckedChange;
     function GetCanUseListPicker: Boolean;
     function GetCount: Integer;
     function GetDropDownButton: TDrawableIcon;
@@ -243,6 +280,10 @@ type
     procedure SetListItemHoveredColor(const Value: TAlphaColor);
     function IsListItemCheckedColorStored: Boolean;
     function IsListItemHoveredColorStored: Boolean;
+    function GetListMultiple: Boolean;
+    procedure SetListMultiple(const Value: Boolean);
+    function GetListItemCheck(const Index: Integer): Boolean;
+    procedure SetListItemCheck(const Index: Integer; const Value: Boolean);
   protected
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Single); override;
@@ -254,6 +295,7 @@ type
     procedure RealignDrawableContent(var ContentRect: TRectF); override;
     function GetDefaultSize: TSizeF; override;
     procedure DoItemChange(Sender: TObject); virtual;
+    procedure DoMultipleCheckedChange(Sender: TObject; ItemIndex: Integer; var Checked: Boolean); virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -267,8 +309,10 @@ type
     property ListTextColor: TViewColor read GetListTextColor write SetListTextColor;
     property ListItemCheckedColor: TAlphaColor read GetListItemCheckedColor write SetListItemCheckedColor stored IsListItemCheckedColorStored;
     property ListItemHoveredColor: TAlphaColor read GetListItemHoveredColor write SetListItemHoveredColor stored IsListItemHoveredColorStored;
+    property ListMultiple: Boolean read GetListMultiple write SetListMultiple default False;
     property Popup: TPopup read GetPopup;
     property Items: TStrings read GetItems write SetItems stored ItemsStored;
+    property ItemsChecked[const Index: Integer]: Boolean read GetListItemCheck write SetListItemCheck;
     property Count: Integer read GetCount;
     property CanUseListPicker: Boolean read GetCanUseListPicker write SetCanUseListPicker default False;
     property DropDownButton: TDrawableIcon read GetDropDownButton;
@@ -282,6 +326,8 @@ type
     property OnClosePopup: TNotifyEvent read FOnClosePopup write FOnClosePopup;
     property OnPopup: TNotifyEvent read GetOnPopup write SetOnPopup;
     property OnInitListAdapter: TOnInitListAdapter read GetOnInitListAdapter write SetOnInitListAdapter;
+    property OnMultipleCheckedChange: TOnMultipleCheckedChange read FOnMultipleCheckedChange write FOnMultipleCheckedChange;
+    property OnMultipleCheckedText: TOnMultipleCheckedText read FOnGetMultipleText write FOnGetMultipleText;
   end;
 
 type
@@ -301,6 +347,7 @@ type
     property ListTextColor;
     property ListItemCheckedColor;
     property ListItemHoveredColor;
+    property ListMultiple default False;
 
     property OnInitListAdapter;
 
@@ -313,6 +360,8 @@ type
     property OnChange;
     property OnClosePopup;
     property OnPopup;
+    property OnMultipleCheckedChange;
+    property OnMultipleCheckedText;
 
     property OnKeyDown;
     property OnKeyUp;
@@ -346,11 +395,14 @@ type
     property ListTextColor;
     property ListItemCheckedColor;
     property ListItemHoveredColor;
+    property ListMultiple default False;
 
     property OnInitListAdapter;
     property OnItemChange;
     property OnClosePopup;
     property OnPopup;
+    property OnMultipleCheckedChange;
+    property OnMultipleCheckedText;
   end;
 
 implementation
@@ -418,6 +470,68 @@ type
   TControlEx = class(TControl);
   TScrollViewX = class(TScrollView);
 
+
+{ TMultipleStringsListAdapter }
+
+constructor TMultipleStringsListAdapter.Create(Owner: TComponent;
+  const AItems: TArray<string>);
+begin
+  FOwner := Owner;
+  inherited Create(AItems);
+end;
+
+constructor TMultipleStringsListAdapter.Create(Owner: TComponent;
+  const AItems: TStrings);
+begin
+  FOwner := Owner;
+  inherited Create(AItems);
+end;
+
+procedure TMultipleStringsListAdapter.DoCheckChange(Sender: TObject);
+begin
+  ItemCheck[TControl(Sender).Tag] := TCheckBoxView(Sender).IsChecked;
+end;
+
+function TMultipleStringsListAdapter.GetView(const Index: Integer;
+  ConvertView: TViewBase; Parent: TViewGroup): TViewBase;
+var
+  ViewItem: TCheckBoxView;
+begin
+  if (ConvertView = nil) or (not (ConvertView is TCheckBoxView)) then begin
+    ViewItem := TCheckBoxView.Create(Parent);
+    if Assigned(FOwner) and (FOwner is TTextStyleView) then
+      ViewItem.StyleManager := TTextStyleView(FOwner).StyleManager;
+    ViewItem.Parent := Parent;
+    ViewItem.CanFocus := False;
+  end else begin
+    ViewItem := ConvertView as TCheckBoxView;
+  end;
+  ViewItem.BeginUpdate;
+  ViewItem.Tag := Index;
+  ViewItem.Width := Parent.Width;
+  ViewItem.MinHeight := ItemDefaultHeight;
+  ViewItem.TextSettings.Font.Size := FFontSize;
+  ViewItem.TextSettings.WordWrap := FWordWrap;
+  ViewItem.Padding.Rect := FPadding;
+  if Assigned(FFontColor) then
+    ViewItem.TextSettings.Color := FFontColor;
+  ViewItem.HeightSize := FHeightSize;
+  ViewItem.Background.ItemDefault.Color := TAlphaColorRec.Null;
+  ViewItem.Background.ItemDefault.Kind := TViewBrushKind.None;
+  ViewItem.Background.ItemChecked.Kind := TViewBrushKind.Solid;
+  ViewItem.Background.ItemChecked.Color := FListItemCheckedColor;
+  ViewItem.Background.ItemHovered.Kind := TViewBrushKind.Solid;
+  ViewItem.Background.ItemHovered.Color := FListItemHoveredColor;
+  if Assigned(ViewItem.StyleManager) then
+    ViewItem.StyleType := TTextStyleView(FOwner).StyleType;
+  ViewItem.OnChange := nil;
+  ViewItem.IsChecked := ItemCheck[Index];
+  ViewItem.OnChange := DoCheckChange;
+  ViewItem.Text := Items[Index];
+  ViewItem.EndUpdate;
+  Result := ViewItem;
+end;
+
 { TCustomDownPopup }
 
 procedure TCustomDownPopup.AddItem(const Item: String; AObject: TObject);
@@ -454,7 +568,7 @@ begin
   FItemHeight := 18;
   FItems := TStringList.Create;
   TStringList(FItems).OnChange := DoItemsChange;
-  FItemCheck := False;
+  FMultiple := False;
   FItemIndex := -1;
   FOldItemIndex := -1;
   FDropDownKind := TDropDownKind.Custom;
@@ -484,6 +598,7 @@ begin
   DropDownKind := TDropDownKind.Native;
   TComboBoxHelper.Register(Self);
   FDropDownButton := CreateDropDownButton;
+  FMultipleTextSeparator := ';';
 end;
 
 function TCustomDownPopup.CreateDropDownButton: TDrawableIcon;
@@ -534,6 +649,25 @@ begin
   if Assigned(FOnChange) then FOnChange(Self);
 end;
 
+procedure TCustomDownPopup.DoCheckedChange(Sender: TObject; ItemIndex: Integer;
+  const ItemView: TControl);
+var
+  AChecked, bCheck: Boolean;
+  AEvent: TNotifyEvent;
+begin
+  if Assigned(OnMultipleCheckedChange) then begin
+    AChecked := TMultipleStringsListAdapter(FListBox.Adapter).ItemCheck[ItemIndex];
+    bCheck := AChecked;
+    OnMultipleCheckedChange(Sender, ItemIndex, bCheck);
+    if AChecked <> bCheck then begin
+      AEvent := TCheckBoxView(ItemView).OnChange;
+      TCheckBoxView(ItemView).OnChange := nil;
+      TCheckBoxView(ItemView).IsChecked := bCheck;
+      TCheckBoxView(ItemView).OnChange := AEvent;
+    end;
+  end;
+end;
+
 procedure TCustomDownPopup.DoClosePicker(Sender: TObject);
 begin
   if not (csDestroying in FOwner.ComponentState) then begin
@@ -571,8 +705,11 @@ end;
 procedure TCustomDownPopup.DoListItemClick(Sender: TObject; ItemIndex: Integer;
   const ItemView: TControl);
 begin
-  Self.ItemIndex := ItemIndex;
-  FPopup.IsOpen := False;
+  if not FMultiple then begin
+    Self.ItemIndex := ItemIndex;
+    FPopup.IsOpen := False;
+  end else
+    DoCheckedChange(Sender, ItemIndex, ItemView);
 end;
 
 procedure TCustomDownPopup.DoOnValueChangedFromDropDownList(Sender: TObject;
@@ -662,7 +799,10 @@ begin
   if Assigned(FOnInitListAdapter) then
     Result := FOnInitListAdapter(Self);
   if not Assigned(Result) then begin
-    Result := TStringsListAdapter.Create(FItems);
+    if FMultiple then
+      Result := TMultipleStringsListAdapter.Create(FOwner, FItems)
+    else
+      Result := TStringsListAdapter.Create(FItems);
     Result.DefaultItemHeight := FItemHeight;
     if FOwner is TTextView then
       Result.FontSize := TTextView(FOwner).TextSettings.Font.Size
@@ -671,6 +811,25 @@ begin
     Result.WordWrap := False;
     Result.Padding := RectF(4, 0, 4, 0);
     Result.HeightSize := TViewSize.CustomSize;
+  end;
+end;
+
+function TCustomDownPopup.GetListItemCheck(const Index: Integer): Boolean;
+begin
+  if FMultiple and Assigned(FListBox) then begin
+    Result := TMultipleStringsListAdapter(FListBox.Adapter).ItemCheck[Index]
+  end else
+    Result := False;
+end;
+
+function TCustomDownPopup.GetMultipleText: string;
+var
+  I: Integer;
+begin
+  Result := '';
+  for I := 0 to Count - 1 do begin
+    if ItemsChecked[I] then
+      Result := Result + Items[I] + FMultipleTextSeparator;
   end;
 end;
 
@@ -940,10 +1099,15 @@ begin
     FDropDownCount := Value;
 end;
 
-procedure TCustomDownPopup.SetItemCheck(const Value: Boolean);
+procedure TCustomDownPopup.SetMultiple(const Value: Boolean);
 begin
-  if FItemCheck <> Value then begin
-    FItemCheck := Value;
+  if FMultiple <> Value then begin
+    FMultiple := Value;
+    if Assigned(FListBox) then begin
+      if Assigned(FListBox.Adapter) then
+        TStringsListAdapter(FListBox.Adapter).FontColor := nil;
+      FListBox.Adapter := GetListAdapter();
+    end;
     FCanUseListPicker := False;
   end;
 end;
@@ -962,6 +1126,7 @@ end;
 procedure TCustomDownPopup.SetItemIndex(const Value: Integer);
 begin
   if FItemIndex <> Value then begin
+    if FMultiple then Exit;
     FItemIndex := Value;
     if FPopup.IsOpen and (not FCanUseListPicker) then begin
       TStringsListAdapter(FListBox.Adapter).ItemIndex := Value;
@@ -994,6 +1159,16 @@ begin
   if FListBackground <> Value then begin
     if Assigned(Value) then
       FListBackground.Assign(Value);
+  end;
+end;
+
+procedure TCustomDownPopup.SetListItemCheck(const Index: Integer;
+  const Value: Boolean);
+begin
+  if FMultiple and Assigned(FListBox) and Assigned(FListBox.Adapter) then begin
+    TMultipleStringsListAdapter(FListBox.Adapter).ItemCheck[Index] := Value;
+    if FPopup.IsOpen then
+      TMultipleStringsListAdapter(FListBox.Adapter).NotifyDataChanged;
   end;
 end;
 
@@ -1031,6 +1206,7 @@ begin
   inherited Create(AOwner);
   FDownPopup := TCustomDownPopup.Create(Self);
   FDownPopup.FOnChange := DoItemChange;
+  FDownPopup.FOnMultipleCheckedChange := DoMultipleCheckedChange;
 
   Clickable := True;
   CanFocus := True;
@@ -1100,6 +1276,17 @@ begin
     Text := FDownPopup.FItems[FDownPopup.ItemIndex];
   if Assigned(FOnItemChange) then
     FOnItemChange(Self);
+end;
+
+procedure TCustomComboBoxView.DoMultipleCheckedChange(Sender: TObject;
+  ItemIndex: Integer; var Checked: Boolean);
+begin
+  if Assigned(FOnMultipleCheckedChange) then
+    FOnMultipleCheckedChange(Self, ItemIndex, Checked);
+  if Assigned(FOnGetMultipleText) then
+    Text := FOnGetMultipleText(Self)
+  else
+    Text := FDownPopup.MultipleText;
 end;
 
 procedure TCustomComboBoxView.DoPaintBackground(var R: TRectF);
@@ -1182,6 +1369,11 @@ begin
   Result := FDownPopup.FListBox;
 end;
 
+function TCustomComboBoxView.GetListItemCheck(const Index: Integer): Boolean;
+begin
+  Result := FDownPopup.ItemsChecked[Index];
+end;
+
 function TCustomComboBoxView.GetListItemCheckedColor: TAlphaColor;
 begin
   Result := FDownPopup.FListItemCheckedColor;
@@ -1190,6 +1382,11 @@ end;
 function TCustomComboBoxView.GetListItemHoveredColor: TAlphaColor;
 begin
   Result := FDownPopup.FListItemHoveredColor;
+end;
+
+function TCustomComboBoxView.GetListMultiple: Boolean;
+begin
+  Result := FDownPopup.FMultiple;
 end;
 
 function TCustomComboBoxView.GetListTextColor: TViewColor;
@@ -1299,6 +1496,12 @@ begin
   FDownPopup.ListBackground := Value;
 end;
 
+procedure TCustomComboBoxView.SetListItemCheck(const Index: Integer;
+  const Value: Boolean);
+begin
+  FDownPopup.ItemsChecked[Index] := Value;
+end;
+
 procedure TCustomComboBoxView.SetListItemCheckedColor(const Value: TAlphaColor);
 begin
   FDownPopup.ListItemCheckedColor := Value;
@@ -1307,6 +1510,11 @@ end;
 procedure TCustomComboBoxView.SetListItemHoveredColor(const Value: TAlphaColor);
 begin
   FDownPopup.ListItemHoveredColor := Value;
+end;
+
+procedure TCustomComboBoxView.SetListMultiple(const Value: Boolean);
+begin
+  FDownPopup.Multiple := Value;
 end;
 
 procedure TCustomComboBoxView.SetListTextColor(const Value: TViewColor);
@@ -1356,6 +1564,7 @@ begin
   inherited Create(AOwner);
   FDownPopup := TCustomDownPopup.Create(Self);
   FDownPopup.FOnChange := DoItemChange;
+  FDownPopup.FOnMultipleCheckedChange := DoMultipleCheckedChange;
 end;
 
 procedure TCustomComboBoxEditView.DeleteSelected;
@@ -1378,6 +1587,17 @@ begin
     Text := FDownPopup.FItems[FDownPopup.ItemIndex];
   if Assigned(FOnItemChange) then
     FOnItemChange(Self);
+end;
+
+procedure TCustomComboBoxEditView.DoMultipleCheckedChange(Sender: TObject;
+  ItemIndex: Integer; var Checked: Boolean);
+begin
+  if Assigned(FOnMultipleCheckedChange) then
+    FOnMultipleCheckedChange(Self, ItemIndex, Checked);
+  if Assigned(FOnGetMultipleText) then
+    Text := FOnGetMultipleText(Self)
+  else
+    Text := FDownPopup.MultipleText;
 end;
 
 procedure TCustomComboBoxEditView.DoPaintBackground(var R: TRectF);
@@ -1462,6 +1682,12 @@ begin
   Result := FDownPopup.ListBox;
 end;
 
+function TCustomComboBoxEditView.GetListItemCheck(
+  const Index: Integer): Boolean;
+begin
+  Result := FDownPopup.ItemsChecked[Index];
+end;
+
 function TCustomComboBoxEditView.GetListItemCheckedColor: TAlphaColor;
 begin
   Result := FDownPopup.ListItemCheckedColor;
@@ -1470,6 +1696,11 @@ end;
 function TCustomComboBoxEditView.GetListItemHoveredColor: TAlphaColor;
 begin
   Result := FDownPopup.ListItemHoveredColor;
+end;
+
+function TCustomComboBoxEditView.GetListMultiple: Boolean;
+begin
+  Result := FDownPopup.FMultiple;
 end;
 
 function TCustomComboBoxEditView.GetListTextColor: TViewColor;
@@ -1636,6 +1867,12 @@ begin
   FDownPopup.ListBackground := Value;
 end;
 
+procedure TCustomComboBoxEditView.SetListItemCheck(const Index: Integer;
+  const Value: Boolean);
+begin
+  FDownPopup.ItemsChecked[Index] := Value;
+end;
+
 procedure TCustomComboBoxEditView.SetListItemCheckedColor(
   const Value: TAlphaColor);
 begin
@@ -1646,6 +1883,11 @@ procedure TCustomComboBoxEditView.SetListItemHoveredColor(
   const Value: TAlphaColor);
 begin
   FDownPopup.ListItemHoveredColor := Value;
+end;
+
+procedure TCustomComboBoxEditView.SetListMultiple(const Value: Boolean);
+begin
+  FDownPopup.Multiple := Value;
 end;
 
 procedure TCustomComboBoxEditView.SetListTextColor(const Value: TViewColor);
