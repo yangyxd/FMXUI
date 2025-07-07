@@ -26,6 +26,7 @@ package YxdUI;
 {$DEFINE DEBUG}
 {$ENDIF IMPLICITBUILDING}
 {$IMPLICITBUILD ON}
+{$WARN IMPLICIT_IMPORT OFF}
 
 requires
   rtl,
@@ -63,5 +64,6 @@ contains
   UI.ComboBox in 'UI.ComboBox.pas';
 
 end.
+
 
 

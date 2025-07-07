@@ -5385,7 +5385,11 @@ procedure TGridAdapterBase.DoValueNotify(Sender: TObject;
 begin
   if Action = System.Generics.Collections.TCollectionNotification.cnRemoved then
     if Assigned(Item) then
+      {$IF CompilerVersion >= 36.0}
+      Item.Free;
+      {$ELSE}
       Item.DisposeOf;
+      {$ENDIF}
 end;
 
 procedure TGridAdapterBase.EndDrawCells;
@@ -6055,7 +6059,11 @@ end;
 procedure TGridColumns.DoValueNotify(Item: PIntHashItem);
 begin
   if (Item <> nil) and Assigned(Item.AsPointer) then
+    {$IF CompilerVersion >= 36.0}
+    TObject(Item.AsPointer).Free;
+    {$ELSE}
     TObject(Item.AsPointer).DisposeOf;
+    {$ENDIF}
 end;
 
 function TGridColumns.GetColumnWidths(const ACol: Integer): Single;

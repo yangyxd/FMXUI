@@ -2312,6 +2312,7 @@ var
   ABackground: TDrawable;
 begin
   FDrawing := True;
+  ABackground := nil;
   try
     ABackground := Background;
     if Assigned(ABackground) and Assigned(FBackground) then
@@ -7509,6 +7510,8 @@ begin
     TStyleViewType.Danger: Result := FStyleDanger;
     TStyleViewType.Info: Result := FStyleInfo;
     TStyleViewType.Text: Result := FStyleText;
+  else
+    Result := nil;
   end;
 end;
 
@@ -7735,8 +7738,8 @@ begin
 end;
 
 procedure TStyleViewManager.Assign(Source: TPersistent);
-var
-  SaveChange: TNotifyEvent;
+//var
+//  SaveChange: TNotifyEvent;
 begin
   if Source is TStyleViewManager then begin
     FDisableChanged := True;

@@ -1732,7 +1732,7 @@ begin
   for Item in FCacleViews do begin
     for I := 0 to Item.Value.Count - 1 do
       RemoveObject(Item.Value.Items[I]);
-    Item.Value.DisposeOf;
+    Item.Value.{$IF CompilerVersion >= 36.0}Free{$ELSE}DisposeOf{$ENDIF};
   end;
   if FCacleViews.Count > 0 then
     FCacleViews.Clear;
@@ -3734,7 +3734,7 @@ procedure TTreeListNode<T>.DoNodeNotify(Sender: TObject;
   const Item: TTreeListNode<T>; Action: System.Generics.Collections.TCollectionNotification);
 begin
   if Action = System.Generics.Collections.TCollectionNotification.cnRemoved then
-    if Assigned(Item) then Item.DisposeOf;
+    if Assigned(Item) then Item.{$IF CompilerVersion >= 36.0}Free{$ELSE}DisposeOf{$ENDIF};
 end;
 
 function TTreeListNode<T>.GetCount: Integer;
@@ -3981,7 +3981,7 @@ end;
 function TCustomTreeListDataAdapter<T>.GetView(const Index: Integer;
   ConvertView: TViewBase; Parent: TViewGroup): TViewBase;
 var
-  ViewItem: TListTextItem;
+  // ViewItem: TListTextItem;
   Node: TTreeListNode<T>;
 begin
   Node := Nodes[Index];

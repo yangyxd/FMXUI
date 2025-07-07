@@ -5,6 +5,14 @@
 
 [Update History]
  - -----------------------------------
+ - ????.??.??
+ * [Added]   Add TListViewEx.OnItemDblClick (Thanks for code: dqi1999)
+ * [Added]   Button style panel and View color panel (Thanks for code: dqi1999)
+ * [Tweaked] TViewColor stored function (Thanks for report: dqi1999)
+ * [Fixed]   Unnecessary showing of frame (Thanks for report: 00121)
+ * [Fixed]   Remove `Text` from TTextSettingsBase.Assign (Thanks for report: dqi1999)
+ * [Fixed]   ACCESS VIOLATION error in TDrawableBase.Assign (Thanks for report: dqi1999)
+ - -----------------------------------
  - 2023.06.30.001
  * [Added]   Add TBadgeStyle.Text
  * [Added]   Add TImageIndexProperty（Thanks for code: ying32）
@@ -22,6 +30,7 @@
  * [Fixed]   fix Animation error under 11.3 (Thanks for report: marlonnardi, 柴头柴脑) GH-55
  * [Fixed]   ListviewEx item click not work with non TView control
  * [Fixed]   fix TPullScrollView/TVertScrollView/THorzScrollView pull action position error under 11.3 (Thanks for report: marlonnardi) GH-58
+ * [Fixed]   NativeInt as a Weak Alias under 12 (Thanks for report: marlonnardi) fixed GH-62
 - -----------------------------------
  - 2021.03.19.001
  * [Added]   Compatible with 10.4

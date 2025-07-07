@@ -4,7 +4,7 @@ interface
 
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  System.Generics.Collections, System.Rtti, System.SyncObjs,
+  System.Generics.Collections, System.Rtti, System.SyncObjs, System.TypInfo,
   FMX.Ani, FMX.Utils,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Platform, IOUtils;
 
@@ -463,7 +463,11 @@ begin
     Item.OnProcess := nil;
   end;
   if FreeSender then
+    {$IF defined(VER360)}
+    TAnimation(Sender).Free;
+    {$ELSE}
     TAnimation(Sender).DisposeOf;
+    {$ENDIF}
   try
     if Assigned(Item.OnFinish) then
       Item.OnFinish(Sender);

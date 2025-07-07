@@ -37,6 +37,9 @@ uses
 
   UI.Design.ImageIndex,
 
+  // Added by dqi1999
+  UI.ButtonViewEditor, UI.TextViewEditor,
+
   UI.Frame,
   {$IFDEF MSWINDOWS}
   Windows, Registry,
@@ -179,6 +182,8 @@ begin
   RegisterComponents(PageName, [TCameraViewer]);
   RegisterComponents(PageName, [TCheckBoxView]);
   RegisterComponents(PageName, [TRadioView]);
+
+  RegisterComponents(PageName, [TStyleViewManager]);
 
   RegisterComponents(PageName, [TStyleViewManager]);
 
@@ -521,8 +526,6 @@ begin
 end;
 
 procedure TViewControlEditor.ExecuteVerb(Index: Integer);
-var
-  O: TDrawableBase;
 begin
   if not (Component is TControl) then Exit;
   case FCmdIndex[Index] of
@@ -576,6 +579,16 @@ begin
           MessageBox(0, PChar(Exception(ExceptObject).Message), 'Error', 48);
         end;
       end;
+    8:
+      begin
+        if Component is TTextView then
+          EditStyledButton(TTextView(Component));
+      end;
+    9:
+      begin
+        if Component is TTextView then
+          EditTextViewStyled(TTextView(Component));
+      end;
   end;
   Designer.SelectComponent(Component);
   DesignerModified;
@@ -584,7 +597,8 @@ end;
 function TViewControlEditor.GetVerb(Index: Integer): string;
 const
   CmdNames: TArray<string> = ['前移', '后移', '移至最前', '移至最后',
-    'Copy Background', 'Paste Background', 'Copy Drawable', 'Paste Drawable'];
+    'Copy Background', 'Paste Background', 'Copy Drawable', 'Paste Drawable',
+    'Button Styles', 'Color Panel'];
 begin
   Result := CmdNames[FCmdIndex[Index]];
 end;
@@ -622,6 +636,15 @@ begin
         Inc(Result);
       end;
     end;
+  end;
+
+  if (Component is TTextView) then
+  begin
+    // 2种style面板，一种是button样式，有点击样式等， 一种是面板样式，无点击、悬停样式
+    FCmdIndex[Result] := 8;
+    Inc(Result);
+    FCmdIndex[Result] := 9;
+    Inc(Result);
   end;
 end;
 

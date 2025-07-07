@@ -1828,7 +1828,7 @@ begin
     end;
   end;
   if not (csDestroying in ComponentState) then
-    DisposeOf;
+    {$IF CompilerVersion >= 36.0}Free;{$ELSE}DisposeOf;{$ENDIF}
 end;
 
 procedure TDialog.DoApplyTitle;
@@ -2201,7 +2201,8 @@ end;
 procedure TCustomAlertDialog.AdjustDownPopupPosition;
 var
   P: TPointF;
-  PW, PH, SW, SH, W, H, X, Y, OX, OY: Single;
+  // PW,
+  PH, SW, SH, W, H, X, Y, OX, OY: Single;
 begin
   P := TPointF.Zero;
   P := FBuilder.FTarget.LocalToAbsolute(P);
@@ -2209,7 +2210,7 @@ begin
   W := FBuilder.FTarget.Width;
   H := FBuilder.FTarget.Height;
 
-  PW := FViewRoot.Width;
+  // PW := FViewRoot.Width;
   PH := FViewRoot.Height;
 
   SW := FViewRoot.FLayBubble.Width;
@@ -3524,7 +3525,7 @@ begin
 
   if Assigned(Owner) and (not (csDesigning in ComponentState)) then begin
     if DefaultStyleManager <> nil then begin
-      DefaultStyleManager.DisposeOf;
+      DefaultStyleManager.{$IF CompilerVersion >= 36.0}Free{$ELSE}DisposeOf{$ENDIF};
       DefaultStyleManager := nil;
     end;
     DefaultStyleManager := Self;

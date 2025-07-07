@@ -526,8 +526,6 @@ begin
 end;
 
 function TArrayEx<T>.Insert(AIndex: NativeInt; const Value: T): NativeInt;
-var
-  i: Integer;
 begin
   Result := -1;
   if (AIndex > Length(FData)) or (AIndex < 0) then

@@ -38,6 +38,9 @@ uses
   {$IFDEF IOS}
   IOSApi.Foundation,
   {$ENDIF}
+  {$IF CompilerVersion >= 36.0}
+  // FMX.Platform.Metrics,
+  {$ENDIF}
   FMX.BehaviorManager, FMX.StdActns, FMX.Menus,
   FMX.Styles, FMX.Styles.Objects,
   FMX.Utils, FMX.ImgList, FMX.MultiResBitmap, FMX.ActnList, System.Rtti, FMX.Consts,
@@ -670,7 +673,6 @@ type
     function GetEmpty: Boolean; override;
     function GetStateImageIndex(): Integer; overload;
     function GetStateImageIndex(State: TViewState): Integer; overload; virtual;
-    function GetStateItem(AState: TViewState): TBrush; override;
   public
     constructor Create(View: IView; const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
       const ADefaultColor: TAlphaColor = TAlphaColors.Null);
@@ -684,6 +686,8 @@ type
     procedure CreateBrush(var Value: TBrush;
       const ADefaultKind: TViewBrushKind = TViewBrushKind.None;
       const ADefaultColor: TAlphaColor = TAlphaColors.Null); override;
+
+    function GetStateItem(AState: TViewState): TBrush; override;
 
     procedure Draw(Canvas: TCanvas; AView: IView); override;
     procedure DrawStateTo(Canvas: TCanvas; const R: TRectF; AState: TViewState; const AOpacity: Single); override;
@@ -725,7 +729,6 @@ type
     FChecked: TAlphaColor;
     FEnabled: TAlphaColor;
     FActivated: TAlphaColor;
-    FHintText: TAlphaColor;
     FColorStoreState: Cardinal;
     procedure SetDefault(const Value: TAlphaColor);
     procedure SetActivated(const Value: TAlphaColor);
@@ -747,6 +750,7 @@ type
     function ColorPressedStored: Boolean;
     function ColorSelectedStored: Boolean;
   protected
+    FHintText: TAlphaColor;
     procedure DoChange(Sender: TObject);
     function GetValue(const Index: Integer): TAlphaColor;
     procedure SetValue(const Index: Integer; const Value: TAlphaColor);
@@ -786,9 +790,8 @@ type
   TTextColor = class(TViewColor)
   private
     procedure SetHintText(const Value: TAlphaColor);
-    function GetHintText: TAlphaColor;
   published
-    property HintText: TAlphaColor read GetHintText write SetHintText default TAlphaColorRec.Gray;
+    property HintText: TAlphaColor read FHintText write SetHintText default TAlphaColorRec.Gray;
   end;
 
   /// <summary>
@@ -2599,7 +2602,6 @@ var
   V: TBrush;
   R: TRectF;
   AState: TViewState;
-  AStyleColor: TAlphaColor;
 begin
   if AView = nil then AView := FView;
   if FIsEmpty or (not Assigned(AView)) then Exit;
@@ -3102,7 +3104,11 @@ end;
 
 destructor TDrawableIcon.Destroy;
 begin
+  {$IF CompilerVersion >= 36.0}
+  FImageLink.Free;
+  {$ELSE}
   FImageLink.DisposeOf;
+  {$ENDIF}
   FreeAndNil(FStyleBrush);
   inherited;
 end;
@@ -3553,11 +3559,6 @@ begin
 end;
 
 { TTextColor }
-
-function TTextColor.GetHintText: TAlphaColor;
-begin
-  Result := FHintText;
-end;
 
 procedure TTextColor.SetHintText(const Value: TAlphaColor);
 begin
@@ -6500,12 +6501,18 @@ begin
   FPrefixStyle := TPrefixStyle.NoPrefix;
   if (csDesigning in AOwner.ComponentState) then begin
     FIsSizeChange := True;
+    {$WARN SYMBOL_DEPRECATED OFF}
+    {$IF CompilerVersion >= 36.0}
     if TView(AOwner).SupportsPlatformService(IFMXDefaultPropertyValueService, DefaultValueService) then
+    {$ELSE}
+    if TView(AOwner).SupportsPlatformService(IFMXDefaultPropertyValueService, DefaultValueService) then
+    {$ENDIF}
     begin
       TrimmingDefault := IFMXDefaultPropertyValueService(DefaultValueService).GetDefaultPropertyValue(Self.ClassName, 'trimming');
       if not TrimmingDefault.IsEmpty then
         FTrimming := TrimmingDefault.AsType<TTextTrimming>;
     end;
+    {$WARN SYMBOL_DEPRECATED ON}
   end else
     FIsSizeChange := False;
 end;
@@ -8142,9 +8149,7 @@ begin
   end;
 
   PW := 0;
-  {$IF CompilerVersion <> 32}
-  VL := 0;
-  {$ENDIF}
+  // VL := 0;
 
   // 如果长宽 > 0 和子控件 > 0 时才处理布局
   if ((VW > 0) and (VH > 0)) or (CtrlCount > 0) then begin
@@ -8694,7 +8699,11 @@ end;
 destructor TDrawableBrush.Destroy;
 begin
   FreeAndNil(FBrush);
+  {$IF CompilerVersion >= 36.0}
+  FImageLink.Free;
+  {$ELSE}
   FImageLink.DisposeOf;
+  {$ENDIF}
   inherited Destroy;
 end;
 

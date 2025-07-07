@@ -5,7 +5,7 @@ interface
 uses
  Winapi.Windows,
  System.SysUtils, System.Classes, FMX.Graphics, Vcl.Graphics,
- System.Types, System.UITypes, FMX.ImgList,
+ System.Types, System.UITypes, System.ImageList, FMX.ImgList, FMX.ActnList,
  DesignIntf, System.TypInfo, DesignEditors, VCLEditors;// Vcl.Controls;
 
 type
@@ -136,7 +136,7 @@ begin
   begin
     FMXBitmap.Canvas.BeginScene();
     try
-      AImageList.Draw(FMXBitmap.Canvas, Rect(0, 0, ImageWidth, ImageHeight), AIndex);
+      AImageList.Draw(FMXBitmap.Canvas, RectF(0, 0, ImageWidth, ImageHeight), AIndex);
     finally
       FMXBitmap.Canvas.EndScene;
     end;
@@ -145,10 +145,7 @@ begin
       VCLBitmap.Handle := LHBitmap;
     except
       if LHBitmap <> 0 then
-      begin
         DeleteObject(LHBitmap);
-        LHBitmap := 0;
-      end;
     end;
   end else
   begin

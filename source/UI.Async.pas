@@ -19,8 +19,13 @@ type
 
   TExecuteEvent = procedure (Async: TAsync) of object;
   TExecuteEventA = reference to procedure (Async: TAsync);
+  TExceptionEvent = procedure(Sender: TObject; E: Exception) of object;
 
   TAsyncThread = class(TThread)
+  class var
+    OnException: TExceptionEvent;
+  private
+    procedure DoHandleException(E: Exception);
   protected
     FAsync: TAsync;
     procedure Execute; override;
@@ -218,6 +223,12 @@ end;
 
 { TAsyncThread }
 
+procedure TAsyncThread.DoHandleException(E: Exception);
+begin
+  if Assigned(TAsyncThread.OnException) then
+    TAsyncThread.OnException(Self, E);
+end;
+
 procedure TAsyncThread.Execute;
 begin
   if Assigned(FAsync) then begin
@@ -226,18 +237,27 @@ begin
         // 先执行异步任务
         FAsync.DoExecute;
       except
+        on E: Exception do
+          DoHandleException(E);
       end;
+
       try
         // 然后执行同步任务
         if FAsync.IsNeedExecuteComplete then
           Synchronize(Self, FAsync.DoExecuteComplete);
       except
+        on E: Exception do
+          DoHandleException(E);
       end;
     finally
       {$IF defined(VER240)}
       FAsync.Free;
       {$ELSE}
+      {$IF CompilerVersion >= 36.0}
+      FAsync.Free;
+      {$ELSE}
       FAsync.DisposeOf;
+      {$IFEND}
       {$IFEND}
       FAsync := nil;
       AtomicDecrement(FAsyncRef);

@@ -872,8 +872,6 @@ end;
 
 function TCustomDownPopup.KeyDown(var Key: Word; var KeyChar: System.WideChar;
   Shift: TShiftState; out OldItemIndex, NewItemIndex: Integer): Boolean;
-var
-  NoVisItems: Integer;
 begin
   Result := False;
   if not FDroppedDown then

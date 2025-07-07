@@ -41,8 +41,12 @@ type
     function TryGetFloat(const Key: string; var Value: Single): Boolean; overload;
     function TryGetInt(const Key: string; var Value: Integer): Boolean; overload;
     function TryGetInt(const Key: string; var Value: Int64): Boolean; overload;
-    function TryGetInt(const Key: string; var Value: NativeInt): Boolean; overload;
+    function TryGetInt(const Key: string; var Value: UInt64): Boolean; overload;
     function TryGetInt(const Key: string; var Value: Cardinal): Boolean; overload;
+    {$IF CompilerVersion < 36.0}
+    function TryGetInt(const Key: string; var Value: NativeInt): Boolean; overload;
+    function TryGetInt(const Key: string; var Value: NativeUInt): Boolean; overload;
+    {$ENDIF <12}
     function TryGetString(const Key: string; var Value: string): Boolean;
     function TryGetDateTime(const Key: string; var Value: TDateTime): Boolean;
 
@@ -297,14 +301,14 @@ begin
 end;
 
 function TJSONObjectHelper.TryGetInt(const Key: string;
-  var Value: NativeInt): Boolean;
+  var Value: UInt64): Boolean;
 var
   V: TJSONValue;
 begin
   V := GetValue(Key);
   if Assigned(V) then begin
     Result := True;
-    Value := V.GetValue<NativeInt>()
+    Value := V.GetValue<UInt64>()
   end else
     Result := False;
 end;
@@ -347,6 +351,34 @@ begin
   end else
     Result := False;
 end;
+
+{$IF CompilerVersion < 36.0}
+function TJSONObjectHelper.TryGetInt(const Key: string;
+  var Value: NativeInt): Boolean;
+var
+  V: TJSONValue;
+begin
+  V := GetValue(Key);
+  if Assigned(V) then begin
+    Result := True;
+    Value := V.GetValue<NativeInt>()
+  end else
+    Result := False;
+end;
+
+function TJSONObjectHelper.TryGetInt(const Key: string;
+  var Value: NativeUInt): Boolean;
+var
+  V: TJSONValue;
+begin
+  V := GetValue(Key);
+  if Assigned(V) then begin
+    Result := True;
+    Value := V.GetValue<NativeUInt>()
+  end else
+    Result := False;
+end;
+{$ENDIF <12}
 
 function TJSONObjectHelper.TryGetString(const Key: string;
   var Value: string): Boolean;

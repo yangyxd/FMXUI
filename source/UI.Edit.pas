@@ -190,7 +190,6 @@ type
     FIsUndoing: Boolean;
     procedure HandleChangeTimer(Sender: TObject);
     function GetCanUndo: Boolean;
-    procedure ScheduleTextCapture;
     procedure CaptureCurrentText;
     function GetCanRedo: Boolean;
     procedure EnabledTimer;
@@ -205,6 +204,7 @@ type
     procedure DoExit;
     procedure DoKeyDown(Shift: TShiftState; var Key: Word; var KeyChar: WideChar);
     procedure DoKeyUp(Shift: TShiftState; var Key: Word);
+    procedure ScheduleTextCapture;
     property CanUndo: Boolean read GetCanUndo;
     property CanRedo: Boolean read GetCanRedo;
   end;
