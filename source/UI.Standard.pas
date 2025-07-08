@@ -789,6 +789,13 @@ type
   end;
 
 type
+  TStyleViewDrawableBorder = class(TDrawableBorder)
+  protected
+    function IsStoredXRadius: Boolean; override;
+    function IsStoredYRadius: Boolean; override;
+  end;
+
+type
   TStyleViewColor = class(TPersistent)
   private
     FOnChanged: TNotifyEvent;
@@ -2503,10 +2510,12 @@ begin
   ADrawable.SizeWidth := 16;
   ADrawable.SizeHeight := 16;
   TViewBrushBase(ADrawable.ItemDefault).Kind := TViewBrushKind.SVGImage;
+  TViewBrushBase(ADrawable.ItemDefault).DefaultKind := TBrushKind(TViewBrushKind.SVGImage);
   TViewBrushBase(ADrawable.ItemDefault).SVGImage.Parse(SDefaultCheck_0_SVG, True);
   TViewBrushBase(ADrawable.ItemDefault).SVGImage.Color := $ff606060;
   TViewBrushBase(ADrawable.ItemDefault).SVGImage.DefaultColor := $ff606060;
   TViewBrushBase(ADrawable.ItemHovered).Kind := TViewBrushKind.SVGImage;
+  TViewBrushBase(ADrawable.ItemHovered).DefaultKind := TBrushKind(TViewBrushKind.SVGImage);
   TViewBrushBase(ADrawable.ItemHovered).SVGImage.Parse(SDefaultCheck_0_SVG, True);
   TViewBrushBase(ADrawable.ItemHovered).SVGImage.Color := $ff101010;
   TViewBrushBase(ADrawable.ItemHovered).SVGImage.DefaultColor := $ff101010;
@@ -2646,6 +2655,7 @@ end;
 procedure TCheckBoxView.InitDefaultCheckedDrawable(ADrawable: TDrawableIcon);
 begin
   TViewBrushBase(ADrawable.ItemChecked).Kind := TViewBrushKind.SVGImage;
+  TViewBrushBase(ADrawable.ItemChecked).DefaultKind := TBrushKind(TViewBrushKind.SVGImage);
   if FFillMode then begin
     TViewBrushBase(ADrawable.ItemChecked).SVGImage.Color := $ff409eff;
     TViewBrushBase(ADrawable.ItemChecked).SVGImage.DefaultColor := $ff409eff;
@@ -2723,10 +2733,12 @@ begin
   ADrawable.SizeWidth := 16;
   ADrawable.SizeHeight := 16;
   TViewBrushBase(ADrawable.ItemDefault).Kind := TViewBrushKind.SVGImage;
+  TViewBrushBase(ADrawable.ItemDefault).DefaultKind := TBrushKind(TViewBrushKind.SVGImage);
   TViewBrushBase(ADrawable.ItemDefault).SVGImage.Parse(SDefaultRadio_0_SVG, True);
   TViewBrushBase(ADrawable.ItemDefault).SVGImage.Color := $ff606060;
   TViewBrushBase(ADrawable.ItemDefault).SVGImage.DefaultColor := $ff606060;
   TViewBrushBase(ADrawable.ItemHovered).Kind := TViewBrushKind.SVGImage;
+  TViewBrushBase(ADrawable.ItemHovered).DefaultKind := TBrushKind(TViewBrushKind.SVGImage);
   TViewBrushBase(ADrawable.ItemHovered).SVGImage.Parse(SDefaultRadio_0_SVG, True);
   TViewBrushBase(ADrawable.ItemHovered).SVGImage.Color := $ff101010;
   TViewBrushBase(ADrawable.ItemHovered).SVGImage.DefaultColor := $ff101010;
@@ -2736,6 +2748,7 @@ end;
 procedure TRadioView.InitDefaultCheckedDrawable(ADrawable: TDrawableIcon);
 begin
   TViewBrushBase(ADrawable.ItemChecked).Kind := TViewBrushKind.SVGImage;
+  TViewBrushBase(ADrawable.ItemChecked).DefaultKind := TBrushKind(TViewBrushKind.SVGImage);
   if FFillMode then begin
     TViewBrushBase(ADrawable.ItemChecked).SVGImage.Color := $ff409eff;
     TViewBrushBase(ADrawable.ItemChecked).SVGImage.DefaultColor := $ff409eff;
@@ -7295,6 +7308,20 @@ begin
   ScrollBars := TViewScroll.Horizontal;
 end;
 
+
+{ TStyleViewDrawableBorder }
+
+function TStyleViewDrawableBorder.IsStoredXRadius: Boolean;
+begin
+  Result := XRadius <> 3;
+end;
+
+function TStyleViewDrawableBorder.IsStoredYRadius: Boolean;
+begin
+  Result := YRadius <> 3;
+end;
+
+
 { TStyleViewColor }
 
 procedure TStyleViewColor.Assign(Source: TPersistent);
@@ -7319,7 +7346,7 @@ end;
 
 constructor TStyleViewColor.Create;
 begin
-  FBackground := TDrawableBorder.Create(nil, TViewBrushKind.Solid);
+  FBackground := TStyleViewDrawableBorder.Create(nil, TViewBrushKind.Solid);
   FBackground.XRadius := 3;
   FBackground.YRadius := 3;
   FText := TTextColor.Create(TAlphaColorRec.Null);
@@ -7414,6 +7441,7 @@ begin
     FText.Checked := $ff409eff;
     FText.Enabled := $ffc0c4cc;
     FText.Focused := $ff409eff;
+    FText.IsChange := False;
     with FBackground.Border do begin
       DefaultStyle := TViewBorderStyle.RectBorder;
       Style := DefaultStyle;
@@ -7423,6 +7451,7 @@ begin
       Color.Checked := $ff409eff;
       Color.Enabled := $ffe0e3e9;
       Color.Focused := Color.Hovered;
+      Color.IsChange := False;
     end;  
     SetBackgroundColor(FBackground.ItemDefault, $ffFFFFFF);
     SetBackgroundColor(FBackground.ItemHovered, $ffecf5ff);
@@ -7435,6 +7464,7 @@ begin
   // Primarty
   with FStylePrimarty do begin
     FText.Default := $ffffffff;
+    FText.IsChange := False;
     SetBackgroundColor(FBackground.ItemDefault, $ff409eff);
     SetBackgroundColor(FBackground.ItemHovered, $ff66b1ff);
     SetBackgroundColor(FBackground.ItemPressed, $ff3a8ee6);
@@ -7446,6 +7476,7 @@ begin
   // Success
   with FStyleSuccess do begin
     FText.Default := $ffffffff;
+    FText.IsChange := False;
     SetBackgroundColor(FBackground.ItemDefault, $ff67c23a);
     SetBackgroundColor(FBackground.ItemHovered, $ff85ce61);
     SetBackgroundColor(FBackground.ItemPressed, $ff5daf34);
@@ -7457,6 +7488,7 @@ begin
   // Info
   with FStyleInfo do begin
     FText.Default := $ffffffff;
+    FText.IsChange := False;
     SetBackgroundColor(FBackground.ItemDefault, $ff909399);
     SetBackgroundColor(FBackground.ItemHovered, $ffa6a9ad);
     SetBackgroundColor(FBackground.ItemPressed, $ff82848a);
@@ -7468,6 +7500,7 @@ begin
   // Warning
   with FStyleWarning do begin
     FText.Default := $ffffffff;
+    FText.IsChange := False;
     SetBackgroundColor(FBackground.ItemDefault, $ffe6a23c);
     SetBackgroundColor(FBackground.ItemHovered, $ffebb563);
     SetBackgroundColor(FBackground.ItemPressed, $ffcf9236);
@@ -7479,6 +7512,7 @@ begin
   // Danger
   with FStyleDanger do begin
     FText.Default := $ffffffff;
+    FText.IsChange := False;
     SetBackgroundColor(FBackground.ItemDefault, $fff56c6c);
     SetBackgroundColor(FBackground.ItemHovered, $fff78989);
     SetBackgroundColor(FBackground.ItemPressed, $ffdd6161);
@@ -7495,6 +7529,7 @@ begin
     FText.Checked := $ff3481d0;
     FText.Enabled := $ffc0c4cc;
     FText.Focused := FText.Hovered;
+    FText.IsChange := False;
     OnChanged := Self.DoChanged;
   end;
 end;
@@ -7571,6 +7606,7 @@ begin
     FText.Checked := FText.Pressed;
     FText.Enabled := $ffc0c4cc;
     FText.Focused := $ff409eff;
+    FText.IsChange := False;
     with FBackground.Border do begin
       DefaultStyle := TViewBorderStyle.RectBorder;
       Style := DefaultStyle;
@@ -7580,6 +7616,7 @@ begin
       Color.Checked := FText.Pressed;
       Color.Enabled := $ffebeef5;
       Color.Focused := Color.Hovered;
+      Color.IsChange := False;
     end; 
     SetBackgroundColor(FBackground.ItemDefault, $ffffffff);
     OnChanged := Self.DoChanged;
@@ -7592,6 +7629,7 @@ begin
     FText.Checked := FText.Hovered;
     FText.Enabled := $ff8cc5ff;
     FText.Focused := $ffffffff;
+    FText.IsChange := False;
     with FBackground.Border do begin
       DefaultStyle := TViewBorderStyle.RectBorder;
       Style := DefaultStyle;
@@ -7601,6 +7639,7 @@ begin
       Color.Checked := Color.Pressed;
       Color.Enabled := $ffd9ecff;
       Color.Focused := Color.Hovered;
+      Color.IsChange := False;
     end; 
     SetBackgroundColor(FBackground.ItemDefault, $ffecf5ff);
     SetBackgroundColor(FBackground.ItemHovered, FBackground.Border.Color.Hovered);
@@ -7618,6 +7657,7 @@ begin
     FText.Checked := FText.Hovered;
     FText.Enabled := $ffa4da89;
     FText.Focused := $ffffffff;
+    FText.IsChange := False;
     with FBackground.Border do begin
       DefaultStyle := TViewBorderStyle.RectBorder;
       Style := DefaultStyle;
@@ -7627,6 +7667,7 @@ begin
       Color.Checked := Color.Pressed;
       Color.Enabled := $ffe1f3d8;
       Color.Focused := Color.Hovered;
+      Color.IsChange := False;
     end; 
     SetBackgroundColor(FBackground.ItemDefault, $fff0f9eb);
     SetBackgroundColor(FBackground.ItemHovered, FBackground.Border.Color.Hovered);
@@ -7644,6 +7685,7 @@ begin
     FText.Checked := FText.Hovered;
     FText.Enabled := $ffbcbec2;
     FText.Focused := $ffffffff;
+    FText.IsChange := False;
     with FBackground.Border do begin
       DefaultStyle := TViewBorderStyle.RectBorder;
       Style := DefaultStyle;
@@ -7653,6 +7695,7 @@ begin
       Color.Checked := Color.Pressed;
       Color.Enabled := $ffe9e9eb;
       Color.Focused := Color.Hovered;
+      Color.IsChange := False;
     end; 
     SetBackgroundColor(FBackground.ItemDefault, $fff4f4f5);
     SetBackgroundColor(FBackground.ItemHovered, FBackground.Border.Color.Hovered);
@@ -7670,6 +7713,7 @@ begin
     FText.Checked := FText.Hovered;
     FText.Enabled := $fff0c78a;
     FText.Focused := $ffffffff;
+    FText.IsChange := False;
     with FBackground.Border do begin
       DefaultStyle := TViewBorderStyle.RectBorder;
       Style := DefaultStyle;
@@ -7679,6 +7723,7 @@ begin
       Color.Checked := Color.Pressed;
       Color.Enabled := $fffaecd8;
       Color.Focused := Color.Hovered;
+      Color.IsChange := False;
     end;
     SetBackgroundColor(FBackground.ItemDefault, $fffdf6ec);
     SetBackgroundColor(FBackground.ItemHovered, FBackground.Border.Color.Hovered);
@@ -7696,6 +7741,7 @@ begin
     FText.Checked := FText.Hovered;
     FText.Enabled := $fff9a9a9;
     FText.Focused := $ffffffff;
+    FText.IsChange := False;
     with FBackground.Border do begin
       DefaultStyle := TViewBorderStyle.RectBorder;
       Style := DefaultStyle;
@@ -7705,6 +7751,7 @@ begin
       Color.Checked := Color.Pressed;
       Color.Enabled := $fffde2e2;
       Color.Focused := Color.Hovered;
+      Color.IsChange := False;
     end; 
     SetBackgroundColor(FBackground.ItemDefault, $fffef0f0);
     SetBackgroundColor(FBackground.ItemHovered, FBackground.Border.Color.Hovered);
@@ -7722,6 +7769,7 @@ begin
     FText.Checked := $ff3481d0;
     FText.Enabled := $ffc0c4cc;
     FText.Focused := FText.Hovered;
+    FText.IsChange := False;
     OnChanged := Self.DoChanged;
   end;
 end;

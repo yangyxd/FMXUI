@@ -522,7 +522,7 @@ type
     property Position;
     property Width;
     property Height;
-    property ClipChildren default False;
+    property ClipChildren default True;
     property ClipParent default False;
     property EnableDragHighlight default True;
     property Enabled default True;
@@ -728,6 +728,7 @@ begin
       SaveChange := Padding.OnChange;
       Padding.OnChange := nil;
       Padding.Rect := RectF(6, 2, 6, 2);
+      Padding.DefaultValue := Padding.Rect;
       Padding.OnChange := SaveChange;
     end;
   end;
@@ -743,8 +744,11 @@ begin
     DefaultStyle := TViewBorderStyle.RectBorder;
     Style := DefaultStyle;
     Color.Default := $BFC0C0C0;
+    Color.DefaultChange := False;
     Color.Focused := $FF0066cc;
+    Color.FocusedChange := False;
     Color.Hovered := $FFC0C0C0;
+    Color.HoveredChange := False;
   end;
   Result.OnChanged := DoBackgroundChanged;
 end;

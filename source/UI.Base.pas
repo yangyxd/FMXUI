@@ -283,6 +283,7 @@ type
     procedure SetAccessory(const Value: TViewAccessory);
     procedure SetSvgImage(const Value: TSVGImage);
     function GetSvgImage: TSVGImage;
+    function IsSVGImageStored: Boolean;
   protected
     procedure DoAccessoryChange(Sender: TObject);
     procedure DoSvgImageChange(Sender: TObject);
@@ -292,7 +293,7 @@ type
     procedure ChangeToSolidColor(const AColor: TAlphaColor; IsDefault: Boolean = True);
   published
     property Accessory: TViewAccessory read GetAccessory write SetAccessory;
-    property SVGImage: TSVGImage read GetSvgImage write SetSvgImage;
+    property SVGImage: TSVGImage read GetSvgImage write SetSvgImage stored IsSVGImageStored;
     property Kind: TViewBrushKind read GetKind write SetKind stored IsKindStored;
   end;
 
@@ -749,6 +750,8 @@ type
     function ColorHoveredStored: Boolean;
     function ColorPressedStored: Boolean;
     function ColorSelectedStored: Boolean;
+    function GetIsChange: Boolean;
+    procedure SetIsChange(const Value: Boolean);
   protected
     FHintText: TAlphaColor;
     procedure DoChange(Sender: TObject);
@@ -766,6 +769,7 @@ type
     function GetColor(State: TViewState): TAlphaColor;
     procedure SetColor(State: TViewState; const Value: TAlphaColor);
 
+    property IsChange: Boolean read GetIsChange write SetIsChange;
     property DefaultChange: Boolean index 1 read GetColorStoreState write SetColorStoreState;
     property PressedChange: Boolean index 2 read GetColorStoreState write SetColorStoreState;
     property FocusedChange: Boolean index 3 read GetColorStoreState write SetColorStoreState;
@@ -3350,6 +3354,7 @@ end;
 
 constructor TViewColor.Create(const ADefaultColor: TAlphaColor);
 begin
+  FColorStoreState := 0;
   FDefault := ADefaultColor;
   FPressed := TAlphaColorRec.Null;
   FFocused := TAlphaColorRec.Null;
@@ -3434,6 +3439,11 @@ end;
 function TViewColor.GetColorStoreState(const Index: Integer): Boolean;
 begin
   Result := (FColorStoreState and Index) <> 0;
+end;
+
+function TViewColor.GetIsChange: Boolean;
+begin
+  Result := FColorStoreState <> 0;
 end;
 
 function TViewColor.GetStateColor(State: TViewState): TAlphaColor;
@@ -3533,6 +3543,11 @@ begin
     HoveredChange := True;
     DoChange(Self);
   end;
+end;
+
+procedure TViewColor.SetIsChange(const Value: Boolean);
+begin
+  if not Value then FColorStoreState := 0;  
 end;
 
 procedure TViewColor.SetPressed(const Value: TAlphaColor);
@@ -7105,7 +7120,7 @@ end;
 
 procedure TDrawableBorder.SetBorder(const Value: TViewBorder);
 begin
-  FBorder.Assign(Value);
+  if FBorder <> Value then FBorder.Assign(Value);
 end;
 
 { TViewBorder }
@@ -7380,6 +7395,11 @@ end;
 function TViewBrushBase.IsKindStored: Boolean;
 begin
   Result := inherited Kind <> DefaultKind;
+end;
+
+function TViewBrushBase.IsSVGImageStored: Boolean;
+begin
+  Result := Assigned(FSvgImage) and (not FSvgImage.Empty);
 end;
 
 procedure TViewBrushBase.SetAccessory(const Value: TViewAccessory);

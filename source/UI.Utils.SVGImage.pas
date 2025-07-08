@@ -964,7 +964,7 @@ end;
 
 function TSVGImage.IsStoreHeight: Boolean;
 begin
-  Result := Assigned(FBitmap) and (FBitmap.Height > 0) and ((not Assigned(FData)) or (FBitmap.Width <> FData.Size.Height));
+  Result := Assigned(FBitmap) and (FBitmap.Height > 0) and ((not Assigned(FData)) or (FBitmap.Height <> FData.Size.Height));
 end;
 
 function TSVGImage.IsStoreWidth: Boolean;
