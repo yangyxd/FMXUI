@@ -723,14 +723,14 @@ begin
     FDrawable.SizeWidth := 16;
     FDrawable.SizeHeight := 16;
     FDrawable.OnChanged := DoDrawableChanged;
+  end;
 
-    if Assigned(Padding) then begin
-      SaveChange := Padding.OnChange;
-      Padding.OnChange := nil;
-      Padding.Rect := RectF(6, 2, 6, 2);
-      Padding.DefaultValue := Padding.Rect;
-      Padding.OnChange := SaveChange;
-    end;
+  if Assigned(Padding) then begin
+    SaveChange := Padding.OnChange;
+    Padding.OnChange := nil;
+    Padding.Rect := RectF(4, 2, 4, 2);
+    Padding.DefaultValue := Padding.Rect;
+    Padding.OnChange := SaveChange;
   end;
 
   SetAcceptsControls(False);
