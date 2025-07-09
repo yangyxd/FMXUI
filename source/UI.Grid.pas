@@ -770,6 +770,7 @@ type
     procedure SetFlatCols(const Value: Boolean);
   public
     constructor Create(AOwner: TGridBase);
+    procedure Assign(Source: TPersistent); override;
   published
     /// <summary>
     /// 固定单元格绘制刷子
@@ -1774,6 +1775,7 @@ begin
   FFixedRightPadding := 0;
   FFixedSetting := TGridFixedSetting.Create(Self);
   FFixedSetting.Brush.ItemDefault.Kind := TViewBrushKind.Gradient;
+  FFixedSetting.Brush.ItemDefault.DefaultKind := TBrushKind(TViewBrushKind.Gradient);
   TempPoint := TGradientPoint.Create(FFixedSetting.Brush.ItemDefault.Gradient.Points);
   TempPoint.Color := $FFD6D6D6;
   TempPoint.Offset := 0;
@@ -7743,6 +7745,28 @@ begin
 end;
 
 { TGridFixedSetting }
+
+procedure TGridFixedSetting.Assign(Source: TPersistent);
+var
+  O: TGridFixedSetting;
+begin
+  if Source is TGridFixedSetting then begin
+    O := TGridFixedSetting(Source);
+    Self.FFooterText := O.FFooterText;
+    Self.FFooterBackgroundColor := O.FFooterBackgroundColor;
+    Self.Brush := O.Brush;
+    Self.TextSettings := O.TextSettings;
+    Self.ColCount := O.ColCount;
+    Self.ColWidth := O.ColWidth;
+    Self.Divider := O.Divider;
+    Self.FlatCols := O.FlatCols;
+    Self.RightBlank := O.RightBlank;
+    Self.RowCount := O.RowCount;
+    Self.RowHeight := O.RowHeight;
+    Self.TextRowIndex := O.TextRowIndex;
+  end else
+    inherited;
+end;
 
 constructor TGridFixedSetting.Create(AOwner: TGridBase);
 begin
