@@ -964,6 +964,8 @@ type
     procedure SetWidthSize(const Value: TViewSize);
     procedure SetBadgeView(const Value: IViewBadge);
 
+    procedure DoLanguageChange(Sender: TObject);
+
     property Layout: TViewLayout read GetLayout write SetLayout;
     property Background: TDrawable read GetBackground write SetBackground;
     property Weight: Single read GetWeight write SetWeight;
@@ -1424,6 +1426,8 @@ type
     procedure DoChangeSize(var ANewWidth, ANewHeight: Single); virtual;
     // 开始计算大小
     procedure DoRecalcSize(var AWidth, AHeight: Single); virtual;
+    // 多语言变化
+    procedure DoLanguageChange(Sender: TObject); virtual;
 
     procedure DoMouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Single); virtual;
     procedure DoMouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Single); virtual;
@@ -1888,6 +1892,38 @@ type
     /// 强制使用列大小。此时不再检测每个格子的宽度高度是否需要自动大小
     /// </summary>
     property ForceColumnSize: Boolean read FForceColumnSize write SetForceColumnSize default False;
+  end;
+
+type
+  /// <summary>
+  /// 多语言管理器
+  /// </summary>
+  [ComponentPlatformsAttribute(AllCurrentPlatforms)]
+  TLanguageManager = class(TComponent)
+  private
+    FDefaultLanguage: string;
+    FLanguage: string;
+    procedure SetDefaultLanguage(const Value: string);
+    procedure SetLanguage(const Value: string);
+  protected
+    procedure DoChanged();
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    /// <summary>
+    /// 获取多语言文本
+    /// </summary>
+    function GetLanguageText(const Name: string): string; overload;
+    function GetLanguageText(const Name: string; const ADefaultValue: string): string; overload;
+  published
+    /// <summary>
+    /// 默认语言
+    /// </summary>
+    property DefaultLanguage: string read FDefaultLanguage write SetDefaultLanguage;
+    /// <summary>
+    /// 当前使用的语言
+    /// </summary>
+    property Language: string read FLanguage write SetLanguage;
   end;
 
 
@@ -4014,6 +4050,10 @@ begin
     FRecalcInVisible := False;
   end else
     RecalcInVisible();
+end;
+
+procedure TView.DoLanguageChange(Sender: TObject);
+begin 
 end;
 
 procedure TView.DoLayoutChanged(Sender: TObject);
@@ -9928,6 +9968,115 @@ begin
   if FStyle <> Value then begin
     FStyle := Value;
     DoChanged;
+  end;
+end;
+
+{ TLanguageManager }
+
+constructor TLanguageManager.Create(AOwner: TComponent);
+begin
+  inherited;
+  FDefaultLanguage := 'en';
+  FLanguage := FDefaultLanguage;
+end;
+
+destructor TLanguageManager.Destroy;
+begin
+  inherited;
+end;
+
+procedure TLanguageManager.DoChanged;
+
+  function GetParentForm: TCustomForm;
+  var
+    P: TComponent;
+  begin
+    Result := nil;
+    P := Self;
+    while P <> nil do begin
+      if P is TCustomForm then begin
+        Result := P as TCustomForm;
+        Break;
+      end else
+        P := P.GetParentComponent;
+    end;
+  end;
+
+  procedure RefreshControls(AContainer: TObject);
+
+    procedure RefreshControl(Control: TControl);
+    var
+      View: IView;
+    begin
+      if Control is TLabel then
+        TLabel(Control).Text := GetLanguageText(Control.Name)
+      else if Control is TButton then
+        TButton(Control).Text := GetLanguageText(Control.Name)
+      else if Control is TView then
+        TView(Control).DoLanguageChange(Self)
+      else if Supports(Control, IView, View) then
+        View.DoLanguageChange(Self)      
+      else
+        RefreshControls(Control);
+    end;
+    
+  var
+    I: Integer;
+    Control: TControl;
+  begin
+    if AContainer is TFmxObject then begin    
+      for I := 0 to TFmxObject(AContainer).ChildrenCount - 1 do begin
+        if TFmxObject(AContainer).Children[I] is TControl then begin
+          Control := TControl(TFmxObject(AContainer).Children[I]);           
+          RefreshControl(Control);
+        end;
+      end;
+    end else if AContainer is TControl then 
+      for I := 0 to TControl(AContainer).ChildrenCount - 1 do begin
+        if TControl(AContainer).Children[I] is TControl then begin
+          Control := TControl(TControl(AContainer).Children[I]);           
+          RefreshControl(Control);
+        end;
+      end;
+  end;
+
+var
+  P: TCustomForm;
+begin
+  P := GetParentForm;
+  if not Assigned(P) then Exit;
+  P.BeginUpdate;
+  try
+    RefreshControls(P);
+  finally
+    P.EndUpdate;
+  end;
+end;
+
+function TLanguageManager.GetLanguageText(const Name,
+  ADefaultValue: string): string;
+begin
+  Result := ADefaultValue;
+end;
+
+function TLanguageManager.GetLanguageText(const Name: string): string;
+begin
+  Result := '';
+end;
+
+procedure TLanguageManager.SetDefaultLanguage(const Value: string);
+begin
+  if FDefaultLanguage <> Value then begin
+    FDefaultLanguage := Value;
+    DoChanged();
+  end;
+end;
+
+procedure TLanguageManager.SetLanguage(const Value: string);
+begin
+  if FLanguage <> Value then begin
+    FLanguage := Value;
+    DoChanged();
   end;
 end;
 

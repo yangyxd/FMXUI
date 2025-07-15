@@ -219,9 +219,9 @@ type
     FTextHeight: Single;
     FLineHeight: Single;
     FLineTop: Single;
-    {$IF (not Defined(ANDROID)) or (CompilerVersion < 33)}
+    {.$IF (not Defined(ANDROID)) or (CompilerVersion <= 36)}
     FCharsBuffer: string;
-    {$ENDIF}
+    {.$ENDIF}
     FTextLayout: TTextLayout;
     FTextService: TTextService;
     FFirstVisibleChar: Integer;
@@ -2534,7 +2534,7 @@ begin
 
     if (Ord(KeyChar) >= 32) and not Model.ReadOnly then
     begin
-    {$IF (not Defined(ANDROID)) or (CompilerVersion < 33)}
+    {.$IF (not Defined(ANDROID)) or (CompilerVersion <= 36) }
       FCharsBuffer := FCharsBuffer + KeyChar;
       if not KeyChar.IsHighSurrogate then
       begin
@@ -2549,10 +2549,10 @@ begin
         DoTyping;
       end;
       KeyHandled := True;
-    {$ELSE}
+    {.$ELSE}
       // On the Android we use proxy native EditText for inputting any kind of text. So implementation TTextService takes
       // care on any kind of text inputting. Therefore, we don't need to intercept inputting latin chars also.
-    {$ENDIF}
+    {.$ENDIF}
     end;
     //if ResourceControl <> nil then
     //  ResourceControl.UpdateEffects;
