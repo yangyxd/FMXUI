@@ -10281,7 +10281,7 @@ begin
       LoadFromFile(FFileName);
   ALanguage := FDefaultLanguage;
   if FAutoSelect and TPlatformServices.Current.SupportsPlatformService(IFMXLocaleService, LocaleSvc) then
-    FLanguage := LocaleSvc.GetCurrentLangID;
+    ALanguage := LocaleSvc.GetCurrentLangID;
   if (ALanguage <> '') and (ALanguage <> FLanguage) then begin
     FLanguage := ALanguage;
     FCurLanguage := InitLanguage(FLanguage);     

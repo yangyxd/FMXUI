@@ -314,6 +314,7 @@ object Form2: TForm2
     Top = 296
   end
   object LangManager1: TLangManager
+    AutoLangFMX = True
     DefaultLang = 'en'
     Lang = 'en'
     Left = 272
