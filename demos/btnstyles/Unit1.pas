@@ -29,6 +29,7 @@ type
     TextView2: TTextView;
     StyleViewManager1: TStyleViewManager;
     ButtonView16: TButtonView;
+    LangManager1: TLangManager;
     procedure ButtonView1Click(Sender: TObject);
     procedure CheckBox1Change(Sender: TObject);
     procedure ButtonView16Click(Sender: TObject);

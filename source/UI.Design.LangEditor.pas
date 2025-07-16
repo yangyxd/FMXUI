@@ -18,19 +18,22 @@ type
     lvItems: TStringGridView;
     Button2: TButton;
     ButtonView1: TButtonView;
-    ButtonView2: TButtonView;
     procedure Button1Click(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure AddClick(Sender: TObject);
     procedure ButtonView1Click(Sender: TObject);
     procedure ButtonView2Click(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure cbLangsChange(Sender: TObject);
+    procedure lvItemsCellEditDone(Sender: TObject; const ACell: TGridCell;
+      const Value: string);
   private
     { Private declarations }
     FLang: TLangManager;
     FNames: TStrings;
     procedure InitForm;
     procedure InitValue;
+    procedure InitNames;
   public
     { Public declarations }
     property Lang: TLangManager read FLang write FLang;
@@ -42,12 +45,13 @@ var
 implementation
 
 {$R *.fmx}
+{$WARN SYMBOL_DEPRECATED OFF}
 
 procedure TLangDesigner.AddClick(Sender: TObject);
 var
   S: string;
 begin
-  S := Trim(InputBox('Add Language Code', '', ''));
+  S := Trim(InputBox('Add Language Code', 'Language: ', ''));
   if S = '' then Exit;
   if FLang.ExistLang(S) then Exit;
   FLang.AddLang(S);
@@ -69,12 +73,12 @@ procedure TLangDesigner.ButtonView1Click(Sender: TObject);
 var
   S: string;
 begin
-  S := Trim(InputBox('Add Language Code', '', ''));
+  S := Trim(InputBox('Add Name', 'Name: ', ''));
   if S = '' then Exit;
   if FLang.ExistName(S) then Exit; 
   FLang.SetLangText(S, '');
   lvItems.RowCount := lvItems.RowCount + 1;
-  lvItems.Cells[0, lvItems.RowCount - 1] := '';
+  lvItems.FixedCells[0, lvItems.RowCount - 1] := S;
 end;
 
 procedure TLangDesigner.ButtonView2Click(Sender: TObject);
@@ -82,25 +86,24 @@ var
   S: string;
   I: Integer;
 begin
-  if cbLangs.Text = '' then Exit;  
-  if lvItems.ItemIndex < 0 then Exit;
-  S := lvItems.Cells[0, lvItems.ItemIndex];
-  if S = '' then Exit;
-  FLang.DeleteName(cbLangs.Text, S);
-  FNames.Delete(lvItems.ItemIndex);
-  lvItems.RowCount := lvItems.RowCount - 1;
-  lvItems.BeginUpdate;
-  try
-    for I := 0 to FNames.Count - 1 do
-      lvItems.Cells[0, I] := FNames[I];
-  finally
-    lvItems.EndUpdate;
+  if cbLangs.ItemIndex < 0 then begin
+    ShowMessage('Please select the language first!');
+    Exit;
   end;
+  I := lvItems.SelectIndex;
+  ShowMessage(IntToStr(lvItems.SelectIndex));
+  if lvItems.SelectIndex < 0 then Exit;
+  S := lvItems.FixedCells[0, I];
+  if S = '' then Exit;
+  FLang.DeleteName(cbLangs.Items[cbLangs.ItemIndex], S);
+  FNames.Delete(I);
+  InitNames();
+  InitValue();
 end;
 
-procedure TLangDesigner.FormCreate(Sender: TObject);
+procedure TLangDesigner.cbLangsChange(Sender: TObject);
 begin
-  InitForm;
+  InitValue();
 end;
 
 procedure TLangDesigner.FormDestroy(Sender: TObject);
@@ -108,26 +111,42 @@ begin
   FreeAndNil(FNames);
 end;
 
+procedure TLangDesigner.FormShow(Sender: TObject);
+begin
+  InitForm;
+end;
+
 procedure TLangDesigner.InitForm;
 var
   S: TStrings;
-  I: Integer;
 begin
   if not Assigned(FLang) then Exit;
   S := FLang.LangsList;
   try
-    cbLangs.Assign(S);
+    cbLangs.Items.Assign(S);
   finally
     S.Free;
   end;
   FreeAndNil(FNames);
   FNames := FLang.NamesList;
-  if cbLangs.Count > 0 then cbLangs.ItemIndex := 0;  
+  cbLangs.ItemIndex := -1;
+  if cbLangs.Count > 0 then cbLangs.ItemIndex := 0;
+  InitNames();
+end;
+
+procedure TLangDesigner.InitNames;
+var
+  I: Integer;
+begin
   lvItems.RowCount := FNames.Count;
   lvItems.BeginUpdate;
   try
+    if FNames.Count = 0 then begin
+      FNames.Add('Source');
+      FLang.SetLangText(FNames[0], '');
+    end;
     for I := 0 to FNames.Count - 1 do
-      lvItems.Cells[0, I] := FNames[I];
+      lvItems.FixedCells[0, I] := FNames[I];
   finally
     lvItems.EndUpdate;
   end;
@@ -138,14 +157,22 @@ var
   I: Integer;
   S: string;
 begin
+  if cbLangs.ItemIndex < 0 then Exit;
   lvItems.BeginUpdate;
   try
-    S := cbLangs.Text;
+    S := cbLangs.Items[cbLangs.ItemIndex];
     for I := 0 to FNames.Count - 1 do
-      lvItems.Cells[1, I] := FLang.GetLangText(S, FNames[I], '');
+      lvItems.Cells[0, I] := FLang.GetLangText(S, FNames[I], '');
   finally
     lvItems.EndUpdate;
   end;
+end;
+
+procedure TLangDesigner.lvItemsCellEditDone(Sender: TObject;
+  const ACell: TGridCell; const Value: string);
+begin
+  if cbLangs.ItemIndex < 0 then Exit;
+  FLang.SetLangText(cbLangs.Items[cbLangs.ItemIndex], lvItems.FixedCells[0, ACell.Row], Value);
 end;
 
 end.

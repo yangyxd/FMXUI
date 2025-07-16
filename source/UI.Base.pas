@@ -1913,6 +1913,7 @@ type
     FFileName: string;
     FStoreInForm: Boolean;
     FAutoSelect: Boolean;
+    FAutoLangFMX: Boolean;
     procedure SetDefaultLanguage(const Value: string);
     procedure SetLanguage(const Value: string);
     function GetLangCount: Integer;
@@ -1984,6 +1985,10 @@ type
     property AutoSelect: Boolean read FAutoSelect write FAutoSelect default True;
     property FileName: string read FFileName write FFileName;
     property StoreInForm: Boolean read FStoreInForm write FStoreInForm default True;
+    /// <summary>
+    /// 自动切换Delphi FMX官方组件语言（启用后，可能会与动态设置的text冲突）
+    /// </summary>
+    property AutoLangFMX: Boolean read FAutoLangFMX write FAutoLangFMX default False;
     /// <summary>
     /// 默认语言
     /// </summary>
@@ -10060,6 +10065,7 @@ begin
   inherited;
   FAutoSelect := True;
   FStoreInForm := True;
+  FAutoLangFMX := False;
   FDefaultLanguage := 'en';
   FLanguage := FDefaultLanguage;
   FData := TDictionary<string, TDictionary<string, string>>.Create;
@@ -10094,7 +10100,7 @@ procedure TLangManager.DoChanged;
 
   function GetParentForm: TCustomForm;
   var
-    P: TComponent;
+    P, P1: TComponent;
   begin
     Result := nil;
     P := Self;
@@ -10102,8 +10108,11 @@ procedure TLangManager.DoChanged;
       if P is TCustomForm then begin
         Result := P as TCustomForm;
         Break;
-      end else
+      end else begin
+        P1 := P;
         P := P.GetParentComponent;
+        if P = nil then P := P1.Owner;
+      end;
     end;
   end;
 
@@ -10117,7 +10126,19 @@ procedure TLangManager.DoChanged;
       if TFmxObject(AContainer).Children[I] is TControl then begin
         Control := TControl(TFmxObject(AContainer).Children[I]);
         if Supports(Control, IView, View) then
-          View.DoLanguageChange(Self);
+          View.DoLanguageChange(Self)
+        else if FAutoLangFMX then begin
+          if Control is TLabel then begin
+            TLabel(Control).Text := GetLangText(Control.Name, TLabel(Control).Text);   
+            Continue;
+          end else if Control is TCustomButton then begin
+            TCustomButton(Control).Text := GetLangText(Control.Name, TCustomButton(Control).Text);   
+            Continue;
+          end else if Control is TPresentedTextControl then begin
+            TPresentedTextControl(Control).Text := GetLangText(Control.Name, TPresentedTextControl(Control).Text);   
+            Continue;
+          end;
+        end;
         RefreshControls(Control);
       end;
     end;
@@ -10126,6 +10147,7 @@ procedure TLangManager.DoChanged;
 var
   P: TCustomForm;
 begin
+  if csDesigning in ComponentState then Exit;
   P := GetParentForm;
   if not Assigned(P) then Exit;
   P.BeginUpdate;
@@ -10251,15 +10273,19 @@ end;
 procedure TLangManager.Loaded;
 var
   LocaleSvc: IFMXLocaleService;
+  ALanguage: string;
 begin
   inherited;
   if FFileName <> '' then
     if FileExists(FFileName) then
       LoadFromFile(FFileName);
+  ALanguage := FDefaultLanguage;
   if FAutoSelect and TPlatformServices.Current.SupportsPlatformService(IFMXLocaleService, LocaleSvc) then
     FLanguage := LocaleSvc.GetCurrentLangID;
-  if FLanguage <> '' then
-    FCurLanguage := InitLanguage(FLanguage);
+  if (ALanguage <> '') and (ALanguage <> FLanguage) then begin
+    FLanguage := ALanguage;
+    FCurLanguage := InitLanguage(FLanguage);     
+  end;
 end;
 
 procedure TLangManager.LoadFromFile(const AFileName: string);
@@ -10308,6 +10334,7 @@ begin
       FreeAndNil(Js);        
       FCurLanguage := InitLanguage(FLanguage);
     end;
+    DoChanged();
   except on E: Exception do
     LogE('TLanguageManager Load Error: ' + E.Message);
   end;

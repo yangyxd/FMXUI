@@ -732,6 +732,7 @@ type
     procedure DoGroupSelected(); virtual;
     procedure DoCheckedChange(); override;
     procedure DoLinkClick(const Text, URL: string); override;
+    procedure DoLanguageChange(Sender: TObject); override;
   protected
     function TextStored: Boolean;
     function IsAutoSize: Boolean; override;
@@ -1758,6 +1759,14 @@ begin
       end;
     end;
   end;
+end;
+
+procedure TTextView.DoLanguageChange(Sender: TObject);
+begin
+  if Assigned(OnLangChange) then
+    OnLangChange(Sender)
+  else
+    Text := TLangManager(Sender).GetLangText(Name, Text);
 end;
 
 procedure TTextView.DoLayoutChanged(Sender: TObject);

@@ -169,82 +169,83 @@ object Form2: TForm2
     Drawable.ItemDefault.SVGImage.Width = 24
     Drawable.ItemDefault.SVGImage.Height = 24
     Drawable.ItemDefault.SVGImage.SVGData = 
-      '<?xml version="1.0" standalone="no"?>'#13#10'<!DOCTYPE           svg P' +
-      'UBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/' +
-      '1.1/DTD/svg11.dtd">'#13#10'<svg t="1745637815270" class="icon" viewBox' +
-      '="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg' +
-      '" p-id="1500" xmlns:xlink="http://www.w3.org/1999/xlink" width="' +
-      '16" height="16">'#13#10'  <path d="M512.000512 81.257675c-237.508345 0' +
-      '-430.737208 193.240119-430.737208 430.748465 0 237.507322 193.22' +
-      '8863 430.736185 430.737208 430.736185 237.507322 0 430.759721-19' +
-      '3.228863 430.759721-430.736185C942.760233 274.497794 749.50681 8' +
-      '1.257675 512.000512 81.257675zM512.000512 887.343597c-206.956515' +
-      ' 0-375.314944-168.381965-375.314944-375.337457 0-206.955492 168.' +
-      '357406-375.326201 375.314944-375.326201 206.953446 0 375.337457 ' +
-      '168.370709 375.337457 375.326201C887.337969 718.961632 718.95395' +
-      '7 887.343597 512.000512 887.343597z" fill="#989898" p-id="1501"/' +
-      '>'#13#10'  <path d="M511.463276 82.893942c-236.599649 0-429.087639 192' +
-      '.501292-429.087639 429.124478 0 236.57202 192.487989 429.086615 ' +
-      '429.087639 429.086615 236.598626 0 429.113221-192.514595 429.113' +
-      '221-429.086615C940.576497 275.395234 748.061902 82.893942 511.46' +
-      '3276 82.893942zM511.463276 885.871059c-206.16243 0-373.878223-16' +
-      '7.714769-373.878223-373.851617 0-206.175733 167.715793-373.90175' +
-      '9 373.878223-373.901759 206.16243 0 373.901759 167.726026 373.90' +
-      '1759 373.901759C885.365035 718.15629 717.625706 885.871059 511.4' +
-      '63276 885.871059z" fill="#989898" p-id="1502"/>'#13#10'  <path d="M644' +
-      '.82361 575.215764c-44.430932 0-80.549547 36.168758-80.549547 80.' +
-      '599689 0 44.404326 36.118616 80.548524 80.549547 80.548524 44.42' +
-      '6839 0 80.571037-36.144198 80.571037-80.548524C725.394646 611.38' +
-      '4521 689.250448 575.215764 644.82361 575.215764zM644.82361 693.7' +
-      '49414c-20.929682 0-37.960567-17.007349-37.960567-37.933961 0-20.' +
-      '928658 17.030885-37.985126 37.960567-37.985126 20.951171 0 37.93' +
-      '2937 17.056468 37.932937 37.985126C682.756547 676.742065 665.773' +
-      '757 693.749414 644.82361 693.749414z" fill="#989898" p-id="1503"' +
-      '/>'#13#10'  <path d="M778.743692 480.601896c-0.442068-0.783853-0.93018' +
-      '5-1.567705-1.518586-2.326998l-50.211589-64.511269c-22.325471-28.' +
-      '733415-66.581418-50.408063-102.947673-50.408063l-52.735062 0 0-1' +
-      '5.755846c0-24.75173-20.144806-44.967144-44.918026-44.967144L265.' +
-      '578146 302.632575c-11.739369 0-21.297049 9.581216-21.297049 21.3' +
-      '31841l0 310.530452c0 0.194428 0.099261 0.341784 0.099261 0.53723' +
-      '6 0 0.246617-0.099261 0.416486-0.099261 0.615007 0 11.736299 9.5' +
-      '5768 21.296025 21.297049 21.296025l30.604018 0c11.762905 0 21.34' +
-      '6167-9.559727 21.346167-21.296025 0-11.762905-9.583263-21.322631' +
-      '-21.346167-21.322631l-9.261944 0L286.92022 345.271698 526.412756' +
-      ' 345.271698c1.24741 0 2.303462 1.041726 2.303462 2.328022l0 130.' +
-      '84607c0 24.798802 20.217461 44.967144 45.237297 44.967144l201.14' +
-      '0043-0.318248c1.393743 0 2.49789 1.125637 2.49789 2.108011l0 95.' +
-      '2739c0 1.202385-1.052982 2.13257-2.424212 2.13257l-23.696702 0c-' +
-      '11.738345 0-21.297049 9.583263-21.297049 21.341051 0 11.716856 9' +
-      '.559727 21.272489 21.297049 21.272489l23.696702 0c24.822338 0 45' +
-      '.039799-20.070104 45.039799-44.747133l0-95.2739C820.206012 501.8' +
-      '48803 802.047444 482.588133 778.743692 480.601896zM573.879837 48' +
-      '0.774835c-1.421372 0-2.549056-1.004887-2.549056-2.328022l0-72.43' +
-      '7799 52.735062 0c22.86373 0 55.260581 15.855106 69.349461 33.903' +
-      '158l31.589462 40.642652L573.879837 480.774835z" fill="#989898" p' +
-      '-id="1504"/>'#13#10'  <path d="M407.806451 575.215764c-44.428885 0-80.' +
-      '597643 36.168758-80.597643 80.599689 0 44.404326 36.168758 80.54' +
-      '8524 80.597643 80.548524 44.403303 0 80.547501-36.144198 80.5475' +
-      '01-80.548524C488.353952 611.384521 452.209754 575.215764 407.806' +
-      '451 575.215764zM407.806451 693.749414c-20.926612 0-37.934984-17.' +
-      '007349-37.934984-37.933961 0-20.928658 17.008372-37.985126 37.93' +
-      '4984-37.985126 20.951171 0 37.932937 17.056468 37.932937 37.9851' +
-      '26C445.739389 676.742065 428.757622 693.749414 407.806451 693.74' +
-      '9414z" fill="#989898" p-id="1505"/>'#13#10'  <path d="M534.472316 614.' +
-      '353133l-19.404955 0c-11.762905 0-21.321608 9.555633-21.321608 21' +
-      '.318538 0 11.712763 9.558703 21.272489 21.321608 21.272489l19.40' +
-      '4955 0c11.762905 0 21.345144-9.559727 21.345144-21.272489C555.81' +
-      '746 623.907743 546.235221 614.353133 534.472316 614.353133z" fil' +
-      'l="#989898" p-id="1506"/>'#13#10'  <path d="M378.399701 379.518686c-10' +
-      '.268878 0-18.62315 8.343015-18.62315 18.61087l0 85.658915c0 10.2' +
-      '93437 8.354272 18.625196 18.62315 18.625196l85.451184 0c10.26683' +
-      '1 0 18.622126-8.331759 18.622126-18.625196 0-10.267854-8.355295-' +
-      '18.624173-18.622126-18.624173l-66.850547 0 0-67.034742C396.99931' +
-      '4 387.862725 388.668579 379.518686 378.399701 379.518686z" fill=' +
-      '"#989898" p-id="1507"/>'#13#10'</svg>'
+      '<?xml version="1.0" standalone="no"?>'#13#10'<!DOCTYPE                ' +
+      '            svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.' +
+      'org/Graphics/SVG/1.1/DTD/svg11.dtd">'#13#10'<svg t="1745637815270" cla' +
+      'ss="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://ww' +
+      'w.w3.org/2000/svg" p-id="1500" xmlns:xlink="http://www.w3.org/19' +
+      '99/xlink" width="16" height="16">'#13#10'  <path d="M512.000512 81.257' +
+      '675c-237.508345 0-430.737208 193.240119-430.737208 430.748465 0 ' +
+      '237.507322 193.228863 430.736185 430.737208 430.736185 237.50732' +
+      '2 0 430.759721-193.228863 430.759721-430.736185C942.760233 274.4' +
+      '97794 749.50681 81.257675 512.000512 81.257675zM512.000512 887.3' +
+      '43597c-206.956515 0-375.314944-168.381965-375.314944-375.337457 ' +
+      '0-206.955492 168.357406-375.326201 375.314944-375.326201 206.953' +
+      '446 0 375.337457 168.370709 375.337457 375.326201C887.337969 718' +
+      '.961632 718.953957 887.343597 512.000512 887.343597z" fill="#989' +
+      '898" p-id="1501"/>'#13#10'  <path d="M511.463276 82.893942c-236.599649' +
+      ' 0-429.087639 192.501292-429.087639 429.124478 0 236.57202 192.4' +
+      '87989 429.086615 429.087639 429.086615 236.598626 0 429.113221-1' +
+      '92.514595 429.113221-429.086615C940.576497 275.395234 748.061902' +
+      ' 82.893942 511.463276 82.893942zM511.463276 885.871059c-206.1624' +
+      '3 0-373.878223-167.714769-373.878223-373.851617 0-206.175733 167' +
+      '.715793-373.901759 373.878223-373.901759 206.16243 0 373.901759 ' +
+      '167.726026 373.901759 373.901759C885.365035 718.15629 717.625706' +
+      ' 885.871059 511.463276 885.871059z" fill="#989898" p-id="1502"/>' +
+      #13#10'  <path d="M644.82361 575.215764c-44.430932 0-80.549547 36.168' +
+      '758-80.549547 80.599689 0 44.404326 36.118616 80.548524 80.54954' +
+      '7 80.548524 44.426839 0 80.571037-36.144198 80.571037-80.548524C' +
+      '725.394646 611.384521 689.250448 575.215764 644.82361 575.215764' +
+      'zM644.82361 693.749414c-20.929682 0-37.960567-17.007349-37.96056' +
+      '7-37.933961 0-20.928658 17.030885-37.985126 37.960567-37.985126 ' +
+      '20.951171 0 37.932937 17.056468 37.932937 37.985126C682.756547 6' +
+      '76.742065 665.773757 693.749414 644.82361 693.749414z" fill="#98' +
+      '9898" p-id="1503"/>'#13#10'  <path d="M778.743692 480.601896c-0.442068' +
+      '-0.783853-0.930185-1.567705-1.518586-2.326998l-50.211589-64.5112' +
+      '69c-22.325471-28.733415-66.581418-50.408063-102.947673-50.408063' +
+      'l-52.735062 0 0-15.755846c0-24.75173-20.144806-44.967144-44.9180' +
+      '26-44.967144L265.578146 302.632575c-11.739369 0-21.297049 9.5812' +
+      '16-21.297049 21.331841l0 310.530452c0 0.194428 0.099261 0.341784' +
+      ' 0.099261 0.537236 0 0.246617-0.099261 0.416486-0.099261 0.61500' +
+      '7 0 11.736299 9.55768 21.296025 21.297049 21.296025l30.604018 0c' +
+      '11.762905 0 21.346167-9.559727 21.346167-21.296025 0-11.762905-9' +
+      '.583263-21.322631-21.346167-21.322631l-9.261944 0L286.92022 345.' +
+      '271698 526.412756 345.271698c1.24741 0 2.303462 1.041726 2.30346' +
+      '2 2.328022l0 130.84607c0 24.798802 20.217461 44.967144 45.237297' +
+      ' 44.967144l201.140043-0.318248c1.393743 0 2.49789 1.125637 2.497' +
+      '89 2.108011l0 95.2739c0 1.202385-1.052982 2.13257-2.424212 2.132' +
+      '57l-23.696702 0c-11.738345 0-21.297049 9.583263-21.297049 21.341' +
+      '051 0 11.716856 9.559727 21.272489 21.297049 21.272489l23.696702' +
+      ' 0c24.822338 0 45.039799-20.070104 45.039799-44.747133l0-95.2739' +
+      'C820.206012 501.848803 802.047444 482.588133 778.743692 480.6018' +
+      '96zM573.879837 480.774835c-1.421372 0-2.549056-1.004887-2.549056' +
+      '-2.328022l0-72.437799 52.735062 0c22.86373 0 55.260581 15.855106' +
+      ' 69.349461 33.903158l31.589462 40.642652L573.879837 480.774835z"' +
+      ' fill="#989898" p-id="1504"/>'#13#10'  <path d="M407.806451 575.215764' +
+      'c-44.428885 0-80.597643 36.168758-80.597643 80.599689 0 44.40432' +
+      '6 36.168758 80.548524 80.597643 80.548524 44.403303 0 80.547501-' +
+      '36.144198 80.547501-80.548524C488.353952 611.384521 452.209754 5' +
+      '75.215764 407.806451 575.215764zM407.806451 693.749414c-20.92661' +
+      '2 0-37.934984-17.007349-37.934984-37.933961 0-20.928658 17.00837' +
+      '2-37.985126 37.934984-37.985126 20.951171 0 37.932937 17.056468 ' +
+      '37.932937 37.985126C445.739389 676.742065 428.757622 693.749414 ' +
+      '407.806451 693.749414z" fill="#989898" p-id="1505"/>'#13#10'  <path d=' +
+      '"M534.472316 614.353133l-19.404955 0c-11.762905 0-21.321608 9.55' +
+      '5633-21.321608 21.318538 0 11.712763 9.558703 21.272489 21.32160' +
+      '8 21.272489l19.404955 0c11.762905 0 21.345144-9.559727 21.345144' +
+      '-21.272489C555.81746 623.907743 546.235221 614.353133 534.472316' +
+      ' 614.353133z" fill="#989898" p-id="1506"/>'#13#10'  <path d="M378.3997' +
+      '01 379.518686c-10.268878 0-18.62315 8.343015-18.62315 18.61087l0' +
+      ' 85.658915c0 10.293437 8.354272 18.625196 18.62315 18.625196l85.' +
+      '451184 0c10.266831 0 18.622126-8.331759 18.622126-18.625196 0-10' +
+      '.267854-8.355295-18.624173-18.622126-18.624173l-66.850547 0 0-67' +
+      '.034742C396.999314 387.862725 388.668579 379.518686 378.399701 3' +
+      '79.518686z" fill="#989898" p-id="1507"/>'#13#10'</svg>'
     StyleType = Danger
     StylePlain = True
   end
   object ButtonView14: TButtonView
+    Background.ItemDefault.Color = xFFFF2121
     Size.Width = 105.000000000000000000
     Size.Height = 33.000000000000000000
     Size.PlatformDefault = False
@@ -252,6 +253,11 @@ object Form2: TForm2
     Position.Y = 248.000000000000000000
     TabOrder = 2
     Text = 'Info'
+    TextSettings.Color.Default = claWhite
+    TextSettings.Color.Focused = claNull
+    TextSettings.Color.Selected = claNull
+    TextSettings.Color.Enabled = claNull
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
     TextSettings.Gravity = Center
     StyleType = Info
     StylePlain = True
@@ -304,167 +310,18 @@ object Form2: TForm2
     StyleType = Success
   end
   object StyleViewManager1: TStyleViewManager
-    Styles.Default.TextColor.Default = xFF282828
-    Styles.Default.TextColor.Pressed = xFF1F93FF
-    Styles.Default.TextColor.Focused = xFF409EFF
-    Styles.Default.TextColor.Hovered = xFF409EFF
-    Styles.Default.TextColor.Selected = claNull
-    Styles.Default.TextColor.Checked = xFF409EFF
-    Styles.Default.TextColor.Enabled = xFFC0C4CC
-    Styles.Default.Background.XRadius = 3.000000000000000000
-    Styles.Default.Background.YRadius = 3.000000000000000000
-    Styles.Default.Background.Border.Color.Default = xFFDCDFE6
-    Styles.Default.Background.Border.Color.Pressed = xFF1F93FF
-    Styles.Default.Background.Border.Color.Focused = xFFC6E2FF
-    Styles.Default.Background.Border.Color.Hovered = xFFC6E2FF
-    Styles.Default.Background.Border.Color.Selected = claNull
-    Styles.Default.Background.Border.Color.Checked = xFF409EFF
-    Styles.Default.Background.Border.Color.Enabled = xFFE0E3E9
-    Styles.Primarty.TextColor.Default = claWhite
-    Styles.Primarty.TextColor.Focused = claNull
-    Styles.Primarty.TextColor.Selected = claNull
-    Styles.Primarty.TextColor.Enabled = claNull
-    Styles.Primarty.Background.XRadius = 3.000000000000000000
-    Styles.Primarty.Background.YRadius = 3.000000000000000000
-    Styles.Success.TextColor.Default = claWhite
-    Styles.Success.TextColor.Focused = claNull
-    Styles.Success.TextColor.Selected = claNull
-    Styles.Success.TextColor.Enabled = claNull
-    Styles.Success.Background.XRadius = 3.000000000000000000
-    Styles.Success.Background.YRadius = 3.000000000000000000
-    Styles.Info.TextColor.Default = claWhite
-    Styles.Info.TextColor.Focused = claNull
-    Styles.Info.TextColor.Selected = claNull
-    Styles.Info.TextColor.Enabled = claNull
-    Styles.Info.Background.XRadius = 3.000000000000000000
-    Styles.Info.Background.YRadius = 3.000000000000000000
-    Styles.Warning.TextColor.Default = claWhite
-    Styles.Warning.TextColor.Focused = claNull
-    Styles.Warning.TextColor.Selected = claNull
-    Styles.Warning.TextColor.Enabled = claNull
-    Styles.Warning.Background.XRadius = 3.000000000000000000
-    Styles.Warning.Background.YRadius = 3.000000000000000000
-    Styles.Danger.TextColor.Default = claWhite
-    Styles.Danger.TextColor.Focused = claNull
-    Styles.Danger.TextColor.Selected = claNull
-    Styles.Danger.TextColor.Enabled = claNull
-    Styles.Danger.Background.XRadius = 3.000000000000000000
-    Styles.Danger.Background.YRadius = 3.000000000000000000
-    Styles.Text.TextColor.Default = xFF46A1FF
-    Styles.Text.TextColor.Pressed = xFF3481D0
-    Styles.Text.TextColor.Focused = xFF6AB3FF
-    Styles.Text.TextColor.Hovered = xFF6AB3FF
-    Styles.Text.TextColor.Selected = claNull
-    Styles.Text.TextColor.Checked = xFF3481D0
-    Styles.Text.TextColor.Enabled = xFFC0C4CC
-    Styles.Text.Background.XRadius = 3.000000000000000000
-    Styles.Text.Background.YRadius = 3.000000000000000000
-    PlainStyles.Default.TextColor.Default = xFF282828
-    PlainStyles.Default.TextColor.Pressed = xFF3A8EE6
-    PlainStyles.Default.TextColor.Focused = xFF409EFF
-    PlainStyles.Default.TextColor.Hovered = xFF409EFF
-    PlainStyles.Default.TextColor.Selected = claNull
-    PlainStyles.Default.TextColor.Checked = xFF3A8EE6
-    PlainStyles.Default.TextColor.Enabled = xFFC0C4CC
-    PlainStyles.Default.Background.XRadius = 3.000000000000000000
-    PlainStyles.Default.Background.YRadius = 3.000000000000000000
-    PlainStyles.Default.Background.Border.Color.Default = xFFDCDFE6
-    PlainStyles.Default.Background.Border.Color.Pressed = xFF3A8EE6
-    PlainStyles.Default.Background.Border.Color.Focused = xFF409EFF
-    PlainStyles.Default.Background.Border.Color.Hovered = xFF409EFF
-    PlainStyles.Default.Background.Border.Color.Selected = claNull
-    PlainStyles.Default.Background.Border.Color.Checked = xFF3A8EE6
-    PlainStyles.Default.Background.Border.Color.Enabled = xFFEBEEF5
-    PlainStyles.Primarty.TextColor.Default = xFF409EFF
-    PlainStyles.Primarty.TextColor.Pressed = claWhite
-    PlainStyles.Primarty.TextColor.Focused = claWhite
-    PlainStyles.Primarty.TextColor.Hovered = claWhite
-    PlainStyles.Primarty.TextColor.Selected = claNull
-    PlainStyles.Primarty.TextColor.Checked = claWhite
-    PlainStyles.Primarty.TextColor.Enabled = xFF8CC5FF
-    PlainStyles.Primarty.Background.XRadius = 3.000000000000000000
-    PlainStyles.Primarty.Background.YRadius = 3.000000000000000000
-    PlainStyles.Primarty.Background.Border.Color.Default = xFFB3D8FF
-    PlainStyles.Primarty.Background.Border.Color.Pressed = xFF3A8EE6
-    PlainStyles.Primarty.Background.Border.Color.Focused = xFF409EFF
-    PlainStyles.Primarty.Background.Border.Color.Hovered = xFF409EFF
-    PlainStyles.Primarty.Background.Border.Color.Selected = claNull
-    PlainStyles.Primarty.Background.Border.Color.Checked = xFF3A8EE6
-    PlainStyles.Primarty.Background.Border.Color.Enabled = xFFD9ECFF
-    PlainStyles.Success.TextColor.Default = xFF67C23A
-    PlainStyles.Success.TextColor.Pressed = claWhite
-    PlainStyles.Success.TextColor.Focused = claWhite
-    PlainStyles.Success.TextColor.Hovered = claWhite
-    PlainStyles.Success.TextColor.Selected = claNull
-    PlainStyles.Success.TextColor.Checked = claWhite
-    PlainStyles.Success.TextColor.Enabled = xFFA4DA89
-    PlainStyles.Success.Background.XRadius = 3.000000000000000000
-    PlainStyles.Success.Background.YRadius = 3.000000000000000000
-    PlainStyles.Success.Background.Border.Color.Default = xFFC2E7B0
-    PlainStyles.Success.Background.Border.Color.Pressed = xFF5DAF34
-    PlainStyles.Success.Background.Border.Color.Focused = xFF67C23A
-    PlainStyles.Success.Background.Border.Color.Hovered = xFF67C23A
-    PlainStyles.Success.Background.Border.Color.Selected = claNull
-    PlainStyles.Success.Background.Border.Color.Checked = xFF5DAF34
-    PlainStyles.Success.Background.Border.Color.Enabled = xFFE1F3D8
-    PlainStyles.Info.TextColor.Default = xFF909399
-    PlainStyles.Info.TextColor.Pressed = claWhite
-    PlainStyles.Info.TextColor.Focused = claWhite
-    PlainStyles.Info.TextColor.Hovered = claWhite
-    PlainStyles.Info.TextColor.Selected = claNull
-    PlainStyles.Info.TextColor.Checked = claWhite
-    PlainStyles.Info.TextColor.Enabled = xFFBCBEC2
-    PlainStyles.Info.Background.XRadius = 3.000000000000000000
-    PlainStyles.Info.Background.YRadius = 3.000000000000000000
-    PlainStyles.Info.Background.Border.Color.Default = xFFD3D4D6
-    PlainStyles.Info.Background.Border.Color.Pressed = xFF82848A
-    PlainStyles.Info.Background.Border.Color.Focused = xFF909399
-    PlainStyles.Info.Background.Border.Color.Hovered = xFF909399
-    PlainStyles.Info.Background.Border.Color.Selected = claNull
-    PlainStyles.Info.Background.Border.Color.Checked = xFF82848A
-    PlainStyles.Info.Background.Border.Color.Enabled = xFFE9E9EB
-    PlainStyles.Warning.TextColor.Default = xFFE6A23C
-    PlainStyles.Warning.TextColor.Pressed = claWhite
-    PlainStyles.Warning.TextColor.Focused = claWhite
-    PlainStyles.Warning.TextColor.Hovered = claWhite
-    PlainStyles.Warning.TextColor.Selected = claNull
-    PlainStyles.Warning.TextColor.Checked = claWhite
-    PlainStyles.Warning.TextColor.Enabled = xFFF0C78A
-    PlainStyles.Warning.Background.XRadius = 3.000000000000000000
-    PlainStyles.Warning.Background.YRadius = 3.000000000000000000
-    PlainStyles.Warning.Background.Border.Color.Default = xFFE6A23C
-    PlainStyles.Warning.Background.Border.Color.Pressed = xFFCF9236
-    PlainStyles.Warning.Background.Border.Color.Focused = xFFE6A23C
-    PlainStyles.Warning.Background.Border.Color.Hovered = xFFE6A23C
-    PlainStyles.Warning.Background.Border.Color.Selected = claNull
-    PlainStyles.Warning.Background.Border.Color.Checked = xFFCF9236
-    PlainStyles.Warning.Background.Border.Color.Enabled = xFFFAECD8
-    PlainStyles.Danger.TextColor.Default = xFFE6A23C
-    PlainStyles.Danger.TextColor.Pressed = claWhite
-    PlainStyles.Danger.TextColor.Focused = claWhite
-    PlainStyles.Danger.TextColor.Hovered = claWhite
-    PlainStyles.Danger.TextColor.Selected = claNull
-    PlainStyles.Danger.TextColor.Checked = claWhite
-    PlainStyles.Danger.TextColor.Enabled = xFFF9A9A9
-    PlainStyles.Danger.Background.XRadius = 3.000000000000000000
-    PlainStyles.Danger.Background.YRadius = 3.000000000000000000
-    PlainStyles.Danger.Background.Border.Color.Default = xFFE6A23C
-    PlainStyles.Danger.Background.Border.Color.Pressed = xFFDD6161
-    PlainStyles.Danger.Background.Border.Color.Focused = xFFF56C6C
-    PlainStyles.Danger.Background.Border.Color.Hovered = xFFF56C6C
-    PlainStyles.Danger.Background.Border.Color.Selected = claNull
-    PlainStyles.Danger.Background.Border.Color.Checked = xFFDD6161
-    PlainStyles.Danger.Background.Border.Color.Enabled = xFFFDE2E2
-    PlainStyles.Text.TextColor.Default = xFF46A1FF
-    PlainStyles.Text.TextColor.Pressed = xFF3481D0
-    PlainStyles.Text.TextColor.Focused = xFF6AB3FF
-    PlainStyles.Text.TextColor.Hovered = xFF6AB3FF
-    PlainStyles.Text.TextColor.Selected = claNull
-    PlainStyles.Text.TextColor.Checked = xFF3481D0
-    PlainStyles.Text.TextColor.Enabled = xFFC0C4CC
-    PlainStyles.Text.Background.XRadius = 3.000000000000000000
-    PlainStyles.Text.Background.YRadius = 3.000000000000000000
     Left = 320
     Top = 296
+  end
+  object LangManager1: TLangManager
+    DefaultLang = 'en'
+    Lang = 'en'
+    Left = 272
+    Top = 384
+    ResBin = {
+      5E0000007B22656E223A7B22427574746F6E5669657732223A225072696D6172
+      7479227D2C227A68223A7B22427574746F6E31223A225C75364434425C753842
+      4435222C22427574746F6E5669657732223A225C75344533425C753839383122
+      7D7D}
   end
 end

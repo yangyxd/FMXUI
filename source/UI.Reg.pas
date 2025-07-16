@@ -36,6 +36,7 @@ uses
   UI.Design.SVGImage,
 
   UI.Design.ImageIndex,
+  UI.Design.LangEditor,
 
   // Added by dqi1999
   UI.ButtonViewEditor, UI.TextViewEditor,
@@ -100,6 +101,17 @@ type
     procedure Edit; override;
   public
     function GetAttributes: TPropertyAttributes; override;
+  end;
+
+  TLangEditor = class(TDefaultEditor)
+  private
+    FCmdIndex: TArray<Integer>;
+  protected
+    procedure DesignerModified;
+  public
+    function GetVerbCount: Integer; override;
+    function GetVerb(Index: Integer): string; override;
+    procedure ExecuteVerb(Index: Integer); override;
   end;
 
 //  TImageIndexExProperty = class(TIntegerProperty, ICustomPropertyDrawing,
@@ -211,6 +223,7 @@ begin
   RegisterComponents(PageName, [TDrawableBrush]);
 
   RegisterComponentEditor(TView, TViewControlEditor);
+  RegisterComponentEditor(TLangManager, TLangEditor);
 
   RegisterPropertyEditor(TypeInfo(TPatchBounds), TPersistent, '', TPatchBoundsProperty);
   RegisterPropertyEditor(TypeInfo(TGridColumnsSetting), TGridBase, '', TGridColumnsSettingsProperty);
@@ -220,7 +233,6 @@ begin
   RegisterPropertyEditor(TypeInfo(TSVGImage), TPersistent, '', TSVGImageProperty);
 
   RegisterPropertyEditor(TypeInfo(TImageIndex), TViewImagesBrush, '', TImageIndexProperty);
-
   //RegisterPropertyEditor(TypeInfo(TCustomImageList), TPersistent, '', TShareImageListProperty);
 
   //RegisterPropertyEditor(TypeInfo(TImageIndex), TViewImagesBrush, '', TAlphaColorProperty);
@@ -513,6 +525,50 @@ begin
   RemoveEnumElementAliases(TypeInfo(TViewAccessoryType));
   RemoveEnumElementAliases(TypeInfo(TCalendarViewType));
   RemoveEnumElementAliases(TypeInfo(TStyleViewType));
+end;
+
+
+{ TLangEditor }
+
+procedure TLangEditor.DesignerModified;
+begin
+  if Designer <> nil then
+    Designer.Modified;
+end;
+
+procedure TLangEditor.ExecuteVerb(Index: Integer);
+var
+  Dialog: TLangDesigner;
+begin
+  if not (Component is TLangManager) then Exit;
+  if FCmdIndex[Index] = 0 then begin
+    Dialog := TLangDesigner.Create(nil);
+    try
+      Dialog.Caption := 'Language Editor - 多语言编辑器';
+      Dialog.Lang := TLangManager(Component);
+      Dialog.ShowModal;
+      Dialog.Lang := nil;
+    finally
+      Dialog.Free;
+    end;
+  end;
+end;
+
+function TLangEditor.GetVerb(Index: Integer): string;
+const
+  CmdNames: TArray<string> = ['Edit Language'];
+begin
+  Result := CmdNames[FCmdIndex[Index]];
+end;
+
+function TLangEditor.GetVerbCount: Integer;
+begin
+  SetLength(FCmdIndex, 1);
+  if (Component is TLangManager) then begin
+    Result := 1;
+    FCmdIndex[0] := 0;
+  end else
+    Result := 0;
 end;
 
 { TViewControlEditor }
@@ -838,6 +894,7 @@ function TViewAccessoryProperty.GetAttributes: TPropertyAttributes;
 begin
   Result := [paMultiSelect, paSubProperties, paReadOnly, paDialog];
 end;
+
 
 initialization
   RegisterAliases;
