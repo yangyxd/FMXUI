@@ -61,7 +61,8 @@ contains
   UI.Json in 'UI.Json.pas',
   UI.Design.Accessory in 'UI.Design.Accessory.pas' {AccessoryDesigner},
   UI.Design.SVGImage in 'UI.Design.SVGImage.pas' {FrmDesignSVGImage},
-  UI.ComboBox in 'UI.ComboBox.pas';
+  UI.ComboBox in 'UI.ComboBox.pas',
+  UI.Design.LangEditor in 'UI.Design.LangEditor.pas' {LangDesigner};
 
 end.
 

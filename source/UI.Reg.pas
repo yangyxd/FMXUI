@@ -183,8 +183,9 @@ begin
   RegisterComponents(PageName, [TCheckBoxView]);
   RegisterComponents(PageName, [TRadioView]);
 
-  RegisterComponents(PageName, [TStyleViewManager]);
+  RegisterComponents(PageName, [TLangManager]);
 
+  RegisterComponents(PageName, [TStyleViewManager]);
   RegisterComponents(PageName, [TStyleViewManager]);
 
   RegisterComponents(PageName, [THorzScrollView]);

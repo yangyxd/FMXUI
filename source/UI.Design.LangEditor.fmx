@@ -1,0 +1,121 @@
+object LangDesigner: TLangDesigner
+  Left = 0
+  Top = 0
+  Caption = 'Form4'
+  ClientHeight = 538
+  ClientWidth = 633
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  DesignerMasterStyle = 0
+  object cbLangs: TComboBox
+    Position.X = 136.000000000000000000
+    Position.Y = 8.000000000000000000
+    Size.Width = 105.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+  end
+  object Label1: TLabel
+    Position.X = 8.000000000000000000
+    Position.Y = 8.000000000000000000
+    Text = 'Language code:'
+    TabOrder = 1
+  end
+  object Add: TButton
+    Position.X = 254.000000000000000000
+    Position.Y = 8.000000000000000000
+    Size.Width = 65.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 4
+    Text = 'Add'
+    TextSettings.Trimming = None
+    OnClick = AddClick
+  end
+  object Button1: TButton
+    Position.X = 352.000000000000000000
+    Position.Y = 8.000000000000000000
+    Size.Width = 113.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 3
+    Text = 'Load from file ...'
+    TextSettings.Trimming = None
+    OnClick = Button1Click
+  end
+  object OpenDialog1: TOpenDialog
+    Filter = #22810#35821#35328#25991#20214'|*.json'
+    Left = 384
+    Top = 96
+  end
+  object lvItems: TStringGridView
+    Align = Client
+    Background.ItemPressed.Color = xFFD9D9D9
+    Background.ItemPressed.Kind = Solid
+    Gravity = None
+    Margins.Top = 38.000000000000000000
+    Margins.Right = 45.000000000000000000
+    Size.Width = 588.000000000000000000
+    Size.Height = 500.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 6
+    DrawableCells.ItemTwoColor.Color = xFFFFFFFC
+    ReadOnly = False
+    Options = [gvEditing, gvAlwaysShowEditor, gvIndicator, gvRowIndex, gvColLines, gvRowLines, gvRowSelect, gvTwoColor, gvShowSelection, gvCancelOnExit, gvEscCancelEdit, gvColumnResize]
+    ColumnsSettings.ColumnsData = 
+      '{"RowsCount":1,"ColsCount":2,"Item_0_0":{"Width":180.0,"ColIndex' +
+      '":0,"Gravity":5,"Padding":[2.0,2.0,2.0,2.0],"ReadOnly":true,"Tit' +
+      'le":"Name"},"Item_1_0":{"Width":283.0,"Weight":1.0,"ColIndex":1,' +
+      '"Gravity":5,"Padding":[2.0,2.0,2.0,2.0],"Title":"Language Text",' +
+      '"FooterValue":2.12199579096527E-314}}'
+    FixedSettings.Brush.ItemDefault.Kind = Solid
+    FixedSettings.RowHeight = 22.000000000000000000
+    FixedSettings.ColWidth = 50.000000000000000000
+    ColCount = 2
+    RowCount = 0
+  end
+  object Button2: TButton
+    Position.X = 477.000000000000000000
+    Position.Y = 8.000000000000000000
+    Size.Width = 113.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    Text = 'Save to file ...'
+    TextSettings.Trimming = None
+    OnClick = Button1Click
+  end
+  object ButtonView1: TButtonView
+    Anchors = [akTop, akRight]
+    Size.Width = 36.000000000000000000
+    Size.Height = 43.000000000000000000
+    Size.PlatformDefault = False
+    Position.X = 592.000000000000000000
+    Position.Y = 38.000000000000000000
+    TabOrder = 8
+    OnClick = ButtonView1Click
+    TextSettings.Gravity = Center
+    Drawable.Position = Center
+    Drawable.ItemDefault.Kind = AccessoryBitmap
+    Drawable.ItemDefault.Accessory.Accessory = Add
+    Drawable.ItemDefault.Accessory.Color = claRoyalblue
+  end
+  object ButtonView2: TButtonView
+    Anchors = [akTop, akRight]
+    Size.Width = 36.000000000000000000
+    Size.Height = 43.000000000000000000
+    Size.PlatformDefault = False
+    Position.X = 592.000000000000000000
+    Position.Y = 89.000000000000000000
+    TabOrder = 7
+    OnClick = ButtonView2Click
+    TextSettings.Gravity = Center
+    Drawable.Position = Center
+    Drawable.ItemDefault.Kind = AccessoryBitmap
+    Drawable.ItemDefault.Accessory.Accessory = Trash
+    Drawable.ItemDefault.Accessory.Color = claRed
+  end
+end

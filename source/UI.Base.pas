@@ -1263,6 +1263,8 @@ type
   end;
 
   TViewBase = class(TControl)
+  private
+    FOnLangChange: TNotifyEvent;
   protected
     function GetBackground: TDrawable; virtual;
     function GetViewBackground: TDrawable; virtual;
@@ -1284,6 +1286,7 @@ type
     property MaxWidth: Single read GetMaxWidth write SetMaxWidth;
     property MaxHeight: Single read GetMaxHeight write SetMaxHeight;
     property ViewState: TViewStates read GetViewStates write SetViewStates;
+    property OnLangChange: TNotifyEvent read FOnLangChange write FOnLangChange;
   end;
 
   /// <summary>
@@ -1703,6 +1706,7 @@ type
     property OnPainting;
     property OnPaint;
     property OnResize;
+    property OnLangChange;
     { Drag and Drop events }
     property OnDragEnter;
     property OnDragLeave;
@@ -1899,31 +1903,95 @@ type
   /// 多语言管理器
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
-  TLanguageManager = class(TComponent)
+  TLangManager = class(TComponent)
   private
+    FData: TDictionary<string, TDictionary<string, string>>;
+    FDefault: TDictionary<string, string>;
+    FCurLanguage: TDictionary<string, string>;
     FDefaultLanguage: string;
     FLanguage: string;
+    FFileName: string;
+    FStoreInForm: Boolean;
+    FAutoSelect: Boolean;
     procedure SetDefaultLanguage(const Value: string);
     procedure SetLanguage(const Value: string);
+    function GetLangCount: Integer;
+    function GetNameCount: Integer;
+    function GetName(const Index: Integer): string;
+    function GetLangItem(const Index: Integer): string;
+    function GetLangsList: TStrings;
+    function GetNamesList: TStrings;
   protected
+    procedure DefineProperties(Filer: TFiler); override;
+    procedure ReadResources(Stream: TStream);
+    procedure WriteResources(Stream: TStream);
+    procedure Loaded; override;
+  protected
+    function ReadString(S: TStream): string;
+    procedure WriteString(S: TStream; const Value: string);
     procedure DoChanged();
+    procedure Clear;
+    function InitLanguage(const ALanguage: string): TDictionary<string, string>;
+    procedure DoValueItemNotify(Sender: TObject; const Item: TDictionary<string, string>;
+      Action: TCollectionNotification);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    procedure LoadFromString(const AText: string);
+    function SaveToString(): string;
+    
+    procedure LoadFromFile(const AFileName: string);
+    procedure SaveToFile(const AFileName: string);
+
+    procedure AddLang(const ALanguage: string);
+    
+    function ExistLang(const ALanguage: string): Boolean;
+    function ExistName(const AName: string): Boolean;
+
+    procedure DeleteName(const ALanguage, AName: string);
+    
     /// <summary>
     /// 获取多语言文本
     /// </summary>
-    function GetLanguageText(const Name: string): string; overload;
-    function GetLanguageText(const Name: string; const ADefaultValue: string): string; overload;
+    function GetLangText(const Name: string): string; overload;
+    function GetLangText(const Name: string; const ADefaultValue: string): string; overload;
+    function GetLangText(const ALangUage, Name: string; const ADefaultValue: string): string; overload;
+    /// <summary>
+    /// 设置多语言文本
+    /// </summary>
+    procedure SetLangText(const ALangeUage, Name, Value: string); overload;
+    procedure SetLangText(const Name, Value: string); overload;
+
+    /// <summary>
+    /// 获取多语言文本
+    /// </summary>
+    property LangStr[const Index: string]: string read GetLangText; default;
+    /// <summary>
+    /// 获取语言名称
+    /// </summary>
+    property Langs[const Index: Integer]: string read GetLangItem;
+    property LangsList: TStrings read GetLangsList;
+    // 语言总数
+    property LangCount: Integer read GetLangCount;
+    /// <summary>
+    /// 获取名称
+    /// </summary>
+    property Names[const Index: Integer]: string read GetName;
+    property NamesList: TStrings read GetNamesList;
+    // 名称总数
+    property NameCount: Integer read GetNameCount;
   published
+    property AutoSelect: Boolean read FAutoSelect write FAutoSelect default True;
+    property FileName: string read FFileName write FFileName;
+    property StoreInForm: Boolean read FStoreInForm write FStoreInForm default True;
     /// <summary>
     /// 默认语言
     /// </summary>
-    property DefaultLanguage: string read FDefaultLanguage write SetDefaultLanguage;
+    property DefaultLang: string read FDefaultLanguage write SetDefaultLanguage;
     /// <summary>
     /// 当前使用的语言
     /// </summary>
-    property Language: string read FLanguage write SetLanguage;
+    property Lang: string read FLanguage write SetLanguage;
   end;
 
 
@@ -1959,7 +2027,7 @@ uses
   {$IFDEF ANDROID}
   UI.FontGlyphs.Android,
   {$ENDIF}
-  UI.Ani;
+  UI.Ani, System.JSON, UI.Json;
 
 resourcestring
   SInvViewValue = '无效的视图状态值: %d';
@@ -4053,7 +4121,8 @@ begin
 end;
 
 procedure TView.DoLanguageChange(Sender: TObject);
-begin 
+begin
+  if Assigned(FOnLangChange) then FOnLangChange(Sender);
 end;
 
 procedure TView.DoLayoutChanged(Sender: TObject);
@@ -9971,21 +10040,57 @@ begin
   end;
 end;
 
-{ TLanguageManager }
+{ TLangManager }
 
-constructor TLanguageManager.Create(AOwner: TComponent);
+procedure TLangManager.AddLang(const ALanguage: string);
+begin
+  InitLanguage(ALanguage);
+end;
+
+procedure TLangManager.Clear;
+begin
+  if Assigned(FData) then
+    FData.Clear;
+  FDefault := nil;
+  FCurLanguage := nil;
+end;
+
+constructor TLangManager.Create(AOwner: TComponent);
 begin
   inherited;
+  FAutoSelect := True;
+  FStoreInForm := True;
   FDefaultLanguage := 'en';
   FLanguage := FDefaultLanguage;
+  FData := TDictionary<string, TDictionary<string, string>>.Create;
+  FData.OnValueNotify := DoValueItemNotify;
+  FDefault := InitLanguage(FDefaultLanguage);
+  FCurLanguage := FDefault;
 end;
 
-destructor TLanguageManager.Destroy;
+procedure TLangManager.DefineProperties(Filer: TFiler);
 begin
+  inherited;
+  Filer.DefineBinaryProperty('ResBin', ReadResources, WriteResources, StoreInForm and (FData.Count > 0));
+end;
+
+procedure TLangManager.DeleteName(const ALanguage, AName: string);
+var
+  Items: TDictionary<string, string>;
+begin
+  if AName = '' then Exit;  
+  if FData.TryGetValue(ALanguage, Items) then
+    Items.Remove(AName);
+end;
+
+destructor TLangManager.Destroy;
+begin
+  Clear;
+  FreeAndNil(FData);
   inherited;
 end;
 
-procedure TLanguageManager.DoChanged;
+procedure TLangManager.DoChanged;
 
   function GetParentForm: TCustomForm;
   var
@@ -10002,42 +10107,20 @@ procedure TLanguageManager.DoChanged;
     end;
   end;
 
-  procedure RefreshControls(AContainer: TObject);
-
-    procedure RefreshControl(Control: TControl);
-    var
-      View: IView;
-    begin
-      if Control is TLabel then
-        TLabel(Control).Text := GetLanguageText(Control.Name)
-      else if Control is TButton then
-        TButton(Control).Text := GetLanguageText(Control.Name)
-      else if Control is TView then
-        TView(Control).DoLanguageChange(Self)
-      else if Supports(Control, IView, View) then
-        View.DoLanguageChange(Self)      
-      else
-        RefreshControls(Control);
-    end;
-    
+  procedure RefreshControls(AContainer: TFmxObject);
   var
     I: Integer;
     Control: TControl;
+    View: IView;
   begin
-    if AContainer is TFmxObject then begin    
-      for I := 0 to TFmxObject(AContainer).ChildrenCount - 1 do begin
-        if TFmxObject(AContainer).Children[I] is TControl then begin
-          Control := TControl(TFmxObject(AContainer).Children[I]);           
-          RefreshControl(Control);
-        end;
+    for I := 0 to TFmxObject(AContainer).ChildrenCount - 1 do begin
+      if TFmxObject(AContainer).Children[I] is TControl then begin
+        Control := TControl(TFmxObject(AContainer).Children[I]);
+        if Supports(Control, IView, View) then
+          View.DoLanguageChange(Self);
+        RefreshControls(Control);
       end;
-    end else if AContainer is TControl then 
-      for I := 0 to TControl(AContainer).ChildrenCount - 1 do begin
-        if TControl(AContainer).Children[I] is TControl then begin
-          Control := TControl(TControl(AContainer).Children[I]);           
-          RefreshControl(Control);
-        end;
-      end;
+    end;
   end;
 
 var
@@ -10053,30 +10136,295 @@ begin
   end;
 end;
 
-function TLanguageManager.GetLanguageText(const Name,
-  ADefaultValue: string): string;
+procedure TLangManager.DoValueItemNotify(Sender: TObject;
+  const Item: TDictionary<string, string>; Action: TCollectionNotification);
 begin
-  Result := ADefaultValue;
+  if (Action = TCollectionNotification.cnDeleting) and Assigned(Item) then
+    Item.Free; 
 end;
 
-function TLanguageManager.GetLanguageText(const Name: string): string;
+function TLangManager.ExistLang(const ALanguage: string): Boolean;
+begin
+  Result := FData.ContainsKey(ALanguage);
+end;
+
+function TLangManager.ExistName(const AName: string): Boolean;
+begin
+  Result := FDefault.ContainsKey(AName);
+end;
+
+function TLangManager.GetLangCount: Integer;
+begin
+  Result := FData.Keys.Count;
+end;
+
+function TLangManager.GetLangItem(const Index: Integer): string;
+var
+  I: Integer;
+  V: string;
 begin
   Result := '';
+  if (Index < 0) or (Index >= FData.Keys.Count) then Exit;  
+  I := 0;
+  for V in FData.Keys do begin
+    if I = Index then begin
+      Result := V;
+      Exit;
+    end;
+    Inc(I);
+  end; 
 end;
 
-procedure TLanguageManager.SetDefaultLanguage(const Value: string);
+function TLangManager.GetLangsList: TStrings;
+var
+  V: string;
+begin
+  Result := TStringList.Create;
+  for V in FData.Keys do 
+    Result.Add(V);
+end;
+
+function TLangManager.GetLangText(const ALangUage, Name,
+  ADefaultValue: string): string;
+var
+  Items: TDictionary<string, string>;
+begin
+  if FData.TryGetValue(ALanguage, Items) then begin
+    Result := '';
+    Items.TryGetValue(Name, Result);
+  end else
+    Result := ADefaultValue;
+end;
+
+function TLangManager.GetLangText(const Name,
+  ADefaultValue: string): string;
+begin
+  if Assigned(FCurLanguage) and (FCurLanguage.TryGetValue(Name, Result)) then begin
+    if Result = '' then 
+      Result := ADefaultValue;
+  end else
+    Result := ADefaultValue;
+  if Result = '' then Result := Name;  
+end;
+
+function TLangManager.GetName(const Index: Integer): string;
+var
+  I: Integer;
+  V: string;
+begin
+  Result := '';
+  if (Index < 0) or (Index >= FDefault.Keys.Count) then Exit;  
+  I := 0;
+  for V in FDefault.Keys do begin
+    if I = Index then begin
+      Result := V;
+      Exit;
+    end;
+    Inc(I);
+  end; 
+end;
+
+function TLangManager.GetNameCount: Integer;
+begin
+  Result := FDefault.Keys.Count;
+end;
+
+function TLangManager.GetNamesList: TStrings;
+var
+  V: string;
+begin
+  Result := TStringList.Create;
+  for V in FDefault.Keys do 
+    Result.Add(V);    
+end;
+
+function TLangManager.InitLanguage(
+  const ALanguage: string): TDictionary<string, string>;
+begin
+  if (not FData.ContainsKey(ALanguage)) or (not Assigned(FData.Items[ALanguage])) then begin
+    Result := TDictionary<string, string>.Create;
+    FData.AddOrSetValue(ALanguage, Result);
+  end else
+    Result := FData.Items[ALanguage];     
+end;
+
+procedure TLangManager.Loaded;
+var
+  LocaleSvc: IFMXLocaleService;
+begin
+  inherited;
+  if FFileName <> '' then
+    if FileExists(FFileName) then
+      LoadFromFile(FFileName);
+  if FAutoSelect and TPlatformServices.Current.SupportsPlatformService(IFMXLocaleService, LocaleSvc) then
+    FLanguage := LocaleSvc.GetCurrentLangID;
+  if FLanguage <> '' then
+    FCurLanguage := InitLanguage(FLanguage);
+end;
+
+procedure TLangManager.LoadFromFile(const AFileName: string);
+var
+  S: TStringStream;
+begin
+  S := TStringStream.Create;
+  try
+    S.LoadFromFile(AFileName);
+    LoadFromString(S.DataString);
+  finally
+    S.Free;
+  end;
+end;
+
+procedure TLangManager.LoadFromString(const AText: string);
+var
+  K: string;
+  Js, Item: TJSONObject;
+  I, J: Integer;
+  Items: TDictionary<string, string>;
+begin
+  try
+    Js := TJsonobject.Create;
+    try
+      Js.Parse(AText);
+      FData.Clear;
+      FDefault := InitLanguage(FDefaultLanguage);
+      for I := 0 to Js.Count - 1 do begin
+        K := Js.Pairs[I].JsonString.Value;
+        if Trim(K) = '' then Continue;
+        Item := Js.O[K];    
+        Items := InitLanguage(K);         
+        for J := 0 to Item.Count - 1 do begin
+          K := Item.Pairs[J].JsonString.Value;
+          if K = '' then Continue;
+          if FDefault <> Items then begin          
+            Items.AddOrSetValue(K, Item.S[K]);
+            if not FDefault.ContainsKey(K) then
+              FDefault.AddOrSetValue(K, '');
+          end else
+            Items.AddOrSetValue(K, Item.S[K]);
+        end;   
+      end;
+    finally
+      FreeAndNil(Js);        
+      FCurLanguage := InitLanguage(FLanguage);
+    end;
+  except on E: Exception do
+    LogE('TLanguageManager Load Error: ' + E.Message);
+  end;
+end;
+
+procedure TLangManager.ReadResources(Stream: TStream);
+begin
+  LoadFromString(ReadString(Stream));
+end;
+
+function TLangManager.ReadString(S: TStream): string;
+var
+  L: Integer;
+  Raw: TBytes;
+begin
+  L := 0;
+  S.Read(L, SizeOf(L));
+  if L > 0 then begin  
+    SetLength(Raw, L);
+    S.Read(Raw[0], L);
+    Result := TEncoding.UTF8.GetString(Raw);
+  end else
+    Result := '';
+end;
+
+function TLangManager.GetLangText(const Name: string): string;
+begin
+  Result := GetLangText(Name, '');
+end;
+
+procedure TLangManager.SaveToFile(const AFileName: string);
+var
+  S: TStringStream;
+begin
+  S := TStringStream.Create;
+  try
+    S.WriteString(SaveToString());
+    S.SaveToFile(AFileName);
+  finally
+    FreeAndNil(S);
+  end;
+end;
+
+function TLangManager.SaveToString: string;
+var
+  Items: TDictionary<string, string>; 
+  Js, Item: TJSONObject;
+  K, N: string;
+begin
+  Js := TJsonObject.Create;
+  try
+    for K in FData.Keys do begin
+      Item := TJsonObject.Create; 
+      Items := FData.Items[K];
+      for N in Items.Keys do 
+        Item.S[N] := Items.Items[N];
+      Js.O[K] := Item;
+    end;  
+  finally
+    Result := Js.ToJson();
+    FreeAndNil(Js);
+  end;
+end;
+
+procedure TLangManager.SetDefaultLanguage(const Value: string);
 begin
   if FDefaultLanguage <> Value then begin
-    FDefaultLanguage := Value;
+    FDefaultLanguage := Trim(Value);
+    if FDefaultLanguage = '' then FDefaultLanguage := 'en';
+    FDefault := InitLanguage(FDefaultLanguage);    
     DoChanged();
   end;
 end;
 
-procedure TLanguageManager.SetLanguage(const Value: string);
+procedure TLangManager.SetLanguage(const Value: string);
 begin
   if FLanguage <> Value then begin
-    FLanguage := Value;
+    FLanguage := Trim(Value);
+    if FLanguage = FDefaultLanguage then
+      FCurLanguage := FDefault
+    else 
+      FCurLanguage := InitLanguage(FLanguage);
     DoChanged();
+  end;
+end;
+
+procedure TLangManager.WriteResources(Stream: TStream);
+begin
+  WriteString(Stream, SaveToString());
+end;
+
+procedure TLangManager.WriteString(S: TStream; const Value: string);
+var
+  L: Integer;
+  Raw: TBytes;
+begin
+  Raw := TEncoding.UTF8.GetBytes(Value);
+  L := Length(Raw);
+  S.Write(L, SizeOf(L));
+  S.Write(Raw[0], L);
+end;
+
+procedure TLangManager.SetLangText(const Name, Value: string);
+begin
+  SetLangText(FLanguage, Name, Value);
+end;
+
+procedure TLangManager.SetLangText(const ALangeUage, Name,
+  Value: string);
+var
+  Items: TDictionary<string, string>;
+begin
+  if Name = '' then Exit;  
+  if FData.TryGetValue(ALangeUage, Items) then begin
+    Items.AddOrSetValue(Name, Value);
+    if (Items <> FDefault) and (not FDefault.ContainsKey(Name)) then
+      FDefault.Add(Name, '');
   end;
 end;
 
