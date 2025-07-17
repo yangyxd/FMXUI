@@ -1899,6 +1899,71 @@ type
   end;
 
 type
+  IStrings = interface(IInterface)
+    function Add(const S: string): Integer;
+    function AddObject(const S: string; AObject: TObject): Integer;
+    procedure Append(const S: string);
+    procedure AddStrings(Strings: TStrings); overload;
+    procedure AddStrings(const Strings: TArray<string>); overload;
+    procedure AddStrings(const Strings: TArray<string>; const Objects: TArray<TObject>); overload;
+    procedure Assign(Source: TPersistent);
+    procedure SetStrings(Source: TStrings);
+    procedure BeginUpdate;
+    procedure Clear;
+    procedure Delete(Index: Integer);
+    procedure EndUpdate;
+    function Equals(Strings: TStrings): Boolean;
+    procedure Exchange(Index1, Index2: Integer);
+    function GetText: PChar;
+    function IndexOf(const S: string): Integer;
+    function IndexOfObject(AObject: TObject): Integer;
+    procedure Insert(Index: Integer; const S: string);
+    procedure InsertObject(Index: Integer; const S: string; AObject: TObject);
+    procedure LoadFromFile(const FileName: string); overload;
+    procedure LoadFromFile(const FileName: string; Encoding: TEncoding); overload;
+    procedure LoadFromStream(Stream: TStream); overload;
+    procedure LoadFromStream(Stream: TStream; Encoding: TEncoding); overload;
+    procedure Move(CurIndex, NewIndex: Integer);
+    procedure SaveToFile(const FileName: string); overload;
+    procedure SaveToFile(const FileName: string; Encoding: TEncoding); overload;
+    procedure SaveToStream(Stream: TStream); overload;
+    procedure SaveToStream(Stream: TStream; Encoding: TEncoding); overload;
+    procedure SetText(Text: PChar);
+    function ToStringArray: TArray<string>;
+    function ToObjectArray: TArray<TObject>;
+    function GetCount(): Integer;
+    function GetObject(Index: Integer): TObject;
+    procedure PutObject(Index: Integer; AObject: TObject);
+    function Get(Index: Integer): string;
+    procedure Put(Index: Integer; const S: string);
+    function GetTextStr: string;
+    procedure SetTextStr(const Value: string);
+    function ToStrings: TStrings;
+    property Count: Integer read GetCount;
+    property Objects[Index: Integer]: TObject read GetObject write PutObject;
+    property Strings[Index: Integer]: string read Get write Put; default;
+    property Text: string read GetTextStr write SetTextStr;
+  end;
+
+  TInterfacedStrings = class(TStringList, IStrings)
+  private const
+    objDestroyingFlag = Integer($80000000);
+  private
+    [Volatile] FRefCount: Integer;
+    FIsToStrings: Integer;
+    function GetRefCount: Integer;
+    class procedure __MarkDestroying(const Obj);
+  protected
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+    function ToStrings: TStrings;
+  public
+    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
+    procedure AfterConstruction; override;
+    property RefCount: Integer read GetRefCount;
+  end;
+
+type
   /// <summary>
   /// 多语言管理器
   /// </summary>
@@ -1920,8 +1985,8 @@ type
     function GetNameCount: Integer;
     function GetName(const Index: Integer): string;
     function GetLangItem(const Index: Integer): string;
-    function GetLangsList: TStrings;
-    function GetNamesList: TStrings;
+    function GetLangsList: IStrings;
+    function GetNamesList: IStrings;
   protected
     procedure DefineProperties(Filer: TFiler); override;
     procedure ReadResources(Stream: TStream);
@@ -1971,14 +2036,14 @@ type
     /// 获取语言名称
     /// </summary>
     property Langs[const Index: Integer]: string read GetLangItem;
-    property LangsList: TStrings read GetLangsList;
+    property LangsList: IStrings read GetLangsList;
     // 语言总数
     property LangCount: Integer read GetLangCount;
     /// <summary>
     /// 获取名称
     /// </summary>
     property Names[const Index: Integer]: string read GetName;
-    property NamesList: TStrings read GetNamesList;
+    property NamesList: IStrings read GetNamesList;
     // 名称总数
     property NameCount: Integer read GetNameCount;
   published
@@ -10161,7 +10226,7 @@ end;
 procedure TLangManager.DoValueItemNotify(Sender: TObject;
   const Item: TDictionary<string, string>; Action: TCollectionNotification);
 begin
-  if (Action = TCollectionNotification.cnDeleting) and Assigned(Item) then
+  if (Action = TCollectionNotification.cnRemoved) and Assigned(Item) then
     Item.Free; 
 end;
 
@@ -10197,11 +10262,11 @@ begin
   end; 
 end;
 
-function TLangManager.GetLangsList: TStrings;
+function TLangManager.GetLangsList: IStrings;
 var
   V: string;
 begin
-  Result := TStringList.Create;
+  Result := TInterfacedStrings.Create;
   for V in FData.Keys do 
     Result.Add(V);
 end;
@@ -10213,20 +10278,25 @@ var
 begin
   if FData.TryGetValue(ALanguage, Items) then begin
     Result := '';
-    Items.TryGetValue(Name, Result);
-  end else
+    if not Items.TryGetValue(Name, Result) then
+      Result := ADefaultValue;
+  end else begin
     Result := ADefaultValue;
+  end;
+  if (ADefaultValue <> '') and Assigned(FDefault) and (not (csDesigning in ComponentState)) and (not FDefault.ContainsKey(Name)) then
+    FDefault.Add(Name, ADefaultValue);
 end;
 
 function TLangManager.GetLangText(const Name,
   ADefaultValue: string): string;
 begin
   if Assigned(FCurLanguage) and (FCurLanguage.TryGetValue(Name, Result)) then begin
-    if Result = '' then 
+    if Result = '' then
       Result := ADefaultValue;
   end else
     Result := ADefaultValue;
-  if Result = '' then Result := Name;  
+  if (ADefaultValue <> '') and Assigned(FDefault) and (not (csDesigning in ComponentState)) and (not FDefault.ContainsKey(Name)) then
+    FDefault.Add(Name, ADefaultValue);
 end;
 
 function TLangManager.GetName(const Index: Integer): string;
@@ -10251,11 +10321,11 @@ begin
   Result := FDefault.Keys.Count;
 end;
 
-function TLangManager.GetNamesList: TStrings;
+function TLangManager.GetNamesList: IStrings;
 var
   V: string;
 begin
-  Result := TStringList.Create;
+  Result := TInterfacedStrings.Create;
   for V in FDefault.Keys do 
     Result.Add(V);    
 end;
@@ -10453,6 +10523,57 @@ begin
     if (Items <> FDefault) and (not FDefault.ContainsKey(Name)) then
       FDefault.Add(Name, '');
   end;
+end;
+
+{ TInterfacedStrings }
+
+procedure TInterfacedStrings.AfterConstruction;
+begin
+  FRefCount := 0;
+end;
+
+function TInterfacedStrings.GetRefCount: Integer;
+begin
+  Result := FRefCount and not objDestroyingFlag;
+end;
+
+function TInterfacedStrings.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then Result := 0 else Result := E_NOINTERFACE;
+end;
+
+function TInterfacedStrings.ToStrings: TStrings;
+begin
+  if AtomicIncrement(FIsToStrings) = 1 then begin
+    Result := Self;
+    AtomicIncrement(FRefCount);
+  end else begin
+    Result := TInterfacedStrings.Create;
+    Result.Assign(Self);
+  end;
+end;
+
+function TInterfacedStrings._AddRef: Integer;
+begin
+  Result := AtomicIncrement(FRefCount);
+end;
+
+function TInterfacedStrings._Release: Integer;
+begin
+  Result := AtomicDecrement(FRefCount);
+  if Result = 0 then begin
+    __MarkDestroying(Self);
+    Destroy;
+  end;
+end;
+
+class procedure TInterfacedStrings.__MarkDestroying(const Obj);
+var
+  LRef: Integer;
+begin
+  repeat
+    LRef := TInterfacedStrings(Obj).FRefCount;
+  until AtomicCmpExchange(TInterfacedStrings(Obj).FRefCount, LRef or objDestroyingFlag, LRef) = LRef;
 end;
 
 initialization

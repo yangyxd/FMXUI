@@ -103,12 +103,14 @@ type
     function GetAttributes: TPropertyAttributes; override;
   end;
 
-  TLangEditor = class(TDefaultEditor)
+  TLangEditor = class(TComponentEditor)
   private
     FCmdIndex: TArray<Integer>;
+    procedure ShowDialog;
   protected
     procedure DesignerModified;
   public
+    procedure Edit; override;
     function GetVerbCount: Integer; override;
     function GetVerb(Index: Integer): string; override;
     procedure ExecuteVerb(Index: Integer); override;
@@ -536,22 +538,17 @@ begin
     Designer.Modified;
 end;
 
-procedure TLangEditor.ExecuteVerb(Index: Integer);
-var
-  Dialog: TLangDesigner;
+procedure TLangEditor.Edit;
 begin
   if not (Component is TLangManager) then Exit;
-  if FCmdIndex[Index] = 0 then begin
-    Dialog := TLangDesigner.Create(nil);
-    try
-      Dialog.Caption := 'Language Editor - 多语言编辑器';
-      Dialog.Lang := TLangManager(Component);
-      Dialog.ShowModal;
-      Dialog.Lang := nil;
-    finally
-      Dialog.Free;
-    end;
-  end;
+  ShowDialog();
+end;
+
+procedure TLangEditor.ExecuteVerb(Index: Integer);
+begin
+  if not (Component is TLangManager) then Exit;
+  if FCmdIndex[Index] = 0 then
+    ShowDialog();
 end;
 
 function TLangEditor.GetVerb(Index: Integer): string;
@@ -569,6 +566,21 @@ begin
     FCmdIndex[0] := 0;
   end else
     Result := 0;
+end;
+
+procedure TLangEditor.ShowDialog;
+var
+  Dialog: TLangDesigner;
+begin
+  Dialog := TLangDesigner.Create(nil);
+  try
+    Dialog.Caption := 'Language Editor - 多语言编辑器';
+    Dialog.Lang := TLangManager(Component);
+    Dialog.ShowModal;
+    Dialog.Lang := nil;
+  finally
+    Dialog.Free;
+  end;
 end;
 
 { TViewControlEditor }

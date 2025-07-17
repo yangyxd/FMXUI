@@ -91,8 +91,7 @@ begin
     Exit;
   end;
   I := lvItems.SelectIndex;
-  ShowMessage(IntToStr(lvItems.SelectIndex));
-  if lvItems.SelectIndex < 0 then Exit;
+  if I < 0 then Exit;
   S := lvItems.FixedCells[0, I];
   if S = '' then Exit;
   FLang.DeleteName(cbLangs.Items[cbLangs.ItemIndex], S);
@@ -117,18 +116,11 @@ begin
 end;
 
 procedure TLangDesigner.InitForm;
-var
-  S: TStrings;
 begin
   if not Assigned(FLang) then Exit;
-  S := FLang.LangsList;
-  try
-    cbLangs.Items.Assign(S);
-  finally
-    S.Free;
-  end;
+  cbLangs.Items.Assign(FLang.LangsList.ToStrings);
   FreeAndNil(FNames);
-  FNames := FLang.NamesList;
+  FNames := FLang.NamesList.ToStrings;
   cbLangs.ItemIndex := -1;
   if cbLangs.Count > 0 then cbLangs.ItemIndex := 0;
   InitNames();
