@@ -1,20 +1,20 @@
 {*******************************************************}
 {                                                       }
-{       FMX UI Dialog Í¨ÓÃ¶Ô»°¿ò                        }
+{       FMX UI Dialog é€šç”¨å¯¹è¯æ¡†                        }
 {                                                       }
-{       °æÈ¨ËùÓĞ (C) 2016 YangYxd                       }
+{       ç‰ˆæƒæ‰€æœ‰ (C) 2016 YangYxd                       }
 {                                                       }
 {*******************************************************}
 
 {
-  Ê¾Àı£º
-  1. »ù±¾¶Ô»°¿ò
+  ç¤ºä¾‹ï¼š
+  1. åŸºæœ¬å¯¹è¯æ¡†
     TDialogBuilder.Create(Self)
-      .SetTitle('±êÌâ')
-      .SetMessage('ÏûÏ¢ÄÚÈİ')
-      .SetNegativeButton('È¡Ïû')
+      .SetTitle('æ ‡é¢˜')
+      .SetMessage('æ¶ˆæ¯å†…å®¹')
+      .SetNegativeButton('å–æ¶ˆ')
       .Show();
-  2. ÁĞ±í¿ò
+  2. åˆ—è¡¨æ¡†
     TDialogBuilder.Create(Self)
       .SetItems(['Item1', 'Item2', 'Item3'],
         procedure (Dialog: IDialog; Which: Integer) begin
@@ -22,7 +22,7 @@
         end
       )
       .Show();
-  3. ¶àÑ¡¿ò
+  3. å¤šé€‰æ¡†
     TDialogBuilder.Create(Self)
       .SetMultiChoiceItems(
         ['Item1', 'Item2', 'Item3'],
@@ -31,9 +31,9 @@
           // Hint(Dialog.Builder.ItemArray[Which]);
         end
       )
-      .SetNeutralButton('È·¶¨',
+      .SetNeutralButton('ç¡®å®š',
         procedure (Dialog: IDialog; Which: Integer) begin
-          Hint(Format('ÄúÑ¡ÔñÁË%dÏî', [Dialog.Builder.CheckedCount]));
+          Hint(Format('æ‚¨é€‰æ‹©äº†%dé¡¹', [Dialog.Builder.CheckedCount]));
         end
       )
       .Show();
@@ -53,7 +53,7 @@ uses
   FMX.ListView, FMX.ListView.Appearances, FMX.ListView.Types;
 
 const
-  // Ã»ÓĞµã»÷°´Å¥
+  // æ²¡æœ‰ç‚¹å‡»æŒ‰é’®
   BUTTON_NONE = 0;
   // The identifier for the positive button.
   BUTTON_POSITIVE = -1;
@@ -65,7 +65,7 @@ const
   BUTTON_CANCEL = -4;
 
 const
-  // ÑÕÉ«¡¢×ÖÌåµÈÄ¬ÈÏÉèÖÃÏî
+  // é¢œè‰²ã€å­—ä½“ç­‰é»˜è®¤è®¾ç½®é¡¹
   COLOR_BodyBackgroundColor = $ffffffff;
   COLOR_BackgroundColor = $ffffffff;
   COLOR_DialogMaskColor = $9f000000;
@@ -147,7 +147,7 @@ type
 
 type
   /// <summary>
-  /// ¶Ô»°¿òÑùÊ½¹ÜÀíÆ÷
+  /// å¯¹è¯æ¡†æ ·å¼ç®¡ç†å™¨
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TDialogStyleManager = class(TComponent)
@@ -201,60 +201,60 @@ type
     destructor Destroy; override;
     procedure Assign(Dest: TPersistent); override;
   published
-    // ÕÚÕÖ²ãÑÕÉ«
+    // é®ç½©å±‚é¢œè‰²
     property DialogMaskColor: TAlphaColor read FDialogMaskColor write FDialogMaskColor default COLOR_DialogMaskColor;
-    // ÕÚÕÖ²ãÍâ±ß¾à
+    // é®ç½©å±‚å¤–è¾¹è·
     property DialogMaskMargins: TBounds read FDialogMaskMargins write FDialogMaskMargins;
-    // ÕÚÕÖ²ãÒõÓ°ÑÕÉ«
+    // é®ç½©å±‚é˜´å½±é¢œè‰²
     property DialogMaskShadowColor: TAlphaColor read FDialogMaskShadowColor write FDialogMaskShadowColor default COLOR_DialogMaskShadowColor;
 
-    // ÏûÏ¢¿ò±³¾°ÑÕÉ«
+    // æ¶ˆæ¯æ¡†èƒŒæ™¯é¢œè‰²
     property BackgroundColor: TAlphaColor read FBackgroundColor write FBackgroundColor default COLOR_BackgroundColor;
-    // ÏûÏ¢¿ò±³¾°ÄÚ±ß¾à
+    // æ¶ˆæ¯æ¡†èƒŒæ™¯å†…è¾¹è·
     property BackgroundPadding: TBounds read FBackgroundPadding write FBackgroundPadding;
-    // ±êÌâÀ¸±³¾°É«
+    // æ ‡é¢˜æ èƒŒæ™¯è‰²
     property TitleBackGroundColor: TAlphaColor read FTitleBackGroundColor write FTitleBackGroundColor default COLOR_TitleBackGroundColor;
-    // ±êÌâÀ¸ÎÄ±¾ÑÕÉ«
+    // æ ‡é¢˜æ æ–‡æœ¬é¢œè‰²
     property TitleTextColor: TAlphaColor read FTitleTextColor write FTitleTextColor default COLOR_TitleTextColor;
-    // Ö÷ÌåÇø±³¾°ÑÕÉ«
+    // ä¸»ä½“åŒºèƒŒæ™¯é¢œè‰²
     property BodyBackgroundColor: TAlphaColor read FBodyBackgroundColor write FBodyBackgroundColor default COLOR_BodyBackgroundColor;
 
-    // ÏûÏ¢ÎÄ±¾ÑÕÉ«
+    // æ¶ˆæ¯æ–‡æœ¬é¢œè‰²
     property MessageTextColor: TAlphaColor read FMessageTextColor write FMessageTextColor default COLOR_MessageTextColor;
-    // ÏûÏ¢ÎÄ±¾±³¾°ÑÕÉ«
+    // æ¶ˆæ¯æ–‡æœ¬èƒŒæ™¯é¢œè‰²
     property MessageTextBackground: TAlphaColor read FMessageTextBackground write FMessageTextBackground default COLOR_MessageTextBackground;
-    // ÏûÏ¢ÎÄ±¾Íâ±ß¾à
+    // æ¶ˆæ¯æ–‡æœ¬å¤–è¾¹è·
     property MessageTextMargins: TBounds  read GetMessageTextMargins write SetMessageTextMargins;
-    // ÏûÏ¢ÎÄ±¾ÖØÁ¦
+    // æ¶ˆæ¯æ–‡æœ¬é‡åŠ›
     property MessageTextGravity: TLayoutGravity read FMessageTextGravity write FMessageTextGravity default TLayoutGravity.CenterVertical;
 
-    // µÈ´ıÏûÏ¢¿ò±³¾°ÑÕÉ«
+    // ç­‰å¾…æ¶ˆæ¯æ¡†èƒŒæ™¯é¢œè‰²
     property ProcessBackgroundColor: TAlphaColor read FProcessBackgroundColor write FProcessBackgroundColor default COLOR_ProcessBackgroundColor;
-    // µÈ´ıÏûÏ¢¿òÏûÏ¢ÎÄ×ÖÑÕÉ«
+    // ç­‰å¾…æ¶ˆæ¯æ¡†æ¶ˆæ¯æ–‡å­—é¢œè‰²
     property ProcessTextColor: TAlphaColor read FProcessTextColor write FProcessTextColor default COLOR_ProcessTextColor;
 
-    // ÁĞ±í¿òÄ¬ÈÏÁĞ±íÏî°´ÏÂÊ±±³¾°ÑÕÉ«
+    // åˆ—è¡¨æ¡†é»˜è®¤åˆ—è¡¨é¡¹æŒ‰ä¸‹æ—¶èƒŒæ™¯é¢œè‰²
     property ListItemPressedColor: TAlphaColor read FListItemPressedColor write FListItemPressedColor default COLOR_ListItemPressedColor;
-    // ÁĞ±í¿òÄ¬ÈÏĞĞÁĞ·Ö¸ôÏßÑÕÉ«
+    // åˆ—è¡¨æ¡†é»˜è®¤è¡Œåˆ—åˆ†éš”çº¿é¢œè‰²
     property ListItemDividerColor: TAlphaColor read FListItemDividerColor write FListItemDividerColor default COLOR_ListItemDividerColor;
 
-    // ±êÌâÀ¸ÎÄ±¾ÖØÁ¦
+    // æ ‡é¢˜æ æ–‡æœ¬é‡åŠ›
     property TitleGravity: TLayoutGravity read FTitleGravity write FTitleGravity default Title_Gravity;
-    // ±êÌâÀ¸¸ß¶È
+    // æ ‡é¢˜æ é«˜åº¦
     property TitleHeight: Integer read FTitleHeight write FTitleHeight default SIZE_TitleHeight;
-    // ±êÌâÀ¸´ÖÌå
+    // æ ‡é¢˜æ ç²—ä½“
     property TitleTextBold: Boolean read FTitleTextBold write FTitleTextBold default False;
-    // ±êÌâÎÄ±¾´óĞ¡
+    // æ ‡é¢˜æ–‡æœ¬å¤§å°
     property TitleTextSize: Integer read FTitleTextSize write FTitleTextSize default FONT_TitleTextSize;
-    // ÏûÏ¢ÎÄ±¾´óĞ¡
+    // æ¶ˆæ¯æ–‡æœ¬å¤§å°
     property MessageTextSize: Integer read FMessageTextSize write FMessageTextSize default FONT_MessageTextSize;
-    // °´Å¥ÎÄ±¾´óĞ¡
+    // æŒ‰é’®æ–‡æœ¬å¤§å°
     property ButtonTextSize: Integer read FButtonTextSize write FButtonTextSize default FONT_ButtonTextSize;
-    // °´Å¥¸ß¶È
+    // æŒ‰é’®é«˜åº¦
     property ButtonHeight: Integer read FButtonHeight write FButtonHeight default SIZE_ButtonHeight;
-    // Í¼±ê´óĞ¡
+    // å›¾æ ‡å¤§å°
     property IconSize: Integer read FIconSize write FIconSize default SIZE_ICON;
-    // ×î´ó¿í¶È
+    // æœ€å¤§å®½åº¦
     property MaxWidth: Integer read FMaxWidth write FMaxWidth default 0;
 
     property BackgroundRadius: Single read FBackgroundRadius write FBackgroundRadius stored IsStoredBackgroundRadius;
@@ -262,9 +262,9 @@ type
     property ButtonTextColor: TTextColor read FButtonTextColor write SetButtonTextColor;
     property ButtonBorder: TViewBorder read FButtonBorder write SetButtonBorder;
 
-    // ±êÌâÓëÄÚÈİÇø·Ö¸ôÏßÑÕÉ«
+    // æ ‡é¢˜ä¸å†…å®¹åŒºåˆ†éš”çº¿é¢œè‰²
     property TitleSpaceColor: TAlphaColor read FTitleSpaceColor write FTitleSpaceColor default COLOR_TitleSpaceColor;
-    // ±êÌâÓëÄÚÈİÇø·Ö¸ôÏß¸ß¶È
+    // æ ‡é¢˜ä¸å†…å®¹åŒºåˆ†éš”çº¿é«˜åº¦
     property TitleSpaceHeight: Single read FTitleSpaceHeight write FTitleSpaceHeight stored IsStoredTitleSpaceHeight;
   end;
 
@@ -274,7 +274,7 @@ type
   TDialogView = class;
 
   /// <summary>
-  /// ¶Ô»°¿ò½Ó¿Ú
+  /// å¯¹è¯æ¡†æ¥å£
   /// </summary>
   IDialog = interface(IInterface)
     ['{53E2915A-B90C-4C9B-85D8-F4E3B9892D9A}']
@@ -284,44 +284,44 @@ type
     function GetCancelable: Boolean;
 
     /// <summary>
-    /// ÏÔÊ¾¶Ô»°¿ò
+    /// æ˜¾ç¤ºå¯¹è¯æ¡†
     /// </summary>
     procedure Show();
     /// <summary>
-    /// ¹Ø±Õ¶Ô»°¿ò
+    /// å…³é—­å¯¹è¯æ¡†
     /// </summary>
     procedure Dismiss();
     /// <summary>
-    /// Òì²½¹Ø±Õ¶Ô»°¿ò
+    /// å¼‚æ­¥å…³é—­å¯¹è¯æ¡†
     /// </summary>
     procedure AsyncDismiss();
     /// <summary>
-    /// ¹Ø±Õ¶Ô»°¿ò
+    /// å…³é—­å¯¹è¯æ¡†
     /// </summary>
     procedure Close();
     /// <summary>
-    /// È¡Ïû¶Ô»°¿ò
+    /// å–æ¶ˆå¯¹è¯æ¡†
     /// </summary>
     procedure Cancel();
     /// <summary>
-    /// Òş²Ø¶Ô»°¿ò
+    /// éšè—å¯¹è¯æ¡†
     /// </summary>
     procedure Hide();
 
     /// <summary>
-    /// ¹¹ÔìÆ÷
+    /// æ„é€ å™¨
     /// </summary>
     property Builder: TDialogBuilder read GetBuilder;
     /// <summary>
-    /// ÊÓÍ¼×é¼ş
+    /// è§†å›¾ç»„ä»¶
     /// </summary>
     property View: TControl read GetView;
     /// <summary>
-    /// ¸ùÊÓÍ¼×é¼ş
+    /// æ ¹è§†å›¾ç»„ä»¶
     /// </summary>
     property ViewRoot: TDialogView read GetViewRoot;
     /// <summary>
-    /// ÊÇ·ñÄÜÈ¡Ïû¶Ô»°¿ò
+    /// æ˜¯å¦èƒ½å–æ¶ˆå¯¹è¯æ¡†
     /// </summary>
     property Cancelable: Boolean read GetCancelable;
   end;
@@ -340,7 +340,7 @@ type
   TOnDialogInitA = reference to procedure (Dialog: IDialog; Builder: TDialogBuilder);
 
   /// <summary>
-  /// ¶Ô»°¿òÊÓÍ¼ (²»ÒªÖ±½ÓÊ¹ÓÃËü)
+  /// å¯¹è¯æ¡†è§†å›¾ (ä¸è¦ç›´æ¥ä½¿ç”¨å®ƒ)
   /// </summary>
   TDialogView = class(TRelativeLayout)
   private
@@ -423,12 +423,12 @@ type
     FCanceled: Boolean;
     FIsDismiss: Boolean;
 
-    FEventing: Boolean;      // ÊÂ¼ş´¦ÀíÖĞ
-    FAllowDismiss: Boolean;  // ĞèÒªÊÍ·Å
+    FEventing: Boolean;      // äº‹ä»¶å¤„ç†ä¸­
+    FAllowDismiss: Boolean;  // éœ€è¦é‡Šæ”¾
 
-    FTempValue: Single;      // ÁÙÊ±±äÁ¿
+    FTempValue: Single;      // ä¸´æ—¶å˜é‡
 
-    FIsDowPopup: Boolean;    // ÊÇ·ñÊÇÏÂÀ­µ¯³ö·½Ê½
+    FIsDowPopup: Boolean;    // æ˜¯å¦æ˜¯ä¸‹æ‹‰å¼¹å‡ºæ–¹å¼
 
     procedure SetCancelable(const Value: Boolean);
     function GetCancelable: Boolean;
@@ -447,10 +447,10 @@ type
     procedure DoAsyncDismiss();
 
     /// <summary>
-    /// ²¥·Å¶¯»­
-    /// <param name="Ani">¶¯»­ÀàĞÍ</param>
-    /// <param name="IsIn">ÊÇ·ñÊÇÕıÒªÏÔÊ¾</param>
-    /// <param name="AEvent">¶¯»­²¥·ÅÍê³ÉÊÂ¼ş</param>
+    /// æ’­æ”¾åŠ¨ç”»
+    /// <param name="Ani">åŠ¨ç”»ç±»å‹</param>
+    /// <param name="IsIn">æ˜¯å¦æ˜¯æ­£è¦æ˜¾ç¤º</param>
+    /// <param name="AEvent">åŠ¨ç”»æ’­æ”¾å®Œæˆäº‹ä»¶</param>
     /// </summary>
     procedure AnimatePlay(Ani: TFrameAniType; IsIn: Boolean; AEvent: TNotifyEventA);
 
@@ -460,17 +460,17 @@ type
     destructor Destroy; override;
 
     /// <summary>
-    /// ÏÔÊ¾¶Ô»°¿ò
+    /// æ˜¾ç¤ºå¯¹è¯æ¡†
     /// </summary>
     procedure Show();
 
     /// <summary>
-    /// ÏÔÊ¾¶Ô»°¿ò
-    /// <param name="Target">¶¨Î»¿Ø¼ş</param>
-    /// <param name="ViewClass">Òª×Ô¶¯´´½¨µÄÊÓÍ¼Àà</param>
-    /// <param name="Position">ÊÓÍ¼Î»ÖÃ£¨Ä¬ÈÏÎ»ÓÚÄ¿±êÏÂ·½£©</param>
-    /// <param name="XOffset">ÊÓÍ¼Æ«ÒÆºáÏòÎ»ÖÃ</param>
-    /// <param name="YOffset">ÊÓÍ¼Æ«ÒÆ´¹Ö±Î»ÖÃ</param>
+    /// æ˜¾ç¤ºå¯¹è¯æ¡†
+    /// <param name="Target">å®šä½æ§ä»¶</param>
+    /// <param name="ViewClass">è¦è‡ªåŠ¨åˆ›å»ºçš„è§†å›¾ç±»</param>
+    /// <param name="Position">è§†å›¾ä½ç½®ï¼ˆé»˜è®¤ä½äºç›®æ ‡ä¸‹æ–¹ï¼‰</param>
+    /// <param name="XOffset">è§†å›¾åç§»æ¨ªå‘ä½ç½®</param>
+    /// <param name="YOffset">è§†å›¾åç§»å‚ç›´ä½ç½®</param>
     /// </summary>
     class function ShowView(const AOwner: TComponent; const Target: TControl;
       const ViewClass: TControlClass;
@@ -479,13 +479,13 @@ type
       Cancelable: Boolean = True; Ani: TFrameAniType = TFrameAniType.None;
       Mask: Boolean = True; Shadow: Boolean = False): TDialog; overload;
     /// <summary>
-    /// ÏÔÊ¾¶Ô»°¿ò
-    /// <param name="Target">¶¨Î»¿Ø¼ş</param>
-    /// <param name="View">ÒªÏÔÊ¾µÄÊÓÍ¼¶ÔÏó</param>
-    /// <param name="AViewAutoFree">ÊÇ·ñ×Ô¶¯ÊÍ·ÅView¶ÔÏó</param>
-    /// <param name="Position">ÊÓÍ¼Î»ÖÃ£¨Ä¬ÈÏÎ»ÓÚÄ¿±êÏÂ·½£©</param>
-    /// <param name="XOffset">ÊÓÍ¼Æ«ÒÆºáÏòÎ»ÖÃ</param>
-    /// <param name="YOffset">ÊÓÍ¼Æ«ÒÆ´¹Ö±Î»ÖÃ</param>
+    /// æ˜¾ç¤ºå¯¹è¯æ¡†
+    /// <param name="Target">å®šä½æ§ä»¶</param>
+    /// <param name="View">è¦æ˜¾ç¤ºçš„è§†å›¾å¯¹è±¡</param>
+    /// <param name="AViewAutoFree">æ˜¯å¦è‡ªåŠ¨é‡Šæ”¾Viewå¯¹è±¡</param>
+    /// <param name="Position">è§†å›¾ä½ç½®ï¼ˆé»˜è®¤ä½äºç›®æ ‡ä¸‹æ–¹ï¼‰</param>
+    /// <param name="XOffset">è§†å›¾åç§»æ¨ªå‘ä½ç½®</param>
+    /// <param name="YOffset">è§†å›¾åç§»å‚ç›´ä½ç½®</param>
     /// </summary>
     class function ShowView(const AOwner: TComponent; const Target: TControl;
       const View: TControl; AViewAutoFree: Boolean = True;
@@ -495,50 +495,50 @@ type
       Mask: Boolean = True; Shadow: Boolean = False): TDialog; overload;
 
     /// <summary>
-    /// ÔÚÒ»¸öÄ¿±ê¿Ø¼şÉíÉÏ²éÕÒÓëÆä°ó¶¨ÔÚÒ»ÆğµÄ¶ÔÏó¿ò
+    /// åœ¨ä¸€ä¸ªç›®æ ‡æ§ä»¶èº«ä¸ŠæŸ¥æ‰¾ä¸å…¶ç»‘å®šåœ¨ä¸€èµ·çš„å¯¹è±¡æ¡†
     /// </summary>
     class function GetDialog(const Target: TControl): IDialog;
 
     /// <summary>
-    /// ÔÚÒ»¸öÄ¿±ê¿Ø¼şÉíÉÏ²éÕÒÓëÆä°ó¶¨ÔÚÒ»ÆğµÄ¶Ô»°¿ò£¬Èç¹ûÕÒµ½£¬¹Ø±ÕËü
+    /// åœ¨ä¸€ä¸ªç›®æ ‡æ§ä»¶èº«ä¸ŠæŸ¥æ‰¾ä¸å…¶ç»‘å®šåœ¨ä¸€èµ·çš„å¯¹è¯æ¡†ï¼Œå¦‚æœæ‰¾åˆ°ï¼Œå…³é—­å®ƒ
     /// </summary>
     class procedure CloseDialog(const Target: TControl);
 
     /// <summary>
-    /// ¹Ø±Õ¶Ô»°¿ò
+    /// å…³é—­å¯¹è¯æ¡†
     /// </summary>
     procedure Dismiss();
     /// <summary>
-    /// ¹Ø±Õ¶Ô»°¿ò
+    /// å…³é—­å¯¹è¯æ¡†
     /// </summary>
     procedure Close();
     /// <summary>
-    /// È¡Ïû¶Ô»°¿ò
+    /// å–æ¶ˆå¯¹è¯æ¡†
     /// </summary>
     procedure Cancel();
     /// <summary>
-    /// Òş²Ø
+    /// éšè—
     /// </summary>
     procedure Hide();
     /// <summary>
-    /// Òì²½ÊÍ·Å
+    /// å¼‚æ­¥é‡Šæ”¾
     /// </summary>
     procedure AsyncDismiss();
 
     /// <summary>
-    /// Í¨ÖªÊı¾İÒÑ¾­¸Ä±ä£¬Ë¢ĞÂÁĞ±í
+    /// é€šçŸ¥æ•°æ®å·²ç»æ”¹å˜ï¼Œåˆ·æ–°åˆ—è¡¨
     /// </summary>
     procedure NotifyDataSetChanged();
 
     /// <summary>
-    /// ¶Ô»°¿òView
+    /// å¯¹è¯æ¡†View
     /// </summary>
     property View: TControl read GetView;
 
     property RootView: TDialogView read GetRootView;
 
     /// <summary>
-    /// ÊÇ·ñÄÜÈ¡Ïû¶Ô»°¿ò
+    /// æ˜¯å¦èƒ½å–æ¶ˆå¯¹è¯æ¡†
     /// </summary>
     property Cancelable: Boolean read FCancelable write SetCancelable;
 
@@ -556,7 +556,7 @@ type
   end;
 
   /// <summary>
-  /// µ¯³öÊ½¶Ô»°¿ò»ùÀà
+  /// å¼¹å‡ºå¼å¯¹è¯æ¡†åŸºç±»
   /// </summary>
   TCustomAlertDialog = class(TDialog)
   private
@@ -593,12 +593,12 @@ type
     destructor Destroy; override;
 
     /// <summary>
-    /// ÒÔ Builder µÄÉèÖÃÀ´³õÊ¼»¯¶Ô»°¿ò
+    /// ä»¥ Builder çš„è®¾ç½®æ¥åˆå§‹åŒ–å¯¹è¯æ¡†
     /// </summary>
     procedure Apply(const ABuilder: TDialogBuilder); virtual;
 
     /// <summary>
-    /// ¶Ô»°¿ò¹¹ÔìÆ÷
+    /// å¯¹è¯æ¡†æ„é€ å™¨
     /// </summary>
     property Builder: TDialogBuilder read FBuilder;
 
@@ -609,7 +609,7 @@ type
   end;
 
   /// <summary>
-  /// ¶Ô»°¿ò¹¹ÔìÆ÷
+  /// å¯¹è¯æ¡†æ„é€ å™¨
   /// </summary>
   TDialogBuilder = class(TObject)
   private
@@ -708,109 +708,109 @@ type
     function Show(OnDismissListener: TOnDialogListenerA): IDialog; overload;
 
     /// <summary>
-    /// ÉèÖÃDialog³õÊ¼»¯ÊÂ¼ş
+    /// è®¾ç½®Dialogåˆå§‹åŒ–äº‹ä»¶
     /// </summary>
     function SetOnInitA(AListener: TOnDialogInitA): TDialogBuilder;
 
     /// <summary>
-    /// ÉèÖÃÒ»¸ö¶Ô»°¿òÑùÊ½¹ÜÀíÆ÷£¬²»ÉèÖÃÔò»á×Ô¶¯²éÕÒ£¬ÕÒ²»µ½ÔòÊ¹ÓÃÄ¬ÈÏÑùÊ½
+    /// è®¾ç½®ä¸€ä¸ªå¯¹è¯æ¡†æ ·å¼ç®¡ç†å™¨ï¼Œä¸è®¾ç½®åˆ™ä¼šè‡ªåŠ¨æŸ¥æ‰¾ï¼Œæ‰¾ä¸åˆ°åˆ™ä½¿ç”¨é»˜è®¤æ ·å¼
     /// </summary>
     function SetStyleManager(AValue: TDialogStyleManager): TDialogBuilder;
 
     /// <summary>
-    /// ÉèÖÃ±êÌâ
+    /// è®¾ç½®æ ‡é¢˜
     /// </summary>
     function SetTitle(const ATitle: string): TDialogBuilder;
     /// <summary>
-    /// ÉèÖÃÏûÏ¢
+    /// è®¾ç½®æ¶ˆæ¯
     /// </summary>
     function SetMessage(const AMessage: string; IsHtmlText: Boolean = False): TDialogBuilder;
     /// <summary>
-    /// ÉèÖÃÍ¼±ê
+    /// è®¾ç½®å›¾æ ‡
     /// </summary>
     function SetIcon(AIcon: TBrush): TDialogBuilder; overload;
     /// <summary>
-    /// ÉèÖÃÍ¼±ê
+    /// è®¾ç½®å›¾æ ‡
     /// </summary>
     function SetIcon(AIcon: TBrushBitmap): TDialogBuilder; overload;
     /// <summary>
-    /// ÉèÖÃÍ¼±ê
+    /// è®¾ç½®å›¾æ ‡
     /// </summary>
     function SetIcon(AIcon: TDrawableBase): TDialogBuilder; overload;
     /// <summary>
-    /// ÉèÖÃÍ¼±ê
+    /// è®¾ç½®å›¾æ ‡
     /// </summary>
     function SetIcon(AIcon: TBitmap): TDialogBuilder; overload;
 
     /// <summary>
-    /// ÉèÖÃ½«¶Ô»°¿ò×÷ÎªÏÂÀ­µ¯³ö²Ëµ¥Ê±µÄ±ê°ĞºÍÆ«ÒÆ £¨Target·Ç¿ÕÊ±£¬¶Ô»°¿òÒÔÏÂÀ­µ¯³ö²Ëµ¥ÑùÊ½ÏÔÊ¾£©
+    /// è®¾ç½®å°†å¯¹è¯æ¡†ä½œä¸ºä¸‹æ‹‰å¼¹å‡ºèœå•æ—¶çš„æ ‡é¶å’Œåç§» ï¼ˆTargetéç©ºæ—¶ï¼Œå¯¹è¯æ¡†ä»¥ä¸‹æ‹‰å¼¹å‡ºèœå•æ ·å¼æ˜¾ç¤ºï¼‰
     /// </summary>
     function SetDownPopup(ATarget: TControl; const XOffset, YOffset: Single;
       Gravity: TLayoutGravity = TLayoutGravity.LeftBottom;
       MaskVisible: Boolean = False): TDialogBuilder;
 
     /// <summary>
-    /// ÉèÖÃÎ»ÖÃ
+    /// è®¾ç½®ä½ç½®
     /// </summary>
     function SetPosition(APosition: TDialogViewPosition): TDialogBuilder;
 
     /// <summary>
-    /// ÉèÖÃÊÇ·ñ×Ô¶¯»»ĞĞ£¨ÁĞ±íÏî£©
+    /// è®¾ç½®æ˜¯å¦è‡ªåŠ¨æ¢è¡Œï¼ˆåˆ—è¡¨é¡¹ï¼‰
     /// </summary>
     function SetWordWrap(V: Boolean): TDialogBuilder;
 
     /// <summary>
-    /// ÉèÖÃÈ·ÈÏ°´Å¥
+    /// è®¾ç½®ç¡®è®¤æŒ‰é’®
     /// </summary>
     function SetPositiveButton(const AText: string; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
     function SetPositiveButton(const AText: string; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
     function SetPositiveButtonStyle(const AColor: Int64; const AStyle: TFontStyles = []; const ASize: Single = -1): TDialogBuilder; overload;
     /// <summary>
-    /// ÉèÖÃ·ñ¶¨°´Å¥
+    /// è®¾ç½®å¦å®šæŒ‰é’®
     /// </summary>
     function SetNegativeButton(const AText: string; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
     function SetNegativeButton(const AText: string; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
     function SetNegativeButtonStyle(const AColor: Int64; const AStyle: TFontStyles = []; const ASize: Single = -1): TDialogBuilder; overload;
     /// <summary>
-    /// ÉèÖÃÖĞ¼ä°´Å¥
+    /// è®¾ç½®ä¸­é—´æŒ‰é’®
     /// </summary>
     function SetNeutralButton(const AText: string; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
     function SetNeutralButton(const AText: string; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
     function SetNeutralButtonStyle(const AColor: Int64; const AStyle: TFontStyles = []; const ASize: Single = -1): TDialogBuilder; overload;
     /// <summary>
-    /// ÉèÖÃµ×²¿È¡Ïû°´Å¥
+    /// è®¾ç½®åº•éƒ¨å–æ¶ˆæŒ‰é’®
     /// </summary>
     function SetCancelButton(const AText: string; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
     function SetCancelButton(const AText: string; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
     function SetCancelButtonStyle(const AColor: Int64; const AStyle: TFontStyles = []; const ASize: Single = -1): TDialogBuilder; overload;
 
     /// <summary>
-    /// ÉèÖÃÊÇ·ñ¿ÉÒÔÈ¡Ïû
+    /// è®¾ç½®æ˜¯å¦å¯ä»¥å–æ¶ˆ
     /// </summary>
     function SetCancelable(ACancelable: Boolean): TDialogBuilder;
     /// <summary>
-    /// ÉèÖÃÈ¡ÏûÊÂ¼ş
+    /// è®¾ç½®å–æ¶ˆäº‹ä»¶
     /// </summary>
     function SetOnCancelListener(AListener: TOnDialogListener): TDialogBuilder; overload;
     function SetOnCancelListener(AListener: TOnDialogListenerA): TDialogBuilder; overload;
     /// <summary>
-    /// ÉèÖÃ°´¼ü¼àÌıÊÂ¼ş
+    /// è®¾ç½®æŒ‰é”®ç›‘å¬äº‹ä»¶
     /// </summary>
     function SetOnKeyListener(AListener: TOnDialogKeyListener): TDialogBuilder; overload;
     function SetOnKeyListener(AListener: TOnDialogKeyListenerA): TDialogBuilder; overload;
     /// <summary>
-    /// ÉèÖÃÁĞ±íÏî
+    /// è®¾ç½®åˆ—è¡¨é¡¹
     /// </summary>
     function SetItems(AItems: TStrings; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
     function SetItems(AItems: TStrings; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
     function SetItems(const AItems: TArray<string>; AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
     function SetItems(const AItems: TArray<string>; AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
     /// <summary>
-    /// ÉèÖÃÒ»¸ö×ÓÊÓÍ¼
+    /// è®¾ç½®ä¸€ä¸ªå­è§†å›¾
     /// </summary>
     function SetView(AView: TControl; AViewAutoFree: Boolean = True): TDialogBuilder;
     /// <summary>
-    /// ÉèÖÃ¶àÖØÑ¡ÏîÁĞ±íÏî
+    /// è®¾ç½®å¤šé‡é€‰é¡¹åˆ—è¡¨é¡¹
     /// </summary>
     function SetMultiChoiceItems(AItems: TStrings; ACheckedItems: TArray<Boolean>;
       AListener: TOnDialogMultiChoiceClickListener = nil): TDialogBuilder; overload;
@@ -821,7 +821,7 @@ type
     function SetMultiChoiceItems(const AItems: TArray<string>; ACheckedItems: TArray<Boolean>;
       AListener: TOnDialogMultiChoiceClickListenerA): TDialogBuilder; overload;
     /// <summary>
-    /// ÉèÖÃµ¥Ñ¡ÁĞ±íÏî
+    /// è®¾ç½®å•é€‰åˆ—è¡¨é¡¹
     /// </summary>
     function SetSingleChoiceItems(AItems: TStrings; ACheckedItem: Integer;
       AListener: TOnDialogClickListener = nil): TDialogBuilder; overload;
@@ -832,64 +832,64 @@ type
     function SetSingleChoiceItems(const AItems: TArray<string>; ACheckedItem: Integer;
       AListener: TOnDialogClickListenerA): TDialogBuilder; overload;
     /// <summary>
-    /// ÉèÖÃÁĞ±íÏîÑ¡ÔñÊÂ¼ş
+    /// è®¾ç½®åˆ—è¡¨é¡¹é€‰æ‹©äº‹ä»¶
     /// </summary>
     function SetOnItemSelectedListener(AListener: TOnDialogItemSelectedListener): TDialogBuilder; overload;
     function SetOnItemSelectedListener(AListener: TOnDialogItemSelectedListenerA): TDialogBuilder; overload;
     /// <summary>
-    /// ÉèÖÃÁĞ±íÏîÊÇ·ñÎªµ¥ĞĞÎÄ±¾£¬Ä¬ÈÏÎª True
+    /// è®¾ç½®åˆ—è¡¨é¡¹æ˜¯å¦ä¸ºå•è¡Œæ–‡æœ¬ï¼Œé»˜è®¤ä¸º True
     /// </summary>
     function SetItemSingleLine(AItemSingleLine: Boolean): TDialogBuilder;
     /// <summary>
-    /// ÉèÖÃÊÇ·ñÔÚµã»÷ÁË°´Å¥ºóÊÍ·Å¶Ô»°¿ò
+    /// è®¾ç½®æ˜¯å¦åœ¨ç‚¹å‡»äº†æŒ‰é’®åé‡Šæ”¾å¯¹è¯æ¡†
     /// </summary>
     function SetClickButtonDismiss(V: Boolean): TDialogBuilder;
 
     /// <summary>
-    /// ÉèÖÃ×Ô¶¨ÒåÁĞ±íÊı¾İÊÊÅäÆ÷
+    /// è®¾ç½®è‡ªå®šä¹‰åˆ—è¡¨æ•°æ®é€‚é…å™¨
     /// </summary>
     function SetOnInitListAdapterA(AListener: TOnDialogInitListAdapterA): TDialogBuilder;
 
     /// <summary>
-    /// ÉèÖÃ Mask ÊÇ·ñ¿ÉÊÓ
+    /// è®¾ç½® Mask æ˜¯å¦å¯è§†
     /// </summary>
     function SetMaskVisible(V: Boolean): TDialogBuilder;
 
     /// <summary>
-    /// ÉèÖÃ Shadow ÊÇ·ñ¿ÉÊÓ
+    /// è®¾ç½® Shadow æ˜¯å¦å¯è§†
     /// </summary>
     function SetShadowVisible(V: Boolean): TDialogBuilder;
 
     /// <summary>
-    /// ÉèÖÃ ¶Ô»°¿ò Root ²ã±³¾°ÑÕÉ«
+    /// è®¾ç½® å¯¹è¯æ¡† Root å±‚èƒŒæ™¯é¢œè‰²
     /// </summary>
     function SetRootBackColor(const V: TAlphaColor): TDialogBuilder;
 
     /// <summary>
-    /// ÉèÖÃ¿í¶È
+    /// è®¾ç½®å®½åº¦
     /// </summary>
     function SetWidth(const V: Single): TDialogBuilder;
     /// <summary>
-    /// ÉèÖÃ×î´ó¿í¶È
+    /// è®¾ç½®æœ€å¤§å®½åº¦
     /// </summary>
     function SetMaxWidth(const V: Single): TDialogBuilder;
 
     /// <summary>
-    /// ÉèÖÃ¸ß¶È
+    /// è®¾ç½®é«˜åº¦
     /// </summary>
     function SetHeight(const V: Single): TDialogBuilder;
     /// <summary>
-    /// ÉèÖÃ×î´ó¸ß¶È
+    /// è®¾ç½®æœ€å¤§é«˜åº¦
     /// </summary>
     function SetMaxHeight(const V: Single): TDialogBuilder;
 
     /// <summary>
-    /// ÉèÖÃÁĞ±íÏî¶Ô»°¿òÄ¬ÈÏĞĞ¸ß
+    /// è®¾ç½®åˆ—è¡¨é¡¹å¯¹è¯æ¡†é»˜è®¤è¡Œé«˜
     /// </summary>
     function SetListItemDefaultHeight(const V: Single): TDialogBuilder;
 
     /// <summary>
-    /// ÉèÖÃ¸½¼ÓµÄÊı¾İ
+    /// è®¾ç½®é™„åŠ çš„æ•°æ®
     /// </summary>
     function SetData(const V: TObject): TDialogBuilder; overload;
     function SetData(const V: TValue): TDialogBuilder; overload;
@@ -965,7 +965,7 @@ type
 
 type
   /// <summary>
-  /// ¶Ô»°¿ò×é¼ş
+  /// å¯¹è¯æ¡†ç»„ä»¶
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TAlertDialog = class(TCustomAlertDialog)
@@ -981,7 +981,7 @@ type
 
 type
   /// <summary>
-  /// µÈ´ı¶Ô»°¿ò
+  /// ç­‰å¾…å¯¹è¯æ¡†
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
   TProgressDialog = class(TDialog)
@@ -996,14 +996,14 @@ type
     destructor Destroy; override;
     procedure InitView(const AMsg: string; IsHtmlText: Boolean = False);
     /// <summary>
-    /// ÏÔÊ¾Ò»¸öµÈ´ı¶Ô»°¿ò
+    /// æ˜¾ç¤ºä¸€ä¸ªç­‰å¾…å¯¹è¯æ¡†
     /// </summary>
     class function Show(AOwner: TComponent; const AMsg: string; ACancelable: Boolean = True): TProgressDialog;
   published
     property StyleManager: TDialogStyleManager read FStyleManager write FStyleManager;
   end;
 
-// Ä¬ÈÏ¶Ô»°¿òÑùÊ½
+// é»˜è®¤å¯¹è¯æ¡†æ ·å¼
 function GetDefaultStyleMgr: TDialogStyleManager;
 
 implementation
@@ -1564,7 +1564,7 @@ procedure TDialog.AnimatePlay(Ani: TFrameAniType; IsIn: Boolean;
 var
   AniView: TControl;
 
-  // ±³¾°µ­Èëµ­³ö
+  // èƒŒæ™¯æ·¡å…¥æ·¡å‡º
   procedure DoFadeInOutBackgroyund();
   var
     NewValue: TAlphaColor;
@@ -1581,12 +1581,12 @@ var
     TFrameAnimator.AnimateColor(FViewRoot, 'Background.ItemDefault.Color', NewValue, nil, 0.3);
   end;
 
-  // µ­Èëµ­³ö
+  // æ·¡å…¥æ·¡å‡º
   procedure DoFadeInOut();
   var
     NewValue: Single;
   begin
-    // ±³¾°´¦Àí
+    // èƒŒæ™¯å¤„ç†
     if Assigned(AniView) then begin
       if IsIn then begin
         AniView.Opacity := 0;
@@ -1598,7 +1598,7 @@ var
     end;
   end;
 
-  // ´Ó¶¥²¿µ¯³ö
+  // ä»é¡¶éƒ¨å¼¹å‡º
   procedure DoTopMoveInOut();
   var
     NewValue: Single;
@@ -1615,7 +1615,7 @@ var
     end;
   end;
 
-  // ´Óµ×²¿µ¯³ö
+  // ä»åº•éƒ¨å¼¹å‡º
   procedure DoBottomMoveInOut();
   var
     NewValue: Single;
@@ -1632,7 +1632,7 @@ var
     end;
   end;
 
-  // ´Ó×ó±ßµ¯³ö µ¯Èë²Ëµ¥
+  // ä»å·¦è¾¹å¼¹å‡º å¼¹å…¥èœå•
   procedure DoLeftSlideMenu();
   var
     NewValue: Single;
@@ -1659,7 +1659,7 @@ var
     end;
   end;
 
-  // ´ÓÓÒ±ßµ¯³ö µ¯Èë²Ëµ¥
+  // ä»å³è¾¹å¼¹å‡º å¼¹å…¥èœå•
   procedure DoRightSlideMenu();
   var
     NewValue: Single;
@@ -1690,9 +1690,9 @@ begin
   if not Assigned(FViewRoot) then Exit;
   AniView := GetAniView;
 
-  // µ­Èëµ­³ö±³¾°
+  // æ·¡å…¥æ·¡å‡ºèƒŒæ™¯
   DoFadeInOutBackgroyund();
-  // Èç¹ûÍ¼²ãÍêÈ«²»¿É¼û£¬ÉèÖÃ¶¯»­Ê±»á³ö´í
+  // å¦‚æœå›¾å±‚å®Œå…¨ä¸å¯è§ï¼Œè®¾ç½®åŠ¨ç”»æ—¶ä¼šå‡ºé”™
   if (not Assigned(AniView)) or (not FMask) or
     ((AniView is TView) and (TView(AniView).Background.ItemDefault.Color and $FF000000 = 0)) then begin
     if Assigned(AEvent) then
@@ -1700,7 +1700,7 @@ begin
     Exit;
   end;
 
-  // ´¦Àí¶¯»­
+  // å¤„ç†åŠ¨ç”»
   case Ani of
     TFrameAniType.FadeInOut:
       DoFadeInOut;
@@ -1714,7 +1714,7 @@ begin
       DoRightSlideMenu;
   else
     begin
-      // ÎŞ¶¯»­Ğ§¹û
+      // æ— åŠ¨ç”»æ•ˆæœ
       if Assigned(AEvent) then
         AEvent(Self);
       if IsIn then
@@ -1824,7 +1824,7 @@ begin
       if LParent is TControl then
         TControl(LParent).SetFocus
       else if LParent is TCustomForm then
-        // Ôİ²»´¦Àí
+        // æš‚ä¸å¤„ç†
     end;
   end;
   if not (csDestroying in ComponentState) then
@@ -1847,7 +1847,7 @@ begin
     if (FViewRoot <> nil) then begin
       if (FViewRoot.FLayBubble <> nil) then
         FViewRoot.FLayBubble.Visible := False
-//      else if FViewRoot.ControlsCount = 1 then // ShowView Ê±»áÊÇÕâÖÖÇé¿ö
+//      else if FViewRoot.ControlsCount = 1 then // ShowView æ—¶ä¼šæ˜¯è¿™ç§æƒ…å†µ
 //        FViewRoot.Controls[0].Visible := False;
     end;
     if FAnimate = TFrameAniType.None then begin
@@ -2270,20 +2270,20 @@ begin
     InitDownPopupView();
   end else begin
     if ABuilder.View <> nil then
-      // ¸½¼Ó View µÄ¶Ô»°¿ò
+      // é™„åŠ  View çš„å¯¹è¯æ¡†
       InitExtPopView()
     else if ABuilder.FIsSingleChoice then
-      // µ¥Ñ¡¶Ô»°¿ò
+      // å•é€‰å¯¹è¯æ¡†
       InitSinglePopView()
     else if ABuilder.FIsMultiChoice then
-      // ¶àÑ¡¶Ô»°¿ò
+      // å¤šé€‰å¯¹è¯æ¡†
       InitMultiPopView()
     else if (Length(ABuilder.FItemArray) > 0) or
       (Assigned(ABuilder.Items) and (ABuilder.Items.Count > 0)) then
-      // ÁĞ±í¿ò
+      // åˆ—è¡¨æ¡†
       InitListPopView()
     else
-      // »ù±¾¶Ô»°¿ò
+      // åŸºæœ¬å¯¹è¯æ¡†
       InitDefaultPopView();
   end;
 
@@ -2319,7 +2319,7 @@ begin
           Builder.FPositiveButtonListenerA(Self, BUTTON_POSITIVE)
         else if Assigned(Builder.PositiveButtonListener) then
           Builder.PositiveButtonListener(Self, BUTTON_POSITIVE)
-        else  // Ã»ÓĞÊÂ¼şµÄ°´Å¥µã»÷ºó¹Ø±Õ¶Ô»°¿ò
+        else  // æ²¡æœ‰äº‹ä»¶çš„æŒ‰é’®ç‚¹å‡»åå…³é—­å¯¹è¯æ¡†
           FAllowDismiss := True;
       end else if Sender = FViewRoot.FButtonNegative then begin
         if Assigned(Builder.FNegativeButtonListenerA) then
@@ -2437,7 +2437,7 @@ begin
   StyleMgr := FBuilder.FStyleManager;
   if StyleMgr = nil then
     StyleMgr := GetDefaultStyleMgr;
-  // ³õÊ¼»¯»ù´¡
+  // åˆå§‹åŒ–åŸºç¡€
   FViewRoot := TDialogView.Create(Owner);
   FViewRoot.Dialog := Self;
   FViewRoot.BeginUpdate;
@@ -2471,7 +2471,7 @@ begin
   if FBuilder.FMaxHeight > 0 then
     FViewRoot.FLayBubble.MaxHeight := FBuilder.FMaxHeight;
 
-  // ³õÊ¼»¯ÏûÏ¢Çø
+  // åˆå§‹åŒ–æ¶ˆæ¯åŒº
   if (Builder.FIcon <> nil) or (Builder.FMessage <> '') then begin
     FViewRoot.InitMessage(StyleMgr);
     if Builder.MessageIsHtml then
@@ -2495,13 +2495,13 @@ begin
   end else
     FViewRoot.FMsgBody.Visible := False;
 
-  // ³õÊ¼»¯ÁĞ±í
+  // åˆå§‹åŒ–åˆ—è¡¨
   if (Length(Builder.FItemArray) > 0) or
     ((Assigned(Builder.FItems)) and (Builder.FItems.Count > 0)) then begin
     FViewRoot.InitList(StyleMgr);
   end;
 
-  // ³õÊ¼»¯°´Å¥
+  // åˆå§‹åŒ–æŒ‰é’®
   FViewRoot.InitButton(StyleMgr);
   if Assigned(FViewRoot.FButtonLayout) then begin
     if Assigned(FViewRoot.FButtonPositive) then
@@ -2529,7 +2529,7 @@ begin
       FViewRoot.FMsgBody.Background.Corners := [TCorner.TopLeft, TCorner.TopRight];
   end;
 
-  // ÉèÖÃ Body ×î´ó¸ß¶È
+  // è®¾ç½® Body æœ€å¤§é«˜åº¦
   if Assigned(FViewRoot.FMsgBody) then begin
     BodyMH := FViewRoot.FLayBubble.MaxHeight;
     if ButtonLayoutHeight > 0 then
@@ -2565,10 +2565,10 @@ begin
     end;
   end;
 
-  // ³õÊ¼»¯ÕÚÕÖ±³¾°
+  // åˆå§‹åŒ–é®ç½©èƒŒæ™¯
   if Builder.FMaskVisible then
     FViewRoot.InitMask(StyleMgr);
-  // ³õÊ¼»¯ÒõÓ°
+  // åˆå§‹åŒ–é˜´å½±
   if Builder.FShadowVisible then
     FViewRoot.InitShadow(StyleMgr);
 end;
@@ -2584,7 +2584,7 @@ begin
   if StyleMgr = nil then
     StyleMgr := GetDefaultStyleMgr;
 
-  // ³õÊ¼»¯»ù´¡
+  // åˆå§‹åŒ–åŸºç¡€
   FViewRoot := TDialogView.Create(Owner);
   FViewRoot.Name := '';
   FViewRoot.Dialog := Self;
@@ -2640,7 +2640,7 @@ begin
 
   AdjustDownPopupPosition();
 
-  // ³õÊ¼»¯ÏûÏ¢Çø
+  // åˆå§‹åŒ–æ¶ˆæ¯åŒº
   if (Builder.FIcon <> nil) or (Builder.FMessage <> '') then begin
     FViewRoot.InitMessage(StyleMgr);
     if Builder.FMessageIsHtml then
@@ -2664,13 +2664,13 @@ begin
   end else
     FViewRoot.FMsgBody.Visible := False;
 
-  // ³õÊ¼»¯ÁĞ±í
+  // åˆå§‹åŒ–åˆ—è¡¨
   if (Length(Builder.FItemArray) > 0) or
     ((Assigned(Builder.FItems)) and (Builder.FItems.Count > 0)) then begin
     FViewRoot.InitList(StyleMgr);
   end;
 
-  // ³õÊ¼»¯°´Å¥
+  // åˆå§‹åŒ–æŒ‰é’®
   FViewRoot.FLayBubble.Background.Corners := [];
   FViewRoot.InitButton(StyleMgr);
   if Assigned(FViewRoot.FButtonLayout) then begin
@@ -2687,7 +2687,7 @@ begin
   if Assigned(FViewRoot.FButtonCancel) then
     FViewRoot.FButtonCancel.OnClick := DoButtonClick;
 
-  // ÉèÖÃ Body ×î´ó¸ß¶È
+  // è®¾ç½® Body æœ€å¤§é«˜åº¦
   if Assigned(FViewRoot.FMsgBody) then begin
     BodyMH := FViewRoot.FLayBubble.MaxHeight;
     if ButtonLayoutHeight > 0 then
@@ -2713,25 +2713,25 @@ begin
       FViewRoot.FTitleSpace.Visible := False;
   end;
 
-  // ³õÊ¼»¯ÕÚÕÖ±³¾°
+  // åˆå§‹åŒ–é®ç½©èƒŒæ™¯
   if Builder.FMaskVisible then
     FViewRoot.InitMask(StyleMgr);
-  // ³õÊ¼»¯ÒõÓ°
+  // åˆå§‹åŒ–é˜´å½±
   if Builder.FShadowVisible then
     FViewRoot.InitShadow(StyleMgr);
 
   if FBuilder.View <> nil then
-    // ¸½¼Ó View µÄ¶Ô»°¿ò
+    // é™„åŠ  View çš„å¯¹è¯æ¡†
     InitExtPopView()
   else if FBuilder.FIsSingleChoice then
-    // µ¥Ñ¡¶Ô»°¿ò
+    // å•é€‰å¯¹è¯æ¡†
     InitSinglePopView()
   else if FBuilder.FIsMultiChoice then
-    // ¶àÑ¡¶Ô»°¿ò
+    // å¤šé€‰å¯¹è¯æ¡†
     InitMultiPopView()
   else if (Length(FBuilder.FItemArray) > 0) or
     (Assigned(FBuilder.Items) and (FBuilder.Items.Count > 0)) then
-    // ÁĞ±í¿ò
+    // åˆ—è¡¨æ¡†
     InitListPopView();
 end;
 
@@ -2809,7 +2809,7 @@ begin
       FViewRoot.FMsgMessage.Visible := False;
   end;
 
-  // ³õÊ¼»¯ÁĞ±í
+  // åˆå§‹åŒ–åˆ—è¡¨
   ListView := FViewRoot.FListView;
   InitList(ListView);
   ListView.OnItemClick := DoListItemClick;
@@ -2827,7 +2827,7 @@ begin
       FViewRoot.FMsgMessage.Visible := False;
   end;
 
-  // ³õÊ¼»¯ÁĞ±í
+  // åˆå§‹åŒ–åˆ—è¡¨
   ListView := FViewRoot.FListView;
   InitList(ListView, True);
   if Length(Builder.FCheckedItems) < ListView.Count then
@@ -2848,7 +2848,7 @@ begin
       FViewRoot.FMsgMessage.Visible := False;
   end;
 
-  // ³õÊ¼»¯ÁĞ±í
+  // åˆå§‹åŒ–åˆ—è¡¨
   ListView := FViewRoot.FListView;
   InitList(ListView);
   ListView.OnItemClick := DoListItemClick;
@@ -2884,11 +2884,11 @@ begin
     Exit;
 
   // TMyControl(xxx).KeyDown
-  // ÈëÔÆÁú·´À¡ÔÚÒ»Ğ©Çé¿öÏÂ»áÓĞÎÊÌâ£¬
-  // ËùÒÔÅĞ¶ÏKey < $80Ê±²Å´«µİÊÂ¼ş
-  // KngStr: ¸ü¸Ä KeyDown Îª AfterDialogKey£¬ÔİÊ±¹Ø±Õ Key < $80
+  // å…¥äº‘é¾™åé¦ˆåœ¨ä¸€äº›æƒ…å†µä¸‹ä¼šæœ‰é—®é¢˜ï¼Œ
+  // æ‰€ä»¥åˆ¤æ–­Key < $80æ—¶æ‰ä¼ é€’äº‹ä»¶
+  // KngStr: æ›´æ”¹ KeyDown ä¸º AfterDialogKeyï¼Œæš‚æ—¶å…³é—­ Key < $80
 
-  // Èç¹û°´ÏÂÁË·µ»Ø¼ü£¬ÇÒÔÊĞíÈ¡Ïû¶Ô»°¿ò£¬Ôò¹Ø±Õ¶Ô»°¿ò
+  // å¦‚æœæŒ‰ä¸‹äº†è¿”å›é”®ï¼Œä¸”å…è®¸å–æ¶ˆå¯¹è¯æ¡†ï¼Œåˆ™å…³é—­å¯¹è¯æ¡†
   if Key in [vkEscape, vkHardwareBack] then begin
     if FDialog.Cancelable then
       FDialog.Cancel;
@@ -3017,7 +3017,7 @@ begin
   if (FDialog.Builder.PositiveButtonText <> '')
     or (FDialog.Builder.NegativeButtonText <> '')
     or (FDialog.Builder.NeutralButtonText <> '') then begin
-    // °´Å¥²¼¾Ö²ã
+    // æŒ‰é’®å¸ƒå±€å±‚
     FButtonLayout := TLinearLayout.Create(Owner);
     {$IFDEF MSWINDOWS}
     FButtonLayout.Name := 'ButtonLayout' + IntToStr(DialogRef);
@@ -3025,9 +3025,9 @@ begin
     FButtonLayout.Parent := FLayBubble;
     FButtonLayout.WidthSize := TViewSize.FillParent;
     FButtonLayout.Orientation := TOrientation.Horizontal;
-    FButtonLayout.HeightSize := TViewSize.WrapContent;
+    //FButtonLayout.HeightSize := TViewSize.WrapContent;
 
-    // °´Å¥
+    // æŒ‰é’®
     FView1 := nil;
     FView2 := nil;
     if FDialog.Builder.PositiveButtonText <> '' then begin
@@ -3046,11 +3046,11 @@ begin
         FDialog.Builder.NeutralButtonSize, FDialog.Builder.NeutralButtonColor, FDialog.Builder.NeutralButtonStyle);
     end;
 
-    // Ä¬ÈÏ½¹µã
+    // é»˜è®¤ç„¦ç‚¹
     FView1.Default := True;
     FView1.SetFocus;
 
-    // °´Å¥Ô²½Ç
+    // æŒ‰é’®åœ†è§’
     if FLayBubble.Background.Corners <> [] then begin
       if FView1 = FView2 then
         FView1.Background.Corners := [TCorner.BottomLeft, TCorner.BottomRight]
@@ -3062,7 +3062,7 @@ begin
   end;
 
   if Assigned(FLayBubbleBottom) and (FDialog.Builder.CancelButtonText <> '') then begin
-    // °´Å¥²¼¾Ö²ã
+    // æŒ‰é’®å¸ƒå±€å±‚
     FCancelButtonLayout := TLinearLayout.Create(Owner);
     {$IFDEF MSWINDOWS}
     FCancelButtonLayout.Name := 'CancelButtonLayout' + IntToStr(DialogRef);
@@ -3071,7 +3071,7 @@ begin
     FCancelButtonLayout.WidthSize := TViewSize.FillParent;
     FCancelButtonLayout.Orientation := TOrientation.Horizontal;
     FCancelButtonLayout.HeightSize := TViewSize.WrapContent;
-    // °´Å¥
+    // æŒ‰é’®
     FButtonCancel := CreateButton(FCancelButtonLayout);
     FButtonCancel.Background.Corners := [TCorner.TopLeft, TCorner.TopRight, TCorner.BottomLeft, TCorner.BottomRight];
     SetButton(FButtonCancel, FDialog.Builder.CancelButtonText,
@@ -3082,7 +3082,7 @@ end;
 
 procedure TDialogView.InitList(StyleMgr: TDialogStyleManager);
 begin
-  // ÁĞ±í
+  // åˆ—è¡¨
   FListView := TListViewEx.Create(Owner);
   {$IFDEF MSWINDOWS}
   FListView.Name := 'FListView' + IntToStr(DialogRef);
@@ -3109,7 +3109,7 @@ end;
 procedure TDialogView.InitMessage(StyleMgr: TDialogStyleManager);
 begin
   if FMsgMessage <> nil then Exit;
-  // ÄÚÈİÇø
+  // å†…å®¹åŒº
   FMsgMessage := TTextView.Create(Owner);
   {$IFDEF MSWINDOWS}
   FMsgMessage.Name := 'FMsgMessage' + IntToStr(DialogRef);
@@ -3162,7 +3162,7 @@ end;
 
 procedure TDialogView.InitProcessView(StyleMgr: TDialogStyleManager);
 begin
-  // Èç¹û¶Ô»°¿ò²»»ñÈ¡½¹µã£¬ÄÇÃ´½¹µã»áÔÚÖ®Ç°µã»÷µÄ¿Ø¼şÉÏ£¬ËùÒÔÕâÀïÒªÖØÖÃÏÂ½¹µã
+  // å¦‚æœå¯¹è¯æ¡†ä¸è·å–ç„¦ç‚¹ï¼Œé‚£ä¹ˆç„¦ç‚¹ä¼šåœ¨ä¹‹å‰ç‚¹å‡»çš„æ§ä»¶ä¸Šï¼Œæ‰€ä»¥è¿™é‡Œè¦é‡ç½®ä¸‹ç„¦ç‚¹
   CanFocus := False;
   if Root <> nil then
     Root.SetFocused(nil);
@@ -3171,7 +3171,7 @@ begin
   {$IFDEF MSWINDOWS}
   FLayBubble.Name := 'LayBubble' + IntToStr(DialogRef);
   {$ENDIF}
-  // ÏûÏ¢¿òÖ÷Ìå
+  // æ¶ˆæ¯æ¡†ä¸»ä½“
   FLayBubble.Parent := Self;
   FLayBubble.Margin := '16';
   FLayBubble.Paddings := '16';
@@ -3194,14 +3194,14 @@ begin
   FLayBubble.MaxWidth := Width - FLayBubble.Margins.Left - FLayBubble.Margins.Right;
   FLayBubble.MaxHeight := Height - FLayBubble.Margins.Top - FLayBubble.Margins.Bottom;
 
-  // µÈ´ı¶¯»­
+  // ç­‰å¾…åŠ¨ç”»
   FAnilndictor := TAniIndicator.Create(Owner);
   {$IFDEF MSWINDOWS}
   FAnilndictor.Name := 'Anilndictor' + IntToStr(DialogRef);
   {$ENDIF}
   FAnilndictor.Parent := FLayBubble;
   FAnilndictor.Align := TAlignLayout.Center;
-  // ÏûÏ¢ÄÚÈİ
+  // æ¶ˆæ¯å†…å®¹
   FMsgMessage := TTextView.Create(Owner);
   {$IFDEF MSWINDOWS}
   FMsgMessage.Name := 'FMsgMessage' + IntToStr(DialogRef);
@@ -3240,7 +3240,7 @@ procedure TDialogView.InitView(StyleMgr: TDialogStyleManager);
     {$IFDEF MSWINDOWS}
     Result.Name := FName + IntToStr(DialogRef);
     {$ENDIF}
-    // ÏûÏ¢¿òÖ÷Ìå
+    // æ¶ˆæ¯æ¡†ä¸»ä½“
     Result.Parent := Self;
     Result.Margin := '16';
     Result.ClipChildren := True;
@@ -3300,7 +3300,7 @@ procedure TDialogView.InitView(StyleMgr: TDialogStyleManager);
   end;
 
 begin
-  // Èç¹û¶Ô»°¿ò²»»ñÈ¡½¹µã£¬ÄÇÃ´½¹µã»áÔÚÖ®Ç°µã»÷µÄ¿Ø¼şÉÏ£¬ËùÒÔÕâÀïÒªÖØÖÃÏÂ½¹µã
+  // å¦‚æœå¯¹è¯æ¡†ä¸è·å–ç„¦ç‚¹ï¼Œé‚£ä¹ˆç„¦ç‚¹ä¼šåœ¨ä¹‹å‰ç‚¹å‡»çš„æ§ä»¶ä¸Šï¼Œæ‰€ä»¥è¿™é‡Œè¦é‡ç½®ä¸‹ç„¦ç‚¹
   CanFocus := False;
   if Root <> nil then
     Root.SetFocused(nil);
@@ -3313,7 +3313,7 @@ begin
   {$ENDIF}
   if (FDialog.Builder.FPosition = TDialogViewPosition.Bottom) and (FDialog.Builder.CancelButtonText <> '') then
     FLayBubbleBottom := InitLayBubble('LayBubbleBottom', TDialogViewPosition.Bottom);
-  // ±êÌâÀ¸
+  // æ ‡é¢˜æ 
   FTitleView := TTextView.Create(Owner);
   {$IFDEF MSWINDOWS}
   FTitleView.Name := 'TitleView' + IntToStr(DialogRef);
@@ -3335,7 +3335,7 @@ begin
   FTitleView.Background.Corners := [TCorner.TopLeft, TCorner.TopRight];
   FTitleView.Background.Padding.Rect := RectF(1, 1, 1, 0);
   FTitleView.HeightSize := TViewSize.WrapContent;
-  // ±êÌâÓëÄÚÈİÇøµÄ·Ö¸ôÏß
+  // æ ‡é¢˜ä¸å†…å®¹åŒºçš„åˆ†éš”çº¿
   if StyleMgr.FTitleSpaceHeight > 0 then begin
     FTitleSpace := TView.Create(Owner);
     {$IFDEF MSWINDOWS}
@@ -3348,7 +3348,7 @@ begin
     FTitleSpace.Background.ItemDefault.Kind := TViewBrushKind.Solid;
     FTitleSpace.WidthSize := TViewSize.FillParent;
   end;
-  // ÄÚÈİÇø
+  // å†…å®¹åŒº
   FMsgBody := TLinearLayout.Create(Owner);
   {$IFDEF MSWINDOWS}
   FMsgBody.Name := 'MsgBody' + IntToStr(DialogRef);
@@ -3371,7 +3371,7 @@ procedure TDialogView.Resize;
 begin
   inherited Resize;
   if Assigned(Dialog) and (ControlsCount = 1) then begin
-    // ×óÓÒ±ßÀ¸²Ëµ¥µ÷Õû´óĞ¡
+    // å·¦å³è¾¹æ èœå•è°ƒæ•´å¤§å°
     if (TDialog(Dialog).FAnimate in [TFrameAniType.LeftSlideMenu, TFrameAniType.RightSlideMenu]) and
       (TDialog(Dialog).Owner is TFrame) then
       Controls[0].Width := Width * SIZE_MENU_WIDTH;
@@ -3606,7 +3606,7 @@ begin
   if StyleMgr = nil then
     StyleMgr := GetDefaultStyleMgr;
 
-  // ³õÊ¼»¯»ù´¡
+  // åˆå§‹åŒ–åŸºç¡€
   FViewRoot := TDialogView.Create(Owner);
   FViewRoot.Dialog := Self;
   FViewRoot.BeginUpdate;
@@ -3633,7 +3633,7 @@ begin
     FViewRoot.FMsgMessage.WidthSize := TViewSize.FillParent;
   end;
 
-  // ³õÊ¼»¯ÕÚÕÖ±³¾°
+  // åˆå§‹åŒ–é®ç½©èƒŒæ™¯
   FViewRoot.InitMask(StyleMgr);
 
   InitOK();
