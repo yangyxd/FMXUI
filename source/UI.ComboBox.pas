@@ -207,7 +207,6 @@ type
     function GetDefaultSize: TSizeF; override;
     procedure SetName(const Value: TComponentName); override;
     procedure DoItemChange(Sender: TObject); virtual;
-    procedure DoLanguageChange(Sender: TObject); override;
     procedure DoMultipleCheckedChange(Sender: TObject; ItemIndex: Integer; var Checked: Boolean); virtual;
   public
     constructor Create(AOwner: TComponent); override;
@@ -1297,12 +1296,6 @@ begin
     Text := FDownPopup.FItems[FDownPopup.ItemIndex];
   if Assigned(FOnItemChange) then
     FOnItemChange(Self);
-end;
-
-procedure TCustomComboBoxView.DoLanguageChange(Sender: TObject);
-begin
-  if Assigned(OnLangChange) then
-    OnLangChange(Sender);
 end;
 
 procedure TCustomComboBoxView.DoMultipleCheckedChange(Sender: TObject;

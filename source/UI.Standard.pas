@@ -685,7 +685,7 @@ type
   /// нд╠╬йсм╪
   /// </summary>
   [ComponentPlatformsAttribute(AllCurrentPlatforms)]
-  TTextView = class(TScrollView, ICaption{$IF CompilerVersion > 30.0}, IAcceleratorKeyReceiver{$ENDIF})
+  TTextView = class(TScrollView, ILang, ICaption{$IF CompilerVersion > 30.0}, IAcceleratorKeyReceiver{$ENDIF})
   private
     FText: UI.Base.TTextSettings;
     FHtmlText: TViewHtmlText;
@@ -693,10 +693,13 @@ type
     FDrawable: TDrawableIcon;
     FInFitSize: Boolean;
     FGroupIndex: Integer;
+    FLangAuto: Boolean;
+    FLangName: string;
 
     FOnDrawText: TOnDrawText;
     FOnTextChange: TNotifyEvent;
     FOnLinkClick: TViewLinkClickEvent;
+    FOnLangChange: TLangChangeEvent;
 
     function GetAutoSize: Boolean;
     function GetText: string;
@@ -711,6 +714,8 @@ type
     function GetNeedSize: TSizeF;
     function GetHtmlText: string;
     procedure SetHtmlText(const Value: string);
+    procedure SetLangAuto(const Value: Boolean);
+    procedure SetLangName(const Value: string);
   protected
     procedure Loaded; override;
     procedure DblClick; override;
@@ -732,7 +737,10 @@ type
     procedure DoGroupSelected(); virtual;
     procedure DoCheckedChange(); override;
     procedure DoLinkClick(const Text, URL: string); override;
-    procedure DoLanguageChange(Sender: TObject); override;
+    { ILang }
+    procedure DoLangChange(Sender: TObject; var AText: string); virtual;
+    function GetLangName: string;
+    function GetLangAuto: Boolean;
   protected
     function TextStored: Boolean;
     function IsAutoSize: Boolean; override;
@@ -781,12 +789,15 @@ type
     property HtmlText: string read GetHtmlText write SetHtmlText;
     property Drawable: TDrawableIcon read GetDrawable write SetDrawable;
     property GroupIndex: Integer read FGroupIndex write SetGroupIndex default 0;
+    property LangAuto: Boolean read FLangAuto write SetLangAuto default True;
+    property LangName: string read FLangName write SetLangName;
     property ScrollBars;
     property ShowScrollBars;
     property DisableMouseWheel;
     property OnTextChange: TNotifyEvent read FOnTextChange write FOnTextChange;
     property OnDrawText: TOnDrawText read FOnDrawText write FOnDrawText;
     property OnLinkClick: TViewLinkClickEvent read FOnLinkClick write FOnLinkClick;
+    property OnLangChange: TLangChangeEvent read FOnLangChange write FOnLangChange;
   end;
 
 type
@@ -1661,6 +1672,7 @@ end;
 constructor TTextView.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
+  FLangAuto := True;
   EnableExecuteAction := True;
   FText := UI.Base.TTextSettings.Create(Self);
   if csDesigning in ComponentState then
@@ -1761,12 +1773,10 @@ begin
   end;
 end;
 
-procedure TTextView.DoLanguageChange(Sender: TObject);
+procedure TTextView.DoLangChange(Sender: TObject; var AText: string);
 begin
-  if Assigned(OnLangChange) then
-    OnLangChange(Sender)
-  else
-    Text := TLangManager(Sender).GetLangText(Name, Text);
+  if Assigned(FOnLangChange) then
+    FOnLangChange(Sender, AText);
 end;
 
 procedure TTextView.DoLayoutChanged(Sender: TObject);
@@ -2021,6 +2031,16 @@ begin
     Result := FHtmlText.HtmlText;
 end;
 
+function TTextView.GetLangAuto: Boolean;
+begin
+  Result := FLangAuto;
+end;
+
+function TTextView.GetLangName: string;
+begin
+  Result := FLangName;
+end;
+
 function TTextView.GetNeedSize: TSizeF;
 begin
   if not (csDestroying in ComponentState) then begin
@@ -2155,6 +2175,22 @@ begin
       FHtmlText.HtmlText := Value;
     FText.IsTextChange := True;
     DoChanged(FText);
+  end;
+end;
+
+procedure TTextView.SetLangAuto(const Value: Boolean);
+begin
+  if FLangAuto <> Value then begin
+    FLangAuto := Value;
+    TLangManager.DoUpdateControl(Self);
+  end;
+end;
+
+procedure TTextView.SetLangName(const Value: string);
+begin
+  if FLangName <> Value then begin
+    FLangName := Value;
+    TLangManager.DoUpdateControl(Self);
   end;
 end;
 
