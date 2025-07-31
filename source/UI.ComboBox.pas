@@ -999,7 +999,8 @@ begin
         // Before closing popup, we should update current value of ItemIndex
         if FDroppedDown then
           ItemIndex := NewItemIndex;
-        DropDown;
+        if FPopup.IsOpen then
+          DropDown;
       end;
       vkEscape:
         if (UseNativePicker and FListPicker.IsShown) or ((not UseNativePicker) and FPopup.IsOpen) then
