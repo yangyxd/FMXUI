@@ -184,18 +184,23 @@ end;
 {$ENDIF}
 
 {$IFDEF SPLASH}
-// {$R ACLOGO.RES}
 procedure RegisterWithSplashScreen;
 var
-  Bmp : TBitmap;
+  Bmp: Vcl.Graphics.TBitmap;
 begin
-  Bmp := TBitmap.Create;
+  if not Assigned(SplashScreenServices) then
+    Exit;
   try
-    Bmp.LoadFromFile('\icon\FMXUI.png');
-    SplashScreenServices.AddPluginBitmap('FMX UI', Bmp.Handle, False, 'Registered');
-  except on E : Exception do
+    Bmp := Vcl.Graphics.TBitmap.Create;
+    try
+      Bmp.LoadFromResourceName(HInstance, 'FMXUI');
+      SplashScreenServices.AddPluginBitmap('FMX UI v1.0.0', Bmp.Handle, False);
+    finally
+      FreeAndNil(Bmp);
+    end;
+  except on E: Exception do
+    MessageBox(0, PChar(E.Message), 'FMX UI', 16);
   end;
-  Bmp.Free;
 end;
 {$ENDIF}
 

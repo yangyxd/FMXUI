@@ -30,9 +30,11 @@ type
     StyleViewManager1: TStyleViewManager;
     ButtonView16: TButtonView;
     LangManager1: TLangManager;
+    ImageControl1: TImageControl;
     procedure ButtonView1Click(Sender: TObject);
     procedure CheckBox1Change(Sender: TObject);
     procedure ButtonView16Click(Sender: TObject);
+    procedure ButtonView4Click(Sender: TObject);
   private
     { Private declarations }
     FStyles: TStyleViewManager;
@@ -46,6 +48,28 @@ var
 implementation
 
 {$R *.fmx}
+
+{$R Logo.RES}
+procedure RegisterWithSplashScreen;
+var
+  S: TResourceStream;
+  Bmp: TBitmap;
+begin
+  try
+    S := TResourceStream.Create(HInstance, 'FMXUI', 'PNG');
+    Bmp := TBitmap.Create;
+    try
+      S.Position := 0;
+      Bmp.LoadFromStream(S);
+      Form2.ImageControl1.Bitmap := Bmp;
+      // SplashScreenServices.AddPluginBitmap('FMX UI', Bmp.Handle, False, 'Registered');
+    finally
+      FreeAndNil(Bmp);
+      FreeAndNil(S);
+    end;
+  except on E : Exception do
+  end;
+end;
 
 procedure TForm2.ButtonView16Click(Sender: TObject);
 begin
@@ -70,6 +94,11 @@ begin
   ButtonView13.StyleManager := FStyles;
   ButtonView14.StyleManager := FStyles;
   ButtonView15.StyleManager := FStyles;
+end;
+
+procedure TForm2.ButtonView4Click(Sender: TObject);
+begin
+  RegisterWithSplashScreen
 end;
 
 procedure TForm2.CheckBox1Change(Sender: TObject);

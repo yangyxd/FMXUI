@@ -14,6 +14,7 @@ unit UI.Base;
 interface
 
 {$R ViewIcon.res}
+{$R Logo.RES}
 {$SCOPEDENUMS ON}
 
 {$IF CompilerVersion >= 29.0}

@@ -2288,13 +2288,16 @@ end;
 procedure TTextStyleView.SetStyleManager(const Value: TStyleViewManager);
 begin
   if FStyleManager <> Value then begin
-    if Assigned(FStyleManager) then
-      FStyleManager.RemoveView(Self);
+    try
+      if Assigned(FStyleManager) then
+        FStyleManager.RemoveView(Self);
+    except
+    end;
     FStyleManager := Value;
-    if Assigned(FStyleManager) then
-      FStyleManager.AddView(Self);
     if csDestroying in ComponentState then
       Exit;
+    if Assigned(FStyleManager) then
+      FStyleManager.AddView(Self);
     DoStyleChange();
     DoChanged(Self);
   end;
@@ -7864,10 +7867,13 @@ var
   View: TControl;
 begin
   FDisableChanged := True;
-  for I := 0 to FViewList.Count - 1 do begin
-    View := FViewList[I];
-    if Assigned(View) and (View is TStyleView) then
-      TStyleView(View).SetStyleManager(nil);
+  try
+    for I := 0 to FViewList.Count - 1 do begin
+      View := FViewList[I];
+      if Assigned(View) and (View is TStyleView) then
+        TStyleView(View).SetStyleManager(nil);
+    end;
+  except
   end;
   FreeAndNil(FStyles);
   FreeAndNil(FPlainStyles);
@@ -7895,6 +7901,7 @@ begin
   if not Assigned(FViewList) then Exit;
   if csDestroying in ComponentState then
     Exit;
+  if FDisableChanged then Exit;
   FViewList.Remove(Control);
 end;
 
