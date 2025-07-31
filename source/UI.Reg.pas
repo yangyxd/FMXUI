@@ -10,6 +10,10 @@ unit UI.Reg;
 
 interface
 
+{$IFNDEF BCB}
+  {$DEFINE SPLASH}
+{$ENDIF}
+
 const
   PageName = 'FMX UI';
 
@@ -19,7 +23,7 @@ implementation
 
 uses
   UI.Debug,
-  System.SysUtils, System.Actions,
+  System.SysUtils, System.Actions, {$IFDEF SPLASH}ToolsAPI, {$ENDIF}
   UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.Calendar, UI.ComboBox,
 
   UI.Grid,
@@ -179,8 +183,28 @@ begin
 end;
 {$ENDIF}
 
+{$IFDEF SPLASH}
+// {$R ACLOGO.RES}
+procedure RegisterWithSplashScreen;
+var
+  Bmp : TBitmap;
+begin
+  Bmp := TBitmap.Create;
+  try
+    Bmp.LoadFromFile('\icon\FMXUI.png');
+    SplashScreenServices.AddPluginBitmap('FMX UI', Bmp.Handle, False, 'Registered');
+  except on E : Exception do
+  end;
+  Bmp.Free;
+end;
+{$ENDIF}
+
 procedure Register;
 begin
+  {$IFDEF SPLASH}
+  RegisterWithSplashScreen;
+  {$ENDIF}
+
   RegisterComponents(PageName, [TView, TViewGroup, TLinearLayout, TRelativeLayout, TGridsLayout]);
 
   RegisterComponents(PageName, [TImageView]);

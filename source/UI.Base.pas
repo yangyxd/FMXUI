@@ -1916,6 +1916,8 @@ type
     procedure AddStrings(Strings: TStrings); overload;
     procedure AddStrings(const Strings: TArray<string>); overload;
     procedure AddStrings(const Strings: TArray<string>; const Objects: TArray<TObject>); overload;
+    procedure AddStrings(const Strings: array of string); overload;
+    procedure AddStrings(const Strings: array of string; const Objects: array of TObject); overload;
     procedure Assign(Source: TPersistent);
     procedure SetStrings(Source: TStrings);
     procedure BeginUpdate;
@@ -1970,6 +1972,10 @@ type
   public
     function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
     procedure AfterConstruction; override;
+    procedure AddStrings(const Strings: TArray<string>); overload;
+    procedure AddStrings(const Strings: TArray<string>; const Objects: TArray<TObject>); overload;
+    procedure AddStrings(const Strings: array of string); overload;
+    procedure AddStrings(const Strings: array of string; const Objects: array of TObject); overload;
     property RefCount: Integer read GetRefCount;
   end;
 
@@ -10624,6 +10630,64 @@ begin
 end;
 
 { TInterfacedStrings }
+
+procedure TInterfacedStrings.AddStrings(const Strings: TArray<string>;
+  const Objects: TArray<TObject>);
+var
+  I: Integer;
+begin
+  if Length(Strings) <> Length(Objects) then
+    raise EArgumentOutOfRangeException.CreateRes(@System.RTLConsts.sInvalidStringAndObjectArrays);
+  BeginUpdate;
+  try
+    for I := Low(Strings) to High(Strings) do
+      AddObject(Strings[I], Objects[I]);
+  finally
+    EndUpdate;
+  end;
+end;
+
+procedure TInterfacedStrings.AddStrings(const Strings: TArray<string>);
+var
+  I: Integer;
+begin
+  BeginUpdate;
+  try
+    for I := Low(Strings) to High(Strings) do
+      Add(Strings[I]);
+  finally
+    EndUpdate;
+  end;
+end;
+
+procedure TInterfacedStrings.AddStrings(const Strings: array of string;
+  const Objects: array of TObject);
+var
+  I: Integer;
+begin
+  if Length(Strings) <> Length(Objects) then
+    raise EArgumentOutOfRangeException.CreateRes(@System.RTLConsts.sInvalidStringAndObjectArrays);
+  BeginUpdate;
+  try
+    for I := Low(Strings) to High(Strings) do
+      AddObject(Strings[I], Objects[I]);
+  finally
+    EndUpdate;
+  end;
+end;
+
+procedure TInterfacedStrings.AddStrings(const Strings: array of string);
+var
+  I: Integer;
+begin
+  BeginUpdate;
+  try
+    for I := Low(Strings) to High(Strings) do
+      Add(Strings[I]);
+  finally
+    EndUpdate;
+  end;
+end;
 
 procedure TInterfacedStrings.AfterConstruction;
 begin
