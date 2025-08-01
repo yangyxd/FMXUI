@@ -2018,7 +2018,6 @@ type
     function InitLanguage(const ALanguage: string): TDictionary<string, string>;
     procedure DoValueItemNotify(Sender: TObject; const Item: TDictionary<string, string>;
       Action: TCollectionNotification);
-    function GetParentForm: TCustomForm;
     procedure RefreshControl(Control: TControl);
     procedure RefreshControls(AContainer: TFmxObject);
     procedure StoreDefaultLanguage(const ALanguage: string);
@@ -2027,6 +2026,7 @@ type
     destructor Destroy; override;
     procedure LoadFromString(const AText: string);
     function SaveToString(): string;
+    function GetParentForm: TCustomForm;
 
     /// <summary>
     /// 刷新控件多语言
@@ -2041,8 +2041,9 @@ type
     function ExistLang(const ALanguage: string): Boolean;
     function ExistName(const AName: string): Boolean;
 
-    procedure DeleteName(const ALanguage, AName: string);
-    
+    procedure DeleteName(const AName: string); overload;
+    procedure DeleteName(const ALanguage, AName: string); overload;
+
     /// <summary>
     /// 获取多语言文本
     /// </summary>
@@ -10171,11 +10172,24 @@ begin
   Filer.DefineBinaryProperty('ResBin', ReadResources, WriteResources, StoreInForm and (FData.Count > 0));
 end;
 
+procedure TLangManager.DeleteName(const AName: string);
+var
+  ALang: string;
+  Items: TDictionary<string, string>;
+begin
+  if AName = '' then Exit;
+  for ALang in FData.Keys do begin
+    Items := FData[ALang];
+    if not Assigned(Items) then Continue;
+    FData[ALang].Remove(AName);
+  end;
+end;
+
 procedure TLangManager.DeleteName(const ALanguage, AName: string);
 var
   Items: TDictionary<string, string>;
 begin
-  if AName = '' then Exit;  
+  if AName = '' then Exit;
   if FData.TryGetValue(ALanguage, Items) then
     Items.Remove(AName);
 end;

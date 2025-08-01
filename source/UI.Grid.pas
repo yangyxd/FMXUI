@@ -640,7 +640,6 @@ type
 
     FEditor: TEditView;
     FEditorShowing: Boolean;
-    FMouseDowning: Boolean;
     FKeyDownIng: Boolean;
 
     FEditText: string;
@@ -4367,10 +4366,7 @@ end;
 procedure TGridViewContent.DoEditExit(Sender: TObject);
 begin
   if (gvCancelOnExit in GridView.FOptions) and (FEditor.Visible) and (not FEditorShowing) then begin
-    if FMouseDowning then
-      DoEditComplete
-    else
-      DoEditCancel;
+    DoEditComplete;
   end;
 end;
 
@@ -5170,16 +5166,12 @@ procedure TGridViewContent.MouseDown(Button: TMouseButton; Shift: TShiftState;
 var
   LCel: TGridCell;
 begin
-  FMouseDowning := True;
-
   inherited;
 
   if FIsDesigning then Exit;
 
   FDownPos.X := X;
   FDownPos.Y := Y;
-
-  FMouseDowning := False;
 
   if IsPointInRect(FDownPos, FRBRect) then
     Exit;
