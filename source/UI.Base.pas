@@ -1996,6 +1996,7 @@ type
     FStoreInForm: Boolean;
     FAutoSelect: Boolean;
     FAutoLangFMX: Boolean;
+    FAutoLangMenu: Boolean;
     FDisabledUpdate: Boolean;
     procedure SetDefaultLanguage(const Value: string);
     procedure SetLanguage(const Value: string);
@@ -2082,6 +2083,10 @@ type
     /// 自动切换Delphi FMX官方组件语言（启用后，可能会与动态设置的text冲突）
     /// </summary>
     property AutoLangFMX: Boolean read FAutoLangFMX write FAutoLangFMX default False;
+    /// <summary>
+    /// 自动切换Delphi FMX菜单组件语言
+    /// </summary>
+    property AutoLangMenu: Boolean read FAutoLangMenu write FAutoLangMenu default False;
     /// <summary>
     /// 默认语言
     /// </summary>
@@ -10155,6 +10160,7 @@ begin
   FAutoSelect := True;
   FStoreInForm := True;
   FAutoLangFMX := False;
+  FAutoLangMenu := False;
   FDisabledUpdate := True;
   FDefaultLanguage := 'en';
   FLanguage := FDefaultLanguage;
@@ -10494,10 +10500,17 @@ end;
 procedure TLangManager.RefreshControls(AContainer: TFmxObject);
 var
   I: Integer;
+  C: TComponent;
 begin
   for I := 0 to TFmxObject(AContainer).ChildrenCount - 1 do begin
     if TFmxObject(AContainer).Children[I] is TControl then
       RefreshControl(TControl(TFmxObject(AContainer).Children[I]));
+  end;
+  if not FAutoLangMenu then Exit;
+  for I := 0 to TFmxObject(AContainer).ComponentCount - 1 do begin
+    C := TFmxObject(AContainer).Components[I];
+    if (C is TMenuItem) and (C.Name <> '') then
+      TMenuItem(C).Text := GetLangText(C.Name, TMenuItem(C).Text);
   end;
 end;
 
@@ -10570,6 +10583,7 @@ procedure TLangManager.StoreDefaultLanguage(const ALanguage: string);
     I: Integer;
     V: ILang;
     Control: TControl;
+    Component: TComponent;
     AName, ALangName: string;
   begin
     for I := 0 to TFmxObject(AContainer).ChildrenCount - 1 do begin
@@ -10593,6 +10607,14 @@ procedure TLangManager.StoreDefaultLanguage(const ALanguage: string);
           end;
         end;
         StoreControls(Control);
+      end;
+    end;
+    if FAutoLangMenu then begin
+      for I := 0 to TFmxObject(AContainer).ComponentCount - 1 do begin
+        Component := TFmxObject(AContainer).Components[I];
+        AName := Component.Name;
+        if (AName <> '') and (Component is TMenuItem) then
+          SetLangText(ALanguage, AName, TMenuItem(Component).Text);
       end;
     end;
   end;

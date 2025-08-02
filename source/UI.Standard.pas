@@ -1776,7 +1776,7 @@ end;
 procedure TTextView.DoLangChange(Sender: TObject; var AText: string);
 begin
   if Assigned(FOnLangChange) then
-    FOnLangChange(Sender, AText);
+    FOnLangChange(Self, AText);
 end;
 
 procedure TTextView.DoLayoutChanged(Sender: TObject);

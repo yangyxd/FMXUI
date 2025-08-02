@@ -159,6 +159,7 @@ type
 var
   [Weak] FCopyBackground: TObject = nil;
   [Weak] FCopyDrawable: TObject = nil;
+  [Weak] LangEditorDialog: TLangDesigner = nil;
 {$ENDIF}
 
 {$IFDEF MSWINDOWS}
@@ -598,18 +599,15 @@ begin
 end;
 
 procedure TLangEditor.ShowDialog;
-var
-  Dialog: TLangDesigner;
 begin
-  Dialog := TLangDesigner.Create(nil);
-  try
-    Dialog.Caption := 'Language Editor - 多语言编辑器';
-    Dialog.Lang := TLangManager(Component);
-    Dialog.ShowModal;
-    Dialog.Lang := nil;
-  finally
-    Dialog.Free;
+  if Assigned(LangEditorDialog) then begin
+    LangEditorDialog.Close;
+    FreeAndNil(LangEditorDialog);
   end;
+  LangEditorDialog := TLangDesigner.Create(nil);
+  LangEditorDialog.Caption := 'Language Editor - 多语言编辑器';
+  LangEditorDialog.Lang := TLangManager(Component);
+  LangEditorDialog.Show;
 end;
 
 { TViewControlEditor }
@@ -947,6 +945,10 @@ finalization
   {$IFDEF MSWINDOWS}
   FCopyBackground := nil;
   FCopyDrawable := nil;
+  if Assigned(LangEditorDialog) then begin
+    LangEditorDialog.Close;
+    FreeAndNil(LangEditorDialog);
+  end;
   {$ENDIF}
 
 end.

@@ -4,6 +4,7 @@ object LangDesigner: TLangDesigner
   ClientHeight = 569
   ClientWidth = 730
   Position = MainFormCenter
+  FormStyle = StayOnTop
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
