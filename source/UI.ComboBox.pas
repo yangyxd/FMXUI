@@ -249,6 +249,7 @@ type
   TCustomComboBoxEditView = class(TEditView)
   private
     FInDropDown: Boolean;
+    FKeyAutoSelect: Boolean;
     FDownPopup: TCustomDownPopup;
     FOnItemChange: TNotifyEvent;
     FOnClosePopup: TNotifyEvent;
@@ -326,6 +327,7 @@ type
     property Count: Integer read GetCount;
     property CanUseListPicker: Boolean read GetCanUseListPicker write SetCanUseListPicker default False;
     property DropDownButton: TDrawableIcon read GetDropDownButton write SetDropDownButton;
+    property KeyAutoSelect: Boolean read FKeyAutoSelect write FKeyAutoSelect default True;
     property ItemIndex: Integer read GetItemIndex write SetItemIndex;
     property ItemWidth: Single read GetItemWidth write SetItemWidth;
     property ItemHeight: Single read GetItemHeight write SetItemHeight stored IsItemHeightStored;
@@ -407,6 +409,7 @@ type
     property ListItemCheckedColor;
     property ListItemHoveredColor;
     property ListMultiple default False;
+    property KeyAutoSelect default True;
 
     property OnInitListAdapter;
     property OnItemChange;
@@ -1591,6 +1594,7 @@ begin
   FDownPopup := TCustomDownPopup.Create(Self);
   FDownPopup.FOnChange := DoItemChange;
   FDownPopup.FOnMultipleCheckedChange := DoMultipleCheckedChange;
+  FKeyAutoSelect := True;
 end;
 
 procedure TCustomComboBoxEditView.DeleteSelected;
@@ -1780,6 +1784,8 @@ begin
     IsDelete := (Key = 8) or (Key = 46);
     if FDownPopup.KeyDown(Key, KeyChar, Shift, OldItemIndex, NewItemIndex) then Exit;
     inherited;
+    if (not FKeyAutoSelect) and (not FDownPopup.DroppedDown) then
+      Exit;
     LastText := Self.Text;
     if FDownPopup.KeyDownHandle(Key, KeyChar, Shift, OldItemIndex, NewItemIndex) and (not IsDelete) and FDownPopup.DroppedDown
       and (NewItemIndex >= 0) then begin
