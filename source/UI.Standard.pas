@@ -3034,7 +3034,9 @@ end;
 function TScrollView.CreateAniCalculations: TScrollCalculations;
 begin
   Result := TScrollCalculations.Create(Self);
+  {$IF CompilerVersion < 37.0}
   Result.Interval := PhysicsProcessingInterval;
+  {$ENDIF}
   Result.OnChanged := AniCalcChange;
   Result.OnStart := AniCalcChange;
   Result.OnStop := AniCalcChange;
@@ -5926,7 +5928,9 @@ begin
   FAniCalc.ViewportPositionF := PointF(0, 0);
   FAniCalc.Animation := True;
   FAniCalc.Averaging := True;
+  {$IF CompilerVersion < 37.0}
   FAniCalc.Interval := 8;
+  {$ENDIF}
   FAniCalc.BoundsAnimation := True;
   FAniCalc.TouchTracking := [ttHorizontal, ttVertical];
   FAniCalc.OnChanged := AniCalcChange;
