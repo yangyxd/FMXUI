@@ -2118,6 +2118,8 @@ function GetRadius(const ARadius: Single; const AControl: TControl): Single; ove
 function ViewStateToString(const State: TViewStates): string;
 function ComponentStateToString(const State: TComponentState): string;
 
+function GetGlobalLang: TLangManager;
+
 var
   /// <summary>
   /// Accessory Í¼ÏñÁÐ±í
@@ -2153,6 +2155,11 @@ var
   FAudioManager: JAudioManager = nil;
   {$ENDIF}
   [Weak] FGlobalLang: TLangManager = nil;
+
+function GetGlobalLang: TLangManager;
+begin
+  Result := FGlobalLang;
+end;
 
 function AlignToPixel(Canvas: TCanvas; const Rect: TRectF): TRectF;
 begin

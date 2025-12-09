@@ -11,7 +11,7 @@ unit UI.Edit;
 interface
 
 uses
-  UI.Base, UI.Standard,
+  UI.Utils, UI.Base, UI.Standard,
   {$IFDEF MSWINDOWS}UI.Debug, {$ENDIF}
   FMX.KeyMapping,
   FMX.VirtualKeyboard,
@@ -1276,45 +1276,65 @@ begin
 end;
 
 function TCustomEditView.CreatePopupMenu: TPopupMenu;
+const
+  SEditUndo_ZH = '撤消';
+  SEditRedo_ZH = '重做';
+  SEditCopy_ZH = '复制';
+  SEditCut_ZH = '剪切';
+  SEditPaste_ZH = '粘贴';
+  SEditDelete_ZH = '删除';
+  SEditSelectAll_ZH = '选择全部';
+  SEditClear_ZH = '清空';
 var
   TmpItem: TMenuItem;
+  bZh: Boolean;
 begin
   Result := TPopupMenu.Create(Self);
   Result.Stored := False;
+  bZh := False;
+  if Assigned(GetGlobalLang()) then
+    bZh := GetGlobalLang().Lang = 'zh'
+  else
+    bZh := IsZh;
+  Result.Tag := Ord(bZh);
 
   TmpItem := TMenuItem.Create(Result);
   TmpItem.Parent := Result;
-  TmpItem.Text := SEditUndo;
+  TmpItem.Text := IIF(bZh, SEditUndo_ZH, SEditUndo);
   TmpItem.StyleName := UndoStyleName;
   TmpItem.OnClick := DoUndo;
 
   TmpItem := TMenuItem.Create(Result);
   TmpItem.Parent := Result;
-  TmpItem.Text := SEditRedo;
+  TmpItem.Text := IIF(bZh, SEditRedo_ZH, SEditRedo);
   TmpItem.StyleName := RedoStyleName;
   TmpItem.OnClick := DoRedo;
 
   TmpItem := TMenuItem.Create(Result);
   TmpItem.Parent := Result;
-  TmpItem.Text := SEditCut;
+  TmpItem.Text := SMenuSeparator;
+
+  TmpItem := TMenuItem.Create(Result);
+  TmpItem.Parent := Result;
+  TmpItem.Text := IIF(bZh, SEditCut_ZH, SEditCut);
   TmpItem.StyleName := CutStyleName;
   TmpItem.OnClick := DoCut;
 
   TmpItem := TMenuItem.Create(Result);
   TmpItem.Parent := Result;
-  TmpItem.Text := SEditCopy;
+  TmpItem.Text := IIF(bZh, SEditCopy_ZH, SEditCopy);
   TmpItem.StyleName := CopyStyleName;
   TmpItem.OnClick := DoCopy;
 
   TmpItem := TMenuItem.Create(Result);
   TmpItem.Parent := Result;
-  TmpItem.Text := SEditPaste;
+  TmpItem.Text := IIF(bZh, SEditPaste_ZH, SEditPaste);
   TmpItem.StyleName := PasteStyleName;
   TmpItem.OnClick := DoPaste;
 
   TmpItem := TMenuItem.Create(Result);
   TmpItem.Parent := Result;
-  TmpItem.Text := SEditDelete;
+  TmpItem.Text := IIF(bZh, SEditDelete_ZH, SEditDelete);
   TmpItem.StyleName := DeleteStyleName;
   TmpItem.OnClick := DoDelete;
 
@@ -1324,14 +1344,14 @@ begin
 
   TmpItem := TMenuItem.Create(Result);
   TmpItem.Parent := Result;
-  TmpItem.Text := SEditSelectAll;
+  TmpItem.Text := IIF(bZh, SEditSelectAll_ZH, SEditSelectAll);
   TmpItem.StyleName := SelectAllStyleName;
   TmpItem.OnClick := DoSelectAll;
 
 
   TmpItem := TMenuItem.Create(Result);
   TmpItem.Parent := Result;
-  TmpItem.Text := SEditClear;
+  TmpItem.Text := IIF(bZh, SEditClear_ZH, SEditClear);
   TmpItem.StyleName := ClearStyleName;
   TmpItem.OnClick := DoClear;
 end;
@@ -1938,6 +1958,10 @@ end;
 
 function TCustomEditView.GetEditPopupMenu: TPopupMenu;
 begin
+  if Assigned(FEditPopupMenu) and Assigned(GetGlobalLang()) then begin
+    if FEditPopupMenu.Tag <> Ord(GetGlobalLang().Lang = 'zh') then
+      FreeAndNil(FEditPopupMenu);
+  end;
   if FEditPopupMenu = nil then
     FEditPopupMenu := CreatePopupMenu;
   Result := FEditPopupMenu;

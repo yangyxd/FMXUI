@@ -62,7 +62,8 @@ contains
   UI.Design.Accessory in 'UI.Design.Accessory.pas' {AccessoryDesigner},
   UI.Design.SVGImage in 'UI.Design.SVGImage.pas' {FrmDesignSVGImage},
   UI.ComboBox in 'UI.ComboBox.pas',
-  UI.Design.LangEditor in 'UI.Design.LangEditor.pas' {LangDesigner};
+  UI.Design.LangEditor in 'UI.Design.LangEditor.pas' {LangDesigner},
+  UI.PageView in 'UI.PageView.pas';
 
 end.
 

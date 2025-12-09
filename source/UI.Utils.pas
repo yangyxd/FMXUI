@@ -54,6 +54,8 @@ uses
   System.Classes, System.Types, System.UITypes, System.SysUtils, System.Math.Vectors,
   FMX.Types, FMX.StdCtrls, FMX.Platform, FMX.Controls, FMX.InertialMovement;
 
+// 是否是中文环境
+function IsZh(): Boolean;
 // 获取当前时间
 function GetTimestamp: Int64;
 // 获取当前时间，结果表示当时时间距离1970年1月1日0时0分0秒0毫秒的毫秒数
@@ -132,6 +134,12 @@ function GetAngle(const CX, CY, X, Y: Single): Single;
 
 // 判断两个方法是否相等
 function EqulsMethod(const A, B: TNotifyEvent): Boolean;
+
+function IIF(const Value: Boolean; const ATrueStr, AFalseStr: string): string; overload;
+function IIF(const Value: Boolean; const ATrueValue, AFalseValue: Double): Double; overload;
+function IIF(const Value: Boolean; const ATrueValue, AFalseValue: Single): Single; overload;
+function IIF(const Value: Boolean; const ATrueValue, AFalseValue: NativeInt): NativeInt; overload;
+function IIF(const A, B: string; const C: string = ''): string; overload;
 
 type
   {$if CompilerVersion < 23}
@@ -355,6 +363,17 @@ begin
   Result := Copy(Mobile, 1, 3) + '****' + Copy(Mobile, 8, 4);
 end;
 
+function IsZh(): Boolean;
+var
+  LocaleSvc: IFMXLocaleService;
+begin
+  try
+    Result := TPlatformServices.Current.SupportsPlatformService(IFMXLocaleService, LocaleSvc) and (LocaleSvc.GetCurrentLangID = 'zh');
+  except
+    Result := False;
+  end;
+end;
+
 {$WARNINGS OFF}
 function CharInSet(C: Char; const CharSet: TSysCharSet): Boolean;
 begin
@@ -462,6 +481,31 @@ end;
 function EqulsMethod(const A, B: TNotifyEvent): Boolean;
 begin
   Result := TMethod(A) = TMethod(B);
+end;
+
+function IIF(const Value: Boolean; const ATrueStr, AFalseStr: string): string;
+begin
+  if Value then Result := ATrueStr else Result := AFalseStr;
+end;
+
+function IIF(const Value: Boolean; const ATrueValue, AFalseValue: Double): Double;
+begin
+  if Value then Result := ATrueValue else Result := AFalseValue;
+end;
+
+function IIF(const Value: Boolean; const ATrueValue, AFalseValue: NativeInt): NativeInt;
+begin
+  if Value then Result := ATrueValue else Result := AFalseValue;
+end;
+
+function IIF(const Value: Boolean; const ATrueValue, AFalseValue: Single): Single;
+begin
+  if Value then Result := ATrueValue else Result := AFalseValue;
+end;
+
+function IIF(const A, B: string; const C: string = ''): string;
+begin
+  if A <> '' then Result := A else if B <> '' then Result := B else Result := C;
 end;
 
 function GetPPI(Context: TFmxObject): Single;

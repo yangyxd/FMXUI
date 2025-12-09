@@ -24,7 +24,7 @@ implementation
 uses
   UI.Debug,
   System.SysUtils, System.Actions, {$IFDEF SPLASH}ToolsAPI, {$ENDIF}
-  UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.Calendar, UI.ComboBox,
+  UI.Utils, UI.Base, UI.Standard, UI.Edit, UI.Dialog, UI.Calendar, UI.ComboBox,
 
   UI.Grid,
   UI.Design.GridColumns,
@@ -32,6 +32,8 @@ uses
   UI.ListView,
   // UI.ListViewEx,
   UI.Toast,
+
+  UI.PageView,
 
   UI.Design.Bounds,
   UI.Design.Accessory,
@@ -55,7 +57,7 @@ uses
   System.Generics.Collections, System.RTLConsts,
 
   ActionEditors, FMX.ActnList, FMX.ImgList,
-  Vcl.ComCtrls, Vcl.Graphics, FMX.Graphics,
+  Vcl.ComCtrls, Vcl.Graphics, FMX.Graphics, FMX.Platform,
 
   FMX.Ani, FMX.Types, FMX.Styles, FMX.Controls, FMX.StdCtrls, FMX.Edit;
 
@@ -226,6 +228,8 @@ begin
   RegisterComponents(PageName, [TCameraViewer]);
   RegisterComponents(PageName, [TCheckBoxView]);
   RegisterComponents(PageName, [TRadioView]);
+
+  RegisterComponents(PageName, [TPageView]);
 
   RegisterComponents(PageName, [TLangManager]);
 
@@ -583,9 +587,13 @@ end;
 
 function TLangEditor.GetVerb(Index: Integer): string;
 const
-  CmdNames: TArray<string> = ['Edit Language'];
+  CmdNames_EN: TArray<string> = ['Edit Language'];
+  CmdNames_CH: TArray<string> = ['编辑多语言'];
 begin
-  Result := CmdNames[FCmdIndex[Index]];
+  if IsZH then
+    Result := CmdNames_CH[FCmdIndex[Index]]
+  else
+    Result := CmdNames_EN[FCmdIndex[Index]];
 end;
 
 function TLangEditor.GetVerbCount: Integer;
@@ -692,11 +700,17 @@ end;
 
 function TViewControlEditor.GetVerb(Index: Integer): string;
 const
-  CmdNames: TArray<string> = ['前移', '后移', '移至最前', '移至最后',
+  CmdNames_ZH: TArray<string> = ['前移', '后移', '移至最前', '移至最后',
+    '复制 Background', '粘贴 Background', '复制 Drawable', '粘贴 Drawable',
+    '按钮风格', '颜色面板'];
+  CmdNames_EN: TArray<string> = ['Move forward', 'Move back', 'Move to the front', 'Move to the end',
     'Copy Background', 'Paste Background', 'Copy Drawable', 'Paste Drawable',
     'Button Styles', 'Color Panel'];
 begin
-  Result := CmdNames[FCmdIndex[Index]];
+  if IsZh then
+    Result := CmdNames_ZH[FCmdIndex[Index]]
+  else
+    Result := CmdNames_EN[FCmdIndex[Index]];
 end;
 
 function TViewControlEditor.GetVerbCount: Integer;
@@ -756,7 +770,10 @@ begin
     Exit;
   Dialog := TBoundsDesigner.Create(nil);
   try
-    Dialog.Caption := '9宫格绘图编辑器';
+    if IsZh then
+      Dialog.Caption := '9宫格绘图编辑器'
+    else
+      Dialog.Caption := '9-grid drawing editor';
     Dialog.Bitmap := TPatch9Bitmap(Component).Bitmap;
     Dialog.Bounds := TPatch9Bitmap(Component).Bounds.Rect;
     if Dialog.ShowModal = mrOK then begin
@@ -867,7 +884,10 @@ begin
     Exit;
   Dialog := TGridColumnsDesigner.Create(nil);
   try
-    Dialog.Caption := 'GridView 列设计器 (隐藏的列请通过点击“上一项”或“下一项”切换)';
+    if IsZh then
+      Dialog.Caption := 'GridView Column Designer (for hidden columns, please switch by clicking "Previous" or "Next")'
+    else
+      Dialog.Caption := 'GridView 列设计器 (隐藏的列请通过点击“上一项”或“下一项”切换)';
     Dialog.Columns := TGridView(Component).Columns;
     if Dialog.ShowModal = mrOK then
       TGridView(Component).Columns.Assign(Dialog.Columns);
