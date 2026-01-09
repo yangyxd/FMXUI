@@ -939,7 +939,9 @@ begin
   FAniCalc.ViewportPositionF := PointF(0, 0);
   FAniCalc.Animation := True;
   FAniCalc.Averaging := True;
+  {$IF CompilerVersion < 37.0}
   FAniCalc.Interval := 8;
+  {$ENDIF}
   FAniCalc.BoundsAnimation := True;
   FAniCalc.TouchTracking := [ttHorizontal];
   FAniCalc.OnChanged := AniCalcChange;
