@@ -4886,12 +4886,9 @@ begin
 
   // inherited;
   if AbsoluteEnabled and Pressed and not DoubleClick and PointInObjectLocal(X, Y) then begin
-    Click;
-    if (not Assigned(Self)) or (csDestroying in ComponentState) then
-      Exit;
-
     Pressed := False;
     StartTriggerAnimation(Self, 'Pressed');
+    Click;
   end;
 end;
 
